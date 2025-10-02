@@ -1,0 +1,86 @@
+{
+  "name": "development-mcp-server",
+  "version": "1.0.0-dev",
+  "port": 3002,
+  "security": {
+    "authentication": {
+      "enabled": false
+    },
+    "rateLimit": {
+      "enabled": false
+    },
+    "audit": {
+      "enabled": true,
+      "logFile": "./logs/audit-dev.log",
+      "logLevel": "debug"
+    }
+  },
+  "tools": [
+    {
+      "name": "debug-echo",
+      "description": "Echoes input with debug information",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args, context) => ({ content: [{ type: 'text', text: `[DEBUG] Echo: ${args.message}\\nSession: ${context?.sessionId}\\nTool: ${context?.metadata?.toolName}` }] })"
+      }
+    },
+    {
+      "name": "test-handler",
+      "description": "Test handler for development",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "test": {
+            "type": "string"
+          }
+        }
+      },
+      "handler": {
+        "type": "file",
+        "path": "./mcp/handlers/examples/greetHandler.ts"
+      }
+    },
+    {
+      "name": "mock-api",
+      "description": "Mock external API for testing",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async () => ({ content: [{ type: 'text', text: JSON.stringify({ status: 'ok', data: 'mock response' }) }] })"
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "test-prompt",
+      "description": "Test prompt for development",
+      "arguments": [
+        {
+          "name": "variable",
+          "required": true
+        }
+      ],
+      "template": "Test template with {{variable}}"
+    }
+  ],
+  "resources": [
+    {
+      "uri": "dev://test",
+      "name": "Test Resource",
+      "description": "Test resource for development",
+      "mimeType": "text/plain",
+      "content": "This is a test resource"
+    }
+  ]
+}

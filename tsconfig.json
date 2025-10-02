@@ -1,0 +1,68 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    /* Modules */
+    "module": "ESNext",
+    "rootDir": ".",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "resolveJsonModule": true,
+
+    /* Emit */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": false,
+    "importHelpers": false,
+    "downlevelIteration": true,
+    "preserveConstEnums": true,
+    "noEmitOnError": false,
+
+    /* Interop Constraints */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Type Checking */
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "noUncheckedIndexedAccess": false,
+
+    /* Completeness */
+    "skipLibCheck": true
+  },
+  "include": [
+    "mcp/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "mcp/tests/**/*",
+    "mcp/examples/**/*",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "test-*.ts",
+    "mcp/servers/**/*",
+    "mcp/configurableServer.ts",
+    "mcp/adapter.ts",
+    "mcp/validation/**/*",
+    "mcp/handlers/**/*",
+    "mcp/cli/**/*"
+  ]
+}

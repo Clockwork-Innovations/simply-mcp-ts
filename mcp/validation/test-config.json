@@ -1,0 +1,84 @@
+{
+  "name": "validation-test-server",
+  "version": "1.0.0",
+  "port": 3001,
+  "tools": [
+    {
+      "name": "echo",
+      "description": "Echoes back the provided message with validation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The message to echo",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": ["message"]
+      },
+      "handler": "echo"
+    },
+    {
+      "name": "user_create",
+      "description": "Creates a user with validated input",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username (alphanumeric and underscore only)",
+            "minLength": 3,
+            "maxLength": 20
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "format": "email"
+          },
+          "age": {
+            "type": "number",
+            "description": "User age",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "role": {
+            "type": "string",
+            "description": "User role",
+            "enum": ["admin", "user", "guest"],
+            "enumNames": ["Administrator", "Regular User", "Guest User"]
+          }
+        },
+        "required": ["username", "email"]
+      },
+      "handler": "user_create"
+    },
+    {
+      "name": "query_data",
+      "description": "Queries data (SQL injection protection enabled)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "string",
+            "description": "Table name to query"
+          },
+          "filter": {
+            "type": "string",
+            "description": "Filter criteria"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum results to return",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 10
+          }
+        },
+        "required": ["table"]
+      },
+      "handler": "query_data"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+// /// dependencies
+// malicious@^1.0.0; rm -rf /
+// evil@^1.0.0 && echo "pwned"
+// bad@1.0.0|cat /etc/passwd
+// ///

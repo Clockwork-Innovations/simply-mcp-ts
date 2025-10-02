@@ -1,0 +1,138 @@
+{
+  "name": "high-performance-mcp-server",
+  "version": "1.0.0",
+  "port": 3001,
+  "security": {
+    "authentication": {
+      "enabled": true,
+      "apiKeys": [
+        {
+          "key": "PERFORMANCE_KEY_REPLACE_ME",
+          "name": "Performance Key",
+          "permissions": ["tools:*"]
+        }
+      ]
+    },
+    "rateLimit": {
+      "enabled": true,
+      "global": {
+        "window": 60000,
+        "maxRequests": 10000
+      }
+    },
+    "audit": {
+      "enabled": false
+    }
+  },
+  "performance": {
+    "caching": {
+      "enabled": true,
+      "ttl": 300,
+      "maxSize": 10000
+    },
+    "compression": {
+      "enabled": true,
+      "level": 6
+    },
+    "keepAlive": {
+      "enabled": true,
+      "timeout": 65000
+    }
+  },
+  "tools": [
+    {
+      "name": "fast-calculation",
+      "description": "Optimized calculation with caching",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": ["add", "multiply"]
+          },
+          "a": {
+            "type": "number"
+          },
+          "b": {
+            "type": "number"
+          }
+        },
+        "required": ["operation", "a", "b"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => { const result = args.operation === 'add' ? args.a + args.b : args.a * args.b; return { content: [{ type: 'text', text: String(result) }] }; }"
+      },
+      "cache": {
+        "enabled": true,
+        "ttl": 600
+      }
+    },
+    {
+      "name": "batch-process",
+      "description": "Batch processing handler",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000
+          }
+        },
+        "required": ["items"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Processed ${args.items.length} items` }] })"
+      }
+    },
+    {
+      "name": "cached-http",
+      "description": "Cached HTTP request",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "handler": {
+        "type": "http",
+        "url": "https://api.example.com/data",
+        "method": "GET",
+        "timeout": 3000
+      },
+      "cache": {
+        "enabled": true,
+        "ttl": 3600
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "quick-query",
+      "description": "Quick query prompt",
+      "arguments": [
+        {
+          "name": "query",
+          "required": true
+        }
+      ],
+      "template": "Quick query: {{query}}"
+    }
+  ],
+  "resources": [
+    {
+      "uri": "perf://metrics",
+      "name": "Performance Metrics",
+      "description": "Server performance metrics",
+      "mimeType": "application/json",
+      "content": {
+        "caching": "enabled",
+        "compression": "enabled",
+        "keepAlive": "enabled",
+        "maxRequests": 10000
+      }
+    }
+  ]
+}

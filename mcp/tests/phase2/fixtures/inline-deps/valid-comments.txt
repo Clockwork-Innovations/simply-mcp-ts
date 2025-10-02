@@ -1,0 +1,10 @@
+// /// dependencies
+// # HTTP libraries
+// axios@^1.6.0  # HTTP client
+//
+// # Validation
+// zod@^3.22.0   # Schema validation
+//
+// # Date utilities
+// date-fns@^2.30.0
+// ///

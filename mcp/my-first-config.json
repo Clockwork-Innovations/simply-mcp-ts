@@ -1,0 +1,47 @@
+{
+  "name": "my-first-mcp-server",
+  "version": "1.0.0",
+  "port": 3002,
+  "tools": [
+    {
+      "name": "add",
+      "description": "Adds two numbers together",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "type": "number",
+            "description": "First number"
+          },
+          "b": {
+            "type": "number",
+            "description": "Second number"
+          }
+        },
+        "required": ["a", "b"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Result: ${args.a} + ${args.b} = ${args.a + args.b}` }] })"
+      }
+    },
+    {
+      "name": "greet",
+      "description": "Greets someone by name",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of person to greet"
+          }
+        },
+        "required": ["name"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Hello, ${args.name}! Welcome to MCP!` }] })"
+      }
+    }
+  ]
+}

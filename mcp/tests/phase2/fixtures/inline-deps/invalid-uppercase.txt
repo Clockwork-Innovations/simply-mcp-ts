@@ -1,0 +1,3 @@
+// /// dependencies
+// UPPERCASE@^1.0.0
+// ///

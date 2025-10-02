@@ -1,0 +1,53 @@
+# Source files (keeping compiled dist/ only)
+*.ts
+!*.d.ts
+tsconfig.json
+
+# Tests
+mcp/tests/
+test-*.ts
+test-*.js
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Examples (optional - remove these lines if you want to include examples)
+mcp/examples/
+
+# Documentation (optional - remove these lines if you want to include docs)
+mcp/docs/
+*.md
+!README.md
+
+# Development files
+.git/
+.gitignore
+.mcp.json
+run-mcp.sh
+test-adapter.js
+test-mcp-client.ts
+test-simple.ts
+test-zod-native.ts
+view-tool-defs.ts
+
+# Config files
+mcp/config*.json
+mcp/*.config.js
+mcp/*.config.example.js
+
+# Planning and implementation docs
+mcp/*_PLAN.md
+mcp/*_IMPLEMENTATION.md
+mcp/*_SUMMARY.md
+mcp/*_GUIDE.md
+mcp/*_TESTING_GUIDE.md
+
+# Node modules (handled by npm automatically but included for clarity)
+node_modules/
+
+# Build artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -1,0 +1,258 @@
+{
+  "name": "validation-examples-server",
+  "version": "1.0.0",
+  "port": 3005,
+  "tools": [
+    {
+      "name": "create-user",
+      "description": "Create a new user with comprehensive validation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username (3-20 chars, alphanumeric + underscore)",
+            "minLength": 3,
+            "maxLength": 20,
+            "pattern": "^[a-zA-Z0-9_]+$"
+          },
+          "email": {
+            "type": "string",
+            "description": "User email address",
+            "format": "email"
+          },
+          "age": {
+            "type": "integer",
+            "description": "Age (18-120)",
+            "minimum": 18,
+            "maximum": 120
+          },
+          "role": {
+            "type": "string",
+            "description": "User role",
+            "enum": ["admin", "moderator", "user", "guest"]
+          },
+          "tags": {
+            "type": "array",
+            "description": "User tags (1-5 unique tags)",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true
+          }
+        },
+        "required": ["username", "email", "age", "role"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `User ${args.username} created successfully` }] })"
+      }
+    },
+    {
+      "name": "set-temperature",
+      "description": "Set temperature with precise range validation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "temperature": {
+            "type": "number",
+            "description": "Temperature in Celsius (must be > -273.15 and <= 1000)",
+            "exclusiveMinimum": -273.15,
+            "maximum": 1000
+          },
+          "unit": {
+            "type": "string",
+            "description": "Temperature unit",
+            "enum": ["celsius", "fahrenheit", "kelvin"]
+          }
+        },
+        "required": ["temperature", "unit"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Temperature set to ${args.temperature}°${args.unit[0].toUpperCase()}` }] })"
+      }
+    },
+    {
+      "name": "calculate-discount",
+      "description": "Calculate discount with multiple-of validation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "number",
+            "description": "Price (must be positive, multiple of 0.01)",
+            "minimum": 0,
+            "multipleOf": 0.01
+          },
+          "discountPercent": {
+            "type": "integer",
+            "description": "Discount percentage (0-100, multiple of 5)",
+            "minimum": 0,
+            "maximum": 100,
+            "multipleOf": 5
+          }
+        },
+        "required": ["price", "discountPercent"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Final price: $${(args.price * (1 - args.discountPercent/100)).toFixed(2)}` }] })"
+      }
+    },
+    {
+      "name": "schedule-event",
+      "description": "Schedule event with date/time validation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "type": "string",
+            "description": "Event name",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "description": "Event date (YYYY-MM-DD)",
+            "format": "date"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "Start time (HH:MM:SS)",
+            "format": "time"
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Priority level",
+            "enum": [1, 2, 3, 4, 5]
+          }
+        },
+        "required": ["eventName", "date", "startTime"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Event '${args.eventName}' scheduled for ${args.date} at ${args.startTime}` }] })"
+      }
+    },
+    {
+      "name": "create-api-key",
+      "description": "Create API key with UUID validation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "API key name",
+            "minLength": 1
+          },
+          "userId": {
+            "type": "string",
+            "description": "User ID (UUID format)",
+            "format": "uuid"
+          },
+          "permissions": {
+            "type": "array",
+            "description": "List of permissions (1-10 unique items)",
+            "items": {
+              "type": "string",
+              "enum": ["read", "write", "delete", "admin"]
+            },
+            "minItems": 1,
+            "maxItems": 10,
+            "uniqueItems": true
+          }
+        },
+        "required": ["name", "userId", "permissions"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `API key '${args.name}' created for user ${args.userId}` }] })"
+      }
+    },
+    {
+      "name": "validate-phone",
+      "description": "Validate phone number with regex pattern",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "description": "International phone number (E.164 format)",
+            "pattern": "^\\+?[1-9]\\d{1,14}$"
+          },
+          "countryCode": {
+            "type": "string",
+            "description": "Two-letter country code",
+            "pattern": "^[A-Z]{2}$"
+          }
+        },
+        "required": ["phoneNumber"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Phone number ${args.phoneNumber} is valid` }] })"
+      }
+    },
+    {
+      "name": "batch-process",
+      "description": "Process batch with array constraints",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Items to process (10-100 items)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": ["id", "value"]
+            },
+            "minItems": 10,
+            "maxItems": 100
+          }
+        },
+        "required": ["items"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Processing ${args.items.length} items` }] })"
+      }
+    },
+    {
+      "name": "union-type-example",
+      "description": "Example with union types",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": ["string", "number"],
+            "description": "Can be either string or number"
+          },
+          "id": {
+            "type": ["string", "integer"],
+            "description": "String or integer ID"
+          }
+        },
+        "required": ["value"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Received value: ${args.value} (type: ${typeof args.value})` }] })"
+      }
+    }
+  ]
+}

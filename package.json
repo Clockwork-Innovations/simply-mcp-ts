@@ -1,0 +1,91 @@
+{
+  "name": "simple-mcp",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
+  "private": false,
+  "type": "module",
+  "main": "./dist/mcp/index.js",
+  "module": "./dist/mcp/index.js",
+  "types": "./dist/mcp/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js",
+      "default": "./dist/mcp/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "simplemcp": "./mcp/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "mcp",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node_modules/.bin/tsc",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "prepublishOnly": "npm run build",
+    "dev": "npx tsx mcp/examples/simple-server.ts",
+    "dev:http": "npx tsx mcp/examples/simple-server.ts --http --port 3000",
+    "dev:class": "npx tsx mcp/class-adapter.ts mcp/examples/class-minimal.ts",
+    "test": "bash mcp/tests/run-all-tests.sh",
+    "test:stdio": "bash mcp/tests/test-stdio.sh",
+    "test:http": "bash mcp/tests/test-stateful-http.sh"
+  },
+  "author": {
+    "name": "Nicholas Marinkovich, MD",
+    "url": "https://cwinnov.com"
+  },
+  "contributors": [
+    "SimpleMCP Contributors"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clockwork-innovations/simple-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/clockwork-innovations/simple-mcp/issues"
+  },
+  "homepage": "https://github.com/clockwork-innovations/simple-mcp#readme",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "llm",
+    "typescript",
+    "server",
+    "framework",
+    "decorators",
+    "claude",
+    "anthropic",
+    "tools",
+    "prompts",
+    "resources"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "reflect-metadata": "^0.2.2",
+    "zod": "^4.1.11",
+    "zod-to-json-schema": "^3.24.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/yargs": "^17.0.33",
+    "esbuild": "^0.20.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5",
+    "yargs": "^17.7.2"
+  }
+}
