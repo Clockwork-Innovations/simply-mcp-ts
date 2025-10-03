@@ -118,7 +118,9 @@ export function tool(description?: string) {
   ) {
     const tools = Reflect.getMetadata(TOOLS_KEY, target.constructor) || [];
     const paramTypes = Reflect.getMetadata('design:paramtypes', target, propertyKey) || [];
-    const jsdoc = extractJSDoc(target[propertyKey]);
+    // Support both legacy decorators (target[propertyKey]) and stage-3 decorators (descriptor.value)
+    const fn = descriptor?.value || target[propertyKey];
+    const jsdoc = extractJSDoc(fn);
 
     tools.push({
       methodName: propertyKey,
@@ -145,9 +147,11 @@ export function prompt(description?: string) {
     const prompts = Reflect.getMetadata(PROMPTS_KEY, target.constructor) || [];
     const paramTypes = Reflect.getMetadata('design:paramtypes', target, propertyKey) || [];
 
+    // Support both legacy decorators (target[propertyKey]) and stage-3 decorators (descriptor.value)
+    const fn = descriptor?.value || target[propertyKey];
     prompts.push({
       methodName: propertyKey,
-      description: description || extractDocstring(target[propertyKey]),
+      description: description || extractDocstring(fn),
       paramTypes,
     });
 
@@ -168,11 +172,13 @@ export function resource(uri: string, options: { name?: string; mimeType?: strin
   ) {
     const resources = Reflect.getMetadata(RESOURCES_KEY, target.constructor) || [];
 
+    // Support both legacy decorators (target[propertyKey]) and stage-3 decorators (descriptor.value)
+    const fn = descriptor?.value || target[propertyKey];
     resources.push({
       methodName: propertyKey,
       uri,
       name: options.name || propertyKey,
-      description: extractDocstring(target[propertyKey]),
+      description: extractDocstring(fn),
       mimeType: options.mimeType || 'text/plain',
     });
 
@@ -186,6 +192,7 @@ export function resource(uri: string, options: { name?: string; mimeType?: strin
  * Parses JSDoc comments to extract description, param tags, returns, examples, and throws tags
  */
 export function extractJSDoc(fn: Function): JSDocInfo | undefined {
+  if (!fn) return undefined;  // Defensive check for undefined functions
   const fnString = fn.toString();
 
   // Match JSDoc comment block (handles both before and after function keyword)
