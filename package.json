@@ -1,6 +1,6 @@
 {
   "name": "@clockwork-innovations/simple-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",
