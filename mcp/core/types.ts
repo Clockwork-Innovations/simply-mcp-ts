@@ -206,6 +206,7 @@ export interface HandlerResult {
   content: Array<TextContent | ImageContent | AudioContent | BinaryContent>;
   metadata?: Record<string, unknown>; // Additional result metadata
   errors?: HandlerError[]; // Non-fatal errors or warnings
+  [key: string]: unknown; // Allow additional properties for SDK compatibility
 }
 
 /**

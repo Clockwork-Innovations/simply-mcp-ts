@@ -6,13 +6,27 @@ export * from './types.js';
 export * from './errors.js';
 export * from './logger.js';
 export * from './HandlerManager.js';
-export * from './content-helpers.js';
+
+// Export content helpers, excluding duplicate types already in types.js
+export {
+  createImageContent,
+  createAudioContent,
+  createBlobContent,
+  ImageInput,
+  AudioInput,
+  BinaryInput,
+} from './content-helpers.js';
 
 // Inline dependency management (Phase 2, Feature 2)
 export * from './dependency-types.js';
 export * from './dependency-parser.js';
 export * from './dependency-validator.js';
-export * from './dependency-utils.js';
+
+// Export dependency-utils, avoiding conflicts with dependency-resolver
+export {
+  mergeDependencies,
+  filterDependencies,
+} from './dependency-utils.js';
 
 // Auto-installation (Phase 2, Feature 3)
 export * from './installation-types.js';
@@ -24,6 +38,11 @@ export * from './package-manager-detector.js';
 export * from './bundle-types.js';
 export * from './bundler.js';
 export * from './entry-detector.js';
-export * from './dependency-resolver.js';
+
+// Export dependency-resolver exports except the conflicting ones
+export {
+  resolveDependencies,
+} from './dependency-resolver.js';
+
 export * from './output-formatter.js';
 export * from './config-loader.js';

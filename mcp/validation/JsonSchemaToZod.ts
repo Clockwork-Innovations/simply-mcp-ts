@@ -335,16 +335,16 @@ function convertObject(
     zodProperties[key] = propZodSchema;
   }
 
-  let objectSchema = z.object(zodProperties);
+  const baseSchema = z.object(zodProperties);
 
-  // Handle additional properties
+  // Handle additional properties and return appropriate type
   if (allowUnknown && schema.additionalProperties !== false) {
-    objectSchema = objectSchema.passthrough() as z.ZodObject<any>;
+    return baseSchema.passthrough();
   } else if (schema.additionalProperties === false) {
-    objectSchema = objectSchema.strict() as z.ZodObject<any>;
+    return baseSchema.strict();
   }
 
-  return objectSchema;
+  return baseSchema;
 }
 
 /**
@@ -376,15 +376,15 @@ function convertArray(
 
   // Unique items
   if (schema.uniqueItems === true) {
-    arraySchema = arraySchema.refine(
-      (arr) => new Set(arr.map(JSON.stringify)).size === arr.length,
+    return arraySchema.refine(
+      (arr: any[]) => new Set(arr.map((item) => JSON.stringify(item))).size === arr.length,
       {
         message: 'Array items must be unique',
       }
-    );
+    ) as ZodTypeAny;
   }
 
-  return arraySchema;
+  return arraySchema as ZodTypeAny;
 }
 
 /**

@@ -46,6 +46,7 @@ import {
   LoggingMessageNotificationSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z, ZodSchema, ZodError } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { HandlerManager } from './core/HandlerManager.js';
 import { HandlerContext, HandlerResult, ToolHandler, SamplingMessage, SamplingOptions, ResourceContents } from './core/types.js';
 import { validateAndSanitize } from './validation/index.js';
@@ -196,9 +197,9 @@ export class SimpleMCP {
       throw new Error(`Tool '${definition.name}' is already registered`);
     }
 
-    // Convert Zod schema to JSON Schema using Zod v4's native converter
-    const jsonSchema = z.toJSONSchema(definition.parameters, {
-      target: 'openapi-3.0',
+    // Convert Zod schema to JSON Schema using zod-to-json-schema
+    const jsonSchema = zodToJsonSchema(definition.parameters, {
+      target: 'openApi3',
     });
 
     // Store the tool
@@ -349,7 +350,7 @@ export class SimpleMCP {
     });
 
     // Call tool handler
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       const toolName = request.params.name;
       const tool = this.tools.get(toolName);
 

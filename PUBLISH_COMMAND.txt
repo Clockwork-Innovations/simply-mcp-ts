@@ -1,0 +1,10 @@
+To complete the npm publish, run:
+
+npm publish --access public --ignore-scripts --otp=YOUR_OTP_CODE
+
+Replace YOUR_OTP_CODE with the 6-digit code from your authenticator app.
+
+Example:
+npm publish --access public --ignore-scripts --otp=123456
+
+Note: The OTP code expires quickly, so get it and run the command immediately.

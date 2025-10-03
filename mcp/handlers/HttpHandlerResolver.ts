@@ -74,14 +74,14 @@ export class HttpHandlerResolver implements HandlerResolver {
 
       try {
         // Transform request if needed
-        let requestData = args;
+        let requestData: Record<string, unknown> = args;
         if (requestTransform) {
-          requestData = await this.executeTransform(
+          requestData = (await this.executeTransform(
             requestTransform,
             args,
             context,
             'request'
-          );
+          )) as Record<string, unknown>;
         }
 
         // Make HTTP request with retries
