@@ -88,6 +88,8 @@ sleep 2  # Allow server cleanup
 run_suite "Stateful HTTP Transport" "mcp/tests/test-stateful-http.sh"
 sleep 2  # Allow server cleanup
 run_suite "SSE Transport (Legacy)" "mcp/tests/test-sse.sh"
+sleep 2  # Allow server cleanup
+run_suite "CLI Commands" "mcp/tests/test-cli-run.sh"
 
 END_TIME=$(date +%s)
 TOTAL_DURATION=$((END_TIME - START_TIME))
@@ -112,7 +114,7 @@ echo "-------------------------------------------"
 printf "%-30s | %s\n" "Test Suite" "Result"
 echo "-------------------------------------------"
 
-for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)"; do
+for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)" "CLI Commands"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -159,7 +161,7 @@ cat > "$REPORT_FILE" << EOF
 |----------------|--------|----------|
 EOF
 
-for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)"; do
+for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)" "CLI Commands"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -203,6 +205,12 @@ cat >> "$REPORT_FILE" << EOF
 - **Use Case:** Legacy systems, streaming updates
 - **Session:** Tracked via query parameters
 - **Tests:** Connection establishment, message sending, session validation
+
+### 6. CLI Commands
+- **Type:** Simplified CLI interface
+- **Use Case:** Running MCP servers with auto-detection
+- **Session:** N/A (adapter selection)
+- **Tests:** Auto-detection (decorator, functional, programmatic), explicit commands (simplymcp-class, simplymcp-func), flags (--style, --verbose, --help, --http), error handling
 
 ## Notes
 

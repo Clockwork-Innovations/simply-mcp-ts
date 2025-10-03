@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",
@@ -99,6 +99,8 @@
   "devDependencies": {
     "@types/node": "^24",
     "@types/yargs": "^17.0.33",
+    "chokidar": "^4.0.3",
+    "pkg": "^5.8.1",
     "tsx": "^4.20.6",
     "typescript": "^5"
   }

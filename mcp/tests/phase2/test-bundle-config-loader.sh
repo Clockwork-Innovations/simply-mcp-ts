@@ -83,7 +83,7 @@ echo ""
 # Test 1: Load .js config
 echo "Test 1: Load .js config"
 setup_test
-cat > "$TEST_TEMP_DIR/simplemcp.config.js" <<'EOF'
+cat > "$TEST_TEMP_DIR/simplymcp.config.js" <<'EOF'
 export default {
   entry: './server.ts',
   output: {
@@ -113,7 +113,7 @@ cleanup_test
 # Test 2: Load .json config
 echo "Test 2: Load .json config"
 setup_test
-cat > "$TEST_TEMP_DIR/simplemcp.config.json" <<'EOF'
+cat > "$TEST_TEMP_DIR/simplymcp.config.json" <<'EOF'
 {
   "entry": "./server.ts",
   "output": {
@@ -143,7 +143,7 @@ cleanup_test
 # Test 3: Default config file detection
 echo "Test 3: Default config file detection"
 setup_test
-cat > "$TEST_TEMP_DIR/simplemcp.config.js" <<'EOF'
+cat > "$TEST_TEMP_DIR/simplymcp.config.js" <<'EOF'
 export default {
   entry: './auto-detected.ts'
 };
@@ -216,7 +216,7 @@ cleanup_test
 # Test 6: Invalid JSON
 echo "Test 6: Invalid JSON"
 setup_test
-cat > "$TEST_TEMP_DIR/simplemcp.config.json" <<'EOF'
+cat > "$TEST_TEMP_DIR/simplymcp.config.json" <<'EOF'
 {
   "entry": "./server.ts",
   invalid json here
@@ -247,7 +247,7 @@ cleanup_test
 # Test 7: Config validation - invalid entry type
 echo "Test 7: Config validation - invalid entry type"
 setup_test
-cat > "$TEST_TEMP_DIR/simplemcp.config.json" <<'EOF'
+cat > "$TEST_TEMP_DIR/simplymcp.config.json" <<'EOF'
 {
   "entry": 123
 }
@@ -277,7 +277,7 @@ cleanup_test
 # Test 8: Config validation - invalid format
 echo "Test 8: Config validation - invalid format"
 setup_test
-cat > "$TEST_TEMP_DIR/simplemcp.config.json" <<'EOF'
+cat > "$TEST_TEMP_DIR/simplymcp.config.json" <<'EOF'
 {
   "output": {
     "format": "invalid-format"
@@ -309,7 +309,7 @@ cleanup_test
 # Test 9: Merge CLI options with config
 echo "Test 9: Merge CLI options with config"
 setup_test
-cat > "$TEST_TEMP_DIR/simplemcp.config.js" <<'EOF'
+cat > "$TEST_TEMP_DIR/simplymcp.config.js" <<'EOF'
 export default {
   entry: './server.ts',
   output: {
@@ -347,7 +347,7 @@ cleanup_test
 # Test 10: CLI options take precedence over config
 echo "Test 10: CLI options take precedence over config"
 setup_test
-cat > "$TEST_TEMP_DIR/simplemcp.config.js" <<'EOF'
+cat > "$TEST_TEMP_DIR/simplymcp.config.js" <<'EOF'
 export default {
   entry: './config-entry.ts',
   output: {

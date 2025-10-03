@@ -7,7 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MCP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+MCP_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 TEST_TEMP_DIR="/tmp/mcp-test-e2e-$$"
 
 # Colors for output
@@ -62,9 +62,9 @@ cat > "$TEST_TEMP_DIR/test-server.ts" <<EOFSERVER
 // axios@^1.6.0
 // ///
 
-import { SimpleMCP } from '$MCP_ROOT/SimpleMCP.js';
+import { SimplyMCP } from '$MCP_ROOT/dist/mcp/index.js';
 
-export const server = new SimpleMCP({
+export const server = new SimplyMCP({
   name: 'test-server',
   version: '1.0.0'
 });
@@ -72,7 +72,7 @@ EOFSERVER
 
 # Create test script to load the server
 cat > "$TEST_TEMP_DIR/load-server.ts" <<EOFLOAD
-import { SimpleMCP } from '$MCP_ROOT/SimpleMCP.js';
+import { SimplyMCP } from '$MCP_ROOT/dist/mcp/index.js';
 import { readFile } from 'fs/promises';
 
 async function main() {
@@ -80,7 +80,7 @@ async function main() {
   const content = await readFile(serverPath, 'utf-8');
 
   // Parse inline dependencies
-  const { parseInlineDependencies } = await import('$MCP_ROOT/core/dependency-parser.js');
+  const { parseInlineDependencies } = await import('$MCP_ROOT/dist/mcp/core/dependency-parser.js');
   const parseResult = parseInlineDependencies(content);
 
   console.log(JSON.stringify({
@@ -94,7 +94,7 @@ main();
 EOFLOAD
 
 # Run the test
-if npx tsx "$TEST_TEMP_DIR/load-server.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/load-server.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   success=$(jq -r '.success' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   deps=$(jq -r '.dependencies' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "{}")
 
@@ -113,10 +113,10 @@ echo "Test 2: Check dependencies workflow"
 setup_test
 
 cat > "$TEST_TEMP_DIR/check-deps.ts" <<EOFCHECK
-import { SimpleMCP } from '$MCP_ROOT/SimpleMCP.js';
+import { SimplyMCP } from '$MCP_ROOT/dist/mcp/index.js';
 
 async function main() {
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: 'test',
     version: '1.0.0',
     dependencies: {
@@ -135,7 +135,7 @@ async function main() {
 main();
 EOFCHECK
 
-if npx tsx "$TEST_TEMP_DIR/check-deps.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/check-deps.ts" > "$TEST_TEMP_DIR/test-output.json" 2>"$TEST_TEMP_DIR/test-error.log"; then
   has_installed=$(jq 'has("installed")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   has_missing=$(jq 'has("missing")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   has_outdated=$(jq 'has("outdated")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
@@ -143,10 +143,11 @@ if npx tsx "$TEST_TEMP_DIR/check-deps.ts" > "$TEST_TEMP_DIR/test-output.json" 2>
   if [ "$has_installed" == "true" ] && [ "$has_missing" == "true" ] && [ "$has_outdated" == "true" ]; then
     pass_test "Check dependencies workflow"
   else
-    fail_test "Check dependencies workflow" "Invalid status structure"
+    fail_test "Check dependencies workflow" "Invalid status structure (installed=$has_installed, missing=$has_missing, outdated=$has_outdated)"
   fi
 else
-  fail_test "Check dependencies workflow" "Test execution failed"
+  error_msg=$(cat "$TEST_TEMP_DIR/test-error.log" 2>/dev/null | tail -20 || echo "unknown error")
+  fail_test "Check dependencies workflow" "Test execution failed. Error log:\n$error_msg"
 fi
 cleanup_test
 
@@ -155,10 +156,10 @@ echo "Test 3: Install dependencies workflow"
 setup_test
 
 cat > "$TEST_TEMP_DIR/install-deps.ts" <<EOFINSTALL
-import { SimpleMCP } from '$MCP_ROOT/SimpleMCP.js';
+import { SimplyMCP } from '$MCP_ROOT/dist/mcp/index.js';
 
 async function main() {
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: 'test',
     version: '1.0.0',
     basePath: process.cwd(),
@@ -181,7 +182,7 @@ async function main() {
 main();
 EOFINSTALL
 
-if npx tsx "$TEST_TEMP_DIR/install-deps.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/install-deps.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   success=$(jq -r '.success' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   has_structure=$(jq 'has("installed") and has("failed") and has("packageManager")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
 
@@ -200,8 +201,8 @@ echo "Test 4: Package manager detection workflow"
 setup_test
 touch "$TEST_TEMP_DIR/package-lock.json"
 
-cat > "$TEST_TEMP_DIR/detect-pm.ts" <<'EOFDETECT'
-import { detectPackageManager } from '../../core/package-manager-detector.js';
+cat > "$TEST_TEMP_DIR/detect-pm.ts" <<EOFDETECT
+import { detectPackageManager } from '$MCP_ROOT/dist/mcp/core/package-manager-detector.js';
 
 async function main() {
   const pm = await detectPackageManager(process.cwd());
@@ -211,7 +212,7 @@ async function main() {
 main();
 EOFDETECT
 
-if npx tsx "$TEST_TEMP_DIR/detect-pm.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/detect-pm.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   pm_name=$(jq -r '.name' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "")
 
   if [ "$pm_name" == "npm" ]; then
@@ -234,8 +235,8 @@ cat > "$TEST_TEMP_DIR/node_modules/axios/package.json" <<'EOF'
 {"name": "axios", "version": "1.6.0"}
 EOF
 
-cat > "$TEST_TEMP_DIR/verify-version.ts" <<'EOFVERIFY'
-import { checkDependencies } from '../../core/dependency-checker.js';
+cat > "$TEST_TEMP_DIR/verify-version.ts" <<EOFVERIFY
+import { checkDependencies } from '$MCP_ROOT/dist/mcp/core/dependency-checker.js';
 
 async function main() {
   const result = await checkDependencies(
@@ -248,7 +249,7 @@ async function main() {
 main();
 EOFVERIFY
 
-if npx tsx "$TEST_TEMP_DIR/verify-version.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/verify-version.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   installed=$(jq -r '.installed[]' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "")
 
   if [ "$installed" == "axios" ]; then
@@ -266,10 +267,10 @@ echo "Test 6: Error handling workflow"
 setup_test
 
 cat > "$TEST_TEMP_DIR/error-handling.ts" <<EOFERROR
-import { SimpleMCP } from '$MCP_ROOT/SimpleMCP.js';
+import { SimplyMCP } from '$MCP_ROOT/dist/mcp/index.js';
 
 async function main() {
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: 'test',
     version: '1.0.0',
     dependencies: {
@@ -291,7 +292,7 @@ async function main() {
 main();
 EOFERROR
 
-if npx tsx "$TEST_TEMP_DIR/error-handling.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/error-handling.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   success=$(jq -r '.success' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "true")
   errors=$(jq '.errors | length' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "0")
 
@@ -310,12 +311,12 @@ echo "Test 7: Progress reporting workflow"
 setup_test
 
 cat > "$TEST_TEMP_DIR/progress.ts" <<EOFPROGRESS
-import { SimpleMCP } from '$MCP_ROOT/SimpleMCP.js';
+import { SimplyMCP } from '$MCP_ROOT/dist/mcp/index.js';
 
 async function main() {
   let progressEvents = 0;
 
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: 'test',
     version: '1.0.0',
     dependencies: {
@@ -343,7 +344,7 @@ async function main() {
 main();
 EOFPROGRESS
 
-if npx tsx "$TEST_TEMP_DIR/progress.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/progress.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   success=$(jq -r '.success' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
 
   if [ "$success" == "true" ]; then
@@ -361,10 +362,10 @@ echo "Test 8: Multiple dependencies workflow"
 setup_test
 
 cat > "$TEST_TEMP_DIR/multiple-deps.ts" <<EOFMULTIPLE
-import { SimpleMCP } from '$MCP_ROOT/SimpleMCP.js';
+import { SimplyMCP } from '$MCP_ROOT/dist/mcp/index.js';
 
 async function main() {
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: 'test',
     version: '1.0.0',
     dependencies: {
@@ -391,7 +392,7 @@ async function main() {
 main();
 EOFMULTIPLE
 
-if npx tsx "$TEST_TEMP_DIR/multiple-deps.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/multiple-deps.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   total=$(jq '(.installed | length) + (.missing | length) + (.outdated | length)' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "0")
 
   if [ "$total" -eq 3 ]; then
@@ -414,8 +415,8 @@ cat > "$TEST_TEMP_DIR/node_modules/@types/node/package.json" <<'EOF'
 {"name": "@types/node", "version": "20.0.0"}
 EOF
 
-cat > "$TEST_TEMP_DIR/scoped.ts" <<'EOFSCOPED'
-import { checkDependencies } from '../../core/dependency-checker.js';
+cat > "$TEST_TEMP_DIR/scoped.ts" <<EOFSCOPED
+import { checkDependencies } from '$MCP_ROOT/dist/mcp/core/dependency-checker.js';
 
 async function main() {
   const result = await checkDependencies(
@@ -428,7 +429,7 @@ async function main() {
 main();
 EOFSCOPED
 
-if npx tsx "$TEST_TEMP_DIR/scoped.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/scoped.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   installed=$(jq -r '.installed[]' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "")
 
   if [ "$installed" == "@types/node" ]; then
@@ -446,11 +447,11 @@ echo "Test 10: Full server lifecycle"
 setup_test
 
 cat > "$TEST_TEMP_DIR/lifecycle.ts" <<EOFLIFECYCLE
-import { SimpleMCP } from '$MCP_ROOT/SimpleMCP.js';
+import { SimplyMCP } from '$MCP_ROOT/dist/mcp/index.js';
 
 async function main() {
   // 1. Create server with dependencies
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: 'lifecycle-test',
     version: '1.0.0',
     dependencies: {
@@ -483,7 +484,7 @@ async function main() {
 main();
 EOFLIFECYCLE
 
-if npx tsx "$TEST_TEMP_DIR/lifecycle.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+if npx tsx "$TEST_TEMP_DIR/lifecycle.ts" 2>/dev/null > "$TEST_TEMP_DIR/test-output.json"; then
   has_initial=$(jq 'has("initialCheck")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   has_install=$(jq 'has("installResult")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   has_final=$(jq 'has("finalCheck")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")

@@ -118,6 +118,29 @@ export interface BundleOptions {
    * Error callback
    */
   onError?: (error: BundleError) => void;
+
+  /**
+   * Target platforms for executable format
+   * @default ['linux']
+   */
+  platforms?: string[];
+
+  /**
+   * Include assets in standalone bundle (file paths or glob patterns)
+   * @default []
+   */
+  includeAssets?: string[];
+
+  /**
+   * Compress executable with GZip (for executable format)
+   * @default true
+   */
+  compress?: boolean;
+
+  /**
+   * Watch mode options
+   */
+  watchOptions?: WatchOptions;
 }
 
 /**
@@ -336,6 +359,35 @@ export interface ResolvedDependencies {
     errors: any[];
     warnings: string[];
   };
+}
+
+/**
+ * Watch mode options
+ */
+export interface WatchOptions {
+  /**
+   * Use polling instead of native file system events
+   * @default false
+   */
+  poll?: boolean;
+
+  /**
+   * Polling interval in milliseconds
+   * @default 100
+   */
+  interval?: number;
+
+  /**
+   * Glob patterns to ignore
+   * @default ['** /node_modules/** ', '** /.git/** ', '** /dist/** ']
+   */
+  ignored?: string[];
+
+  /**
+   * Auto-restart server after successful rebuild
+   * @default false
+   */
+  restart?: boolean;
 }
 
 /**

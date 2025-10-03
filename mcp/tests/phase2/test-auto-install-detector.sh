@@ -385,10 +385,10 @@ console.log(JSON.stringify(result));
 "
 
 if [ $? -eq 0 ]; then
-  has_name=$(jq 'has(\"name\")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
-  has_version=$(jq 'has(\"version\")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
-  has_available=$(jq 'has(\"available\")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
-  has_lockFile=$(jq 'has(\"lockFile\")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
+  has_name=$(jq 'has("name")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
+  has_version=$(jq 'has("version")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
+  has_available=$(jq 'has("available")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
+  has_lockFile=$(jq 'has("lockFile")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
 
   if [ "$has_name" == "true" ] && [ "$has_version" == "true" ] && \
      [ "$has_available" == "true" ] && [ "$has_lockFile" == "true" ]; then

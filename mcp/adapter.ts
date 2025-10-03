@@ -2,18 +2,32 @@
 /**
  * Single-File MCP Adapter
  *
- * Inspired by FastMCP - runs MCP servers from a single TypeScript configuration file.
+ * @deprecated This adapter is deprecated. Use the new CLI commands instead:
+ *   - `simplymcp run <file>` (auto-detect)
+ *   - `simplymcp-func <file>` (explicit functional API)
  *
- * Usage:
+ * This file will be removed in a future major version.
+ *
+ * OLD Usage (deprecated):
  *   npx tsx mcp/adapter.ts <config-file.ts> [options]
+ *
+ * NEW Usage (recommended):
+ *   simplymcp run <config-file.ts> [options]
+ *   simplymcp-func <config-file.ts> [options]
+ *
+ * Inspired by FastMCP - runs MCP servers from a single TypeScript configuration file.
  *
  * Options:
  *   --http              Use HTTP transport instead of stdio
  *   --port <number>     Port for HTTP server (default: 3000)
  *
- * Example:
+ * Example (deprecated):
  *   npx tsx mcp/adapter.ts mcp/examples/single-file-basic.ts
  *   npx tsx mcp/adapter.ts mcp/examples/single-file-basic.ts --http --port 3000
+ *
+ * Example (recommended):
+ *   simplymcp run mcp/examples/single-file-basic.ts
+ *   simplymcp run mcp/examples/single-file-basic.ts --http --port 3000
  *
  * Config File Format:
  * ```typescript
@@ -41,6 +55,12 @@ import { SimplyMCP } from './SimplyMCP.js';
 import type { SingleFileMCPConfig } from './single-file-types.js';
 import { schemaToZod } from './schema-builder.js';
 import { ZodSchema } from 'zod';
+
+// Deprecation warning on startup
+console.warn('\n⚠️  WARNING: This adapter is DEPRECATED and will be removed in a future version.');
+console.warn('   Please use the new CLI commands instead:');
+console.warn('   - simplymcp run <file>       (auto-detect)');
+console.warn('   - simplymcp-func <file>      (explicit functional API)\n');
 
 /**
  * Parse command line arguments

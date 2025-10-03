@@ -182,8 +182,8 @@ export function mergeDependencies(
 ): Record<string, string> {
   const merged: Record<string, string> = {};
 
-  // Iterate in reverse order so higher priority overwrites lower
-  for (let i = sources.length - 1; i >= 0; i--) {
+  // Iterate in forward order so later sources (higher priority) overwrite earlier ones
+  for (let i = 0; i < sources.length; i++) {
     const source = sources[i];
     if (source) {
       Object.assign(merged, source);

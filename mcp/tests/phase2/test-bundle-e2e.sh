@@ -56,9 +56,9 @@ echo ""
 echo "Test 1: Full bundling workflow"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
+import { SimplyMCP } from 'simply-mcp';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'test-server',
   version: '1.0.0'
 });
@@ -78,7 +78,7 @@ export default server;
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/dist/bundle.js" --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/dist/bundle.js" --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/dist/bundle.js" ]; then
     bundle_size=$(wc -c < "$TEST_TEMP_DIR/dist/bundle.js")
     if [ "$bundle_size" -gt 100 ]; then
@@ -102,9 +102,9 @@ cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
 // axios@^1.6.0
 // zod@^3.22.0
 // ///
-import { SimpleMCP } from 'simplemcp';
+import { SimplyMCP } from 'simply-mcp';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'deps-server',
   version: '1.0.0'
 });
@@ -113,7 +113,7 @@ export default server;
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.js" ]; then
     pass_test "Bundle with dependencies"
   else
@@ -128,8 +128,8 @@ cleanup_test
 echo "Test 3: Bundle with config file"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cat > "$TEST_TEMP_DIR/simplemcp.config.js" <<'EOF'
@@ -147,7 +147,7 @@ export default {
 EOF
 
 cd "$TEST_TEMP_DIR"
-if node "$MCP_ROOT/cli/index.js" bundle 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/dist/server.js" ]; then
     pass_test "Bundle with config file"
   else
@@ -162,12 +162,12 @@ cleanup_test
 echo "Test 4: Bundle ESM format"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.mjs" --format esm --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.mjs" --format esm --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.mjs" ]; then
     pass_test "Bundle ESM format"
   else
@@ -182,12 +182,12 @@ cleanup_test
 echo "Test 5: Bundle CJS format"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.cjs" --format cjs --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.cjs" --format cjs --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.cjs" ]; then
     pass_test "Bundle CJS format"
   else
@@ -202,8 +202,8 @@ cleanup_test
 echo "Test 6: Bundle with minification"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 server.addTool({
   name: 'test',
   description: 'Test tool',
@@ -215,11 +215,11 @@ EOF
 
 cd "$MCP_ROOT"
 # Bundle without minification
-node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/unminified.js" --no-minify 2>&1
+node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/unminified.js" --no-minify --external simply-mcp 2>&1
 unminified_size=$(wc -c < "$TEST_TEMP_DIR/unminified.js" 2>/dev/null || echo "0")
 
 # Bundle with minification
-node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/minified.js" --minify 2>&1
+node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/minified.js" --minify --external simply-mcp 2>&1
 minified_size=$(wc -c < "$TEST_TEMP_DIR/minified.js" 2>/dev/null || echo "0")
 
 if [ "$minified_size" -gt 0 ] && [ "$minified_size" -lt "$unminified_size" ]; then
@@ -237,12 +237,12 @@ cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
 // axios@^1.6.0
 // lodash@^4.17.21
 // ///
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --external "axios,lodash" --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --external "axios,lodash,simply-mcp" --no-minify 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.js" ]; then
     pass_test "Bundle with external packages"
   else
@@ -258,7 +258,7 @@ echo "Test 8: Error handling - missing entry"
 setup_test
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/nonexistent.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/nonexistent.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify --external simply-mcp 2>&1; then
   fail_test "Error handling - missing entry" "Should have failed for missing entry"
 else
   pass_test "Error handling - missing entry"
@@ -276,7 +276,7 @@ cat > "$TEST_TEMP_DIR/simplemcp.config.json" <<'EOF'
 EOF
 
 cd "$TEST_TEMP_DIR"
-if node "$MCP_ROOT/cli/index.js" bundle 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle --external simply-mcp 2>&1; then
   fail_test "Error handling - invalid config" "Should have failed for invalid config"
 else
   pass_test "Error handling - invalid config"
@@ -287,12 +287,12 @@ cleanup_test
 echo "Test 10: Bundle with source maps"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --sourcemap --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --sourcemap --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.js" ] && [ -f "$TEST_TEMP_DIR/bundle.js.map" ]; then
     pass_test "Bundle with source maps"
   else
@@ -307,9 +307,9 @@ cleanup_test
 echo "Test 11: Bundle multiple tools"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
+import { SimplyMCP } from 'simply-mcp';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'multi-tool-server',
   version: '1.0.0'
 });
@@ -338,7 +338,7 @@ export default server;
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.js" ]; then
     pass_test "Bundle multiple tools"
   else
@@ -353,12 +353,12 @@ cleanup_test
 echo "Test 12: Bundle with verbose output"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-output=$(node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --verbose --no-minify 2>&1)
+output=$(node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --verbose --no-minify --external simply-mcp 2>&1)
 if echo "$output" | grep -q "INFO"; then
   pass_test "Bundle with verbose output"
 else
@@ -370,12 +370,12 @@ cleanup_test
 echo "Test 13: Bundle with custom target"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --target node18 --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --target node18 --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.js" ]; then
     pass_test "Bundle with custom target"
   else
@@ -390,12 +390,12 @@ cleanup_test
 echo "Test 14: Bundle detects entry by convention"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'convention', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'convention', version: '1.0.0' });
 EOF
 
 cd "$TEST_TEMP_DIR"
-if node "$MCP_ROOT/cli/index.js" bundle --output bundle.js --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle --output bundle.js --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.js" ]; then
     pass_test "Bundle detects entry by convention"
   else
@@ -420,12 +420,12 @@ cat > "$TEST_TEMP_DIR/package.json" <<'EOF'
 EOF
 
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.js" ]; then
     pass_test "Bundle with package.json dependencies"
   else
@@ -440,12 +440,12 @@ cleanup_test
 echo "Test 16: Bundle output shows metadata"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-output=$(node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify 2>&1)
+output=$(node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify --external simply-mcp 2>&1)
 if echo "$output" | grep -q "Output:" && echo "$output" | grep -q "Size:"; then
   pass_test "Bundle output shows metadata"
 else
@@ -457,12 +457,12 @@ cleanup_test
 echo "Test 17: Bundle creates nested directories"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/deep/nested/dir/bundle.js" --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/deep/nested/dir/bundle.js" --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/deep/nested/dir/bundle.js" ]; then
     pass_test "Bundle creates nested directories"
   else
@@ -478,12 +478,12 @@ echo "Test 18: Bundle handles relative paths"
 setup_test
 mkdir -p "$TEST_TEMP_DIR/src"
 cat > "$TEST_TEMP_DIR/src/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$TEST_TEMP_DIR"
-if node "$MCP_ROOT/cli/index.js" bundle src/server.ts --output dist/bundle.js --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle src/server.ts --output dist/bundle.js --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/dist/bundle.js" ]; then
     pass_test "Bundle handles relative paths"
   else
@@ -508,13 +508,13 @@ cat > "$TEST_TEMP_DIR/tsconfig.json" <<'EOF'
 EOF
 
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server: any = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server: any = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
 cd "$MCP_ROOT"
-if node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify 2>&1; then
+if node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify --external simply-mcp 2>&1; then
   if [ -f "$TEST_TEMP_DIR/bundle.js" ]; then
     pass_test "Bundle with TypeScript project"
   else
@@ -529,12 +529,12 @@ cleanup_test
 echo "Test 20: Bundle success indicator"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 cd "$MCP_ROOT"
-output=$(node cli/index.js bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify 2>&1)
+output=$(node "$MCP_ROOT/../dist/mcp/cli/index.js" bundle "$TEST_TEMP_DIR/server.ts" --output "$TEST_TEMP_DIR/bundle.js" --no-minify --external simply-mcp 2>&1)
 if echo "$output" | grep -q "success"; then
   pass_test "Bundle success indicator"
 else

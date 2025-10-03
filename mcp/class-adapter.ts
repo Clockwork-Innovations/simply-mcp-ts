@@ -2,18 +2,38 @@
 /**
  * Class-Based MCP Adapter
  *
- * Runs MCP servers defined as TypeScript classes with decorators.
+ * @deprecated This adapter is deprecated. Use the new CLI commands instead:
+ *   - `simplymcp run <file>` (auto-detect)
+ *   - `simplymcp-class <file>` (explicit decorator API)
  *
- * Usage:
+ * This file will be removed in a future major version.
+ *
+ * OLD Usage (deprecated):
  *   npx tsx mcp/class-adapter.ts <class-file.ts> [options]
  *
- * Example:
+ * NEW Usage (recommended):
+ *   simplymcp run <class-file.ts> [options]
+ *   simplymcp-class <class-file.ts> [options]
+ *
+ * Runs MCP servers defined as TypeScript classes with decorators.
+ *
+ * Example (deprecated):
  *   npx tsx mcp/class-adapter.ts mcp/examples/class-basic.ts --http --port 3000
+ *
+ * Example (recommended):
+ *   simplymcp run mcp/examples/class-basic.ts --http --port 3000
+ *   simplymcp-class mcp/examples/class-basic.ts --http --port 3000
  */
 
 import 'reflect-metadata';
 import { resolve, dirname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
+
+// Deprecation warning on startup
+console.warn('\n⚠️  WARNING: This adapter is DEPRECATED and will be removed in a future version.');
+console.warn('   Please use the new CLI commands instead:');
+console.warn('   - simplymcp run <file>       (auto-detect)');
+console.warn('   - simplymcp-class <file>     (explicit decorator API)\n');
 
 // Import types from source (compile-time only)
 import type { SimplyMCP as SimplyMCPType } from './SimplyMCP.js';

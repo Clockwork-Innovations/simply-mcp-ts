@@ -52,8 +52,18 @@ run_entry_detector_test() {
   local test_name="$1"
   local test_script="$2"
 
-  cat > "$TEST_TEMP_DIR/test-runner.ts" <<EOFTEST
-import { detectEntryPoint, resolveEntryPath, validateSimpleMCPEntry, isSimpleMCPFile, extractServerName, isTypeScriptEntry, isESMEntry } from '$MCP_ROOT/core/entry-detector.js';
+  cat > "$TEST_TEMP_DIR/test-runner.mjs" <<EOFTEST
+import * as entryDetectorModule from '$MCP_ROOT/../dist/mcp/core/entry-detector.js';
+
+// Workaround for null prototype issue in ES modules - extract functions by property name
+const props = Object.getOwnPropertyNames(entryDetectorModule);
+const detectEntryPoint = Object.getOwnPropertyDescriptor(entryDetectorModule, props[0])?.value;
+const extractServerName = Object.getOwnPropertyDescriptor(entryDetectorModule, props[1])?.value;
+const isESMEntry = Object.getOwnPropertyDescriptor(entryDetectorModule, props[2])?.value;
+const isSimplyMCPFile = Object.getOwnPropertyDescriptor(entryDetectorModule, props[3])?.value;
+const isTypeScriptEntry = Object.getOwnPropertyDescriptor(entryDetectorModule, props[4])?.value;
+const resolveEntryPath = Object.getOwnPropertyDescriptor(entryDetectorModule, props[5])?.value;
+const validateSimplyMCPEntry = Object.getOwnPropertyDescriptor(entryDetectorModule, props[6])?.value;
 
 async function runTest() {
   try {
@@ -68,7 +78,7 @@ runTest();
 EOFTEST
 
   # Run the test
-  if npx tsx "$TEST_TEMP_DIR/test-runner.ts" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
+  if node "$TEST_TEMP_DIR/test-runner.mjs" > "$TEST_TEMP_DIR/test-output.json" 2>&1; then
     return 0
   else
     return 1
@@ -84,8 +94,8 @@ echo ""
 echo "Test 1: Detect explicit entry point"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
@@ -117,8 +127,8 @@ cat > "$TEST_TEMP_DIR/package.json" <<'EOF'
 EOF
 mkdir -p "$TEST_TEMP_DIR/src"
 cat > "$TEST_TEMP_DIR/src/index.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-export default new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+export default new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_entry_detector_test "detect_from_pkg_main" "
@@ -142,8 +152,8 @@ cleanup_test
 echo "Test 3: Detect from convention (server.ts)"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
@@ -168,8 +178,8 @@ cleanup_test
 echo "Test 4: Detect from convention (index.ts)"
 setup_test
 cat > "$TEST_TEMP_DIR/index.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
@@ -190,33 +200,33 @@ else
 fi
 cleanup_test
 
-# Test 5: Validate SimpleMCP import exists
-echo "Test 5: Validate SimpleMCP import exists"
+# Test 5: Validate SimplyMCP import exists
+echo "Test 5: Validate SimplyMCP import exists"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_entry_detector_test "validate_import" "
-await validateSimpleMCPEntry('$TEST_TEMP_DIR/server.ts');
+await validateSimplyMCPEntry('$TEST_TEMP_DIR/server.ts');
 console.log(JSON.stringify({ success: true }));
 "
 
 if [ $? -eq 0 ]; then
   success=$(jq -r '.success' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   if [ "$success" == "true" ]; then
-    pass_test "Validate SimpleMCP import exists"
+    pass_test "Validate SimplyMCP import exists"
   else
-    fail_test "Validate SimpleMCP import exists" "Expected validation to pass"
+    fail_test "Validate SimplyMCP import exists" "Expected validation to pass"
   fi
 else
-  fail_test "Validate SimpleMCP import exists" "Test execution failed"
+  fail_test "Validate SimplyMCP import exists" "Test execution failed"
 fi
 cleanup_test
 
-# Test 6: Reject non-SimpleMCP files
-echo "Test 6: Reject non-SimpleMCP files"
+# Test 6: Reject non-SimplyMCP files
+echo "Test 6: Reject non-SimplyMCP files"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
 console.log('Just a regular file');
@@ -224,7 +234,7 @@ EOF
 
 run_entry_detector_test "reject_non_mcp" "
 try {
-  await validateSimpleMCPEntry('$TEST_TEMP_DIR/server.ts');
+  await validateSimplyMCPEntry('$TEST_TEMP_DIR/server.ts');
   console.log(JSON.stringify({ shouldFail: true }));
 } catch (error) {
   console.log(JSON.stringify({ rejected: true }));
@@ -234,12 +244,12 @@ try {
 if [ $? -eq 0 ]; then
   rejected=$(jq -r '.rejected' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   if [ "$rejected" == "true" ]; then
-    pass_test "Reject non-SimpleMCP files"
+    pass_test "Reject non-SimplyMCP files"
   else
-    fail_test "Reject non-SimpleMCP files" "Expected validation to reject file"
+    fail_test "Reject non-SimplyMCP files" "Expected validation to reject file"
   fi
 else
-  fail_test "Reject non-SimpleMCP files" "Test execution failed"
+  fail_test "Reject non-SimplyMCP files" "Test execution failed"
 fi
 cleanup_test
 
@@ -272,8 +282,8 @@ cleanup_test
 echo "Test 8: Handle TypeScript files"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
@@ -298,13 +308,13 @@ cleanup_test
 echo "Test 9: Handle JavaScript files"
 setup_test
 cat > "$TEST_TEMP_DIR/server.js" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
 run_entry_detector_test "javascript_file" "
-await validateSimpleMCPEntry('$TEST_TEMP_DIR/server.js');
+await validateSimplyMCPEntry('$TEST_TEMP_DIR/server.js');
 const isTS = isTypeScriptEntry('$TEST_TEMP_DIR/server.js');
 console.log(JSON.stringify({ isTS }));
 "
@@ -325,8 +335,8 @@ cleanup_test
 echo "Test 10: Handle .mjs files"
 setup_test
 cat > "$TEST_TEMP_DIR/server.mjs" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
@@ -347,30 +357,30 @@ else
 fi
 cleanup_test
 
-# Test 11: Multiple SimpleMCP instances
-echo "Test 11: Multiple SimpleMCP instances"
+# Test 11: Multiple SimplyMCP instances
+echo "Test 11: Multiple SimplyMCP instances"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server1 = new SimpleMCP({ name: 'test1', version: '1.0.0' });
-const server2 = new SimpleMCP({ name: 'test2', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server1 = new SimplyMCP({ name: 'test1', version: '1.0.0' });
+const server2 = new SimplyMCP({ name: 'test2', version: '1.0.0' });
 export default server1;
 EOF
 
 run_entry_detector_test "multiple_instances" "
-await validateSimpleMCPEntry('$TEST_TEMP_DIR/server.ts');
+await validateSimplyMCPEntry('$TEST_TEMP_DIR/server.ts');
 console.log(JSON.stringify({ success: true }));
 "
 
 if [ $? -eq 0 ]; then
   success=$(jq -r '.success' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   if [ "$success" == "true" ]; then
-    pass_test "Multiple SimpleMCP instances"
+    pass_test "Multiple SimplyMCP instances"
   else
-    fail_test "Multiple SimpleMCP instances" "Expected validation to pass"
+    fail_test "Multiple SimplyMCP instances" "Expected validation to pass"
   fi
 else
-  fail_test "Multiple SimpleMCP instances" "Test execution failed"
+  fail_test "Multiple SimplyMCP instances" "Test execution failed"
 fi
 cleanup_test
 
@@ -378,13 +388,13 @@ cleanup_test
 echo "Test 12: Scoped package imports"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from '@simplemcp/core';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from '@simplemcp/core';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
 run_entry_detector_test "scoped_package" "
-await validateSimpleMCPEntry('$TEST_TEMP_DIR/server.ts');
+await validateSimplyMCPEntry('$TEST_TEMP_DIR/server.ts');
 console.log(JSON.stringify({ success: true }));
 "
 
@@ -406,7 +416,7 @@ setup_test
 
 run_entry_detector_test "invalid_path" "
 try {
-  await validateSimpleMCPEntry('$TEST_TEMP_DIR/nonexistent.ts');
+  await validateSimplyMCPEntry('$TEST_TEMP_DIR/nonexistent.ts');
   console.log(JSON.stringify({ shouldFail: true }));
 } catch (error) {
   console.log(JSON.stringify({ error: 'file not found' }));
@@ -429,8 +439,8 @@ cleanup_test
 echo "Test 14: Relative vs absolute paths"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_entry_detector_test "path_resolution" "
@@ -460,8 +470,8 @@ echo "Test 15: basePath option handling"
 setup_test
 mkdir -p "$TEST_TEMP_DIR/subdir"
 cat > "$TEST_TEMP_DIR/subdir/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
@@ -486,8 +496,8 @@ cleanup_test
 echo "Test 16: Extract server name from constructor"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'my-cool-server', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'my-cool-server', version: '1.0.0' });
 export default server;
 EOF
 
@@ -512,8 +522,8 @@ cleanup_test
 echo "Test 17: Extract server name fallback to filename"
 setup_test
 cat > "$TEST_TEMP_DIR/my-server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ version: '1.0.0' });
 export default server;
 EOF
 
@@ -534,52 +544,52 @@ else
 fi
 cleanup_test
 
-# Test 18: isSimpleMCPFile returns true for valid file
-echo "Test 18: isSimpleMCPFile returns true for valid file"
+# Test 18: isSimplyMCPFile returns true for valid file
+echo "Test 18: isSimplyMCPFile returns true for valid file"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_entry_detector_test "is_mcp_file_true" "
-const isMCP = await isSimpleMCPFile('$TEST_TEMP_DIR/server.ts');
+const isMCP = await isSimplyMCPFile('$TEST_TEMP_DIR/server.ts');
 console.log(JSON.stringify({ isMCP }));
 "
 
 if [ $? -eq 0 ]; then
   is_mcp=$(jq -r '.isMCP' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
   if [ "$is_mcp" == "true" ]; then
-    pass_test "isSimpleMCPFile returns true for valid file"
+    pass_test "isSimplyMCPFile returns true for valid file"
   else
-    fail_test "isSimpleMCPFile returns true for valid file" "Expected true"
+    fail_test "isSimplyMCPFile returns true for valid file" "Expected true"
   fi
 else
-  fail_test "isSimpleMCPFile returns true for valid file" "Test execution failed"
+  fail_test "isSimplyMCPFile returns true for valid file" "Test execution failed"
 fi
 cleanup_test
 
-# Test 19: isSimpleMCPFile returns false for invalid file
-echo "Test 19: isSimpleMCPFile returns false for invalid file"
+# Test 19: isSimplyMCPFile returns false for invalid file
+echo "Test 19: isSimplyMCPFile returns false for invalid file"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-console.log('Not a SimpleMCP file');
+console.log('Not a SimplyMCP file');
 EOF
 
 run_entry_detector_test "is_mcp_file_false" "
-const isMCP = await isSimpleMCPFile('$TEST_TEMP_DIR/server.ts');
+const isMCP = await isSimplyMCPFile('$TEST_TEMP_DIR/server.ts');
 console.log(JSON.stringify({ isMCP }));
 "
 
 if [ $? -eq 0 ]; then
   is_mcp=$(jq -r '.isMCP' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "true")
   if [ "$is_mcp" == "false" ]; then
-    pass_test "isSimpleMCPFile returns false for invalid file"
+    pass_test "isSimplyMCPFile returns false for invalid file"
   else
-    fail_test "isSimpleMCPFile returns false for invalid file" "Expected false"
+    fail_test "isSimplyMCPFile returns false for invalid file" "Expected false"
   fi
 else
-  fail_test "isSimpleMCPFile returns false for invalid file" "Test execution failed"
+  fail_test "isSimplyMCPFile returns false for invalid file" "Test execution failed"
 fi
 cleanup_test
 
@@ -592,8 +602,8 @@ cat > "$TEST_TEMP_DIR/package.json" <<'EOF'
 }
 EOF
 cat > "$TEST_TEMP_DIR/server.js" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_entry_detector_test "esm_detection_pkg" "

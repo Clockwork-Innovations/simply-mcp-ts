@@ -49,4 +49,3 @@ export {
 } from './dependency-resolver.js';
 
 export * from './output-formatter.js';
-export * from './config-loader.js';

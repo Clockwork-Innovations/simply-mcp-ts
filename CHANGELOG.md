@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2025-10-03
+
+### Added
+- **Advanced Bundle Formats (Feature 4.2)**
+  - Standalone format: Directory bundles with package.json, native modules, and assets
+  - Executable format: Native binaries for Linux, macOS, Windows, and Alpine (no Node.js required)
+  - Enhanced source map support with inline, external, and both modes
+  - Watch mode for development with auto-rebuild on file changes
+  - Cross-platform builds: Generate executables for multiple platforms simultaneously
+  - New CLI flags: `--format`, `--platforms`, `--compress`, `--assets`, `--watch-poll`, `--watch-interval`, `--watch-restart`
+
+### Changed
+- Updated chokidar dependency from 3.6.0 to 4.0.3 (improved file watching)
+- Enhanced bundler with format routing and advanced output options
+
+### Fixed
+- Path resolution for absolute and relative asset paths in standalone format
+- Directory-based output path handling for standalone bundles
+- TypeScript error handling in watch mode for stricter type safety
+
+### Developer Experience
+- 65 new comprehensive tests for advanced bundling features
+- Full integration testing for all formatter components
+- Complete documentation for new bundling formats
+
 ## [2.1.0] - 2025-10-03
 
 ### Added
@@ -139,7 +164,8 @@ We use [Semantic Versioning](https://semver.org/):
 
 ---
 
-[Unreleased]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v1.0.0...v2.0.0

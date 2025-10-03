@@ -7,6 +7,7 @@ import type { CommandModule, ArgumentsCamelCase } from 'yargs';
 import { bundle } from '../core/bundler.js';
 import { loadConfig, mergeConfig, validateBundleOptions } from '../core/config-loader.js';
 import { BundleFormat, SourceMapType } from '../core/bundle-types.js';
+import { detectEntryPoint } from '../core/entry-detector.js';
 
 interface BundleArgs {
   entry?: string;
@@ -24,6 +25,12 @@ interface BundleArgs {
   watch?: boolean;
   'auto-install'?: boolean;
   verbose?: boolean;
+  platforms?: string;
+  compress?: boolean;
+  assets?: string;
+  'watch-poll'?: boolean;
+  'watch-interval'?: number;
+  'watch-restart'?: boolean;
 }
 
 /**
@@ -106,15 +113,45 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
         default: false,
       })
       .option('verbose', {
-        alias: 'v',
         describe: 'Verbose output',
         type: 'boolean',
         default: false,
       })
+      .option('platforms', {
+        describe: 'Target platforms for executable (comma-separated: linux,macos,windows)',
+        type: 'string',
+      })
+      .option('compress', {
+        describe: 'Compress executable with GZip',
+        type: 'boolean',
+        default: true,
+      })
+      .option('assets', {
+        describe: 'Include assets in bundle (comma-separated file paths)',
+        type: 'string',
+      })
+      .option('watch-poll', {
+        describe: 'Use polling for file watching (useful for network drives)',
+        type: 'boolean',
+        default: false,
+      })
+      .option('watch-interval', {
+        describe: 'Polling interval in milliseconds',
+        type: 'number',
+        default: 100,
+      })
+      .option('watch-restart', {
+        describe: 'Auto-restart server after rebuild in watch mode',
+        type: 'boolean',
+        default: false,
+      })
       .example('$0 bundle server.ts', 'Bundle server.ts to dist/bundle.js')
+      .example('$0 bundle -o dist/server.js', 'Auto-detect entry and bundle')
       .example('$0 bundle server.ts -o dist/server.js', 'Bundle with custom output')
       .example('$0 bundle server.ts -f standalone', 'Create standalone distribution')
-      .example('$0 bundle server.ts -w', 'Watch mode for development');
+      .example('$0 bundle server.ts -f executable --platforms linux,macos', 'Create native executables')
+      .example('$0 bundle server.ts -w --watch-restart', 'Watch mode with auto-restart')
+      .example('$0 bundle server.ts --assets data.json,config.yaml', 'Bundle with asset files');
   },
 
   handler: async (argv: ArgumentsCamelCase<BundleArgs>) => {
@@ -151,9 +188,31 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
         sourcemap = argv.sourcemap as SourceMapType;
       }
 
+      // Detect entry point if not provided
+      let entry = argv.entry;
+      if (!entry) {
+        try {
+          entry = await detectEntryPoint(undefined, process.cwd());
+        } catch (error) {
+          throw new Error(
+            `No entry point provided and could not detect one. ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+
+      // Parse platforms
+      const platforms = argv.platforms
+        ? argv.platforms.split(',').map(p => p.trim())
+        : undefined;
+
+      // Parse assets
+      const includeAssets = argv.assets
+        ? argv.assets.split(',').map(a => a.trim())
+        : undefined;
+
       // Merge config with CLI options
       const options = mergeConfig(config, {
-        entry: argv.entry,
+        entry,
         output: argv.output,
         format: argv.format,
         minify,
@@ -164,6 +223,14 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
         treeShake,
         watch: argv.watch,
         autoInstall: argv['auto-install'],
+        platforms,
+        includeAssets,
+        compress: argv.compress,
+        watchOptions: {
+          poll: argv['watch-poll'],
+          interval: argv['watch-interval'],
+          restart: argv['watch-restart'],
+        },
         onProgress: argv.verbose ? (msg: string) => console.log(`[INFO] ${msg}`) : undefined,
         onError: (err) => console.error(`[ERROR] ${err.message}`),
       });

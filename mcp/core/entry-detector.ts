@@ -129,31 +129,40 @@ export async function validateSimplyMCPEntry(filePath: string): Promise<void> {
     );
   }
 
-  // Check if file imports SimplyMCP
+  // Check if file imports SimplyMCP (or variants like SimpleMCP, MCPServer)
+  // Accept: simply-mcp, simplemcp, @simplemcp/*, or relative imports
   const hasImport =
+    /from\s+['"]simply-mcp['"]/.test(content) ||
+    /from\s+['"]simplemcp['"]/.test(content) ||
+    /from\s+['"]@simplemcp\//.test(content) ||
+    /from\s+['"]@simply-mcp\//.test(content) ||
+    /from\s+['"]\.\.?\/.*[Mm][Cc][Pp]/.test(content) ||
+    content.includes('SimpleMCP') ||
     content.includes('SimplyMCP') ||
-    content.includes('simply-mcp') ||
-    content.includes('./SimplyMCP') ||
-    content.includes('../SimplyMCP');
+    content.includes('MCPServer');
 
   if (!hasImport) {
     throw new Error(
       `Entry point does not appear to import SimplyMCP: ${filePath}\n` +
-      'Expected: import { SimplyMCP } from "simply-mcp" or similar'
+      'Expected: import { SimpleMCP } from "simply-mcp" or similar'
     );
   }
 
-  // Check if file instantiates SimplyMCP
+  // Check if file instantiates SimplyMCP (or variants)
   const hasInstantiation =
     /new\s+SimplyMCP\s*\(/.test(content) ||
+    /new\s+SimpleMCP\s*\(/.test(content) ||
+    /new\s+MCPServer\s*\(/.test(content) ||
     /SimplyMCP\.fromFile\s*\(/.test(content) ||
-    /export\s+default.*SimplyMCP/.test(content) ||
-    /export\s*\{.*SimplyMCP.*\}/.test(content);
+    /SimpleMCP\.fromFile\s*\(/.test(content) ||
+    /MCPServer\.fromFile\s*\(/.test(content) ||
+    /export\s+default.*(?:Simply|Simple)?MCP/.test(content) ||
+    /export\s*\{.*(?:Simply|Simple)?MCP.*\}/.test(content);
 
   if (!hasInstantiation) {
     throw new Error(
       `Entry point does not appear to create a SimplyMCP instance: ${filePath}\n` +
-      'Expected: new SimplyMCP(...) or SimplyMCP.fromFile(...)'
+      'Expected: new SimpleMCP(...) or SimpleMCP.fromFile(...)'
     );
   }
 }
@@ -187,8 +196,8 @@ export async function extractServerName(filePath: string): Promise<string> {
   try {
     const content = await readFile(filePath, 'utf-8');
 
-    // Try to extract name from SimplyMCP constructor
-    const nameMatch = /new\s+SimplyMCP\s*\(\s*\{[^}]*name\s*:\s*['"]([^'"]+)['"]/.exec(content);
+    // Try to extract name from SimplyMCP/SimpleMCP/MCPServer constructor
+    const nameMatch = /new\s+(?:Simply|Simple)?MCP(?:Server)?\s*\(\s*\{[^}]*name\s*:\s*['"]([^'"]+)['"]/.exec(content);
     if (nameMatch && nameMatch[1]) {
       return nameMatch[1];
     }

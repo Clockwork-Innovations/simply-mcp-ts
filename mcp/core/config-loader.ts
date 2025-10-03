@@ -1,67 +1,60 @@
 /**
  * Configuration file loader for SimplyMCP bundling
- * Supports .js, .ts, .mjs, and .json config files
+ * Feature 4.1: Core Bundling - Config Loader
  */
 
-import { readFile, writeFile } from 'fs/promises';
+import { readFile } from 'fs/promises';
+import { resolve, join } from 'path';
 import { existsSync } from 'fs';
-import { join, extname } from 'path';
 import { pathToFileURL } from 'url';
-import { SimplyMCPConfig, BundleOptions } from './bundle-types.js';
+import type { SimplyMCPConfig, BundleOptions } from './bundle-types.js';
 
 /**
- * Load SimplyMCP configuration from file
- *
- * Search order (if no config path provided):
- * 1. simplymcp.config.js
- * 2. simplymcp.config.ts
- * 3. simplymcp.config.mjs
- * 4. simplymcp.config.json
- * 5. mcp.config.js
- * 6. mcp.config.ts
- * 7. mcp.config.json
- *
- * @param configPath - Optional explicit config file path
- * @param basePath - Base directory for config search
- * @returns Loaded config or null if not found
- *
- * @example
- * ```typescript
- * const config = await loadConfig();
- * if (config) {
- *   console.log('Entry:', config.entry);
- * }
- * ```
+ * Load configuration from file
+ * @param configPath - Explicit config file path (optional)
+ * @param cwd - Working directory (default: process.cwd())
+ * @returns Parsed configuration or null if not found
  */
 export async function loadConfig(
   configPath?: string,
-  basePath: string = process.cwd()
+  cwd: string = process.cwd()
 ): Promise<SimplyMCPConfig | null> {
-  // 1. Determine config file path(s) to check
-  const paths = configPath
-    ? [configPath]
-    : [
-        'simplymcp.config.js',
-        'simplymcp.config.ts',
-        'simplymcp.config.mjs',
-        'simplymcp.config.json',
-        'mcp.config.js',
-        'mcp.config.ts',
-        'mcp.config.json',
-      ];
+  const configFile = configPath
+    ? resolve(cwd, configPath)
+    : await findConfigFile(cwd);
 
-  // 2. Try each path until one is found
-  for (const path of paths) {
-    const fullPath = join(basePath, path);
-    if (existsSync(fullPath)) {
-      try {
-        const config = await loadConfigFile(fullPath);
-        return validateConfig(config);
-      } catch (error) {
-        throw new Error(
-          `Failed to load config from ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
-      }
+  if (!configFile) {
+    return null;
+  }
+
+  if (!existsSync(configFile)) {
+    throw new Error(`Config file not found: ${configFile}`);
+  }
+
+  return parseConfig(configFile);
+}
+
+/**
+ * Find config file by convention
+ * @param cwd - Working directory
+ * @returns Path to config file or null if not found
+ */
+async function findConfigFile(cwd: string): Promise<string | null> {
+  const candidates = [
+    'simplemcp.config.js',
+    'simplemcp.config.mjs',
+    'simplemcp.config.json',
+    'simplymcp.config.js',
+    'simplymcp.config.mjs',
+    'simplymcp.config.json',
+    '.simplemcprc.json',
+    '.simplemcprc.js',
+  ];
+
+  for (const candidate of candidates) {
+    const candidatePath = join(cwd, candidate);
+    if (existsSync(candidatePath)) {
+      return candidatePath;
     }
   }
 
@@ -69,154 +62,234 @@ export async function loadConfig(
 }
 
 /**
- * Load and parse a specific config file
- *
- * @param path - Absolute path to config file
- * @returns Parsed config
+ * Parse config file based on extension
+ * @param configPath - Path to config file
+ * @returns Parsed configuration
  */
-async function loadConfigFile(path: string): Promise<SimplyMCPConfig> {
-  const ext = extname(path);
+async function parseConfig(configPath: string): Promise<SimplyMCPConfig> {
+  const ext = configPath.split('.').pop()?.toLowerCase();
 
-  // JSON config
-  if (ext === '.json') {
-    const content = await readFile(path, 'utf-8');
-    return JSON.parse(content);
+  if (ext === 'json') {
+    // JSON config
+    const content = await readFile(configPath, 'utf-8');
+    try {
+      const config = JSON.parse(content);
+      validateConfig(config);
+      return config;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error(`Invalid JSON in config file: ${configPath}`);
+      }
+      throw error;
+    }
+  } else if (ext === 'js' || ext === 'mjs') {
+    // JavaScript/MJS config
+    const configUrl = pathToFileURL(configPath).href;
+    try {
+      const module = await import(configUrl);
+      const config = module.default || module;
+      validateConfig(config);
+      return config;
+    } catch (error) {
+      throw new Error(`Failed to load config file: ${configPath} - ${error instanceof Error ? error.message : String(error)}`);
+    }
+  } else {
+    throw new Error(`Unsupported config file format: ${ext}`);
   }
-
-  // JavaScript/TypeScript config (ESM)
-  if (ext === '.js' || ext === '.ts' || ext === '.mjs' || ext === '.mts') {
-    // Use dynamic import for ESM modules
-    const fileUrl = pathToFileURL(path).href;
-    const module = await import(fileUrl);
-
-    // Support both default export and named export
-    return module.default || module.config || module;
-  }
-
-  throw new Error(`Unsupported config file format: ${ext}`);
 }
 
 /**
- * Validate and normalize config structure
- *
- * @param config - Raw config object
- * @returns Validated config
+ * Validate configuration object
+ * @param config - Configuration to validate
  */
-function validateConfig(config: any): SimplyMCPConfig {
-  if (!config || typeof config !== 'object') {
+function validateConfig(config: any): void {
+  if (typeof config !== 'object' || config === null) {
     throw new Error('Config must be an object');
   }
 
-  // Validate entry if provided
+  // Validate entry field
   if (config.entry !== undefined && typeof config.entry !== 'string') {
-    throw new Error('config.entry must be a string');
+    throw new Error('Config field "entry" must be a string');
   }
 
-  // Validate output if provided
-  if (config.output !== undefined) {
-    if (typeof config.output !== 'object') {
-      throw new Error('config.output must be an object');
-    }
-
-    const { dir, filename, format } = config.output;
-
-    if (dir !== undefined && typeof dir !== 'string') {
-      throw new Error('config.output.dir must be a string');
-    }
-
-    if (filename !== undefined && typeof filename !== 'string') {
-      throw new Error('config.output.filename must be a string');
-    }
-
-    if (format !== undefined) {
-      const validFormats = ['single-file', 'standalone', 'executable', 'esm', 'cjs'];
-      if (!validFormats.includes(format)) {
-        throw new Error(`config.output.format must be one of: ${validFormats.join(', ')}`);
-      }
+  // Validate output.format field
+  if (config.output?.format !== undefined) {
+    const validFormats = ['single-file', 'standalone', 'executable', 'esm', 'cjs'];
+    if (!validFormats.includes(config.output.format)) {
+      throw new Error(`Config field "output.format" must be one of: ${validFormats.join(', ')}`);
     }
   }
 
-  // Validate bundle options if provided
-  if (config.bundle !== undefined && typeof config.bundle !== 'object') {
-    throw new Error('config.bundle must be an object');
+  // Validate output.dir field
+  if (config.output?.dir !== undefined && typeof config.output.dir !== 'string') {
+    throw new Error('Config field "output.dir" must be a string');
   }
 
-  // Validate autoInstall if provided
-  if (config.autoInstall !== undefined && typeof config.autoInstall !== 'boolean') {
-    throw new Error('config.autoInstall must be a boolean');
+  // Validate output.filename field
+  if (config.output?.filename !== undefined && typeof config.output.filename !== 'string') {
+    throw new Error('Config field "output.filename" must be a string');
   }
 
-  return config as SimplyMCPConfig;
+  // Validate bundle.minify field
+  if (config.bundle?.minify !== undefined && typeof config.bundle.minify !== 'boolean') {
+    throw new Error('Config field "bundle.minify" must be a boolean');
+  }
+
+  // Validate bundle.platform field
+  if (config.bundle?.platform !== undefined) {
+    const validPlatforms = ['node', 'neutral'];
+    if (!validPlatforms.includes(config.bundle.platform)) {
+      throw new Error(`Config field "bundle.platform" must be one of: ${validPlatforms.join(', ')}`);
+    }
+  }
+
+  // Validate bundle.external field
+  if (config.bundle?.external !== undefined) {
+    if (!Array.isArray(config.bundle.external)) {
+      throw new Error('Config field "bundle.external" must be an array');
+    }
+    if (!config.bundle.external.every((item: any) => typeof item === 'string')) {
+      throw new Error('Config field "bundle.external" must be an array of strings');
+    }
+  }
 }
 
 /**
- * Merge config with CLI options
+ * Merge CLI options with config file
  * CLI options take precedence over config file
- *
- * @param config - Config from file
- * @param cliOptions - Options from CLI
+ * @param config - Config file settings
+ * @param cliOptions - CLI command options
  * @returns Merged bundle options
- *
- * @example
- * ```typescript
- * const config = await loadConfig();
- * const options = mergeConfig(config, {
- *   output: './dist/server.js',
- *   minify: true
- * });
- * ```
  */
 export function mergeConfig(
   config: SimplyMCPConfig | null,
   cliOptions: Partial<BundleOptions>
 ): BundleOptions {
-  if (!config) {
-    // No config file - use CLI options directly
-    return {
-      entry: cliOptions.entry || '',
-      output: cliOptions.output || '',
-      ...cliOptions,
-    };
+  const merged: any = {};
+
+  // Entry point (CLI > config)
+  if (cliOptions.entry !== undefined) {
+    merged.entry = cliOptions.entry;
+  } else if (config?.entry !== undefined) {
+    merged.entry = config.entry;
   }
 
-  // Merge config and CLI options
-  const merged: BundleOptions = {
-    // Entry point (CLI > config)
-    entry: cliOptions.entry || config.entry || '',
+  // Output (CLI > config)
+  if (cliOptions.output !== undefined) {
+    merged.output = cliOptions.output;
+  } else if (config?.output?.dir !== undefined || config?.output?.filename !== undefined) {
+    // Combine dir and filename if both present
+    if (config.output.dir && config.output.filename) {
+      merged.output = join(config.output.dir, config.output.filename);
+    } else {
+      merged.output = config.output.dir || config.output.filename;
+    }
+  }
 
-    // Output (CLI > config)
-    output: cliOptions.output || (config.output?.dir && config.output?.filename
-      ? join(config.output.dir, config.output.filename)
-      : config.output?.dir || ''),
+  // Format (CLI > config)
+  if (cliOptions.format !== undefined) {
+    merged.format = cliOptions.format;
+  } else if (config?.output?.format !== undefined) {
+    merged.format = config.output.format;
+  }
 
-    // Format (CLI > config)
-    format: cliOptions.format || config.output?.format || 'single-file',
+  // Minify (CLI > config)
+  if (cliOptions.minify !== undefined) {
+    merged.minify = cliOptions.minify;
+  } else if (config?.bundle?.minify !== undefined) {
+    merged.minify = config.bundle.minify;
+  }
 
-    // Bundle options (CLI > config)
-    minify: cliOptions.minify !== undefined ? cliOptions.minify : config.bundle?.minify,
-    sourcemap: cliOptions.sourcemap !== undefined ? cliOptions.sourcemap : config.bundle?.sourcemap,
-    platform: cliOptions.platform || config.bundle?.platform,
-    target: cliOptions.target || config.bundle?.target,
-    external: cliOptions.external || config.bundle?.external,
-    treeShake: cliOptions.treeShake !== undefined ? cliOptions.treeShake : config.bundle?.treeShake,
-    banner: cliOptions.banner || config.bundle?.banner,
-    footer: cliOptions.footer || config.bundle?.footer,
+  // Platform (CLI > config)
+  if (cliOptions.platform !== undefined) {
+    merged.platform = cliOptions.platform;
+  } else if (config?.bundle?.platform !== undefined) {
+    merged.platform = config.bundle.platform;
+  }
 
-    // Other options
-    watch: cliOptions.watch,
-    autoInstall: cliOptions.autoInstall !== undefined ? cliOptions.autoInstall : config.autoInstall,
-    basePath: cliOptions.basePath,
-    onProgress: cliOptions.onProgress,
-    onError: cliOptions.onError,
-  };
+  // Target (CLI > config)
+  if (cliOptions.target !== undefined) {
+    merged.target = cliOptions.target;
+  } else if (config?.bundle?.target !== undefined) {
+    merged.target = config.bundle.target;
+  }
+
+  // External (CLI > config)
+  if (cliOptions.external !== undefined) {
+    merged.external = cliOptions.external;
+  } else if (config?.bundle?.external !== undefined) {
+    merged.external = config.bundle.external;
+  }
+
+  // Sourcemap (CLI > config)
+  if (cliOptions.sourcemap !== undefined) {
+    merged.sourcemap = cliOptions.sourcemap;
+  } else if (config?.bundle?.sourcemap !== undefined) {
+    merged.sourcemap = config.bundle.sourcemap;
+  }
+
+  // Auto-install (CLI > config)
+  if (cliOptions.autoInstall !== undefined) {
+    merged.autoInstall = cliOptions.autoInstall;
+  } else if (config?.autoInstall !== undefined) {
+    merged.autoInstall = config.autoInstall;
+  }
+
+  // Preserve callbacks (these are CLI-only, not in config files)
+  if (cliOptions.onProgress !== undefined) {
+    merged.onProgress = cliOptions.onProgress;
+  }
+  if (cliOptions.onError !== undefined) {
+    merged.onError = cliOptions.onError;
+  }
+  if (cliOptions.watch !== undefined) {
+    merged.watch = cliOptions.watch;
+  }
+  if (cliOptions.treeShake !== undefined) {
+    merged.treeShake = cliOptions.treeShake;
+  }
+  if (cliOptions.basePath !== undefined) {
+    merged.basePath = cliOptions.basePath;
+  }
 
   return merged;
 }
 
 /**
- * Create a default config object
- *
- * @returns Default SimplyMCP config
+ * Validate bundle options before bundling
+ * @param options - Bundle options to validate
+ */
+export function validateBundleOptions(options: Partial<BundleOptions>): void {
+  // Entry is required
+  if (!options.entry || options.entry.trim() === '') {
+    throw new Error('Entry point is required');
+  }
+
+  // Output is required
+  if (!options.output || options.output.trim() === '') {
+    throw new Error('Output path is required');
+  }
+
+  // Validate format if specified
+  if (options.format !== undefined) {
+    const validFormats = ['single-file', 'standalone', 'executable', 'esm', 'cjs'];
+    if (!validFormats.includes(options.format)) {
+      throw new Error(`Invalid format: ${options.format}. Must be one of: ${validFormats.join(', ')}`);
+    }
+  }
+
+  // Validate platform if specified
+  if (options.platform !== undefined) {
+    const validPlatforms = ['node', 'neutral'];
+    if (!validPlatforms.includes(options.platform)) {
+      throw new Error(`Invalid platform: ${options.platform}. Must be one of: ${validPlatforms.join(', ')}`);
+    }
+  }
+}
+
+/**
+ * Create default configuration
+ * @returns Default bundle configuration
  */
 export function createDefaultConfig(): SimplyMCPConfig {
   return {
@@ -225,8 +298,7 @@ export function createDefaultConfig(): SimplyMCPConfig {
       format: 'single-file',
     },
     bundle: {
-      minify: true,
-      sourcemap: false,
+      minify: false,
       platform: 'node',
       target: 'node20',
       external: [],
@@ -237,63 +309,30 @@ export function createDefaultConfig(): SimplyMCPConfig {
 }
 
 /**
- * Write a config file with given options
- *
- * @param config - Config to write
- * @param path - Output path
- * @param format - File format (js, ts, json)
+ * Write configuration to file
+ * @param config - Configuration to write
+ * @param outputPath - Path to write config file
+ * @param format - File format ('js' or 'json')
  */
 export async function writeConfig(
   config: SimplyMCPConfig,
-  path: string,
-  format: 'js' | 'ts' | 'json' = 'js'
+  outputPath: string,
+  format: 'js' | 'json' = 'js'
 ): Promise<void> {
-  let content: string;
+  const { writeFile } = await import('fs/promises');
+  const { dirname } = await import('path');
+  const { mkdir } = await import('fs/promises');
+
+  // Ensure directory exists
+  await mkdir(dirname(outputPath), { recursive: true });
 
   if (format === 'json') {
-    content = JSON.stringify(config, null, 2);
-  } else if (format === 'ts') {
-    content = `import { SimplyMCPConfig } from 'simply-mcp';
-
-export default ${JSON.stringify(config, null, 2)} satisfies SimplyMCPConfig;
-`;
+    // Write JSON format
+    const content = JSON.stringify(config, null, 2);
+    await writeFile(outputPath, content, 'utf-8');
   } else {
-    // JavaScript
-    content = `export default ${JSON.stringify(config, null, 2)};
-`;
-  }
-
-  await writeFile(path, content, 'utf-8');
-}
-
-/**
- * Validate that required options are present
- *
- * @param options - Bundle options to validate
- * @throws Error if validation fails
- */
-export function validateBundleOptions(options: BundleOptions): void {
-  if (!options.entry) {
-    throw new Error('Entry point is required. Provide --entry or set entry in config file.');
-  }
-
-  if (!options.output) {
-    throw new Error('Output path is required. Provide --output or set output in config file.');
-  }
-
-  // Validate format if specified
-  if (options.format) {
-    const validFormats = ['single-file', 'standalone', 'executable', 'esm', 'cjs'];
-    if (!validFormats.includes(options.format)) {
-      throw new Error(`Invalid format: ${options.format}. Must be one of: ${validFormats.join(', ')}`);
-    }
-  }
-
-  // Validate platform if specified
-  if (options.platform) {
-    const validPlatforms = ['node', 'neutral'];
-    if (!validPlatforms.includes(options.platform)) {
-      throw new Error(`Invalid platform: ${options.platform}. Must be one of: ${validPlatforms.join(', ')}`);
-    }
+    // Write JavaScript format
+    const content = `export default ${JSON.stringify(config, null, 2)};\n`;
+    await writeFile(outputPath, content, 'utf-8');
   }
 }

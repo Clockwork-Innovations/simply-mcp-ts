@@ -53,7 +53,7 @@ run_dep_resolver_test() {
   local test_script="$2"
 
   cat > "$TEST_TEMP_DIR/test-runner.ts" <<EOFTEST
-import { resolveDependencies, detectNativeModules, isNativeModule, mergeDependencies, filterDependencies, detectPeerDependencies, getBuiltinModules } from '$MCP_ROOT/core/dependency-resolver.js';
+import { resolveDependencies, detectNativeModules, isNativeModule, mergeDependencies, filterDependencies, detectPeerDependencies, getBuiltinModules } from '$MCP_ROOT/../dist/mcp/core/dependency-resolver.js';
 
 async function runTest() {
   try {
@@ -88,8 +88,8 @@ cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
 // axios@^1.6.0
 // zod@^3.22.0
 // ///
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 EOF
 
@@ -123,8 +123,8 @@ cat > "$TEST_TEMP_DIR/package.json" <<'EOF'
 }
 EOF
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_dep_resolver_test "resolve_pkg_json" "
@@ -158,8 +158,8 @@ cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
 // /// dependencies
 // axios@^1.6.0
 // ///
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_dep_resolver_test "inline_precedence" "
@@ -334,12 +334,12 @@ console.log(JSON.stringify({ builtins, count: builtins.length }));
 
 if [ $? -eq 0 ]; then
   count=$(jq -r '.count' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "0")
-  has_fs=$(jq -r '.builtins | any(. == \"fs\")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
-  has_path=$(jq -r '.builtins | any(. == \"path\")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
-  if [ "$count" -gt 10 ] && [ "$has_fs" == "true" ] && [ "$has_path" == "true" ]; then
+  has_fs=$(jq -r '.builtins | any(. == "fs")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
+  has_path=$(jq -r '.builtins | any(. == "path")' "$TEST_TEMP_DIR/test-output.json" 2>/dev/null || echo "false")
+  if [ "$count" -gt 10 ] && [ "$has_fs" = "true" ] && [ "$has_path" = "true" ]; then
     pass_test "Get builtin modules"
   else
-    fail_test "Get builtin modules" "Expected builtin modules list, got count=$count"
+    fail_test "Get builtin modules" "Expected builtin modules list, got count=$count, has_fs=$has_fs, has_path=$has_path"
   fi
 else
   fail_test "Get builtin modules" "Test execution failed"
@@ -372,8 +372,8 @@ cleanup_test
 echo "Test 12: Empty dependencies"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_dep_resolver_test "empty_deps" "
@@ -405,8 +405,8 @@ cat > "$TEST_TEMP_DIR/package.json" <<'EOF'
 }
 EOF
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_dep_resolver_test "dev_deps" "
@@ -431,10 +431,10 @@ echo "Test 14: Inline dependency errors captured"
 setup_test
 cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
 // /// dependencies
-// invalid-syntax-here
+// package!invalid
 // ///
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_dep_resolver_test "inline_errors" "
@@ -462,8 +462,8 @@ cat > "$TEST_TEMP_DIR/server.ts" <<'EOF'
 // fsevents@^2.3.0
 // axios@^1.6.0
 // ///
-import { SimpleMCP } from 'simplemcp';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 EOF
 
 run_dep_resolver_test "native_external" "

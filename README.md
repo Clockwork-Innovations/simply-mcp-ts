@@ -357,6 +357,99 @@ export default {
 - `--config <path>` - Custom config file path
 - `--verbose` - Show detailed bundling information
 
+### Advanced Bundle Formats
+
+#### Standalone Format
+Create a directory bundle with package.json and assets:
+```bash
+simplemcp bundle server.ts --format standalone --output dist/
+```
+
+Output structure:
+```
+dist/
+├── server.js         # Bundled application
+├── package.json      # Runtime dependencies (native modules only)
+├── node_modules/     # Native modules (if needed)
+└── assets/           # Static assets (if included)
+```
+
+#### Executable Format
+Create native binaries that don't require Node.js:
+```bash
+# Single platform
+simplemcp bundle server.ts --format executable --output myserver
+
+# Cross-platform builds
+simplemcp bundle server.ts --format executable \
+  --platforms linux,macos,windows --output dist/server
+```
+
+Creates: `dist/server-linux`, `dist/server-macos`, `dist/server-win.exe`
+
+Supported platforms: `linux`, `macos`, `macos-arm`, `windows`, `alpine`
+
+#### Watch Mode
+Auto-rebuild during development:
+```bash
+simplemcp bundle server.ts --watch --watch-restart
+```
+
+Options:
+- `--watch`: Enable watch mode
+- `--watch-poll`: Use polling (for network drives)
+- `--watch-interval`: Polling interval in ms (default: 100)
+- `--watch-restart`: Auto-restart server after rebuild
+
+#### Source Maps
+Enhanced debugging with multiple source map modes:
+```bash
+# Inline (embedded in bundle)
+simplemcp bundle server.ts --sourcemap inline
+
+# External (.map file)
+simplemcp bundle server.ts --sourcemap external
+
+# Both (maximum compatibility)
+simplemcp bundle server.ts --sourcemap both
+```
+
+### Complete CLI Reference
+
+All bundling options:
+```
+--format           Output format (single-file|standalone|executable|esm|cjs)
+-o, --output       Output path (file or directory depending on format)
+--minify           Minify output
+--sourcemap        Source maps (inline|external|both)
+--platforms        Target platforms for executable (comma-separated)
+--compress         Compress executable with GZip (default: true)
+--assets           Include assets (comma-separated paths)
+--external         External packages (comma-separated)
+--watch            Watch mode
+--watch-poll       Use polling for watch mode
+--watch-interval   Polling interval (default: 100ms)
+--watch-restart    Auto-restart server after rebuild
+--config           Configuration file path
+--verbose          Verbose output
+```
+
+### Example: Production Deployment
+
+Create an optimized executable for production:
+```bash
+# Development: Watch mode with auto-restart
+simplemcp bundle server.ts --watch --watch-restart --sourcemap inline
+
+# Production: Minified executable for Linux
+simplemcp bundle server.ts --format executable \
+  --platforms linux --minify --output prod/server
+
+# Deploy: Just copy the binary (no Node.js needed)
+scp prod/server-linux user@server:/app/
+ssh user@server "/app/server-linux"
+```
+
 ## 🎨 API Comparison
 
 | Feature | Decorator | Functional | Programmatic |

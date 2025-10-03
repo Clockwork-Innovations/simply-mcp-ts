@@ -113,7 +113,8 @@ export async function installDependencies(
   }
 
   // If all packages failed validation, return early
-  if (failed.length === Object.keys(dependencies).length) {
+  // But only if there were actually packages to validate (not empty dependencies)
+  if (failed.length > 0 && failed.length === Object.keys(dependencies).length) {
     return {
       success: false,
       installed: [],
@@ -295,7 +296,6 @@ async function executeInstall(
     const proc = spawn(packageManager, args, {
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
-      shell: true,
     });
 
     let stdout = '';
