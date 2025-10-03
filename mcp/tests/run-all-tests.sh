@@ -81,6 +81,8 @@ echo ""
 # Run all test suites
 run_suite "Stdio Transport" "mcp/tests/test-stdio.sh"
 sleep 2  # Allow server cleanup
+run_suite "Decorator API" "mcp/tests/test-decorators.sh"
+sleep 2  # Allow server cleanup
 run_suite "Stateless HTTP Transport" "mcp/tests/test-stateless-http.sh"
 sleep 2  # Allow server cleanup
 run_suite "Stateful HTTP Transport" "mcp/tests/test-stateful-http.sh"
@@ -110,7 +112,7 @@ echo "-------------------------------------------"
 printf "%-30s | %s\n" "Test Suite" "Result"
 echo "-------------------------------------------"
 
-for suite in "Stdio Transport" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)"; do
+for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -157,7 +159,7 @@ cat > "$REPORT_FILE" << EOF
 |----------------|--------|----------|
 EOF
 
-for suite in "Stdio Transport" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)"; do
+for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -170,7 +172,7 @@ done
 
 cat >> "$REPORT_FILE" << EOF
 
-## Transport Types Tested
+## Test Categories
 
 ### 1. Stdio Transport
 - **Type:** Standard input/output communication
@@ -178,19 +180,25 @@ cat >> "$REPORT_FILE" << EOF
 - **Session:** Per-process
 - **Tests:** Initialize, tools, prompts, resources, validation
 
-### 2. Stateless HTTP Transport
+### 2. Decorator API
+- **Type:** Class-based decorator syntax (@tool, @prompt, @resource)
+- **Use Case:** TypeScript servers with decorators
+- **Session:** Per-process (stdio)
+- **Tests:** Decorator registration, JSDoc parsing, parameter validation, type inference, edge cases
+
+### 3. Stateless HTTP Transport
 - **Type:** HTTP without session persistence
 - **Use Case:** Simple REST APIs, serverless functions
 - **Session:** None (new transport per request)
 - **Tests:** Independent requests, concurrent requests, no session tracking
 
-### 3. Stateful HTTP Transport
+### 4. Stateful HTTP Transport
 - **Type:** HTTP with session management
 - **Use Case:** Long-running applications, persistent connections
 - **Session:** Tracked via Mcp-Session-Id header
 - **Tests:** Session creation, reuse, isolation, termination, SSE streaming
 
-### 4. SSE Transport (Legacy)
+### 5. SSE Transport (Legacy)
 - **Type:** Server-Sent Events
 - **Use Case:** Legacy systems, streaming updates
 - **Session:** Tracked via query parameters
