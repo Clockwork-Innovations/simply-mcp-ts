@@ -151,10 +151,10 @@ Consider for future releases:
 npm pack --dry-run
 
 # View the actual package contents
-tar -tzf simple-mcp-1.0.0.tgz
+tar -tzf simply-mcp-1.1.0.tgz
 
 # Test installation locally
-npm install ./simple-mcp-1.0.0.tgz
+npm install ./simply-mcp-1.1.0.tgz
 ```
 
 ### GitHub Release Tips

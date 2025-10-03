@@ -25,7 +25,7 @@ import type {
 } from './decorators.js';
 import { parseTypeScriptFileWithCache, getMethodParameterTypes, type ParsedClass } from './type-parser.js';
 
-// Import runtime from compiled dist to match user imports from 'simple-mcp'
+// Import runtime from compiled dist to match user imports from 'simply-mcp'
 // This ensures decorator metadata is shared between class-adapter and user code
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distPath = resolve(__dirname, '../dist/mcp');

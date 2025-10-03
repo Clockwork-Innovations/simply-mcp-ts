@@ -4,8 +4,8 @@
 
 PROJECT DETAILS
 ───────────────
-Name:         simple-mcp
-Version:      1.0.0
+Name:         simply-mcp
+Version:      1.1.0
 Author:       Nicholas Marinkovich, MD
 Organization: Clockwork Innovations, LLC
 License:      MIT
@@ -73,7 +73,7 @@ git push origin v1.0.0
 npm login
 npm publish --access public  # if using scoped name
 # or
-npm publish  # if using simple-mcp
+npm publish  # if using simply-mcp
 
 VERIFY DEPLOYMENT
 ─────────────────
@@ -81,10 +81,10 @@ VERIFY DEPLOYMENT
 Visit: https://github.com/clockwork-innovations/simple-mcp
 
 # Check npm
-npm view simple-mcp
+npm view simply-mcp
 
 # Test install
-npm install simple-mcp
+npm install simply-mcp
 
 NEXT STEPS AFTER DEPLOYMENT
 ────────────────────────────
@@ -108,7 +108,7 @@ NOTES
   (validation/handlers). This is OK - they're excluded from compilation.
 • Main module exports are clean and working
 • Use --legacy-peer-deps for npm install (zod version conflict)
-• Package name 'simple-mcp' availability not yet checked - verify first!
+• Package name 'simply-mcp' is available on npm - verified and ready to publish!
 
 ═══════════════════════════════════════════════════════════════
 
