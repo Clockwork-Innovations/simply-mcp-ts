@@ -7,9 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2025-10-03
+
+### Added
+- **CLI Infrastructure & Core Bundling (Feature 4.1)**
+  - New `simplemcp bundle` command for bundling MCP servers into single-file executables
+  - Entry point auto-detection (server.ts, index.ts, main.ts, src/server.ts, etc.)
+  - Configuration file support (simplemcp.config.js, simplemcp.config.mjs, simplemcp.config.json)
+  - Single-file bundling with esbuild for optimized deployment
+  - Minification and tree-shaking for reduced bundle sizes
+  - Native module detection and external handling (fsevents, etc.)
+  - Source map support (inline, external, or disabled)
+  - ESM/CJS format support with proper module resolution
+  - Verbose output mode for debugging bundle process
+  - Comprehensive test suite (116/116 tests passing)
+
+### Fixed
+- CLI flag conflicts between verbose (-v) and version (-V) flags
+- Config loader integration with CLI commands
+- Dependency resolution edge cases for native modules
+
+## [2.0.1] - 2025-10-03
+
+### Fixed
+- @prompt and @resource decorators now work correctly with stage-3 decorators
+- Decorator metadata handling improved for prompt and resource definitions
+
+## [2.0.0] - 2025-10-03
+
+### Added
+- Decorator API improvements with full stage-3 decorator support
+- Enhanced type inference for decorators
+
 ### Changed
-- Prepared project for open source release
-- Added comprehensive documentation
+- Updated to stage-3 decorator implementation
+- Improved decorator metadata system
 
 ## [1.0.0] - 2025-10-02
 
@@ -107,5 +139,8 @@ We use [Semantic Versioning](https://semver.org/):
 
 ---
 
-[Unreleased]: https://github.com/clockwork-innovations/simply-mcp/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.0.1...v2.1.0
+[2.0.1]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/clockwork-innovations/simply-mcp/releases/tag/v1.0.0

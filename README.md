@@ -25,6 +25,8 @@ A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript
   - Binary content support (images, audio, PDFs)
 
 - **Developer Experience**:
+  - Simple CLI with auto-detection (`simplymcp run`)
+  - Production bundling (`simplemcp bundle`)
   - Automatic type inference from JSDoc comments
   - Built-in dependency management
   - Comprehensive error handling
@@ -81,6 +83,13 @@ class Calculator {
 
 Run it:
 ```bash
+# Auto-detect and run
+simplymcp run my-server.ts
+
+# Or explicit decorator command
+simplymcp-class my-server.ts
+
+# Or run directly (programmatic API)
 npx tsx my-server.ts
 ```
 
@@ -120,6 +129,15 @@ export default defineMCP({
     }
   ]
 });
+```
+
+Run it:
+```bash
+# Auto-detect and run
+simplymcp run my-server.ts
+
+# Or explicit functional command
+simplymcp-func my-server.ts
 ```
 
 ### Programmatic API
@@ -174,6 +192,10 @@ simply-mcp/
 │   ├── SimplyMCP.ts          # Programmatic API
 │   ├── decorators.ts         # Decorator API
 │   ├── single-file-types.ts  # Functional API
+│   ├── cli/                  # CLI commands
+│   │   ├── index.ts          # Main CLI entry
+│   │   ├── run.ts            # Auto-detect & run
+│   │   └── ...
 │   ├── core/                 # Core framework
 │   │   ├── types.ts
 │   │   ├── errors.ts
@@ -196,6 +218,144 @@ simply-mcp/
 - **[API Reference](./mcp/docs/guides/HANDLER-DEVELOPMENT.md)** - Handler development guide
 - **[Deployment Guide](./mcp/docs/guides/DEPLOYMENT.md)** - Production deployment
 - **[Module Usage](./MODULE_USAGE.md)** - Using SimplyMCP as a module
+
+## 🤖 Using with Claude Code/Desktop
+
+SimplyMCP servers work with Claude Code CLI and Claude Desktop. Create `.mcp.json` in your project root:
+
+**Auto-detect (Recommended):**
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "simplymcp",
+      "args": ["run", "path/to/server.ts"]
+    }
+  }
+}
+```
+
+**Explicit Commands:**
+```json
+{
+  "mcpServers": {
+    "decorator-server": {
+      "command": "simplymcp-class",
+      "args": ["path/to/server.ts"]
+    },
+    "functional-server": {
+      "command": "simplymcp-func",
+      "args": ["path/to/server.ts"]
+    }
+  }
+}
+```
+
+**Programmatic API:**
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["tsx", "path/to/server.ts"]
+    }
+  }
+}
+```
+
+**Environment Variables:**
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "simplymcp",
+      "args": ["run", "server.ts"],
+      "env": {
+        "API_KEY": "${API_KEY}",
+        "DATABASE_URL": "${DATABASE_URL:-sqlite://./dev.db}"
+      }
+    }
+  }
+}
+```
+
+**Verify:** `claude mcp list`
+
+### CLI Commands
+
+The `simplymcp` CLI automatically detects your API style and runs your server:
+
+```bash
+# Auto-detect API style (recommended)
+simplymcp run server.ts
+
+# With flags
+simplymcp run server.ts --http --port 3000
+simplymcp run server.ts --style decorator --verbose
+
+# Explicit commands (skip auto-detection)
+simplymcp-class server.ts    # For @MCPServer classes
+simplymcp-func server.ts     # For defineMCP() configs
+
+# Get help
+simplymcp run --help
+```
+
+**Available Flags:**
+- `--http` - Use HTTP transport instead of stdio
+- `--port <number>` - Port for HTTP server (default: 3000)
+- `--style <type>` - Override auto-detection (decorator|functional|programmatic)
+- `--verbose` - Show detailed detection and startup information
+
+### Bundling for Production
+
+The `simplemcp bundle` command packages your MCP server into a single, optimized file for deployment:
+
+```bash
+# Bundle with auto-detected entry point
+simplemcp bundle
+
+# Specify custom entry point and output
+simplemcp bundle --entry src/my-server.ts --outfile dist/server.js
+
+# Bundle with minification and source maps
+simplemcp bundle --minify --sourcemap
+
+# Generate CommonJS bundle
+simplemcp bundle --format cjs
+
+# Verbose output for debugging
+simplemcp bundle --verbose
+```
+
+**Bundle Features:**
+- **Auto-detection** - Automatically finds server.ts, index.ts, main.ts, or src/server.ts
+- **Configuration file** - Use simplemcp.config.js/mjs/json for custom settings
+- **Optimized output** - Minification and tree-shaking with esbuild
+- **Native modules** - Automatic detection and externalization of native dependencies
+- **Source maps** - Support for inline, external, or no source maps
+- **Format support** - Generate ESM (default) or CommonJS bundles
+
+**Configuration File Example (simplemcp.config.js):**
+```javascript
+export default {
+  entry: './src/server.ts',
+  outfile: './dist/bundle.js',
+  format: 'esm',
+  minify: true,
+  sourcemap: 'external',
+  external: ['better-sqlite3'] // Additional external packages
+};
+```
+
+**CLI Flags:**
+- `--entry <path>` - Entry point file (default: auto-detect)
+- `--outfile <path>` - Output bundle path (default: dist/bundle.js)
+- `--format <esm|cjs>` - Output format (default: esm)
+- `--minify` - Minify the bundle
+- `--sourcemap <inline|external|none>` - Source map generation
+- `--config <path>` - Custom config file path
+- `--verbose` - Show detailed bundling information
 
 ## 🎨 API Comparison
 
@@ -286,7 +446,11 @@ npm test
 npm run test:stdio
 npm run test:http
 
-# Run examples
+# Run examples with CLI commands
+simplymcp run mcp/examples/class-minimal.ts
+simplymcp run mcp/examples/single-file-basic.ts --http --port 3000
+
+# Or use npm scripts
 npm run dev              # stdio transport
 npm run dev:http         # HTTP transport
 npm run dev:class        # Decorator API example
