@@ -113,23 +113,53 @@ export function MCPServer(config: ServerConfig = {}) {
 export function tool(description?: string) {
   return function (
     target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
+    propertyKeyOrContext: string | any,
+    descriptor?: PropertyDescriptor
   ) {
-    const tools = Reflect.getMetadata(TOOLS_KEY, target.constructor) || [];
-    const paramTypes = Reflect.getMetadata('design:paramtypes', target, propertyKey) || [];
-    // Support both legacy decorators (target[propertyKey]) and stage-3 decorators (descriptor.value)
-    const fn = descriptor?.value || target[propertyKey];
-    const jsdoc = extractJSDoc(fn);
+    // Handle both legacy and stage-3 decorator formats
+    const isStage3 = typeof propertyKeyOrContext === 'object' && propertyKeyOrContext !== null && 'kind' in propertyKeyOrContext;
 
-    tools.push({
-      methodName: propertyKey,
-      description: description || jsdoc?.description || propertyKey,
-      paramTypes,
-      jsdoc,
-    });
+    if (isStage3) {
+      // Stage-3 decorators
+      const context = propertyKeyOrContext;
+      const propertyKey = context.name;
+      const fn = target;
+      const jsdoc = extractJSDoc(fn);
 
-    Reflect.defineMetadata(TOOLS_KEY, tools, target.constructor);
+      // Use addInitializer to register metadata after class is constructed
+      context.addInitializer(function(this: any) {
+        const targetConstructor = this.constructor;
+        const tools = Reflect.getMetadata(TOOLS_KEY, targetConstructor) || [];
+        const paramTypes = Reflect.getMetadata('design:paramtypes', this, propertyKey) || [];
+
+        tools.push({
+          methodName: propertyKey,
+          description: description || jsdoc?.description || propertyKey,
+          paramTypes,
+          jsdoc,
+        });
+
+        Reflect.defineMetadata(TOOLS_KEY, tools, targetConstructor);
+      });
+    } else {
+      // Legacy decorators
+      const propertyKey = propertyKeyOrContext;
+      const targetConstructor = target.constructor;
+      const tools = Reflect.getMetadata(TOOLS_KEY, targetConstructor) || [];
+      const paramTypes = Reflect.getMetadata('design:paramtypes', target, propertyKey) || [];
+      const fn = descriptor?.value || target[propertyKey];
+      const jsdoc = extractJSDoc(fn);
+
+      tools.push({
+        methodName: propertyKey,
+        description: description || jsdoc?.description || propertyKey,
+        paramTypes,
+        jsdoc,
+      });
+
+      Reflect.defineMetadata(TOOLS_KEY, tools, targetConstructor);
+    }
+
     return descriptor;
   };
 }
@@ -141,21 +171,49 @@ export function tool(description?: string) {
 export function prompt(description?: string) {
   return function (
     target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
+    propertyKeyOrContext: string | any,
+    descriptor?: PropertyDescriptor
   ) {
-    const prompts = Reflect.getMetadata(PROMPTS_KEY, target.constructor) || [];
-    const paramTypes = Reflect.getMetadata('design:paramtypes', target, propertyKey) || [];
+    // Handle both legacy and stage-3 decorator formats
+    const isStage3 = typeof propertyKeyOrContext === 'object' && propertyKeyOrContext !== null && 'kind' in propertyKeyOrContext;
 
-    // Support both legacy decorators (target[propertyKey]) and stage-3 decorators (descriptor.value)
-    const fn = descriptor?.value || target[propertyKey];
-    prompts.push({
-      methodName: propertyKey,
-      description: description || extractDocstring(fn),
-      paramTypes,
-    });
+    if (isStage3) {
+      // Stage-3 decorators
+      const context = propertyKeyOrContext;
+      const propertyKey = context.name;
+      const fn = target;
 
-    Reflect.defineMetadata(PROMPTS_KEY, prompts, target.constructor);
+      // Use addInitializer to register metadata after class is constructed
+      context.addInitializer(function(this: any) {
+        const targetConstructor = this.constructor;
+        const prompts = Reflect.getMetadata(PROMPTS_KEY, targetConstructor) || [];
+        const paramTypes = Reflect.getMetadata('design:paramtypes', this, propertyKey) || [];
+
+        prompts.push({
+          methodName: propertyKey,
+          description: description || extractDocstring(fn),
+          paramTypes,
+        });
+
+        Reflect.defineMetadata(PROMPTS_KEY, prompts, targetConstructor);
+      });
+    } else {
+      // Legacy decorators
+      const propertyKey = propertyKeyOrContext;
+      const targetConstructor = target.constructor;
+      const prompts = Reflect.getMetadata(PROMPTS_KEY, targetConstructor) || [];
+      const paramTypes = Reflect.getMetadata('design:paramtypes', target, propertyKey) || [];
+      const fn = descriptor?.value || target[propertyKey];
+
+      prompts.push({
+        methodName: propertyKey,
+        description: description || extractDocstring(fn),
+        paramTypes,
+      });
+
+      Reflect.defineMetadata(PROMPTS_KEY, prompts, targetConstructor);
+    }
+
     return descriptor;
   };
 }
@@ -167,22 +225,51 @@ export function prompt(description?: string) {
 export function resource(uri: string, options: { name?: string; mimeType?: string } = {}) {
   return function (
     target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
+    propertyKeyOrContext: string | any,
+    descriptor?: PropertyDescriptor
   ) {
-    const resources = Reflect.getMetadata(RESOURCES_KEY, target.constructor) || [];
+    // Handle both legacy and stage-3 decorator formats
+    const isStage3 = typeof propertyKeyOrContext === 'object' && propertyKeyOrContext !== null && 'kind' in propertyKeyOrContext;
 
-    // Support both legacy decorators (target[propertyKey]) and stage-3 decorators (descriptor.value)
-    const fn = descriptor?.value || target[propertyKey];
-    resources.push({
-      methodName: propertyKey,
-      uri,
-      name: options.name || propertyKey,
-      description: extractDocstring(fn),
-      mimeType: options.mimeType || 'text/plain',
-    });
+    if (isStage3) {
+      // Stage-3 decorators
+      const context = propertyKeyOrContext;
+      const propertyKey = context.name;
+      const fn = target;
 
-    Reflect.defineMetadata(RESOURCES_KEY, resources, target.constructor);
+      // Use addInitializer to register metadata after class is constructed
+      context.addInitializer(function(this: any) {
+        const targetConstructor = this.constructor;
+        const resources = Reflect.getMetadata(RESOURCES_KEY, targetConstructor) || [];
+
+        resources.push({
+          methodName: propertyKey,
+          uri,
+          name: options.name || propertyKey,
+          description: extractDocstring(fn),
+          mimeType: options.mimeType || 'text/plain',
+        });
+
+        Reflect.defineMetadata(RESOURCES_KEY, resources, targetConstructor);
+      });
+    } else {
+      // Legacy decorators
+      const propertyKey = propertyKeyOrContext;
+      const targetConstructor = target.constructor;
+      const resources = Reflect.getMetadata(RESOURCES_KEY, targetConstructor) || [];
+      const fn = descriptor?.value || target[propertyKey];
+
+      resources.push({
+        methodName: propertyKey,
+        uri,
+        name: options.name || propertyKey,
+        description: extractDocstring(fn),
+        mimeType: options.mimeType || 'text/plain',
+      });
+
+      Reflect.defineMetadata(RESOURCES_KEY, resources, targetConstructor);
+    }
+
     return descriptor;
   };
 }
