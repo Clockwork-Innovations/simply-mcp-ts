@@ -1,4 +1,4 @@
-# Release Notes - v1.2.0
+# Release Notes - v2.0.0
 
 **Release Date:** 2025-10-03
 **Type:** Major Release (Breaking Change - API Rename)
@@ -18,7 +18,7 @@ The main class has been renamed from `SimpleMCP` to `SimplyMCP` to match the pac
 
 ### Update Your Imports
 
-**Before (v1.1.x):**
+**Before (v1.x.x):**
 ```typescript
 import { SimpleMCP } from 'simply-mcp';
 
@@ -28,7 +28,7 @@ const server = new SimpleMCP({
 });
 ```
 
-**After (v1.2.0):**
+**After (v2.0.0):**
 ```typescript
 import { SimplyMCP } from 'simply-mcp';
 
@@ -242,7 +242,7 @@ Everything now follows the "simply-mcp" pattern!
 
 ---
 
-**Full Changelog:** https://github.com/Clockwork-Innovations/simply-mcp/compare/v1.1.1...v1.2.0
+**Full Changelog:** https://github.com/Clockwork-Innovations/simply-mcp/compare/v1.1.1...v2.0.0
 
 🤖 **Generated with [Claude Code](https://claude.com/claude-code)**
 
