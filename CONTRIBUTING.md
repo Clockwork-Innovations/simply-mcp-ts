@@ -18,7 +18,7 @@ Thank you for your interest in contributing to SimpleMCP! This document provides
 ```bash
 # Fork the repository on GitHub, then:
 git clone https://github.com/clockwork-innovations/simply-mcp.git
-cd simple-mcp
+cd simply-mcp
 ```
 
 ### 2. Install Dependencies

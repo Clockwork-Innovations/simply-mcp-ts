@@ -13,10 +13,10 @@ import { SimpleMCPConfig, BundleOptions } from './bundle-types.js';
  * Load SimpleMCP configuration from file
  *
  * Search order (if no config path provided):
- * 1. simplemcp.config.js
- * 2. simplemcp.config.ts
- * 3. simplemcp.config.mjs
- * 4. simplemcp.config.json
+ * 1. simplymcp.config.js
+ * 2. simplymcp.config.ts
+ * 3. simplymcp.config.mjs
+ * 4. simplymcp.config.json
  * 5. mcp.config.js
  * 6. mcp.config.ts
  * 7. mcp.config.json
@@ -41,10 +41,10 @@ export async function loadConfig(
   const paths = configPath
     ? [configPath]
     : [
-        'simplemcp.config.js',
-        'simplemcp.config.ts',
-        'simplemcp.config.mjs',
-        'simplemcp.config.json',
+        'simplymcp.config.js',
+        'simplymcp.config.ts',
+        'simplymcp.config.mjs',
+        'simplymcp.config.json',
         'mcp.config.js',
         'mcp.config.ts',
         'mcp.config.json',
@@ -253,7 +253,7 @@ export async function writeConfig(
   if (format === 'json') {
     content = JSON.stringify(config, null, 2);
   } else if (format === 'ts') {
-    content = `import { SimpleMCPConfig } from 'simplemcp/bundler';
+    content = `import { SimpleMCPConfig } from 'simply-mcp';
 
 export default ${JSON.stringify(config, null, 2)} satisfies SimpleMCPConfig;
 `;

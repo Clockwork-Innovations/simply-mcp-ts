@@ -132,14 +132,14 @@ export async function validateSimpleMCPEntry(filePath: string): Promise<void> {
   // Check if file imports SimpleMCP
   const hasImport =
     content.includes('SimpleMCP') ||
-    content.includes('@simplemcp/core') ||
+    content.includes('simply-mcp') ||
     content.includes('./SimpleMCP') ||
     content.includes('../SimpleMCP');
 
   if (!hasImport) {
     throw new Error(
       `Entry point does not appear to import SimpleMCP: ${filePath}\n` +
-      'Expected: import { SimpleMCP } from "simplemcp" or similar'
+      'Expected: import { SimpleMCP } from "simply-mcp" or similar'
     );
   }
 

@@ -10,7 +10,7 @@ import { bundleCommand } from './bundle.js';
 
 // Parse and execute commands
 yargs(hideBin(process.argv))
-  .scriptName('simplemcp')
+  .scriptName('simplymcp')
   .usage('$0 <command> [options]')
   .command(bundleCommand)
   .demandCommand(1, 'You must provide a command')

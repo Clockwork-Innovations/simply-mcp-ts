@@ -661,7 +661,7 @@ SimpleMCP servers can be bundled into standalone, production-ready distributions
 Bundle your server into a single JavaScript file:
 
 ```bash
-simplemcp bundle server.ts
+simplymcp bundle server.ts
 ```
 
 **Output:**
@@ -697,7 +697,7 @@ SimpleMCP supports multiple bundle formats:
 #### 1. Single-File (Default)
 Everything in one JavaScript file:
 ```bash
-simplemcp bundle server.ts --format single-file
+simplymcp bundle server.ts --format single-file
 ```
 
 Best for: Serverless functions (Lambda, Vercel), simple deployments
@@ -705,7 +705,7 @@ Best for: Serverless functions (Lambda, Vercel), simple deployments
 #### 2. Standalone Distribution
 Complete directory with bundle + metadata:
 ```bash
-simplemcp bundle server.ts --format standalone --output dist/
+simplymcp bundle server.ts --format standalone --output dist/
 ```
 
 Creates:
@@ -718,7 +718,7 @@ Best for: Traditional servers, Docker containers
 #### 3. Executable Format
 Direct execution without `node` prefix:
 ```bash
-simplemcp bundle server.ts --format executable --output dist/myserver
+simplymcp bundle server.ts --format executable --output dist/myserver
 ```
 
 Run with:
@@ -730,30 +730,30 @@ Best for: CLI tools, system services
 
 #### 4. ESM/CJS Formats
 ```bash
-simplemcp bundle server.ts --format esm   # Modern modules
-simplemcp bundle server.ts --format cjs   # CommonJS
+simplymcp bundle server.ts --format esm   # Modern modules
+simplymcp bundle server.ts --format cjs   # CommonJS
 ```
 
 ### Common Options
 
 ```bash
 # Production build (minified, optimized)
-simplemcp bundle server.ts \
+simplymcp bundle server.ts \
   --output dist/server.js \
   --minify \
   --target node20
 
 # Development build (source maps, readable)
-simplemcp bundle server.ts \
+simplymcp bundle server.ts \
   --no-minify \
   --sourcemap \
   --watch
 
 # Auto-install dependencies before bundling
-simplemcp bundle server.ts --auto-install
+simplymcp bundle server.ts --auto-install
 
 # Externalize native modules
-simplemcp bundle server.ts --external fsevents,better-sqlite3
+simplymcp bundle server.ts --external fsevents,better-sqlite3
 ```
 
 ### Deployment Examples
@@ -766,7 +766,7 @@ FROM node:20 AS builder
 WORKDIR /app
 COPY . .
 RUN npm install
-RUN npx simplemcp bundle server.ts --output dist/bundle.js
+RUN npx simplymcp bundle server.ts --output dist/bundle.js
 
 FROM node:20-alpine
 WORKDIR /app
@@ -784,7 +784,7 @@ docker run -p 3000:3000 myserver
 
 ```bash
 # Bundle for Lambda
-simplemcp bundle server.ts \
+simplymcp bundle server.ts \
   --output lambda/index.js \
   --minify \
   --target node20 \
@@ -795,7 +795,7 @@ simplemcp bundle server.ts \
 
 ```bash
 # Bundle
-simplemcp bundle server.ts --output dist/server.js
+simplymcp bundle server.ts --output dist/server.js
 
 # Copy to server
 scp dist/server.js user@server:/app/
@@ -809,7 +809,7 @@ ssh user@server "node /app/server.js"
 ```yaml
 # .github/workflows/deploy.yml
 - run: npm install
-- run: npx simplemcp bundle server.ts --auto-install
+- run: npx simplymcp bundle server.ts --auto-install
 - run: scp dist/bundle.js user@server:/app/
 ```
 
@@ -830,7 +830,7 @@ Bundling automatically includes inline dependencies:
 
 For complex setups, use a config file:
 
-**simplemcp.config.js:**
+**simplymcp.config.js:**
 ```javascript
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -853,7 +853,7 @@ export default {
 
 **Run:**
 ```bash
-simplemcp bundle  # Automatically finds config
+simplymcp bundle  # Automatically finds config
 ```
 
 ### Benefits

@@ -102,7 +102,7 @@ Follow the prompts:
 gh auth status
 
 # Test access to the org
-gh repo view Clockwork-Innovations/simple-mcp
+gh repo view Clockwork-Innovations/simply-mcp
 ```
 
 ### Step 4: Push Code
@@ -131,13 +131,13 @@ gh release create v1.0.0 \
 
 ```bash
 # View repository
-gh repo view Clockwork-Innovations/simple-mcp
+gh repo view Clockwork-Innovations/simply-mcp
 
 # View in browser
-gh repo view Clockwork-Innovations/simple-mcp --web
+gh repo view Clockwork-Innovations/simply-mcp --web
 
 # Edit repository settings
-gh repo edit Clockwork-Innovations/simple-mcp \
+gh repo edit Clockwork-Innovations/simply-mcp \
   --description "A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript" \
   --homepage "https://cwinnov.com"
 
@@ -278,7 +278,7 @@ gh auth login
 
 # 3. Verify
 gh auth status
-gh repo view Clockwork-Innovations/simple-mcp
+gh repo view Clockwork-Innovations/simply-mcp
 
 # 4. Deploy
 cd /mnt/Shared/cs-projects/simple-mcp

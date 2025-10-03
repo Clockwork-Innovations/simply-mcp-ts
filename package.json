@@ -21,7 +21,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "simplemcp": "./mcp/cli/index.js"
+    "simplymcp": "./mcp/cli/index.js"
   },
   "files": [
     "dist",

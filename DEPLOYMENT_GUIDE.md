@@ -129,7 +129,7 @@ git push -u origin main
 
 ```bash
 # Replace 'yourusername' with your GitHub username
-git remote add origin https://github.com/yourusername/simple-mcp.git
+git remote add origin https://github.com/yourusername/simply-mcp.git
 git branch -M main
 git push -u origin main
 ```
@@ -180,7 +180,7 @@ npm view simply-mcp
 
 **If name is taken**, choose alternative:
 - `simply-mcp-server` (recommended)
-- `simplemcp`
+- `simplymcp`
 - `mcp-server-framework`
 
 **To use alternative package name**, update `package.json`:
