@@ -30,6 +30,28 @@ Fixed critical bug where `esbuild` and `yargs` were incorrectly placed in `devDe
 - Updated all documentation URLs to point to `clockwork-innovations/simply-mcp`
 - Updated git remote URLs
 
+### Naming Consistency Fixes
+
+Fixed inconsistent naming across the codebase to follow the `simply-mcp` pattern:
+
+**Command Name:**
+- Changed bin command from `simplemcp` → `simplymcp`
+- Now runs as: `simplymcp bundle ...` (matches package pattern)
+
+**Config Files:**
+- Updated config file names: `simplemcp.config.*` → `simplymcp.config.*`
+- Updated generated config imports to use `'simply-mcp'`
+
+**Documentation:**
+- Updated all code examples with correct command name
+- Fixed repo references in CONTRIBUTING.md, DEPLOYMENT_GUIDE.md
+- Consistent naming pattern throughout
+
+**Naming Pattern:**
+- Package: `simply-mcp` (install: `npm install simply-mcp`)
+- Command: `simplymcp` (run: `simplymcp bundle ...`)
+- Repository: `simply-mcp` (GitHub: `Clockwork-Innovations/simply-mcp`)
+
 ## 📦 Dependencies
 
 ### Added to dependencies:
