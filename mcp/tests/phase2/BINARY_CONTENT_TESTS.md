@@ -2,14 +2,14 @@
 
 ## Overview
 
-This document describes the comprehensive test suite for SimpleMCP's binary content support feature. The test suite validates that tools and resources can correctly handle images, PDFs, audio files, and other binary data.
+This document describes the comprehensive test suite for SimplyMCP's binary content support feature. The test suite validates that tools and resources can correctly handle images, PDFs, audio files, and other binary data.
 
 ## Test Strategy
 
 Our testing approach follows three levels:
 
 1. **Unit Tests** - Test individual helper functions in isolation
-2. **Integration Tests** - Test SimpleMCP server integration with binary content
+2. **Integration Tests** - Test SimplyMCP server integration with binary content
 3. **End-to-End Tests** - Test complete workflows from client request to data delivery
 
 ### Why This Approach?
@@ -27,7 +27,7 @@ Our testing approach follows three levels:
 | File | Purpose | Test Count |
 |------|---------|------------|
 | `test-binary-helpers.sh` | Unit tests for content-helpers.ts | 44 tests |
-| `test-binary-integration.sh` | Integration tests for SimpleMCP | 25 tests |
+| `test-binary-integration.sh` | Integration tests for SimplyMCP | 25 tests |
 | `test-binary-e2e.sh` | End-to-end workflow tests | 7 tests |
 | `run-phase2-tests.sh` | Master test runner | Runs all suites |
 
@@ -216,9 +216,9 @@ Verifies implementation details:
 15. Audio type declarations
 16. Binary type declarations
 
-### SimpleMCP Integration (6 tests)
+### SimplyMCP Integration (6 tests)
 
-Verifies SimpleMCP methods:
+Verifies SimplyMCP methods:
 
 17. `normalizeResult()` method exists
 18. Buffer detection (isBuffer)
@@ -270,13 +270,13 @@ Tests full client-to-server workflows:
 
 5. **Error Recovery Workflow**
    - Client calls tool with invalid file path
-   - SimpleMCP throws error
+   - SimplyMCP throws error
    - Error message is clear and actionable
    - No crash or undefined behavior
 
 6. **Uint8Array Workflow**
    - Client receives Uint8Array data
-   - SimpleMCP converts to base64
+   - SimplyMCP converts to base64
    - Client decodes successfully
    - Data matches original
 
@@ -380,7 +380,7 @@ Log files are preserved in /tmp/ for debugging.
 - ✅ `isBuffer()` - All types
 - ✅ `isUint8Array()` - All types
 
-#### SimpleMCP.ts (Binary features)
+#### SimplyMCP.ts (Binary features)
 - ✅ `normalizeResult()` - String, Buffer, Uint8Array, objects
 - ✅ `registerResourceHandlers()` - Text and binary resources
 - ✅ `ExecuteFunction` type - All return types
@@ -430,7 +430,7 @@ Log files are preserved in /tmp/ for debugging.
 
 **Integration Tests (25 tests):**
 - ✅ Real tool execution (NOT grep-based!)
-- ✅ SimpleMCP's normalizeResult() with actual data
+- ✅ SimplyMCP's normalizeResult() with actual data
 - ✅ Resource registration and binary content handling
 - ✅ Base64 validity for all binary types
 - ✅ MIME type detection in real workflows
@@ -459,7 +459,7 @@ Log files are preserved in /tmp/ for debugging.
 ### Test Methodology
 
 **Integration Tests:**
-The integration tests create a real SimpleMCP server instance and directly call tool handlers and access resources. This provides strong verification of the implementation WITHOUT requiring a separate MCP client or network transport layer.
+The integration tests create a real SimplyMCP server instance and directly call tool handlers and access resources. This provides strong verification of the implementation WITHOUT requiring a separate MCP client or network transport layer.
 
 **Why not full protocol testing?**
 - Would require additional infrastructure (MCP client, transport layer)
@@ -513,9 +513,9 @@ chmod +x tests/phase2/*.sh
 
 ### All Tests Pass Except E2E
 
-**Problem:** E2E tests require internal SimpleMCP access
+**Problem:** E2E tests require internal SimplyMCP access
 
-**Solution:** Check that SimpleMCP.ts exports are correct:
+**Solution:** Check that SimplyMCP.ts exports are correct:
 ```typescript
 // Should be accessible:
 (server as any).normalizeResult
@@ -620,7 +620,7 @@ The test suite includes security-focused tests:
 
 ## Summary
 
-This test suite provides comprehensive coverage of SimpleMCP's binary content feature:
+This test suite provides comprehensive coverage of SimplyMCP's binary content feature:
 
 - **76 total tests** across 3 test suites
 - **Real binary data** (no mocking)
@@ -639,5 +639,5 @@ The test suite ensures that binary content handling is:
 ## References
 
 - [Phase 2 Feature 1 Plan](/mnt/Shared/cs-projects/cv-gen/mcp/PHASE2_FEATURE1_PLAN.md)
-- [SimpleMCP Documentation](/mnt/Shared/cs-projects/cv-gen/mcp/README.md)
+- [SimplyMCP Documentation](/mnt/Shared/cs-projects/cv-gen/mcp/README.md)
 - [MCP Protocol Specification](https://spec.modelcontextprotocol.io/)

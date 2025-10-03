@@ -1,6 +1,6 @@
-# SimpleMCP Deployment Guide
+# SimplyMCP Deployment Guide
 
-Complete step-by-step instructions for deploying SimpleMCP to GitHub and npm.
+Complete step-by-step instructions for deploying SimplyMCP to GitHub and npm.
 
 ## Prerequisites
 
@@ -62,8 +62,8 @@ npm install /mnt/Shared/cs-projects/simply-mcp
 
 # Create test file
 cat > test.js << 'EOF'
-import { SimpleMCP } from 'simply-mcp';
-console.log('SimpleMCP imported successfully!');
+import { SimplyMCP } from 'simply-mcp';
+console.log('SimplyMCP imported successfully!');
 EOF
 
 # Run test
@@ -100,7 +100,7 @@ git add .
 git status
 
 # Create initial commit
-git commit -m "Initial commit: SimpleMCP v1.0.0
+git commit -m "Initial commit: SimplyMCP v1.0.0
 
 - Multiple API styles (Decorator, Functional, Programmatic)
 - Multiple transports (stdio, HTTP, SSE)
@@ -145,7 +145,7 @@ git push -u origin main
 # Create annotated tag
 git tag -a v1.0.0 -m "Release v1.0.0
 
-SimpleMCP - A modern MCP server framework for TypeScript
+SimplyMCP - A modern MCP server framework for TypeScript
 
 Features:
 - Multiple API styles
@@ -162,7 +162,7 @@ git push origin v1.0.0
 
 1. Go to: `https://github.com/clockwork-innovations/simply-mcp/releases/new`
 2. Choose tag: `v1.0.0`
-3. Release title: `SimpleMCP v1.0.0`
+3. Release title: `SimplyMCP v1.0.0`
 4. Description: Copy from `CHANGELOG.md`
 5. Click: "Publish release"
 
@@ -315,10 +315,10 @@ EOF
 
 # Test Programmatic API
 cat > test-programmatic.ts << 'EOF'
-import { SimpleMCP } from 'simply-mcp';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 server.addTool({
   name: 'echo',
   description: 'Echo input',
@@ -351,7 +351,7 @@ After successful deployment:
 **Social Media Posts:**
 
 ```
-🚀 Introducing SimpleMCP v1.0.0!
+🚀 Introducing SimplyMCP v1.0.0!
 
 A modern, type-safe Model Context Protocol server framework for TypeScript.
 

@@ -26,7 +26,7 @@ Failed:       0
 
 ### What the documentation claims:
 ```markdown
-Tests SimpleMCP server with binary content through real MCP protocol calls.
+Tests SimplyMCP server with binary content through real MCP protocol calls.
 ```
 Source: `/mcp/tests/phase2/test-binary-integration.sh` lines 9-10
 
@@ -37,12 +37,12 @@ run_test "cd '$MCP_DIR' && grep -q 'generate_chart' examples/binary-content-demo
   "Verify generate_chart tool exists"
 
 # Line 366: Not a real test, just grep  
-run_test "cd '$MCP_DIR' && grep -q 'normalizeResult' SimpleMCP.ts" \
+run_test "cd '$MCP_DIR' && grep -q 'normalizeResult' SimplyMCP.ts" \
   "Verify normalizeResult method exists"
 
 # Line 367: Not a real test, just grep
-run_test "cd '$MCP_DIR' && grep -q 'isBuffer' SimpleMCP.ts" \
-  "Verify Buffer detection in SimpleMCP"
+run_test "cd '$MCP_DIR' && grep -q 'isBuffer' SimplyMCP.ts" \
+  "Verify Buffer detection in SimplyMCP"
 ```
 
 These tests only verify that strings exist in source files. They do NOT:
@@ -65,7 +65,7 @@ These tests only verify that strings exist in source files. They do NOT:
 $ bash tests/phase2/test-binary-e2e.sh
 
 Test 1: Workflow: Image tool → base64 → decode → verify... FAIL
-Error: Cannot find module '../../SimpleMCP.js'
+Error: Cannot find module '../../SimplyMCP.js'
 
 Test 2-7: (never run due to first failure)
 ```
@@ -75,7 +75,7 @@ Test 2-7: (never run due to first failure)
 ### Root cause:
 ```typescript
 // In dynamically created e2e-client.ts (line 82):
-import { SimpleMCP } from '../../SimpleMCP.js';
+import { SimplyMCP } from '../../SimplyMCP.js';
 ```
 
 The file is created in `/tmp/mcp-e2e-tests-*/` but tries to import from relative path that doesn't exist.
@@ -128,14 +128,14 @@ This test will FAIL only if:
 ```markdown
 ### Integration Tests (test-binary-integration.sh)
 
-Tests SimpleMCP server integration with binary content.
+Tests SimplyMCP server integration with binary content.
 
 1. Tool Registration (7 tests)
    - Verifies all binary content tools exist
 2. Binary Content Handling (5 tests)  
    - Verifies implementation details
-3. SimpleMCP Integration (6 tests)
-   - Verifies SimpleMCP methods
+3. SimplyMCP Integration (6 tests)
+   - Verifies SimplyMCP methods
 ```
 
 ### What actually happens in the script:

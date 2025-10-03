@@ -400,7 +400,7 @@ The test-server provides 4 tools:
 4. log_message - Log a message (demonstrates context usage)
 
 $ echo "Use the greet tool to say hello to Alice formally" | claude --print --dangerously-skip-permissions
-Good day, Alice! Welcome to SimpleMCP!
+Good day, Alice! Welcome to SimplyMCP!
 
 $ echo "Calculate 123 multiplied by 456" | claude --print --dangerously-skip-permissions
 56088

@@ -11,7 +11,7 @@ import { resolveDependencies, getBuiltinModules } from './dependency-resolver.js
 import { formatOutput } from './output-formatter.js';
 
 /**
- * Bundle a SimpleMCP server using esbuild
+ * Bundle a SimplyMCP server using esbuild
  *
  * @param options - Bundle options
  * @returns Bundle result

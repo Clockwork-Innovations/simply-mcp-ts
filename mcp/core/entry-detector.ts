@@ -1,6 +1,6 @@
 /**
  * Entry point detection and validation
- * Detects and validates SimpleMCP server entry points
+ * Detects and validates SimplyMCP server entry points
  */
 
 import { readFile, access } from 'fs/promises';
@@ -8,7 +8,7 @@ import { existsSync } from 'fs';
 import { join, resolve, isAbsolute } from 'path';
 
 /**
- * Detect SimpleMCP entry point from various sources
+ * Detect SimplyMCP entry point from various sources
  *
  * Priority order:
  * 1. Provided entry point (validated)
@@ -30,10 +30,10 @@ export async function detectEntryPoint(
   providedEntry?: string,
   basePath: string = process.cwd()
 ): Promise<string> {
-  // 1. If provided, validate it exists and is SimpleMCP
+  // 1. If provided, validate it exists and is SimplyMCP
   if (providedEntry) {
     const resolvedPath = resolveEntryPath(providedEntry, basePath);
-    await validateSimpleMCPEntry(resolvedPath);
+    await validateSimplyMCPEntry(resolvedPath);
     return resolvedPath;
   }
 
@@ -46,7 +46,7 @@ export async function detectEntryPoint(
 
       if (pkg.main) {
         const mainPath = resolveEntryPath(pkg.main, basePath);
-        if (await isSimpleMCPFile(mainPath)) {
+        if (await isSimplyMCPFile(mainPath)) {
           return mainPath;
         }
       }
@@ -74,14 +74,14 @@ export async function detectEntryPoint(
   for (const file of conventions) {
     const path = join(basePath, file);
     if (existsSync(path)) {
-      if (await isSimpleMCPFile(path)) {
+      if (await isSimplyMCPFile(path)) {
         return path;
       }
     }
   }
 
   throw new Error(
-    'No SimpleMCP entry point found. Please provide an entry point or create one of: ' +
+    'No SimplyMCP entry point found. Please provide an entry point or create one of: ' +
     conventions.slice(0, 6).join(', ')
   );
 }
@@ -101,17 +101,17 @@ export function resolveEntryPath(entryPath: string, basePath: string): string {
 }
 
 /**
- * Validate that a file is a valid SimpleMCP entry point
+ * Validate that a file is a valid SimplyMCP entry point
  *
  * Checks:
  * 1. File exists
- * 2. File imports SimpleMCP
- * 3. File instantiates or exports SimpleMCP
+ * 2. File imports SimplyMCP
+ * 3. File instantiates or exports SimplyMCP
  *
  * @param filePath - Absolute path to file
  * @throws Error if validation fails
  */
-export async function validateSimpleMCPEntry(filePath: string): Promise<void> {
+export async function validateSimplyMCPEntry(filePath: string): Promise<void> {
   // Check file exists
   try {
     await access(filePath);
@@ -129,45 +129,45 @@ export async function validateSimpleMCPEntry(filePath: string): Promise<void> {
     );
   }
 
-  // Check if file imports SimpleMCP
+  // Check if file imports SimplyMCP
   const hasImport =
-    content.includes('SimpleMCP') ||
+    content.includes('SimplyMCP') ||
     content.includes('simply-mcp') ||
-    content.includes('./SimpleMCP') ||
-    content.includes('../SimpleMCP');
+    content.includes('./SimplyMCP') ||
+    content.includes('../SimplyMCP');
 
   if (!hasImport) {
     throw new Error(
-      `Entry point does not appear to import SimpleMCP: ${filePath}\n` +
-      'Expected: import { SimpleMCP } from "simply-mcp" or similar'
+      `Entry point does not appear to import SimplyMCP: ${filePath}\n` +
+      'Expected: import { SimplyMCP } from "simply-mcp" or similar'
     );
   }
 
-  // Check if file instantiates SimpleMCP
+  // Check if file instantiates SimplyMCP
   const hasInstantiation =
-    /new\s+SimpleMCP\s*\(/.test(content) ||
-    /SimpleMCP\.fromFile\s*\(/.test(content) ||
-    /export\s+default.*SimpleMCP/.test(content) ||
-    /export\s*\{.*SimpleMCP.*\}/.test(content);
+    /new\s+SimplyMCP\s*\(/.test(content) ||
+    /SimplyMCP\.fromFile\s*\(/.test(content) ||
+    /export\s+default.*SimplyMCP/.test(content) ||
+    /export\s*\{.*SimplyMCP.*\}/.test(content);
 
   if (!hasInstantiation) {
     throw new Error(
-      `Entry point does not appear to create a SimpleMCP instance: ${filePath}\n` +
-      'Expected: new SimpleMCP(...) or SimpleMCP.fromFile(...)'
+      `Entry point does not appear to create a SimplyMCP instance: ${filePath}\n` +
+      'Expected: new SimplyMCP(...) or SimplyMCP.fromFile(...)'
     );
   }
 }
 
 /**
- * Check if a file appears to be a SimpleMCP server
- * Non-throwing version of validateSimpleMCPEntry
+ * Check if a file appears to be a SimplyMCP server
+ * Non-throwing version of validateSimplyMCPEntry
  *
  * @param filePath - Path to file
- * @returns True if file appears to be SimpleMCP server
+ * @returns True if file appears to be SimplyMCP server
  */
-export async function isSimpleMCPFile(filePath: string): Promise<boolean> {
+export async function isSimplyMCPFile(filePath: string): Promise<boolean> {
   try {
-    await validateSimpleMCPEntry(filePath);
+    await validateSimplyMCPEntry(filePath);
     return true;
   } catch {
     return false;
@@ -177,7 +177,7 @@ export async function isSimpleMCPFile(filePath: string): Promise<boolean> {
 /**
  * Extract server name from entry point
  * Tries to extract from:
- * 1. SimpleMCP constructor options
+ * 1. SimplyMCP constructor options
  * 2. Filename (fallback)
  *
  * @param filePath - Entry point file path
@@ -187,8 +187,8 @@ export async function extractServerName(filePath: string): Promise<string> {
   try {
     const content = await readFile(filePath, 'utf-8');
 
-    // Try to extract name from SimpleMCP constructor
-    const nameMatch = /new\s+SimpleMCP\s*\(\s*\{[^}]*name\s*:\s*['"]([^'"]+)['"]/.exec(content);
+    // Try to extract name from SimplyMCP constructor
+    const nameMatch = /new\s+SimplyMCP\s*\(\s*\{[^}]*name\s*:\s*['"]([^'"]+)['"]/.exec(content);
     if (nameMatch && nameMatch[1]) {
       return nameMatch[1];
     }

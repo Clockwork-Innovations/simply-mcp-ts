@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive implementation plan for adding a CLI bundling command to SimpleMCP servers. This feature will package SimpleMCP servers into standalone distributions for easy deployment, eliminating the need for end users to manage dependencies or configuration.
+This document provides a comprehensive implementation plan for adding a CLI bundling command to SimplyMCP servers. This feature will package SimplyMCP servers into standalone distributions for easy deployment, eliminating the need for end users to manage dependencies or configuration.
 
 **Status**: Planning Phase
 **Priority**: HIGH
@@ -16,7 +16,7 @@ This document provides a comprehensive implementation plan for adding a CLI bund
 
 ### 1.1 What is Bundling?
 
-Bundling packages SimpleMCP servers into standalone, production-ready distributions that can be deployed anywhere without external dependencies.
+Bundling packages SimplyMCP servers into standalone, production-ready distributions that can be deployed anywhere without external dependencies.
 
 **Key Capabilities:**
 1. **Single-file bundles** - All code and dependencies in one .js file
@@ -30,9 +30,9 @@ Bundling packages SimpleMCP servers into standalone, production-ready distributi
 
 ### 1.2 FastMCP Parity Goals
 
-Python's FastMCP uses standard Python packaging (pip, PyPI) but doesn't have a direct equivalent to bundling. SimpleMCP's bundling feature goes beyond FastMCP by providing:
+Python's FastMCP uses standard Python packaging (pip, PyPI) but doesn't have a direct equivalent to bundling. SimplyMCP's bundling feature goes beyond FastMCP by providing:
 
-**SimpleMCP Bundling Goals:**
+**SimplyMCP Bundling Goals:**
 - **Single-file distribution** - Bundle everything into one file
 - **Zero-dependency deployment** - No npm install required
 - **Platform-native binaries** - True executables (optional)
@@ -42,7 +42,7 @@ Python's FastMCP uses standard Python packaging (pip, PyPI) but doesn't have a d
 
 **Comparison:**
 
-| Aspect | FastMCP (Python) | SimpleMCP (TypeScript) |
+| Aspect | FastMCP (Python) | SimplyMCP (TypeScript) |
 |--------|------------------|------------------------|
 | **Distribution** | pip install | Bundle to single file |
 | **Dependencies** | Requirements.txt | Bundled into output |
@@ -302,25 +302,25 @@ simplemcp bundle server.ts
 **Validation:**
 ```typescript
 /**
- * Validate entry point is a SimpleMCP server
+ * Validate entry point is a SimplyMCP server
  */
 async function validateEntryPoint(filePath: string): Promise<boolean> {
   const source = await readFile(filePath, 'utf-8');
 
-  // Check for SimpleMCP imports
-  if (!source.includes('SimpleMCP')) {
+  // Check for SimplyMCP imports
+  if (!source.includes('SimplyMCP')) {
     throw new Error(
-      `Entry point must import SimpleMCP: ${filePath}`
+      `Entry point must import SimplyMCP: ${filePath}`
     );
   }
 
-  // Check for SimpleMCP instantiation or export
-  const hasNew = /new\s+SimpleMCP/.test(source);
-  const hasDefault = /export\s+default.*SimpleMCP/.test(source);
+  // Check for SimplyMCP instantiation or export
+  const hasNew = /new\s+SimplyMCP/.test(source);
+  const hasDefault = /export\s+default.*SimplyMCP/.test(source);
 
   if (!hasNew && !hasDefault) {
     throw new Error(
-      `Entry point must create or export SimpleMCP instance: ${filePath}`
+      `Entry point must create or export SimplyMCP instance: ${filePath}`
     );
   }
 
@@ -639,7 +639,7 @@ simplemcp bundle server.ts --target auto
 ```
 
 **Rationale:**
-- SimpleMCP is Node.js-first
+- SimplyMCP is Node.js-first
 - Neutral platform for edge/browser use cases
 - Target version ensures compatibility
 - Auto-detection from existing config
@@ -718,10 +718,10 @@ simplemcp bundle server.ts --auto-install
 **API Integration:**
 ```typescript
 import { bundle } from 'simplemcp/bundler';
-import { SimpleMCP } from 'simplemcp';
+import { SimplyMCP } from 'simplemcp';
 
 // Load server with inline deps
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: true  // Feature 3
 });
 
@@ -764,7 +764,7 @@ const result = await bundle({
 ┌─────────────────────────────────────────────────────────┐
 │         Entry Point Detector                             │
 │  ├─ Detect entry point                                   │
-│  ├─ Validate SimpleMCP usage                            │
+│  ├─ Validate SimplyMCP usage                            │
 │  └─ Return entry path                                   │
 └─────────────────────────────────────────────────────────┘
                          │
@@ -820,8 +820,8 @@ CLI Parser (bundle.ts)
          ▼
 Entry Point Detector
   - Validate server.ts exists
-  - Check for SimpleMCP import
-  - Verify SimpleMCP instantiation
+  - Check for SimplyMCP import
+  - Verify SimplyMCP instantiation
   → Entry: /path/to/server.ts
          │
          ▼
@@ -907,7 +907,7 @@ mcp/
 │   │   ├── detectEntryPoint()
 │   │   ├── validateEntryPoint()
 │   │   ├── findEntryByConvention()
-│   │   └── checkSimpleMCPUsage()
+│   │   └── checkSimplyMCPUsage()
 │   │
 │   ├── dependency-resolver.ts           (NEW - ~250 lines)
 │   │   ├── resolveDependencies()
@@ -933,7 +933,7 @@ mcp/
 │   ├── dependency-installer.ts          (EXISTING - Feature 3)
 │   └── ...
 │
-├── SimpleMCP.ts                         (EXISTING - no changes)
+├── SimplyMCP.ts                         (EXISTING - no changes)
 │
 ├── examples/
 │   └── bundling/                        (NEW)
@@ -973,7 +973,7 @@ mcp/
 ```typescript
 #!/usr/bin/env node
 /**
- * SimpleMCP CLI
+ * SimplyMCP CLI
  * Main entry point for all CLI commands
  */
 
@@ -989,13 +989,13 @@ const packageJson = JSON.parse(
 
 program
   .name('simplemcp')
-  .description('SimpleMCP CLI - Build and bundle MCP servers')
+  .description('SimplyMCP CLI - Build and bundle MCP servers')
   .version(packageJson.version);
 
 // Bundle command
 program
   .command('bundle <entry>')
-  .description('Bundle a SimpleMCP server into a standalone file')
+  .description('Bundle a SimplyMCP server into a standalone file')
   .option('-o, --output <path>', 'Output file or directory path')
   .option('-f, --format <format>', 'Output format: single-file|standalone|executable|esm|cjs', 'single-file')
   .option('-m, --minify', 'Minify output', true)
@@ -1132,7 +1132,7 @@ import { readFile } from 'fs/promises';
 import { join, dirname, basename } from 'path';
 
 /**
- * Bundle a SimpleMCP server
+ * Bundle a SimplyMCP server
  *
  * @param options - Bundle options
  * @returns Bundle result
@@ -1341,7 +1341,7 @@ function getSourceMapType(
 
 **File: `/mcp/core/entry-detector.ts`**
 
-**Purpose:** Detect and validate SimpleMCP server entry points
+**Purpose:** Detect and validate SimplyMCP server entry points
 
 ```typescript
 import { readFile, access } from 'fs/promises';
@@ -1379,30 +1379,30 @@ export async function detectEntryPoint(entry: string): Promise<string> {
 }
 
 /**
- * Validate entry point is a SimpleMCP server
+ * Validate entry point is a SimplyMCP server
  */
 export async function validateEntryPoint(filePath: string): Promise<void> {
   const source = await readFile(filePath, 'utf-8');
 
-  // Check for SimpleMCP import
-  const hasImport = /import\s+.*SimpleMCP.*from/.test(source);
-  const hasRequire = /require\(['"].*SimpleMCP.*['"]\)/.test(source);
+  // Check for SimplyMCP import
+  const hasImport = /import\s+.*SimplyMCP.*from/.test(source);
+  const hasRequire = /require\(['"].*SimplyMCP.*['"]\)/.test(source);
 
   if (!hasImport && !hasRequire) {
     throw new Error(
-      `Entry point must import SimpleMCP: ${filePath}\n` +
-      `Expected: import { SimpleMCP } from 'simplemcp';`
+      `Entry point must import SimplyMCP: ${filePath}\n` +
+      `Expected: import { SimplyMCP } from 'simplemcp';`
     );
   }
 
-  // Check for SimpleMCP usage
-  const hasNew = /new\s+SimpleMCP/.test(source);
-  const hasExport = /export\s+(default\s+)?.*SimpleMCP/.test(source);
+  // Check for SimplyMCP usage
+  const hasNew = /new\s+SimplyMCP/.test(source);
+  const hasExport = /export\s+(default\s+)?.*SimplyMCP/.test(source);
 
   if (!hasNew && !hasExport) {
     throw new Error(
-      `Entry point must create or export SimpleMCP instance: ${filePath}\n` +
-      `Expected: const server = new SimpleMCP({ ... });`
+      `Entry point must create or export SimplyMCP instance: ${filePath}\n` +
+      `Expected: const server = new SimplyMCP({ ... });`
     );
   }
 }
@@ -1455,12 +1455,12 @@ async function findEntryByConvention(): Promise<string | null> {
   for (const candidate of candidates) {
     const path = resolve(candidate);
     if (existsSync(path)) {
-      // Verify it's a SimpleMCP server
+      // Verify it's a SimplyMCP server
       try {
         await validateEntryPoint(path);
         return path;
       } catch {
-        // Not a SimpleMCP server, try next
+        // Not a SimplyMCP server, try next
         continue;
       }
     }
@@ -1470,11 +1470,11 @@ async function findEntryByConvention(): Promise<string | null> {
 }
 
 /**
- * Check if file contains SimpleMCP usage
+ * Check if file contains SimplyMCP usage
  */
-export function checkSimpleMCPUsage(source: string): boolean {
-  const hasImport = /import\s+.*SimpleMCP.*from/.test(source);
-  const hasNew = /new\s+SimpleMCP/.test(source);
+export function checkSimplyMCPUsage(source: string): boolean {
+  const hasImport = /import\s+.*SimplyMCP.*from/.test(source);
+  const hasNew = /new\s+SimplyMCP/.test(source);
   return hasImport && hasNew;
 }
 ```
@@ -1485,11 +1485,11 @@ export function checkSimpleMCPUsage(source: string): boolean {
 - Detect by convention (server.ts)
 - Detect by convention (index.ts)
 - Detect by convention (src/server.ts)
-- Validate SimpleMCP import
-- Validate SimpleMCP instantiation
+- Validate SimplyMCP import
+- Validate SimplyMCP instantiation
 - Handle missing entry point
 - Handle invalid entry point
-- Handle non-SimpleMCP files
+- Handle non-SimplyMCP files
 - Multiple entry point candidates
 - Priority order (explicit > package.json > convention)
 
@@ -2178,7 +2178,7 @@ export interface BundleCommandOptions {
 ```markdown
 # Basic Bundling Example
 
-Bundle a simple SimpleMCP server into a single file.
+Bundle a simple SimplyMCP server into a single file.
 
 ## Server Code (server.ts)
 
@@ -2188,10 +2188,10 @@ Bundle a simple SimpleMCP server into a single file.
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'basic-server',
   version: '1.0.0',
 });
@@ -2350,20 +2350,20 @@ Test 3: Detect by convention (server.ts)
 Test 4: Detect by convention (index.ts)
 Test 5: Detect by convention (src/server.ts)
 Test 6: Priority order (explicit > package.json > convention)
-Test 7: Validate SimpleMCP import (present)
-Test 8: Validate SimpleMCP import (missing - error)
-Test 9: Validate SimpleMCP instantiation (present)
-Test 10: Validate SimpleMCP instantiation (missing - error)
+Test 7: Validate SimplyMCP import (present)
+Test 8: Validate SimplyMCP import (missing - error)
+Test 9: Validate SimplyMCP instantiation (present)
+Test 10: Validate SimplyMCP instantiation (missing - error)
 Test 11: Handle missing entry point (error)
 Test 12: Handle invalid entry point (error)
-Test 13: Handle non-SimpleMCP file (error)
+Test 13: Handle non-SimplyMCP file (error)
 Test 14: Multiple entry candidates (choose first)
 Test 15: Absolute vs relative paths
 Test 16: Symbolic links
 Test 17: Entry point in subdirectory
 Test 18: Entry point with TypeScript
 Test 19: Entry point with JavaScript
-Test 20: checkSimpleMCPUsage() function
+Test 20: checkSimplyMCPUsage() function
 ```
 
 #### B. Dependency Resolver Tests (20 tests)
@@ -2571,7 +2571,7 @@ describe('Bundle Integration Tests', () => {
   });
 
   test('Bundle invalid entry point (error)', async () => {
-    // Bundle non-SimpleMCP file
+    // Bundle non-SimplyMCP file
     // Verify error message
   });
 
@@ -2963,7 +2963,7 @@ async function copyLargeFile(src: string, dest: string): Promise<void> {
 | Error | Detection | User Message | Recovery |
 |-------|-----------|--------------|----------|
 | **Entry not found** | File access | "Entry point not found: {path}" | Specify correct entry |
-| **Invalid entry** | SimpleMCP validation | "Entry must be SimpleMCP server" | Fix import/instantiation |
+| **Invalid entry** | SimplyMCP validation | "Entry must be SimplyMCP server" | Fix import/instantiation |
 | **Missing dependencies** | Dependency resolution | "Dependencies missing: {list}" | Run --auto-install |
 | **Build failure** | esbuild error | "Build failed: {reason}" | Fix source code |
 | **Output directory** | Write permission | "Cannot write to: {path}" | Check permissions |
@@ -3023,7 +3023,7 @@ try {
 **Existing Code Unchanged:**
 ```typescript
 // Before Feature 4 (still works)
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 server.addTool({ ... });
 await server.start();
 
@@ -3093,7 +3093,7 @@ ssh prod-server 'node /opt/app/server.js'
 
 - [ ] Implement `core/entry-detector.ts`
 - [ ] Entry point detection strategies
-- [ ] SimpleMCP validation
+- [ ] SimplyMCP validation
 - [ ] Convention-based detection
 - [ ] Write entry detector tests (20 tests)
 
@@ -3238,7 +3238,7 @@ ssh prod-server 'node /opt/app/server.js'
 
 **Decision: NO (not in MVP)**
 - Adds complexity
-- SimpleMCP servers are typically small
+- SimplyMCP servers are typically small
 - Single file is simpler to deploy
 - Can be added later if demand exists
 
@@ -3262,7 +3262,7 @@ export default {
 **Question**: Generate .d.ts files for bundled output?
 
 **Decision: NO (not needed for servers)**
-- SimpleMCP servers are applications, not libraries
+- SimplyMCP servers are applications, not libraries
 - No external consumers need types
 - Reduces bundle complexity
 
@@ -3445,7 +3445,7 @@ export default {
 **Plan Version:** 1.0
 **Created:** 2025-10-02
 **Author:** Agent 1 (Planner)
-**For:** SimpleMCP Phase 2, Feature 4
+**For:** SimplyMCP Phase 2, Feature 4
 **Estimated Lines:** ~1,200 lines
 **Next:** Agent 2 (Implementer) executes this plan
 

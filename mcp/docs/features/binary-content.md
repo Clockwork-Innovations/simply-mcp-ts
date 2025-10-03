@@ -2,7 +2,7 @@
 
 ## Overview
 
-SimpleMCP's **Binary Content Support** allows tools and resources to return images, PDFs, audio files, and other binary data in addition to text. This feature makes it easy to build MCP servers that work with visual data, documents, and multimedia.
+SimplyMCP's **Binary Content Support** allows tools and resources to return images, PDFs, audio files, and other binary data in addition to text. This feature makes it easy to build MCP servers that work with visual data, documents, and multimedia.
 
 ### What It Does
 
@@ -35,7 +35,7 @@ Use binary content support when your tools need to:
 - **Phase**: 2, Feature 1
 - **Status**: ✅ Implemented
 - **Tested**: ✅ 74/74 tests passing (100% pass rate)
-- **Available in**: SimpleMCP v1.1.0+
+- **Available in**: SimplyMCP v1.1.0+
 
 ## Quick Start
 
@@ -47,19 +47,19 @@ server.addTool({
   description: 'Generate a bar chart',
   parameters: z.object({ data: z.array(z.number()) }),
   execute: async (args) => {
-    // Return a Buffer - SimpleMCP auto-detects it's an image!
+    // Return a Buffer - SimplyMCP auto-detects it's an image!
     return generateChartPNG(args.data);
   }
 });
 ```
 
-That's it! SimpleMCP handles all the encoding, MIME type detection, and formatting automatically.
+That's it! SimplyMCP handles all the encoding, MIME type detection, and formatting automatically.
 
 ## Core Concepts
 
 ### Content Types
 
-SimpleMCP supports three binary content types:
+SimplyMCP supports three binary content types:
 
 1. **Image Content** (`type: 'image'`)
    - PNG, JPEG, GIF, WebP, BMP, SVG, TIFF
@@ -78,7 +78,7 @@ SimpleMCP supports three binary content types:
 
 ### MIME Type Detection
 
-SimpleMCP automatically detects MIME types using:
+SimplyMCP automatically detects MIME types using:
 
 1. **Explicit Type** (if you provide it)
 2. **File Extension** (e.g., `.png` → `image/png`)
@@ -96,7 +96,7 @@ All binary content is automatically base64-encoded for transmission:
 
 ### Buffer Handling
 
-SimpleMCP seamlessly works with:
+SimplyMCP seamlessly works with:
 
 - **Node.js Buffer** - Most common format
 - **Uint8Array** - Standard JavaScript typed array
@@ -302,7 +302,7 @@ server.addTool({
     // Generate chart using your favorite library
     const chartBuffer = await generateChartPNG(args.data, args.title);
 
-    // SimpleMCP auto-detects this is a PNG image
+    // SimplyMCP auto-detects this is a PNG image
     return chartBuffer;
   }
 });
@@ -331,7 +331,7 @@ server.addTool({
   execute: async (args) => {
     const thumbnailPath = `/images/thumbnails/${args.imageId}.jpg`;
 
-    // SimpleMCP reads the file and converts to base64
+    // SimplyMCP reads the file and converts to base64
     return {
       type: 'file',
       path: thumbnailPath,
@@ -431,7 +431,7 @@ server.addResource({
   name: 'Company Logo',
   description: 'Company logo in PNG format',
   mimeType: 'image/png',
-  content: logoBuffer,  // SimpleMCP handles Buffer automatically
+  content: logoBuffer,  // SimplyMCP handles Buffer automatically
 });
 ```
 
@@ -445,7 +445,7 @@ server.addTool({
     imageData: z.string().describe('Base64-encoded image'),
   }),
   execute: async (args) => {
-    // SimpleMCP handles base64 strings automatically
+    // SimplyMCP handles base64 strings automatically
     const processedBuffer = await processImage(args.imageData);
 
     return {
@@ -470,7 +470,7 @@ server.addTool({
     const encoder = new TextEncoder();
     const uint8Array = encoder.encode(args.text);
 
-    // SimpleMCP converts Uint8Array to base64
+    // SimplyMCP converts Uint8Array to base64
     return {
       type: 'binary',
       data: uint8Array,
@@ -482,7 +482,7 @@ server.addTool({
 
 ## Input Formats
 
-SimpleMCP accepts binary content in multiple formats for maximum flexibility:
+SimplyMCP accepts binary content in multiple formats for maximum flexibility:
 
 | Input Type | Auto-Detection | Example | Notes |
 |------------|----------------|---------|-------|
@@ -589,7 +589,7 @@ If MIME type cannot be detected:
 
 ## Security Features
 
-SimpleMCP includes built-in security measures for binary content:
+SimplyMCP includes built-in security measures for binary content:
 
 ### Path Traversal Prevention
 
@@ -791,7 +791,7 @@ execute: async (args) => {
 
 **Use file paths for existing files:**
 ```typescript
-// ✅ Good - let SimpleMCP read the file
+// ✅ Good - let SimplyMCP read the file
 execute: async (args) => {
   const outputPath = generateReport(args.id);
   return { type: 'file', path: outputPath };
@@ -858,7 +858,7 @@ const reportBuffer = generatePDF();
 ### 6. Leverage Auto-Detection
 
 ```typescript
-// ✅ Simple - let SimpleMCP figure it out
+// ✅ Simple - let SimplyMCP figure it out
 execute: async (args) => {
   return Buffer.from(pngData);  // Auto-detected as PNG
 }
@@ -1090,7 +1090,7 @@ return { type: 'file', path: './images/chart.png' };
 
 ## Comparison with FastMCP
 
-| Feature | SimpleMCP | FastMCP (Python) |
+| Feature | SimplyMCP | FastMCP (Python) |
 |---------|-----------|------------------|
 | **Buffer Support** | ✅ Buffer, Uint8Array | ✅ bytes |
 | **Auto MIME Detection** | ✅ Extension + Magic bytes | ✅ Extension |
@@ -1102,7 +1102,7 @@ return { type: 'file', path: './images/chart.png' };
 | **Security** | ✅ Path traversal prevention | ⚠️ Manual security |
 | **Multiple Formats** | ✅ 6 input formats | ⚠️ Fewer options |
 
-### SimpleMCP Advantages
+### SimplyMCP Advantages
 
 1. **More flexible input types** - 6 different input formats
 2. **Native Node.js types** - No custom classes needed
@@ -1124,7 +1124,7 @@ See [Binary Content Migration Guide](../guides/BINARY_CONTENT_MIGRATION.md) for 
 
 - [Progress Notifications](./progress.md) - Show progress while generating images
 - [Sampling](./sampling.md) - Request LLM completions for image analysis
-- [SimpleMCP Guide](../../SIMPLE_MCP_GUIDE.md) - Complete SimpleMCP documentation
+- [SimplyMCP Guide](../../SIMPLE_MCP_GUIDE.md) - Complete SimplyMCP documentation
 - [Examples](../../examples/) - Working code examples
 
 ## Examples
@@ -1137,7 +1137,7 @@ See the complete working example server:
 - [MCP Protocol Specification](https://spec.modelcontextprotocol.io/)
 - [Phase 2 Feature 1 Implementation Plan](../../PHASE2_FEATURE1_PLAN.md)
 - [Test Documentation](../../tests/phase2/BINARY_CONTENT_TESTS.md)
-- [SimpleMCP Guide](../../SIMPLE_MCP_GUIDE.md)
+- [SimplyMCP Guide](../../SIMPLE_MCP_GUIDE.md)
 
 ---
 

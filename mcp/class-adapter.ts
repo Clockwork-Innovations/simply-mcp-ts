@@ -16,7 +16,7 @@ import { resolve, dirname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
 // Import types from source (compile-time only)
-import type { SimpleMCP as SimpleMCPType } from './SimpleMCP.js';
+import type { SimplyMCP as SimplyMCPType } from './SimplyMCP.js';
 import type {
   ToolMetadata,
   PromptMetadata,
@@ -30,7 +30,7 @@ import { parseTypeScriptFileWithCache, getMethodParameterTypes, type ParsedClass
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const distPath = resolve(__dirname, '../dist/mcp');
 
-const { SimpleMCP } = await import(pathToFileURL(resolve(distPath, 'SimpleMCP.js')).href);
+const { SimplyMCP } = await import(pathToFileURL(resolve(distPath, 'SimplyMCP.js')).href);
 const {
   getServerConfig,
   getTools,
@@ -159,9 +159,9 @@ function mergeParameterTypes(
 }
 
 /**
- * Create SimpleMCP server from decorated class
+ * Create SimplyMCP server from decorated class
  */
-function createServerFromClass(ServerClass: any, sourceFilePath: string): SimpleMCPType {
+function createServerFromClass(ServerClass: any, sourceFilePath: string): SimplyMCPType {
   const config = getServerConfig(ServerClass);
 
   if (!config) {
@@ -173,7 +173,7 @@ function createServerFromClass(ServerClass: any, sourceFilePath: string): Simple
   const parsedClass = parseTypeScriptFileWithCache(sourceFilePath);
   console.log(`[ClassAdapter] Parsed class:`, parsedClass ? `${parsedClass.className} with ${parsedClass.methods.size} methods` : 'null');
 
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: config.name!,
     version: config.version!,
     port: config.port,

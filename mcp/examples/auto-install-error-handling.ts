@@ -17,7 +17,7 @@
 // this-package-does-not-exist-12345@^1.0.0
 // ///
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 
 async function main() {
@@ -27,11 +27,11 @@ async function main() {
   console.log('Strategy 1: Catch errors and continue with available packages');
   console.log('─'.repeat(60));
 
-  let server: SimpleMCP;
+  let server: SimplyMCP;
 
   try {
     // Try auto-install (will fail due to invalid package)
-    server = await SimpleMCP.fromFile(__filename, {
+    server = await SimplyMCP.fromFile(__filename, {
       name: 'error-handling-demo',
       version: '1.0.0',
       autoInstall: {
@@ -55,7 +55,7 @@ async function main() {
     console.log('Strategy 2: Fallback to manual server creation');
     console.log('─'.repeat(60));
 
-    server = new SimpleMCP({
+    server = new SimplyMCP({
       name: 'error-handling-demo',
       version: '1.0.0',
     });
@@ -229,7 +229,7 @@ async function main() {
     }
 
     console.log('3. Or enable auto-install:');
-    console.log('   const server = await SimpleMCP.fromFile(__filename, {');
+    console.log('   const server = await SimplyMCP.fromFile(__filename, {');
     console.log('     autoInstall: true');
     console.log('   });\n');
   } else {

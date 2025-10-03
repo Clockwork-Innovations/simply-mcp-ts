@@ -62,7 +62,6 @@
     "mcp/configurableServer.ts",
     "mcp/adapter.ts",
     "mcp/validation/**/*",
-    "mcp/handlers/**/*",
-    "mcp/cli/**/*"
+    "mcp/handlers/**/*"
   ]
 }

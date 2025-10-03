@@ -2,7 +2,7 @@
 
 ## Overview
 
-SimpleMCP uses GitHub Actions for automated testing, versioning, and publishing to npm.
+SimplyMCP uses GitHub Actions for automated testing, versioning, and publishing to npm.
 
 ## Workflows
 

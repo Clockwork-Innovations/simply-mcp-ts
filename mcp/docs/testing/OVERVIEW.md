@@ -133,10 +133,10 @@ bash mcp/tests/test-sse.sh            # 12 tests
 ### Manual Server Testing
 
 ```bash
-# SimpleMCP server (stdio)
+# SimplyMCP server (stdio)
 npx tsx mcp/examples/simple-server.ts
 
-# SimpleMCP server (HTTP)
+# SimplyMCP server (HTTP)
 npx tsx mcp/examples/simple-server.ts --http --port 3000
 
 # Class-based server

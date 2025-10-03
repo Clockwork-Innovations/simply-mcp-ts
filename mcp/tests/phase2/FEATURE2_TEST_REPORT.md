@@ -103,8 +103,8 @@ Feature 2 (Inline Dependencies) has been comprehensively tested with **139+ test
 **Status:** ⚠️ PARTIAL (21 passed, 4 expected failures)
 
 #### Coverage
-- ✅ SimpleMCP.fromFile() integration
-- ⚠️ SimpleMCP dependency access APIs (getDependencies, hasDependency, getDependencyVersion)
+- ✅ SimplyMCP.fromFile() integration
+- ⚠️ SimplyMCP dependency access APIs (getDependencies, hasDependency, getDependencyVersion)
 - ✅ generatePackageJson() utility
 - ✅ mergeDependencies() utility
 - ✅ formatDependencyList() utility
@@ -114,8 +114,8 @@ Feature 2 (Inline Dependencies) has been comprehensively tested with **139+ test
 - ✅ End-to-end workflows
 
 #### Test Breakdown
-- **SimpleMCP.fromFile() (3):** Parse from file, handle no deps, throw on invalid (strict mode)
-- **SimpleMCP Access (3):** hasDependency(), getDependencyVersion(), getDependencies() - **4 expected failures**
+- **SimplyMCP.fromFile() (3):** Parse from file, handle no deps, throw on invalid (strict mode)
+- **SimplyMCP Access (3):** hasDependency(), getDependencyVersion(), getDependencies() - **4 expected failures**
 - **generatePackageJson() (3):** Valid structure, peer deps, array input
 - **mergeDependencies() (3):** Merge, detect conflicts, handle all dep types
 - **Formatting (4):** List, inline, JSON, with count
@@ -123,7 +123,7 @@ Feature 2 (Inline Dependencies) has been comprehensively tested with **139+ test
 - **E2E Workflows (5):** Parse→validate→generate, complete lifecycle, security detection, large lists, backward compatibility
 
 #### Expected Failures (Not Bugs)
-The 4 failing integration tests are due to API mismatches between the test expectations and actual SimpleMCP implementation:
+The 4 failing integration tests are due to API mismatches between the test expectations and actual SimplyMCP implementation:
 
 1. `hasDependency()` - API signature mismatch
 2. `getDependencyVersion()` - API signature mismatch
@@ -348,7 +348,7 @@ Failed:       0
 - ✅ Utils: getDependencyStats()
 - ✅ Utils: filterDependencies()
 - ✅ Utils: sortDependencies()
-- ✅ SimpleMCP: fromFile()
+- ✅ SimplyMCP: fromFile()
 - ✅ Error handling
 - ✅ Security features
 - ✅ Edge cases
@@ -356,7 +356,7 @@ Failed:       0
 
 ### What's Not Tested (Future)
 
-- ⚠️ SimpleMCP constructor with parseInlineDependencies option (experimental feature)
+- ⚠️ SimplyMCP constructor with parseInlineDependencies option (experimental feature)
 - ⚠️ Auto-installation (Feature 3 - not yet implemented)
 - ⚠️ CLI integration (Feature 4 - not yet implemented)
 
@@ -386,7 +386,7 @@ Failed:       0
 ### Integration Test Failures (Expected, Not Bugs)
 
 **Issue:** 4 out of 25 integration tests fail.
-**Root Cause:** API interface mismatches between test expectations and actual SimpleMCP implementation.
+**Root Cause:** API interface mismatches between test expectations and actual SimplyMCP implementation.
 **Impact:** LOW - Core functionality is fully tested and working.
 **Affected Tests:**
 1. `hasDependency()` - API signature issue

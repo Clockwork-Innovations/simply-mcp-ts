@@ -65,7 +65,7 @@ async function formatStandalone(
     version: '1.0.0',
     type: options.format === 'esm' ? 'module' : 'commonjs',
     main: bundleFilename,
-    description: 'SimpleMCP server bundle',
+    description: 'SimplyMCP server bundle',
     engines: {
       node: '>=18.0.0',
     },
@@ -130,7 +130,7 @@ require('${bundlePath}');
   await chmod(wrapperPath, 0o755);
 
   // Create README explaining how to use
-  const readme = `# Executable SimpleMCP Server
+  const readme = `# Executable SimplyMCP Server
 
 ## Usage
 
@@ -178,7 +178,7 @@ function generateReadme(
 
   return `# ${serverName}
 
-SimpleMCP server bundle - ready to deploy!
+SimplyMCP server bundle - ready to deploy!
 
 ## Quick Start
 
@@ -189,7 +189,7 @@ node ${bundleFilename}
 
 ## What's Inside
 
-This is a bundled SimpleMCP server with all dependencies included.
+This is a bundled SimplyMCP server with all dependencies included.
 
 - **Bundle size**: Self-contained JavaScript file
 - **Format**: ${options.format || 'single-file'}
@@ -293,14 +293,14 @@ chmod +x ${bundleFilename}
 
 ## Support
 
-This bundle was created with SimpleMCP. For issues:
-1. Check the SimpleMCP documentation
+This bundle was created with SimplyMCP. For issues:
+1. Check the SimplyMCP documentation
 2. Verify Node.js version (18+)
 3. Check native module installation
 
 ## License
 
-Same as the original SimpleMCP server.
+Same as the original SimplyMCP server.
 `;
 }
 
@@ -315,7 +315,7 @@ export async function createShellWrapper(
   const wrapperPath = join(dirname(bundlePath), wrapperName);
 
   const script = `#!/bin/bash
-# SimpleMCP server wrapper script
+# SimplyMCP server wrapper script
 
 # Get the directory of this script
 DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" && pwd )"
@@ -341,7 +341,7 @@ export async function createBatchWrapper(
   const wrapperPath = join(dirname(bundlePath), wrapperName);
 
   const script = `@echo off
-REM SimpleMCP server wrapper script
+REM SimplyMCP server wrapper script
 
 REM Get the directory of this script
 SET DIR=%~dp0

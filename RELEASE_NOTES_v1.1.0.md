@@ -18,7 +18,7 @@ npm install @clockwork-innovations/simply-mcp
 ```
 
 ```typescript
-import { SimpleMCP } from '@clockwork-innovations/simply-mcp';
+import { SimplyMCP } from '@clockwork-innovations/simply-mcp';
 ```
 
 ### New Package (v1.1.0+)
@@ -27,7 +27,7 @@ npm install simply-mcp
 ```
 
 ```typescript
-import { SimpleMCP } from 'simply-mcp';
+import { SimplyMCP } from 'simply-mcp';
 ```
 
 ### Why This Change?
@@ -109,7 +109,7 @@ npm install simply-mcp
 ```
 
 ```typescript
-import { SimpleMCP } from 'simply-mcp';
+import { SimplyMCP } from 'simply-mcp';
 ```
 
 ### For Existing Users (Upgrading from v1.0.x)
@@ -130,14 +130,14 @@ npm install simply-mcp
 
 **Before (v1.0.x)**:
 ```typescript
-import { SimpleMCP } from '@clockwork-innovations/simply-mcp';
+import { SimplyMCP } from '@clockwork-innovations/simply-mcp';
 import { MCPServer, tool } from '@clockwork-innovations/simply-mcp';
 import { defineMCP } from '@clockwork-innovations/simply-mcp';
 ```
 
 **After (v1.1.0)**:
 ```typescript
-import { SimpleMCP } from 'simply-mcp';
+import { SimplyMCP } from 'simply-mcp';
 import { MCPServer, tool } from 'simply-mcp';
 import { defineMCP } from 'simply-mcp';
 ```
@@ -203,10 +203,10 @@ All three APIs are production-ready:
 
 ### 1. Programmatic API ✅
 ```typescript
-import { SimpleMCP } from 'simply-mcp';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimpleMCP({ name: 'my-server', version: '1.0.0' });
+const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
 server.addTool({
   name: 'greet',
   parameters: z.object({ name: z.string() }),

@@ -1,5 +1,5 @@
 /**
- * Type definitions for SimpleMCP bundling feature
+ * Type definitions for SimplyMCP bundling feature
  * Feature 4: Bundling Command
  */
 
@@ -24,7 +24,7 @@ export type Target = 'node18' | 'node20' | 'node22' | 'esnext' | 'es2020' | 'es2
 export type SourceMapType = 'inline' | 'external' | 'both' | false;
 
 /**
- * Options for bundling a SimpleMCP server
+ * Options for bundling a SimplyMCP server
  */
 export interface BundleOptions {
   /**
@@ -230,9 +230,9 @@ export interface BundleError {
 }
 
 /**
- * SimpleMCP configuration file schema
+ * SimplyMCP configuration file schema
  */
-export interface SimpleMCPConfig {
+export interface SimplyMCPConfig {
   /**
    * Entry point file
    */

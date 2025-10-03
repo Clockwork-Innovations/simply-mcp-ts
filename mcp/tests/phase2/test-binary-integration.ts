@@ -8,7 +8,7 @@
  * Tests include:
  * - Tool calls with binary content
  * - Resource reading with binary content
- * - SimpleMCP's normalizeResult() function
+ * - SimplyMCP's normalizeResult() function
  * - Backward compatibility with text content
  * - Base64 encoding/decoding validation
  * - MIME type detection
@@ -17,7 +17,7 @@
  * Usage: npx tsx mcp/tests/phase2/test-binary-integration.sh
  */
 
-import { SimpleMCP } from '../../SimpleMCP.js';
+import { SimplyMCP } from '../../SimplyMCP.js';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -42,7 +42,7 @@ let passedTests = 0;
 let failedTests = 0;
 
 // Create server instance
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'integration-test-server',
   version: '1.0.0',
 });

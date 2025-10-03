@@ -116,13 +116,13 @@ Tests cover:
 4 tests FAILED
 ```
 
-**✅ VERIFIED: Tests create real SimpleMCP instances and call real methods**
+**✅ VERIFIED: Tests create real SimplyMCP instances and call real methods**
 
 Sample integration test:
 ```typescript
 it('should parse inline dependencies from file', async () => {
   const filePath = join(FIXTURES_DIR, 'real-server.ts');
-  const server = await SimpleMCP.fromFile(filePath, {  // ← REAL API CALL
+  const server = await SimplyMCP.fromFile(filePath, {  // ← REAL API CALL
     name: 'test-server',
     version: '1.0.0',
   });
@@ -149,7 +149,7 @@ Agent 3 claimed these 4 failures are "expected API mismatches, not bugs."
 **Test Code (lines 95-114):**
 ```typescript
 it('hasDependency() should return true for existing deps', () => {
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: 'test',
     version: '1.0.0',
     inlineDependencies: {  // ❌ WRONG PARAMETER NAME
@@ -162,20 +162,20 @@ it('hasDependency() should return true for existing deps', () => {
 });
 ```
 
-**Actual SimpleMCP Implementation (line 121):**
+**Actual SimplyMCP Implementation (line 121):**
 ```typescript
-export interface SimpleMCPOptions {
+export interface SimplyMCPOptions {
   name: string;
   version: string;
   dependencies?: ParsedDependencies;  // ← CORRECT NAME
 }
 ```
 
-**Root Cause:** Test uses `inlineDependencies` but SimpleMCP expects `dependencies`.
+**Root Cause:** Test uses `inlineDependencies` but SimplyMCP expects `dependencies`.
 
-**Evidence from SimpleMCP.ts:**
+**Evidence from SimplyMCP.ts:**
 ```typescript
-constructor(options: SimpleMCPOptions) {
+constructor(options: SimplyMCPOptions) {
   // ...
   if (options.dependencies) {  // ← Looks for 'dependencies'
     this.dependencies = options.dependencies;
@@ -189,14 +189,14 @@ constructor(options: SimpleMCPOptions) {
 
 **Same root cause:** Tests use `inlineDependencies`, implementation expects `dependencies`.
 
-**Lines 116-158:** All three failing tests in "SimpleMCP Dependency Access" section use wrong parameter.
+**Lines 116-158:** All three failing tests in "SimplyMCP Dependency Access" section use wrong parameter.
 
 #### Failure 4: Backward compatibility test
 
 **Test Code (lines 527-537):**
 ```typescript
 it('should maintain backward compatibility', () => {
-  const server = new SimpleMCP({
+  const server = new SimplyMCP({
     name: 'old-server',
     version: '1.0.0',
   });
@@ -205,7 +205,7 @@ it('should maintain backward compatibility', () => {
 });
 ```
 
-**SimpleMCP Implementation (line 916):**
+**SimplyMCP Implementation (line 916):**
 ```typescript
 getDependencies(): ParsedDependencies | null {
   return this.dependencies || null;  // ← Returns null, not undefined
@@ -417,8 +417,8 @@ Tests  4 failed | 21 passed (25)
 **Total:** 25 tests ✅
 
 **Breakdown:**
-- SimpleMCP.fromFile(): 3 tests (3 pass)
-- SimpleMCP Access: 3 tests (0 pass, 3 fail)
+- SimplyMCP.fromFile(): 3 tests (3 pass)
+- SimplyMCP Access: 3 tests (0 pass, 3 fail)
 - generatePackageJson(): 3 tests (3 pass)
 - mergeDependencies(): 3 tests (3 pass)
 - formatDependencyList(): 4 tests (4 pass)
@@ -458,18 +458,18 @@ Tests  4 failed | 21 passed (25)
 ✅ sortDependencies() - 1 test
 ```
 
-**SimpleMCP Integration:**
+**SimplyMCP Integration:**
 ```typescript
-✅ SimpleMCP.fromFile() - 3 tests (3 pass)
-❌ SimpleMCP.getDependencies() - 1 test (FAILS - test bug)
-❌ SimpleMCP.hasDependency() - 1 test (FAILS - test bug)
-❌ SimpleMCP.getDependencyVersion() - 1 test (FAILS - test bug)
+✅ SimplyMCP.fromFile() - 3 tests (3 pass)
+❌ SimplyMCP.getDependencies() - 1 test (FAILS - test bug)
+❌ SimplyMCP.hasDependency() - 1 test (FAILS - test bug)
+❌ SimplyMCP.getDependencyVersion() - 1 test (FAILS - test bug)
 ```
 
 #### 6.2 Coverage Gaps
 
 **Not tested:**
-- ⚠️ SimpleMCP constructor with `dependencies` option (correct parameter name) - only tested with wrong parameter
+- ⚠️ SimplyMCP constructor with `dependencies` option (correct parameter name) - only tested with wrong parameter
 - ⚠️ Error messages for each validation failure type
 - ⚠️ Performance benchmarks (claimed but not verified)
 - ⚠️ Memory leak testing (claimed but not verified)
@@ -510,7 +510,7 @@ Failed:       0
 - ✅ All parser functions tested
 - ✅ All validator functions tested
 - ✅ All utility functions tested
-- ✅ SimpleMCP integration tested
+- ✅ SimplyMCP integration tested
 - ⚠️ Performance claims not verified with actual benchmarks
 
 #### 8.3 Assertion Quality: **9/10**
@@ -547,36 +547,36 @@ Failed:       0
 **Description:**
 Agent 3 claims 4 integration test failures are "expected API mismatches" and "not bugs." This is incorrect. The failures are caused by:
 1. Tests using `inlineDependencies` parameter (wrong name)
-2. SimpleMCP expecting `dependencies` parameter (correct name)
+2. SimplyMCP expecting `dependencies` parameter (correct name)
 3. One test expecting `undefined` when implementation returns `null`
 
 **Evidence:**
 ```typescript
 // TEST CODE (WRONG):
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   inlineDependencies: { ... }  // ❌ Parameter doesn't exist
 });
 
 // IMPLEMENTATION (CORRECT):
-export interface SimpleMCPOptions {
+export interface SimplyMCPOptions {
   dependencies?: ParsedDependencies;  // ← Correct name
 }
 ```
 
 **Impact:**
 - Tests don't actually test the implemented API
-- SimpleMCP dependency access methods are untested with correct API
+- SimplyMCP dependency access methods are untested with correct API
 - False sense of testing coverage
 
 **Required Fix:**
 ```typescript
 // Change all occurrences of:
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   inlineDependencies: { ... }  // WRONG
 });
 
 // To:
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   dependencies: { ... }  // CORRECT
 });
 ```
@@ -592,10 +592,10 @@ const server = new SimpleMCP({
 
 **Severity:** MEDIUM
 **Category:** API Design
-**Location:** SimpleMCP.ts line 916
+**Location:** SimplyMCP.ts line 916
 
 **Description:**
-SimpleMCP.getDependencies() returns `null` when no dependencies exist, but one test expects `undefined`. This is a minor inconsistency.
+SimplyMCP.getDependencies() returns `null` when no dependencies exist, but one test expects `undefined`. This is a minor inconsistency.
 
 **Current Implementation:**
 ```typescript
@@ -716,7 +716,7 @@ Once these fixes are completed, the test suite will be **APPROVED**.
 - ✅ `/mcp/tests/phase2/test-inline-deps-validator.sh` (263 lines)
 - ✅ `/mcp/tests/phase2/inline-deps-integration.test.ts` (540 lines)
 - ✅ `/mcp/tests/phase2/fixtures/inline-deps/*` (14 files)
-- ✅ `/mcp/SimpleMCP.ts` (API verification)
+- ✅ `/mcp/SimplyMCP.ts` (API verification)
 - ✅ `/mcp/PHASE2_FEATURE2_PLAN.md` (plan compliance)
 - ✅ `/mcp/tests/phase2/FEATURE2_TEST_REPORT.md` (claims verification)
 

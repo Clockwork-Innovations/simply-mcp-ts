@@ -1,5 +1,5 @@
 /**
- * Binary and image content helper functions for SimpleMCP
+ * Binary and image content helper functions for SimplyMCP
  * Handles conversion, detection, and validation of binary content
  */
 

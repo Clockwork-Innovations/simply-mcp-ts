@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SimpleMCP CLI - Command-line interface for SimpleMCP
+ * SimplyMCP CLI - Command-line interface for SimplyMCP
  * Main entry point for CLI commands
  */
 

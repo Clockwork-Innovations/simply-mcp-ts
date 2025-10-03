@@ -1,6 +1,6 @@
-# Contributing to SimpleMCP
+# Contributing to SimplyMCP
 
-Thank you for your interest in contributing to SimpleMCP! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to SimplyMCP! This document provides guidelines and instructions for contributing.
 
 ## 🎯 Ways to Contribute
 
@@ -105,7 +105,7 @@ Types:
 Examples:
 ```
 feat(decorators): add support for async prompts
-fix(SimpleMCP): resolve memory leak in HTTP transport
+fix(SimplyMCP): resolve memory leak in HTTP transport
 docs(README): update installation instructions
 ```
 
@@ -138,7 +138,7 @@ simple-mcp/
 │   ├── core/              # Core framework code
 │   ├── decorators.ts      # Decorator API
 │   ├── single-file-types.ts # Functional API
-│   ├── SimpleMCP.ts       # Programmatic API
+│   ├── SimplyMCP.ts       # Programmatic API
 │   ├── examples/          # Example implementations
 │   ├── tests/             # Test suite
 │   └── docs/              # Documentation
@@ -344,4 +344,4 @@ Report issues to project maintainers.
 
 ## 🎉 Thank You!
 
-Your contributions make SimpleMCP better for everyone. Thank you for taking the time to contribute!
+Your contributions make SimplyMCP better for everyone. Thank you for taking the time to contribute!

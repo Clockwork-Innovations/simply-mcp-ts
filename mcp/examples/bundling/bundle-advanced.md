@@ -1,10 +1,10 @@
 # Advanced Bundling Options
 
-This guide covers advanced bundling features and options for SimpleMCP servers.
+This guide covers advanced bundling features and options for SimplyMCP servers.
 
 ## Output Formats
 
-SimpleMCP supports multiple output formats for different deployment scenarios.
+SimplyMCP supports multiple output formats for different deployment scenarios.
 
 ### Single-File (Default)
 

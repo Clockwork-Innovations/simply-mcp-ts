@@ -1,6 +1,6 @@
-# SimpleMCP Features Documentation
+# SimplyMCP Features Documentation
 
-This directory contains comprehensive documentation for all SimpleMCP features, including implemented features and planned roadmap items.
+This directory contains comprehensive documentation for all SimplyMCP features, including implemented features and planned roadmap items.
 
 ## 📚 Documentation Structure
 
@@ -27,7 +27,7 @@ This directory contains comprehensive documentation for all SimpleMCP features, 
 - [Roots](./roots.md) - File system root management
 
 ### Future/Ecosystem Features 🔮
-- [SimpleMCP Registry](./registry.md) - Share and discover servers
+- [SimplyMCP Registry](./registry.md) - Share and discover servers
 - [OAuth Integration](./oauth.md) - Enterprise authentication
 - [Testing Framework](./testing-framework.md) - Built-in testing utilities
 - [Hot Reloading](./hot-reloading.md) - Development mode with auto-restart
@@ -82,7 +82,7 @@ Each feature document includes:
 
 ## 🔗 Related Documentation
 
-- [Quick Start Guide](../QUICK-START.md) - Get started with SimpleMCP
+- [Quick Start Guide](../QUICK-START.md) - Get started with SimplyMCP
 - [API Documentation](../reference/API.md) - Complete API reference
 - [Examples](../../examples/) - Working code examples
 - [Architecture](../architecture/OVERVIEW.md) - System architecture
@@ -102,7 +102,7 @@ Have an idea for a new feature? Please:
 
 ## 📊 Comparison with Other Frameworks
 
-| Feature | SimpleMCP | FastMCP | Official SDK |
+| Feature | SimplyMCP | FastMCP | Official SDK |
 |---------|-----------|---------|--------------|
 | Single-File Servers | ✅ | ✅ | ❌ |
 | Class Decorators | ✅ | ❌ | ❌ |
@@ -120,4 +120,4 @@ Have an idea for a new feature? Please:
 
 **Last Updated:** October 1, 2025
 **Version:** 1.1.0
-**Maintained by:** SimpleMCP Team
+**Maintained by:** SimplyMCP Team

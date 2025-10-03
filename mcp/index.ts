@@ -1,5 +1,5 @@
 /**
- * SimpleMCP - Model Context Protocol Server Framework
+ * SimplyMCP - Model Context Protocol Server Framework
  *
  * A comprehensive MCP server framework with support for multiple API styles:
  * - Decorator-based class API
@@ -37,10 +37,10 @@
  *
  * @example Programmatic API
  * ```typescript
- * import { SimpleMCP } from 'simply-mcp';
+ * import { SimplyMCP } from 'simply-mcp';
  * import { z } from 'zod';
  *
- * const server = new SimpleMCP({ name: 'my-server', version: '1.0.0' });
+ * const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
  * server.addTool({
  *   name: 'greet',
  *   description: 'Greet a user',
@@ -52,9 +52,9 @@
  */
 
 // ============================================================================
-// Main SimpleMCP Class (Programmatic API)
+// Main SimplyMCP Class (Programmatic API)
 // ============================================================================
-export { SimpleMCP } from './SimpleMCP.js';
+export { SimplyMCP } from './SimplyMCP.js';
 
 // ============================================================================
 // Decorator API

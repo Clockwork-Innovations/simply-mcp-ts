@@ -2,7 +2,7 @@
 /**
  * Binary Content Demo Server
  *
- * This example demonstrates SimpleMCP's Phase 2 Feature 1: Image & Binary Content Support
+ * This example demonstrates SimplyMCP's Phase 2 Feature 1: Image & Binary Content Support
  * Shows how to return images, PDFs, audio, and other binary data from tools and resources.
  *
  * Features demonstrated:
@@ -21,13 +21,13 @@
  *   npx tsx mcp/examples/binary-content-demo.ts --http --port 3000
  */
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 import { readFile, writeFile } from 'fs/promises';
 import { resolve } from 'path';
 
-// Create a SimpleMCP server
-const server = new SimpleMCP({
+// Create a SimplyMCP server
+const server = new SimplyMCP({
   name: 'binary-content-demo',
   version: '1.0.0',
   port: 3000,
@@ -52,7 +52,7 @@ server.addTool({
       'base64'
     );
 
-    // SimpleMCP auto-detects this is an image and converts it
+    // SimplyMCP auto-detects this is an image and converts it
     return pngBuffer;
   },
 });
@@ -134,7 +134,7 @@ startxref
 
     context?.logger.info(`Generated PDF report: ${pdfPath}`);
 
-    // SimpleMCP reads the file and converts to base64
+    // SimplyMCP reads the file and converts to base64
     return {
       type: 'file',
       path: pdfPath,
@@ -263,7 +263,7 @@ server.addTool({
     const qrPath = `/tmp/qr-${Date.now()}.png`;
     await writeFile(qrPath, yellowPngData);
 
-    // Return file path - SimpleMCP will auto-detect it's an image
+    // Return file path - SimplyMCP will auto-detect it's an image
     return {
       type: 'file',
       path: qrPath,
@@ -318,7 +318,7 @@ server.addResource({
   name: 'User Manual',
   description: 'Binary Content Demo user manual (PDF)',
   mimeType: 'application/pdf',
-  content: pdfDocBuffer, // SimpleMCP handles Buffer automatically
+  content: pdfDocBuffer, // SimplyMCP handles Buffer automatically
 });
 
 // Resource 2: Company Logo (PNG image)
@@ -368,7 +368,7 @@ server.addResource({
   mimeType: 'text/plain',
   content: `Binary Content Demo Server
 
-This server demonstrates SimpleMCP's support for binary content including:
+This server demonstrates SimplyMCP's support for binary content including:
 - Images (PNG, JPEG, GIF, WebP)
 - PDFs
 - Audio files (MP3, WAV)

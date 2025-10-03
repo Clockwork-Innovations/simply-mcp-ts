@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Test Client for SimpleMCP
+ * Test Client for SimplyMCP
  *
- * This script tests the SimpleMCP server by making various tool calls.
+ * This script tests the SimplyMCP server by making various tool calls.
  * Useful for verifying that the server is working correctly.
  *
  * Usage:
@@ -18,8 +18,8 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 
 const SERVER_URL = 'http://localhost:3000/mcp';
 
-async function testSimpleMCP() {
-  console.log('Connecting to SimpleMCP server...');
+async function testSimplyMCP() {
+  console.log('Connecting to SimplyMCP server...');
 
   const client = new Client(
     {
@@ -201,7 +201,7 @@ async function testSimpleMCP() {
 }
 
 // Run tests
-testSimpleMCP().catch((error) => {
+testSimplyMCP().catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });

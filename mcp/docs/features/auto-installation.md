@@ -2,7 +2,7 @@
 
 ## Overview
 
-SimpleMCP's **Auto-Installation** feature automatically detects and installs missing npm package dependencies when running an MCP server. This eliminates manual `npm install` steps and enables true single-file server distribution with automatic dependency management.
+SimplyMCP's **Auto-Installation** feature automatically detects and installs missing npm package dependencies when running an MCP server. This eliminates manual `npm install` steps and enables true single-file server distribution with automatic dependency management.
 
 ### What It Does
 
@@ -45,7 +45,7 @@ Use auto-installation when you want to:
   - Core functionality fully verified
   - Some unit/E2E tests have infrastructure issues (temp dirs, paths)
   - Real-world usage: All examples work correctly
-- **Available in**: SimpleMCP v1.3.0+
+- **Available in**: SimplyMCP v1.3.0+
 
 ### Known Issues
 
@@ -66,10 +66,10 @@ The test suite shows some failures in unit and E2E tests due to test infrastruct
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
 // Load server with auto-install - that's it!
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'my-server',
   version: '1.0.0',
   autoInstall: true
@@ -80,10 +80,10 @@ await server.start();
 
 Output:
 ```
-[SimpleMCP] Auto-installing dependencies...
-[SimpleMCP] Installing 2 packages with npm...
-[SimpleMCP] Successfully installed 2 packages
-[SimpleMCP] Starting 'my-server' v1.0.0 (stdio transport)
+[SimplyMCP] Auto-installing dependencies...
+[SimplyMCP] Installing 2 packages with npm...
+[SimplyMCP] Successfully installed 2 packages
+[SimplyMCP] Starting 'my-server' v1.0.0 (stdio transport)
 ```
 
 That's it! Dependencies are automatically installed before the server starts.
@@ -185,15 +185,15 @@ Feature 3 adds:
 
 ## API Reference
 
-### SimpleMCP.fromFile() with autoInstall
+### SimplyMCP.fromFile() with autoInstall
 
 Load a server from file and automatically install dependencies.
 
 ```typescript
 static async fromFile(
   filePath: string,
-  options?: Partial<SimpleMCPOptions>
-): Promise<SimpleMCP>
+  options?: Partial<SimplyMCPOptions>
+): Promise<SimplyMCP>
 ```
 
 **Parameters:**
@@ -203,18 +203,18 @@ static async fromFile(
   - `false` or `undefined`: No installation (default)
   - `InstallOptions`: Install with custom settings
 
-**Returns:** Promise resolving to SimpleMCP instance
+**Returns:** Promise resolving to SimplyMCP instance
 
 **Example:**
 
 ```typescript
 // Basic auto-install
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: true
 });
 
 // Custom install options
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: {
     packageManager: 'pnpm',
     timeout: 10 * 60 * 1000,
@@ -599,10 +599,10 @@ Simplest auto-install usage:
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'auto-install-demo',
   version: '1.0.0',
   autoInstall: true
@@ -639,9 +639,9 @@ Custom progress reporting with visual feedback:
 // chalk@^5.3.0
 // ///
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'advanced-install',
   version: '1.0.0',
   autoInstall: {
@@ -685,10 +685,10 @@ Graceful error handling with recovery strategies:
 // this-package-does-not-exist@^1.0.0
 // ///
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 
 try {
-  const server = await SimpleMCP.fromFile(__filename, {
+  const server = await SimplyMCP.fromFile(__filename, {
     autoInstall: {
       onError: (error) => {
         console.error(`Failed: ${error.packageName}`);
@@ -727,9 +727,9 @@ See full example: [/mcp/examples/auto-install-error-handling.ts](/mcp/examples/a
 Check dependencies first, install manually if needed:
 
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
-const server = await SimpleMCP.fromFile('./server.ts');
+const server = await SimplyMCP.fromFile('./server.ts');
 
 // Check status first
 const status = await server.checkDependencies();
@@ -760,7 +760,7 @@ await server.start();
 Use pnpm instead of npm:
 
 ```typescript
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: {
     packageManager: 'pnpm',
     production: true, // Only production deps
@@ -776,7 +776,7 @@ Auto-install only in development:
 ```typescript
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: isDevelopment ? {
     onProgress: (e) => console.log(e.message)
   } : false
@@ -914,8 +914,8 @@ const NPM_REGISTRY = 'https://registry.npmjs.org';
 
 // Warn on custom registries
 if (customRegistry && customRegistry !== NPM_REGISTRY) {
-  console.warn('[SimpleMCP] Using custom registry:', customRegistry);
-  console.warn('[SimpleMCP] Ensure this registry is trusted');
+  console.warn('[SimplyMCP] Using custom registry:', customRegistry);
+  console.warn('[SimplyMCP] Ensure this registry is trusted');
 }
 ```
 
@@ -926,7 +926,7 @@ if (customRegistry && customRegistry !== NPM_REGISTRY) {
 ```typescript
 const isProduction = process.env.NODE_ENV === 'production';
 
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: !isProduction
 });
 
@@ -1007,7 +1007,7 @@ await server.installDependencies({
 
 ```typescript
 // In CI environments, be explicit
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: {
     packageManager: 'npm', // Explicit in CI
     production: true,
@@ -1169,7 +1169,7 @@ await server.installDependencies({
 // inline deps: axios@^1.6.0
 // package.json: axios@^1.5.0
 
-// SimpleMCP uses package.json version (precedence)
+// SimplyMCP uses package.json version (precedence)
 // Update either inline or package.json to match
 ```
 
@@ -1260,7 +1260,7 @@ await server.installDependencies({
 
 ### 3. What if package.json already exists?
 
-SimpleMCP respects existing package.json:
+SimplyMCP respects existing package.json:
 - Inline deps are informational
 - package.json takes precedence
 - Conflicts generate warnings
@@ -1276,7 +1276,7 @@ registry=https://your-registry.com
 //your-registry.com/:_authToken=YOUR_TOKEN
 ```
 
-SimpleMCP uses the configured registry automatically.
+SimplyMCP uses the configured registry automatically.
 
 ### 5. Does it support monorepos/workspaces?
 
@@ -1289,7 +1289,7 @@ For complex monorepos, use package manager directly.
 
 ### 6. What about peer dependencies?
 
-Package managers handle peer dependencies automatically. SimpleMCP doesn't need special logic.
+Package managers handle peer dependencies automatically. SimplyMCP doesn't need special logic.
 
 ### 7. Can I auto-install devDependencies?
 
@@ -1330,7 +1330,7 @@ No (not in MVP). Use package.json for git deps:
 ### 10. What's the difference between autoInstall: true and manual?
 
 **autoInstall: true:**
-- Installs during `SimpleMCP.fromFile()`
+- Installs during `SimplyMCP.fromFile()`
 - Blocks server startup until complete
 - Throws error if installation fails
 
@@ -1424,7 +1424,7 @@ Auto-installation builds on inline dependency declarations:
 // ///
 
 // Feature 3: Auto-install them
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   autoInstall: true
 });
 ```
@@ -1458,12 +1458,12 @@ installation-types.ts (215 lines)
   └── Defines: All TypeScript interfaces
 ```
 
-### SimpleMCP Integration
+### SimplyMCP Integration
 
-Added methods to SimpleMCP class:
+Added methods to SimplyMCP class:
 
 ```typescript
-class SimpleMCP {
+class SimplyMCP {
   // New methods
   async installDependencies(options?: InstallOptions): Promise<InstallResult>
   async checkDependencies(): Promise<DependencyStatus>
@@ -1472,7 +1472,7 @@ class SimpleMCP {
   static async fromFile(
     filePath: string,
     options?: { autoInstall?: boolean | InstallOptions }
-  ): Promise<SimpleMCP>
+  ): Promise<SimplyMCP>
 }
 ```
 
@@ -1505,4 +1505,4 @@ Perfect for:
 **Next Steps:**
 - Try the [examples](/mcp/examples/)
 - Read the [migration guide](../guides/AUTO_INSTALL_MIGRATION.md)
-- Check the [SimpleMCP guide](../../SIMPLE_MCP_GUIDE.md)
+- Check the [SimplyMCP guide](../../SIMPLE_MCP_GUIDE.md)

@@ -25,7 +25,7 @@
  */
 
 import { ZodSchema } from 'zod';
-import type { ExecuteFunction, PromptDefinition, ResourceDefinition } from './SimpleMCP.js';
+import type { ExecuteFunction, PromptDefinition, ResourceDefinition } from './SimplyMCP.js';
 import type { Schema as SchemaType } from './schema-builder.js';
 import { schemaToZod, Schema } from './schema-builder.js';
 

@@ -3,10 +3,10 @@
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from '../../../SimpleMCP.js';
+import { SimplyMCP } from '../../../SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'test-server',
   version: '1.0.0',
 });

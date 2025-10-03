@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented PEP 723-style inline dependency management for SimpleMCP servers. This feature allows developers to declare npm dependencies directly in their server files using comment-based metadata.
+Successfully implemented PEP 723-style inline dependency management for SimplyMCP servers. This feature allows developers to declare npm dependencies directly in their server files using comment-based metadata.
 
 ## Status: ✅ COMPLETE
 
@@ -11,7 +11,7 @@ All implementation requirements have been met:
 - ✅ Validator implementation (dependency-validator.ts)  
 - ✅ Type definitions (dependency-types.ts)
 - ✅ Utility functions (dependency-utils.ts)
-- ✅ SimpleMCP integration
+- ✅ SimplyMCP integration
 - ✅ Example server (inline-deps-demo.ts)
 - ✅ Core exports updated
 - ✅ No breaking changes to existing code
@@ -85,8 +85,8 @@ Utility functions for working with dependencies:
 - `filterDependencies(deps, pattern)` - Pattern-based filter
 - `getDependencyStats(deps)` - Statistics
 
-### 5. `/mcp/SimpleMCP.ts` (Modified)
-Added inline dependency support to SimpleMCP class:
+### 5. `/mcp/SimplyMCP.ts` (Modified)
+Added inline dependency support to SimplyMCP class:
 
 **New Methods:**
 - `getDependencies()` - Get parsed dependencies
@@ -95,7 +95,7 @@ Added inline dependency support to SimpleMCP class:
 - `static fromFile(filePath, options)` - Create server from file with dependency parsing
 
 **Modified:**
-- `SimpleMCPOptions` - Added `dependencies?: ParsedDependencies`
+- `SimplyMCPOptions` - Added `dependencies?: ParsedDependencies`
 - Constructor - Store dependencies if provided
 - No breaking changes - all new features are opt-in
 
@@ -155,9 +155,9 @@ getDependencyStats(deps)
 // { total: 4, scoped: 1, unscoped: 3, types: 1, ... }
 ```
 
-### Test 4: SimpleMCP.fromFile() ✅
+### Test 4: SimplyMCP.fromFile() ✅
 ```javascript
-const server = await SimpleMCP.fromFile('./examples/inline-deps-demo.ts');
+const server = await SimplyMCP.fromFile('./examples/inline-deps-demo.ts');
 server.getDependencies() // { map: { zod: '^3.22.0' } }
 server.hasDependency('zod') // true
 server.getDependencyVersion('zod') // '^3.22.0'
@@ -204,7 +204,7 @@ npx tsx examples/inline-deps-demo.ts
 - npm/yarn syntax (familiar to JS developers)
 - No JSON/TOML parser needed (reduces dependencies)
 
-### 2. SimpleMCP Integration
+### 2. SimplyMCP Integration
 **Approach:** Optional `dependencies` field + `fromFile()` static method
 
 **Rationale:**
@@ -227,7 +227,7 @@ npx tsx examples/inline-deps-demo.ts
 **Rationale:**
 - Requires stack trace analysis (fragile)
 - Performance overhead
-- Only works if SimpleMCP created in same file
+- Only works if SimplyMCP created in same file
 - Better to use explicit `fromFile()` method
 
 ## Deviations from Plan
@@ -236,7 +236,7 @@ npx tsx examples/inline-deps-demo.ts
 All implementation follows the plan exactly:
 - ✅ Hybrid Format as specified
 - ✅ All 4 core files created
-- ✅ SimpleMCP integration as designed
+- ✅ SimplyMCP integration as designed
 - ✅ Example server created
 - ✅ No auto-install (that's Feature 3)
 - ✅ Security validation included
@@ -244,10 +244,10 @@ All implementation follows the plan exactly:
 
 ## Known Limitations
 
-### 1. SimpleMCP.fromFile() Limitation
+### 1. SimplyMCP.fromFile() Limitation
 **Issue:** `fromFile()` only parses dependencies, does not execute the server code.
 
-**Why:** TypeScript execution and module loading is complex. The method reads the file as text, parses metadata, and creates a new SimpleMCP instance. It does NOT import/execute the file's logic.
+**Why:** TypeScript execution and module loading is complex. The method reads the file as text, parses metadata, and creates a new SimplyMCP instance. It does NOT import/execute the file's logic.
 
 **Workaround:** Use inline dependencies for documentation and Feature 3 (auto-install). For runtime, use normal import.
 
@@ -305,11 +305,11 @@ if (result.errors.length > 0) {
 }
 ```
 
-### Using SimpleMCP.fromFile()
+### Using SimplyMCP.fromFile()
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
-const server = await SimpleMCP.fromFile('./my-server.ts', {
+const server = await SimplyMCP.fromFile('./my-server.ts', {
   name: 'custom-name',
   version: '2.0.0',
 });
@@ -339,7 +339,7 @@ await writeFile('package.json', JSON.stringify(pkg, null, 2));
 - ✅ All 8 files created/modified
 - ✅ Parser handles all formats from plan
 - ✅ Validator checks all security rules
-- ✅ SimpleMCP integration works
+- ✅ SimplyMCP integration works
 - ✅ Example server runs without errors
 - ✅ No TypeScript compilation errors (in new code)
 - ✅ No breaking changes to existing code
@@ -359,7 +359,7 @@ npx tsx -e "import { parseInlineDependencies } from './mcp/core/index.js'; conso
 npx tsx -e "import { validatePackageName, validateSemverRange } from './mcp/core/index.js'; console.log(validatePackageName('axios'), validateSemverRange('^1.0.0'));"
 
 # Test fromFile
-npx tsx -e "import { SimpleMCP } from './mcp/SimpleMCP.js'; (async () => { const s = await SimpleMCP.fromFile('./examples/inline-deps-demo.ts'); console.log(s.getDependencies()); })();"
+npx tsx -e "import { SimplyMCP } from './mcp/SimplyMCP.js'; (async () => { const s = await SimplyMCP.fromFile('./examples/inline-deps-demo.ts'); console.log(s.getDependencies()); })();"
 
 # Run example server
 npx tsx examples/inline-deps-demo.ts
@@ -385,7 +385,7 @@ Agent 3 should create tests for all 30+ scenarios from the plan:
    - Version rules (semver, ranges, keywords)
    - Security (injection prevention, dangerous chars)
 
-3. **SimpleMCP Integration**
+3. **SimplyMCP Integration**
    - fromFile() parsing
    - getDependencies() accuracy
    - hasDependency() correctness

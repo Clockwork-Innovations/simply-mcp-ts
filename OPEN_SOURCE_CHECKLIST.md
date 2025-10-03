@@ -1,6 +1,6 @@
 # Open Source Release Checklist
 
-Use this checklist to prepare SimpleMCP for open source release.
+Use this checklist to prepare SimplyMCP for open source release.
 
 ## 📄 Documentation
 

@@ -3,7 +3,7 @@
  * Basic Auto-Installation Example
  *
  * This example demonstrates simple automatic dependency installation
- * using SimpleMCP's auto-install feature.
+ * using SimplyMCP's auto-install feature.
  *
  * Usage:
  *   npx tsx examples/auto-install-basic.ts
@@ -14,14 +14,14 @@
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 
 async function main() {
   console.log('[Example] Loading server with auto-install...');
 
   // Load server from file with auto-install enabled
-  const server = await SimpleMCP.fromFile(__filename, {
+  const server = await SimplyMCP.fromFile(__filename, {
     name: 'auto-install-demo',
     version: '1.0.0',
     autoInstall: true, // Enable automatic dependency installation
@@ -51,7 +51,7 @@ async function main() {
         const response = await axios.get(args.url, {
           timeout: 5000,
           headers: {
-            'User-Agent': 'SimpleMCP-AutoInstall-Demo/1.0',
+            'User-Agent': 'SimplyMCP-AutoInstall-Demo/1.0',
           },
         });
 

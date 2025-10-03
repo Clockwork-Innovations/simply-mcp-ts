@@ -1,11 +1,11 @@
 /**
  * Auto-Installation Feature - Integration Tests
- * Tests integration between components and SimpleMCP API
+ * Tests integration between components and SimplyMCP API
  * CRITICAL: All tests MUST call real implementation
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SimpleMCP } from '../../SimpleMCP.js';
+import { SimplyMCP } from '../../SimplyMCP.js';
 import { checkDependencies, isPackageInstalled, getInstalledVersion } from '../../core/dependency-checker.js';
 import { detectPackageManager } from '../../core/package-manager-detector.js';
 import { installDependencies } from '../../core/dependency-installer.js';
@@ -23,10 +23,10 @@ describe('Auto-Installation - Integration Tests', () => {
     await rm(TEMP_DIR, { recursive: true, force: true });
   });
 
-  // Group 1: SimpleMCP API Tests (10 tests)
-  describe('SimpleMCP API', () => {
+  // Group 1: SimplyMCP API Tests (10 tests)
+  describe('SimplyMCP API', () => {
     it('server.checkDependencies() returns status', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {
@@ -46,7 +46,7 @@ describe('Auto-Installation - Integration Tests', () => {
     });
 
     it('server.checkDependencies() with no deps returns empty', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
       });
@@ -58,7 +58,7 @@ describe('Auto-Installation - Integration Tests', () => {
     });
 
     it('server.installDependencies() returns result with empty deps', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {
@@ -80,7 +80,7 @@ describe('Auto-Installation - Integration Tests', () => {
     });
 
     it('server.installDependencies() with invalid package fails validation', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {
@@ -98,7 +98,7 @@ describe('Auto-Installation - Integration Tests', () => {
     });
 
     it('server dependencies are parsed correctly from constructor', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {
@@ -121,7 +121,7 @@ describe('Auto-Installation - Integration Tests', () => {
     });
 
     it('server handles undefined dependencies gracefully', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
       });
@@ -134,7 +134,7 @@ describe('Auto-Installation - Integration Tests', () => {
     });
 
     it('server.installDependencies() accepts custom options', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {
@@ -161,7 +161,7 @@ describe('Auto-Installation - Integration Tests', () => {
       const customPath = join(TEMP_DIR, 'custom');
       await mkdir(customPath, { recursive: true });
 
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         basePath: customPath,
@@ -181,7 +181,7 @@ describe('Auto-Installation - Integration Tests', () => {
     });
 
     it('server handles progress callbacks', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {
@@ -207,7 +207,7 @@ describe('Auto-Installation - Integration Tests', () => {
     });
 
     it('server handles error callbacks', async () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {

@@ -1,15 +1,15 @@
-# SimpleMCP Quick Start Guide
+# SimplyMCP Quick Start Guide
 
 ## Overview
 
-**SimpleMCP** is a FastMCP-inspired framework for creating MCP servers with minimal boilerplate. It provides a clean, single-file API while leveraging the robust existing MCP infrastructure.
+**SimplyMCP** is a FastMCP-inspired framework for creating MCP servers with minimal boilerplate. It provides a clean, single-file API while leveraging the robust existing MCP infrastructure.
 
 ## Installation
 
-SimpleMCP is already part of this repository. Just import it:
+SimplyMCP is already part of this repository. Just import it:
 
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 ```
 
@@ -19,11 +19,11 @@ import { z } from 'zod';
 
 ```typescript
 #!/usr/bin/env node
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
 // Create server
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-awesome-server',
   version: '1.0.0',
 });
@@ -36,7 +36,7 @@ server.addTool({
     name: z.string().describe('The name of the person to greet'),
   }),
   execute: async (args) => {
-    return `Hello, ${args.name}! Welcome to SimpleMCP!`;
+    return `Hello, ${args.name}! Welcome to SimplyMCP!`;
   },
 });
 
@@ -109,7 +109,7 @@ execute: async (args) => {
 
 ### ✅ Built-in Error Handling
 
-SimpleMCP automatically handles:
+SimplyMCP automatically handles:
 - Zod validation errors
 - Runtime exceptions
 - Custom errors
@@ -232,7 +232,7 @@ server.addResource({
 
 ### Returning Images and Binary Content
 
-SimpleMCP supports returning images, audio, PDFs, and other binary content from tools:
+SimplyMCP supports returning images, audio, PDFs, and other binary content from tools:
 
 ```typescript
 import { readFile } from 'fs/promises';
@@ -246,7 +246,7 @@ server.addTool({
   }),
   execute: async (args) => {
     const chartBuffer = generateChartPNG(args.data);
-    return chartBuffer;  // SimpleMCP handles it!
+    return chartBuffer;  // SimplyMCP handles it!
   },
 });
 
@@ -321,7 +321,7 @@ For more details, see the [Binary Content Guide](./docs/features/binary-content.
 
 ### Inline Dependencies (Phase 2, Feature 2)
 
-SimpleMCP supports declaring npm dependencies directly in your server file using PEP 723-style inline metadata. This makes your servers truly self-contained and easy to share.
+SimplyMCP supports declaring npm dependencies directly in your server file using PEP 723-style inline metadata. This makes your servers truly self-contained and easy to share.
 
 #### Basic Usage
 
@@ -333,12 +333,12 @@ SimpleMCP supports declaring npm dependencies directly in your server file using
 // date-fns@^2.30.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'weather-server',
   version: '1.0.0',
 });
@@ -390,10 +390,10 @@ if (deps) {
 #### Loading from File
 
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
 // Load server and automatically parse inline dependencies
-const server = await SimpleMCP.fromFile('./my-server.ts', {
+const server = await SimplyMCP.fromFile('./my-server.ts', {
   name: 'my-server',
   version: '1.0.0',
 });
@@ -456,7 +456,7 @@ await writeFile('package.json', JSON.stringify(pkg, null, 2));
 
 #### Security Features
 
-SimpleMCP validates all inline dependencies:
+SimplyMCP validates all inline dependencies:
 
 - Package names must follow npm rules (lowercase, valid characters)
 - Version specifiers must be valid semver
@@ -470,7 +470,7 @@ For complete documentation, see:
 
 ### Auto-Installation (Phase 2, Feature 3)
 
-SimpleMCP can automatically install missing dependencies declared in your inline dependencies block. This eliminates manual `npm install` steps and enables true single-file server distribution.
+SimplyMCP can automatically install missing dependencies declared in your inline dependencies block. This eliminates manual `npm install` steps and enables true single-file server distribution.
 
 #### Basic Usage
 
@@ -481,11 +481,11 @@ SimpleMCP can automatically install missing dependencies declared in your inline
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
 // Load server with auto-install enabled
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'weather-server',
   version: '1.0.0',
   autoInstall: true, // Dependencies install automatically!
@@ -513,10 +513,10 @@ await server.start();
 npx tsx weather-server.ts
 
 # Output:
-# [SimpleMCP] Auto-installing dependencies...
-# [SimpleMCP] Installing 2 packages with npm...
-# [SimpleMCP] Successfully installed 2 packages
-# [SimpleMCP] Starting 'weather-server' v1.0.0
+# [SimplyMCP] Auto-installing dependencies...
+# [SimplyMCP] Installing 2 packages with npm...
+# [SimplyMCP] Successfully installed 2 packages
+# [SimplyMCP] Starting 'weather-server' v1.0.0
 ```
 
 **Second run:**
@@ -524,7 +524,7 @@ npx tsx weather-server.ts
 npx tsx weather-server.ts
 
 # Output:
-# [SimpleMCP] Starting 'weather-server' v1.0.0
+# [SimplyMCP] Starting 'weather-server' v1.0.0
 # (no installation - already installed)
 ```
 
@@ -533,7 +533,7 @@ npx tsx weather-server.ts
 Custom installation options with progress tracking:
 
 ```typescript
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'my-server',
   version: '1.0.0',
   autoInstall: {
@@ -559,7 +559,7 @@ const server = await SimpleMCP.fromFile(__filename, {
 Check and install dependencies programmatically:
 
 ```typescript
-const server = await SimpleMCP.fromFile('./server.ts');
+const server = await SimplyMCP.fromFile('./server.ts');
 
 // Check dependency status
 const status = await server.checkDependencies();
@@ -593,12 +593,12 @@ Auto-installation supports npm, yarn, pnpm, and bun with automatic detection fro
 // Auto-detects from pnpm-lock.yaml → pnpm
 // Auto-detects from bun.lockb → bun
 
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: true // Uses detected package manager
 });
 
 // Or explicitly specify
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: {
     packageManager: 'yarn' // Force yarn
   }
@@ -620,7 +620,7 @@ Enable auto-install in development, verify in production:
 ```typescript
 const isProduction = process.env.NODE_ENV === 'production';
 
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'my-server',
   version: '1.0.0',
   autoInstall: !isProduction // Only auto-install in development
@@ -654,7 +654,7 @@ For complete documentation, see:
 
 ## Bundling & Deployment
 
-SimpleMCP servers can be bundled into standalone, production-ready distributions for easy deployment.
+SimplyMCP servers can be bundled into standalone, production-ready distributions for easy deployment.
 
 ### Quick Bundle
 
@@ -666,7 +666,7 @@ simplymcp bundle server.ts
 
 **Output:**
 ```
-SimpleMCP Bundler
+SimplyMCP Bundler
 =================
 
 Entry:    /path/to/server.ts
@@ -692,7 +692,7 @@ That's it! Your server is bundled and ready for production.
 
 ### Output Formats
 
-SimpleMCP supports multiple bundle formats:
+SimplyMCP supports multiple bundle formats:
 
 #### 1. Single-File (Default)
 Everything in one JavaScript file:
@@ -900,14 +900,14 @@ export default async function(args, context) {
 node configurableServer.ts config.json
 ```
 
-### New Way (SimpleMCP)
+### New Way (SimplyMCP)
 
 **server.ts:**
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({ name: 'my-server', version: '1.0.0' });
+const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
 
 server.addTool({
   name: 'greet',
@@ -926,7 +926,7 @@ node server.ts
 
 ### Benefits
 
-| Feature | Config-Based | SimpleMCP |
+| Feature | Config-Based | SimplyMCP |
 |---------|-------------|-----------|
 | Files needed | 3+ (config + handlers) | 1 |
 | Schema format | JSON Schema (manual) | Zod (type-safe) |
@@ -967,7 +967,7 @@ await server.stop();
 
 ## Integration with Existing Infrastructure
 
-SimpleMCP wraps and reuses:
+SimplyMCP wraps and reuses:
 
 - **HandlerManager**: Tool execution
 - **Validation System**: Input validation & sanitization
@@ -979,10 +979,10 @@ This means you get all the production-ready features of the existing infrastruct
 
 ## Migration Guide
 
-### From Config-Based to SimpleMCP
+### From Config-Based to SimplyMCP
 
 1. **Create a new TypeScript file**
-2. **Import SimpleMCP and Zod**
+2. **Import SimplyMCP and Zod**
 3. **Convert your config.json tools to addTool calls**
 4. **Convert JSON Schema to Zod schemas**
 5. **Inline your handler functions**
@@ -1070,7 +1070,7 @@ Ensure you're using compatible TypeScript settings (ESM, etc.).
 
 ## Summary
 
-SimpleMCP gives you:
+SimplyMCP gives you:
 - ✅ Single-file servers
 - ✅ Type-safe Zod validation
 - ✅ Automatic schema conversion

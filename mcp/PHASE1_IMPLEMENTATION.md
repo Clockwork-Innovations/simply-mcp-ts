@@ -1,10 +1,10 @@
 # Phase 1: Core Protocol Completeness - Implementation Summary
 
-This document describes the implementation of Phase 1 features for the SimpleMCP framework.
+This document describes the implementation of Phase 1 features for the SimplyMCP framework.
 
 ## Overview
 
-Phase 1 adds four major features to SimpleMCP:
+Phase 1 adds four major features to SimplyMCP:
 
 1. **Sampling/LLM Completion Support** - Servers can request LLM completions from clients
 2. **Progress Notifications** - Tools can report progress during long-running operations
@@ -49,7 +49,7 @@ server.addTool({
 
 **Enable in server:**
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
   capabilities: {
@@ -182,7 +182,7 @@ execute: async (args, context) => {
 
 **Enable in server:**
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
   capabilities: {
@@ -210,9 +210,9 @@ const server = new SimpleMCP({
    - Implemented all 8 MCP log levels
    - Updated `createDefaultLogger()` to accept notification callback
 
-3. **mcp/SimpleMCP.ts**
+3. **mcp/SimplyMCP.ts**
    - Added imports for new MCP SDK schemas
-   - Extended `SimpleMCPOptions` with `capabilities` field
+   - Extended `SimplyMCPOptions` with `capabilities` field
    - Updated server initialization to declare logging capability
    - Modified tool handler to provide enhanced context with:
      - Logging with notification callback
@@ -264,9 +264,9 @@ npx tsx mcp/examples/phase1-features.ts
 
 **Output:**
 ```
-[SimpleMCP] Starting 'phase1-features-server' v1.0.0 (stdio transport)
-[SimpleMCP] Registered: 4 tools, 0 prompts, 2 resources
-[SimpleMCP] Connected and ready for requests
+[SimplyMCP] Starting 'phase1-features-server' v1.0.0 (stdio transport)
+[SimplyMCP] Registered: 4 tools, 0 prompts, 2 resources
+[SimplyMCP] Connected and ready for requests
 [Phase1Example] Capabilities: sampling, logging, progress, resources
 ```
 
@@ -291,7 +291,7 @@ npx tsx mcp/examples/phase1-features.ts
 ### For Simple Use Cases
 Enable logging for better debugging:
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
   capabilities: {
@@ -323,7 +323,7 @@ execute: async (args, context) => {
 ### For AI-Assisted Tools
 Enable sampling (when client supports it):
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   capabilities: {
     sampling: true,
   },
@@ -348,10 +348,10 @@ Potential improvements for Phase 2+:
 
 ## API Reference
 
-### SimpleMCPOptions
+### SimplyMCPOptions
 
 ```typescript
-interface SimpleMCPOptions {
+interface SimplyMCPOptions {
   name: string;
   version: string;
   port?: number;

@@ -1,13 +1,13 @@
 /**
- * SimpleMCP - A simplified single-file MCP server framework
+ * SimplyMCP - A simplified single-file MCP server framework
  * Inspired by FastMCP but built on the existing MCP infrastructure
  *
  * Usage:
  * ```typescript
- * import { SimpleMCP } from './SimpleMCP';
+ * import { SimplyMCP } from './SimplyMCP';
  * import { z } from 'zod';
  *
- * const server = new SimpleMCP({
+ * const server = new SimplyMCP({
  *   name: 'my-server',
  *   version: '1.0.0'
  * });
@@ -69,7 +69,7 @@ import {
   isUint8Array,
 } from './core/content-helpers.js';
 
-// Type definitions for SimpleMCP
+// Type definitions for SimplyMCP
 
 export type ExecuteFunction<T = any> = (
   args: T,
@@ -108,7 +108,7 @@ export interface ResourceDefinition {
   content: string | { [key: string]: any } | Buffer | Uint8Array;
 }
 
-export interface SimpleMCPOptions {
+export interface SimplyMCPOptions {
   name: string;
   version: string;
   port?: number;
@@ -144,10 +144,10 @@ interface InternalTool {
 }
 
 /**
- * SimpleMCP Server - A simplified API for creating MCP servers
+ * SimplyMCP Server - A simplified API for creating MCP servers
  */
-export class SimpleMCP {
-  private options: Required<SimpleMCPOptions>;
+export class SimplyMCP {
+  private options: Required<SimplyMCPOptions>;
   private tools: Map<string, InternalTool> = new Map();
   private prompts: Map<string, PromptDefinition> = new Map();
   private resources: Map<string, ResourceDefinition> = new Map();
@@ -159,9 +159,9 @@ export class SimpleMCP {
   private dependencies?: ParsedDependencies;
 
   /**
-   * Create a new SimpleMCP server
+   * Create a new SimplyMCP server
    */
-  constructor(options: SimpleMCPOptions) {
+  constructor(options: SimplyMCPOptions) {
     this.options = {
       name: options.name,
       version: options.version,
@@ -170,7 +170,7 @@ export class SimpleMCP {
       defaultTimeout: options.defaultTimeout || 5000,
       capabilities: options.capabilities || {},
       dependencies: options.dependencies || undefined,
-    } as Required<SimpleMCPOptions>;
+    } as Required<SimplyMCPOptions>;
 
     this.handlerManager = new HandlerManager({
       basePath: this.options.basePath,
@@ -297,7 +297,7 @@ export class SimpleMCP {
       return;
     }
 
-    console.log('Shutting down SimpleMCP server...');
+    console.log('Shutting down SimplyMCP server...');
 
     // Close HTTP server if running
     if (this.httpServer) {
@@ -327,7 +327,7 @@ export class SimpleMCP {
     }
 
     this.isRunning = false;
-    console.log('SimpleMCP server stopped');
+    console.log('SimplyMCP server stopped');
   }
 
   /**
@@ -573,16 +573,16 @@ export class SimpleMCP {
     }
 
     console.error(
-      `[SimpleMCP] Starting '${this.options.name}' v${this.options.version} (stdio transport)`
+      `[SimplyMCP] Starting '${this.options.name}' v${this.options.version} (stdio transport)`
     );
     console.error(
-      `[SimpleMCP] Registered: ${this.tools.size} tools, ${this.prompts.size} prompts, ${this.resources.size} resources`
+      `[SimplyMCP] Registered: ${this.tools.size} tools, ${this.prompts.size} prompts, ${this.resources.size} resources`
     );
 
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
 
-    console.error('[SimpleMCP] Connected and ready for requests');
+    console.error('[SimplyMCP] Connected and ready for requests');
 
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
@@ -618,7 +618,7 @@ export class SimpleMCP {
         const url = new URL(origin);
         const allowedHosts = ['localhost', '127.0.0.1', '::1'];
         if (!allowedHosts.includes(url.hostname)) {
-          console.warn(`[SimpleMCP] Blocked request from unauthorized origin: ${origin}`);
+          console.warn(`[SimplyMCP] Blocked request from unauthorized origin: ${origin}`);
           res.status(403).json({
             jsonrpc: '2.0',
             error: {
@@ -730,10 +730,10 @@ export class SimpleMCP {
     // Start HTTP server
     this.httpServer = app.listen(port, () => {
       console.log(
-        `[SimpleMCP] Server '${this.options.name}' v${this.options.version} listening on port ${port}`
+        `[SimplyMCP] Server '${this.options.name}' v${this.options.version} listening on port ${port}`
       );
       console.log(
-        `[SimpleMCP] Registered: ${this.tools.size} tools, ${this.prompts.size} prompts, ${this.resources.size} resources`
+        `[SimplyMCP] Registered: ${this.tools.size} tools, ${this.prompts.size} prompts, ${this.resources.size} resources`
       );
     });
 
@@ -1029,25 +1029,25 @@ export class SimpleMCP {
   }
 
   /**
-   * Create SimpleMCP server from file with inline dependencies
+   * Create SimplyMCP server from file with inline dependencies
    * Parses the file content to extract inline dependency declarations
    *
    * @param filePath - Path to server file
    * @param options - Additional server options (will override parsed values)
-   * @returns Promise resolving to SimpleMCP instance
+   * @returns Promise resolving to SimplyMCP instance
    *
    * @example
    * ```typescript
    * // Without auto-install (default)
-   * const server = await SimpleMCP.fromFile('./server.ts');
+   * const server = await SimplyMCP.fromFile('./server.ts');
    *
    * // With auto-install
-   * const server = await SimpleMCP.fromFile('./server.ts', {
+   * const server = await SimplyMCP.fromFile('./server.ts', {
    *   autoInstall: true
    * });
    *
    * // With custom install options
-   * const server = await SimpleMCP.fromFile('./server.ts', {
+   * const server = await SimplyMCP.fromFile('./server.ts', {
    *   autoInstall: {
    *     packageManager: 'pnpm',
    *     onProgress: (event) => console.log(event.message)
@@ -1055,7 +1055,7 @@ export class SimpleMCP {
    * });
    * ```
    */
-  static async fromFile(filePath: string, options?: Partial<SimpleMCPOptions>): Promise<SimpleMCP> {
+  static async fromFile(filePath: string, options?: Partial<SimplyMCPOptions>): Promise<SimplyMCP> {
     // Import fs/promises dynamically to avoid issues in browser environments
     const { readFile } = await import('fs/promises');
     const { resolve } = await import('path');
@@ -1073,7 +1073,7 @@ export class SimpleMCP {
 
     // Log warnings to stderr
     if (parseResult.warnings.length > 0) {
-      console.error('[SimpleMCP] Inline dependency warnings:');
+      console.error('[SimplyMCP] Inline dependency warnings:');
       parseResult.warnings.forEach(w => console.error(`  - ${w}`));
     }
 
@@ -1100,7 +1100,7 @@ export class SimpleMCP {
     };
 
     // Create server with parsed dependencies
-    const server = new SimpleMCP({
+    const server = new SimplyMCP({
       name: options?.name || 'server-from-file',
       version: options?.version || '1.0.0',
       ...options,
@@ -1113,7 +1113,7 @@ export class SimpleMCP {
         ? {}
         : options.autoInstall;
 
-      console.error('[SimpleMCP] Auto-installing dependencies...');
+      console.error('[SimplyMCP] Auto-installing dependencies...');
       const result = await server.installDependencies(installOptions);
 
       if (!result.success) {
@@ -1125,7 +1125,7 @@ export class SimpleMCP {
         );
       }
 
-      console.error(`[SimpleMCP] Successfully installed ${result.installed.length} packages`);
+      console.error(`[SimplyMCP] Successfully installed ${result.installed.length} packages`);
     }
 
     return server;
@@ -1193,7 +1193,7 @@ export class SimpleMCP {
     try {
       this.server.notification(notification);
     } catch (error) {
-      console.error('[SimpleMCP] Failed to send progress notification:', error);
+      console.error('[SimplyMCP] Failed to send progress notification:', error);
     }
   }
 
@@ -1219,7 +1219,7 @@ export class SimpleMCP {
     try {
       this.server.notification(notification);
     } catch (error) {
-      console.error('[SimpleMCP] Failed to send logging notification:', error);
+      console.error('[SimplyMCP] Failed to send logging notification:', error);
     }
   }
 

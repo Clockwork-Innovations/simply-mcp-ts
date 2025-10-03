@@ -1,6 +1,6 @@
 /**
- * Bundle command for SimpleMCP CLI
- * Bundles SimpleMCP servers into standalone distributions
+ * Bundle command for SimplyMCP CLI
+ * Bundles SimplyMCP servers into standalone distributions
  */
 
 import type { CommandModule, ArgumentsCamelCase } from 'yargs';
@@ -31,7 +31,7 @@ interface BundleArgs {
  */
 export const bundleCommand: CommandModule<{}, BundleArgs> = {
   command: 'bundle [entry]',
-  describe: 'Bundle a SimpleMCP server into a standalone distribution',
+  describe: 'Bundle a SimplyMCP server into a standalone distribution',
 
   builder: (yargs) => {
     return yargs
@@ -172,7 +172,7 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
       validateBundleOptions(options);
 
       // Print configuration
-      console.log('SimpleMCP Bundler');
+      console.log('SimplyMCP Bundler');
       console.log('=================\n');
       console.log(`Entry:    ${options.entry}`);
       console.log(`Output:   ${options.output}`);

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Comprehensive test suite for SimpleMCP Phase 2, Feature 3 (Auto-Installation). All tests call **real implementations** - NO fake grep-based tests.
+Comprehensive test suite for SimplyMCP Phase 2, Feature 3 (Auto-Installation). All tests call **real implementations** - NO fake grep-based tests.
 
 ## Test Files Created
 
@@ -74,7 +74,7 @@ Comprehensive test suite for SimpleMCP Phase 2, Feature 3 (Auto-Installation). A
 - **Lines**: 540
 - **Tests**: 30 tests
 - **Test Groups**:
-  - **SimpleMCP API Tests (10 tests)**:
+  - **SimplyMCP API Tests (10 tests)**:
     - `server.checkDependencies()` returns status
     - `server.checkDependencies()` with no deps
     - `server.installDependencies()` returns result
@@ -117,7 +117,7 @@ Comprehensive test suite for SimpleMCP Phase 2, Feature 3 (Auto-Installation). A
 - **Lines**: 517
 - **Tests**: 10 tests
 - **Coverage**:
-  - SimpleMCP.fromFile() workflow
+  - SimplyMCP.fromFile() workflow
   - Check dependencies workflow
   - Install dependencies workflow
   - Package manager detection workflow
@@ -204,7 +204,7 @@ npx vitest run tests/phase2/auto-install-integration.test.ts
 - Import real modules directly
 - Create temp directories with actual file structures
 - Test component interactions
-- Verify SimpleMCP API behavior
+- Verify SimplyMCP API behavior
 
 ### E2E Tests (Bash Scripts)
 - Test complete workflows
@@ -249,9 +249,9 @@ npx vitest run tests/phase2/auto-install-integration.test.ts
 - ✅ `package-manager-detector.ts` - 15 unit tests + integration tests
 - ✅ `dependency-installer.ts` - 25 unit tests + integration tests
 
-### SimpleMCP API
-- ✅ `SimpleMCP.checkDependencies()` - 10 tests
-- ✅ `SimpleMCP.installDependencies()` - 10 tests
+### SimplyMCP API
+- ✅ `SimplyMCP.checkDependencies()` - 10 tests
+- ✅ `SimplyMCP.installDependencies()` - 10 tests
 - ✅ API integration - 10 tests
 
 ### Workflows

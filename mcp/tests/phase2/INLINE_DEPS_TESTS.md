@@ -27,7 +27,7 @@ This document describes the comprehensive test suite for Phase 2, Feature 2: Inl
 ### Integration Tests
 
 3. **`inline-deps-integration.test.ts`** - Integration Tests (25 tests)
-   - SimpleMCP.fromFile() integration
+   - SimplyMCP.fromFile() integration
    - Dependency access APIs (getDependencies, hasDependency, getDependencyVersion)
    - Package.json generation
    - Dependency merging
@@ -185,12 +185,12 @@ npx vitest run mcp/tests/phase2/inline-deps-integration.test.ts
 
 ### 3. Integration Tests (25 tests)
 
-#### SimpleMCP.fromFile() (3 tests)
+#### SimplyMCP.fromFile() (3 tests)
 - Parse inline dependencies from file
 - Handle files without inline deps
 - Throw on invalid deps with strict mode
 
-#### SimpleMCP Dependency Access (3 tests)
+#### SimplyMCP Dependency Access (3 tests)
 - hasDependency() returns correct boolean
 - getDependencyVersion() returns correct version
 - getDependencies() returns complete data
@@ -230,7 +230,7 @@ npx vitest run mcp/tests/phase2/inline-deps-integration.test.ts
 - All tests use REAL parser/validator functions
 - No mocking of functions being tested
 - Actual file I/O operations
-- Real SimpleMCP instances
+- Real SimplyMCP instances
 
 ### Security Testing
 - Injection prevention (;, |, &, $, `)
@@ -260,7 +260,7 @@ npx vitest run mcp/tests/phase2/inline-deps-integration.test.ts
 ### Known Issues
 
 1. **Integration Test Failures (Expected):**
-   - SimpleMCP API may not exactly match test expectations
+   - SimplyMCP API may not exactly match test expectations
    - These are integration mismatches, not implementation bugs
    - Core functionality (parser, validator, utils) is fully tested
 
@@ -286,14 +286,14 @@ npx vitest run mcp/tests/phase2/inline-deps-integration.test.ts
 - ✅ All parser functions
 - ✅ All validator functions
 - ✅ All utility functions
-- ✅ SimpleMCP integration (fromFile)
+- ✅ SimplyMCP integration (fromFile)
 - ✅ Error handling
 - ✅ Edge cases
 - ✅ Security features
 - ✅ Performance
 
 **What's Not Tested:**
-- ⚠️ SimpleMCP constructor with parseInlineDependencies option (experimental)
+- ⚠️ SimplyMCP constructor with parseInlineDependencies option (experimental)
 - ⚠️ Auto-installation (Feature 3)
 - ⚠️ CLI integration (Feature 4)
 
@@ -318,7 +318,7 @@ npx vitest run mcp/tests/phase2/inline-deps-integration.test.ts
 
 **Symptom:** 3-4 integration tests fail with "expected X to be Y".
 
-**Cause:** SimpleMCP API may not match test expectations exactly.
+**Cause:** SimplyMCP API may not match test expectations exactly.
 
 **Solution:** These failures are expected and documented. Core functionality is tested separately.
 

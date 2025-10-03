@@ -95,7 +95,7 @@ No changes required! The fix is backward compatible. Type imports that worked be
 
 ```typescript
 // Both of these still work:
-import { SimpleMCP } from 'simply-mcp';
+import { SimplyMCP } from 'simply-mcp';
 import type { ImageInput } from 'simply-mcp';
 ```
 

@@ -143,7 +143,7 @@ Available Prompts:
 - greeting: Generate greeting
 - code-review: Generate code review prompt
 
-For more information, see the SimpleMCP documentation.`,
+For more information, see the SimplyMCP documentation.`,
     },
   ],
 });

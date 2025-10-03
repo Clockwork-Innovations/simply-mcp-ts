@@ -65,7 +65,7 @@ gh auth status
 
 ---
 
-## For SimpleMCP Deployment
+## For SimplyMCP Deployment
 
 ### Step 1: Install GitHub CLI
 
@@ -119,7 +119,7 @@ git push origin v1.0.0
 
 # Create GitHub release
 gh release create v1.0.0 \
-  --title "SimpleMCP v1.0.0" \
+  --title "SimplyMCP v1.0.0" \
   --notes-file CHANGELOG.md
 ```
 
@@ -149,7 +149,7 @@ gh repo edit Clockwork-Innovations/simply-mcp \
 ```bash
 # Create release
 gh release create v1.0.0 \
-  --title "SimpleMCP v1.0.0" \
+  --title "SimplyMCP v1.0.0" \
   --notes-file CHANGELOG.md
 
 # List releases
@@ -266,7 +266,7 @@ gh release create v1.0.0 --title "v1.0.0" --notes-file CHANGELOG.md
 
 ---
 
-## For SimpleMCP Right Now
+## For SimplyMCP Right Now
 
 ```bash
 # 1. Install GitHub CLI
@@ -285,7 +285,7 @@ cd /mnt/Shared/cs-projects/simple-mcp
 git push -u origin main
 git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
-gh release create v1.0.0 --title "SimpleMCP v1.0.0" --notes-file CHANGELOG.md
+gh release create v1.0.0 --title "SimplyMCP v1.0.0" --notes-file CHANGELOG.md
 ```
 
 Done! 🎉

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * SimpleMCP Advanced Example
+ * SimplyMCP Advanced Example
  *
- * This example demonstrates more advanced SimpleMCP features:
+ * This example demonstrates more advanced SimplyMCP features:
  * - Complex validation with Zod schemas
  * - Error handling
  * - Using HandlerContext
@@ -13,12 +13,12 @@
  *   node mcp/examples/advanced-server.ts
  */
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'advanced-example-server',
   version: '1.0.0',
 });

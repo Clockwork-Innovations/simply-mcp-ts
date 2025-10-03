@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive implementation plan for adding PEP 723-style inline dependency management to SimpleMCP servers. This feature will allow developers to declare npm dependencies directly in their server files using comment-based metadata, similar to Python's PEP 723 specification.
+This document provides a comprehensive implementation plan for adding PEP 723-style inline dependency management to SimplyMCP servers. This feature will allow developers to declare npm dependencies directly in their server files using comment-based metadata, similar to Python's PEP 723 specification.
 
 **Status**: Planning Phase
 **Priority**: HIGH
@@ -182,11 +182,11 @@ from fastmcp import FastMCP
 // package-name  # without version = latest
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -240,12 +240,12 @@ EOL                ::= "\n" | "\r\n"
 // date-fns@^2.30.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'weather-server',
   version: '1.0.0',
 });
@@ -307,7 +307,7 @@ await server.start();
 // /// dependencies
 // ///
 
-// No external dependencies - server uses only SimpleMCP and Node.js builtins
+// No external dependencies - server uses only SimplyMCP and Node.js builtins
 ```
 
 ### 3.6 Complex Example
@@ -335,7 +335,7 @@ await server.start();
 // drizzle-orm@^0.29.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -352,10 +352,10 @@ import pg from 'pg';
 // This server has no inline dependencies block
 // It should work exactly as before
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'simple-server',
   version: '1.0.0',
 });
@@ -371,7 +371,7 @@ const server = new SimpleMCP({
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                 SimpleMCP Server File                    │
+│                 SimplyMCP Server File                    │
 │  ┌───────────────────────────────────────────────────┐  │
 │  │ // /// dependencies                                │  │
 │  │ // axios@^1.6.0                                   │  │
@@ -379,7 +379,7 @@ const server = new SimpleMCP({
 │  │ // ///                                             │  │
 │  └───────────────────────────────────────────────────┘  │
 │  │                                                       │
-│  │ import { SimpleMCP } from './mcp/SimpleMCP.js';      │
+│  │ import { SimplyMCP } from './mcp/SimplyMCP.js';      │
 │  │ import axios from 'axios';                           │
 │  │ ...                                                  │
 │  └───────────────────────────────────────────────────────┘
@@ -449,7 +449,7 @@ mcp/
 │   │
 │   └── types.ts                     (MODIFIED - add inline deps to context)
 │
-├── SimpleMCP.ts                     (MODIFIED - add inline dep support)
+├── SimplyMCP.ts                     (MODIFIED - add inline dep support)
 │   ├── Add inlineDependencies field
 │   ├── Add parseDependencies() method
 │   ├── Add getDependencies() method
@@ -471,11 +471,11 @@ mcp/
 
 ### 4.3 Integration Points
 
-**Where inline dependencies fit in SimpleMCP:**
+**Where inline dependencies fit in SimplyMCP:**
 
-1. **SimpleMCP Constructor** (Optional auto-parse)
+1. **SimplyMCP Constructor** (Optional auto-parse)
    ```typescript
-   constructor(options: SimpleMCPOptions) {
+   constructor(options: SimplyMCPOptions) {
      // Existing code...
 
      // NEW: Optional auto-parse inline dependencies
@@ -487,12 +487,12 @@ mcp/
 
 2. **Static Method** (Recommended approach)
    ```typescript
-   static async fromFile(filePath: string): Promise<SimpleMCP> {
+   static async fromFile(filePath: string): Promise<SimplyMCP> {
      const source = await readFile(filePath, 'utf-8');
      const deps = parseInlineDependencies(source);
 
      // Create server with parsed dependencies
-     const server = new SimpleMCP({
+     const server = new SimplyMCP({
        name: 'server-from-file',
        version: '1.0.0',
        inlineDependencies: deps,
@@ -572,10 +572,10 @@ export interface ValidationError {
 }
 ```
 
-**SimpleMCP Integration API:**
+**SimplyMCP Integration API:**
 
 ```typescript
-class SimpleMCP {
+class SimplyMCP {
   private inlineDependencies?: InlineDependencies;
 
   /**
@@ -594,9 +594,9 @@ class SimpleMCP {
   getDependencyVersion(packageName: string): string | undefined;
 
   /**
-   * Create SimpleMCP server from file (parses inline deps)
+   * Create SimplyMCP server from file (parses inline deps)
    */
-  static async fromFile(filePath: string, options?: SimpleMCPOptions): Promise<SimpleMCP>;
+  static async fromFile(filePath: string, options?: SimplyMCPOptions): Promise<SimplyMCP>;
 }
 ```
 
@@ -911,14 +911,14 @@ export interface DependencySpec {
 }
 ```
 
-### 5.4 SimpleMCP Integration
+### 5.4 SimplyMCP Integration
 
-**File: `mcp/SimpleMCP.ts` (additions)**
+**File: `mcp/SimplyMCP.ts` (additions)**
 
 ```typescript
 import { parseInlineDependencies, InlineDependencies } from './core/inline-deps/index.js';
 
-export interface SimpleMCPOptions {
+export interface SimplyMCPOptions {
   name: string;
   version: string;
   port?: number;
@@ -934,11 +934,11 @@ export interface SimpleMCPOptions {
   parseInlineDependencies?: boolean;        // Auto-parse from caller (experimental)
 }
 
-export class SimpleMCP {
-  private options: Required<SimpleMCPOptions>;
+export class SimplyMCP {
+  private options: Required<SimplyMCPOptions>;
   private inlineDependencies?: InlineDependencies;
 
-  constructor(options: SimpleMCPOptions) {
+  constructor(options: SimplyMCPOptions) {
     // Existing initialization...
 
     // Store inline dependencies if provided
@@ -974,17 +974,17 @@ export class SimpleMCP {
   }
 
   /**
-   * Create SimpleMCP from file (parses inline dependencies)
+   * Create SimplyMCP from file (parses inline dependencies)
    * @param filePath - Path to server file
    * @param options - Server options
    */
-  static async fromFile(filePath: string, options?: Partial<SimpleMCPOptions>): Promise<SimpleMCP> {
+  static async fromFile(filePath: string, options?: Partial<SimplyMCPOptions>): Promise<SimplyMCP> {
     const source = await readFile(filePath, 'utf-8');
     const parseResult = parseInlineDependencies(source);
 
     // Log warnings
     if (parseResult.warnings.length > 0) {
-      console.warn('[SimpleMCP] Inline dependency warnings:');
+      console.warn('[SimplyMCP] Inline dependency warnings:');
       parseResult.warnings.forEach(w => console.warn(`  - ${w}`));
     }
 
@@ -997,7 +997,7 @@ export class SimpleMCP {
       );
     }
 
-    return new SimpleMCP({
+    return new SimplyMCP({
       name: options?.name || 'server-from-file',
       version: options?.version || '1.0.0',
       ...options,
@@ -1025,7 +1025,7 @@ export class SimpleMCP {
 **Scenario 1: No package.json exists**
 - Inline dependencies are the source of truth
 - Feature 3 (Auto-Installation) can generate package.json from inline deps
-- SimpleMCP can provide a method to export dependencies
+- SimplyMCP can provide a method to export dependencies
 
 **Scenario 2: package.json exists**
 - Both inline deps and package.json coexist
@@ -1208,7 +1208,7 @@ expect(result.dependencies).toEqual({});
 **Test 8: No metadata block**
 ```typescript
 const source = `
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 // Regular code without inline dependencies
 `;
 const result = parseInlineDependencies(source);
@@ -1365,7 +1365,7 @@ expect(result.errors).toContainEqual(
 
 ### 7.3 Integration Tests
 
-**Test 21: SimpleMCP.fromFile() parses dependencies**
+**Test 21: SimplyMCP.fromFile() parses dependencies**
 ```typescript
 const serverFile = '/tmp/test-server.ts';
 await writeFile(serverFile, `
@@ -1373,17 +1373,17 @@ await writeFile(serverFile, `
 // axios@^1.6.0
 // ///
 
-import { SimpleMCP } from './SimpleMCP.js';
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+import { SimplyMCP } from './SimplyMCP.js';
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 `);
 
-const server = await SimpleMCP.fromFile(serverFile);
+const server = await SimplyMCP.fromFile(serverFile);
 expect(server.getDependencies()).toEqual({ 'axios': '^1.6.0' });
 ```
 
-**Test 22: SimpleMCP.hasDependency()**
+**Test 22: SimplyMCP.hasDependency()**
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'test',
   version: '1.0.0',
   inlineDependencies: { 'axios': '^1.6.0', 'zod': '^3.22.0' },
@@ -1393,9 +1393,9 @@ expect(server.hasDependency('axios')).toBe(true);
 expect(server.hasDependency('lodash')).toBe(false);
 ```
 
-**Test 23: SimpleMCP.getDependencyVersion()**
+**Test 23: SimplyMCP.getDependencyVersion()**
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'test',
   version: '1.0.0',
   inlineDependencies: { 'axios': '^1.6.0' },
@@ -1676,7 +1676,7 @@ function parseInlineDependenciesCached(
 
 ### 10.2 Differences
 
-| Aspect | PEP 723 (Python) | SimpleMCP (TypeScript) |
+| Aspect | PEP 723 (Python) | SimplyMCP (TypeScript) |
 |--------|------------------|------------------------|
 | **Format** | TOML within comments | npm syntax within comments |
 | **Delimiter** | `# /// script` | `// /// dependencies` |
@@ -1712,10 +1712,10 @@ function parseInlineDependenciesCached(
 
 **Before:**
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -1733,10 +1733,10 @@ await server.start();
 **After (still works):**
 ```typescript
 // No changes needed - exact same code still works
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -1760,10 +1760,10 @@ await server.start();
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -1781,12 +1781,12 @@ console.log('Dependencies:', dependencies);
 // { "zod": "^3.22.0" }
 ```
 
-**Step 3: Use SimpleMCP.fromFile() (optional)**
+**Step 3: Use SimplyMCP.fromFile() (optional)**
 ```typescript
 // server-loader.ts
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
-const server = await SimpleMCP.fromFile('./my-server.ts');
+const server = await SimplyMCP.fromFile('./my-server.ts');
 console.log('Dependencies:', server.getDependencies());
 ```
 
@@ -1863,7 +1863,7 @@ Allow separate blocks for dependencies, devDependencies, etc.?
 ### 12.3 Should we auto-parse in constructor?
 
 **Question:**
-Should `new SimpleMCP()` automatically parse inline deps from the caller file?
+Should `new SimplyMCP()` automatically parse inline deps from the caller file?
 
 **Pros:**
 - Zero-config experience
@@ -1872,11 +1872,11 @@ Should `new SimpleMCP()` automatically parse inline deps from the caller file?
 **Cons:**
 - Requires stack trace analysis (fragile)
 - Performance overhead
-- Only works if SimpleMCP is created in same file
+- Only works if SimplyMCP is created in same file
 - Doesn't work with imports/exports
 
 **Decision: NO (primary), YES (optional flag)**
-- Provide `SimpleMCP.fromFile()` as recommended approach
+- Provide `SimplyMCP.fromFile()` as recommended approach
 - Allow `parseInlineDependencies: true` option for experimental auto-parse
 - Document limitations clearly
 
@@ -1894,7 +1894,7 @@ If inline dep says `axios@^1.6.0` but package.json says `axios@^1.5.0`, what sho
 ### 12.5 Should we generate package.json?
 
 **Question:**
-Should SimpleMCP provide a method to generate package.json from inline deps?
+Should SimplyMCP provide a method to generate package.json from inline deps?
 
 **Decision: YES (utility function)**
 ```typescript
@@ -1940,15 +1940,15 @@ await writeFile('package.json', JSON.stringify(pkg, null, 2));
   - [ ] Semver pattern matching
   - [ ] Security checks
 
-### Phase 3: SimpleMCP Integration (Day 4)
+### Phase 3: SimplyMCP Integration (Day 4)
 
-- [ ] Update `SimpleMCP.ts`
+- [ ] Update `SimplyMCP.ts`
   - [ ] Add `inlineDependencies` field
   - [ ] Add `getDependencies()` method
   - [ ] Add `hasDependency()` method
   - [ ] Add `getDependencyVersion()` method
   - [ ] Add `static fromFile()` method
-  - [ ] Update `SimpleMCPOptions` interface
+  - [ ] Update `SimplyMCPOptions` interface
 - [ ] Create `core/inline-deps/index.ts`
   - [ ] Export all public APIs
   - [ ] Re-export types
@@ -1972,7 +1972,7 @@ await writeFile('package.json', JSON.stringify(pkg, null, 2));
   - [ ] Include comments
 - [ ] Create `examples/class-based-inline-deps.ts`
   - [ ] Class-based server
-  - [ ] Use `SimpleMCP.fromFile()`
+  - [ ] Use `SimplyMCP.fromFile()`
   - [ ] Show dependency access
 - [ ] Update existing examples
   - [ ] Add inline deps to `simple-server.ts`
@@ -1991,7 +1991,7 @@ await writeFile('package.json', JSON.stringify(pkg, null, 2));
   - [ ] Duplicate detection tests
   - [ ] Security validation tests
 - [ ] Create `tests/inline-deps/test-integration.ts`
-  - [ ] SimpleMCP.fromFile() tests
+  - [ ] SimplyMCP.fromFile() tests
   - [ ] Dependency access tests
   - [ ] Export to package.json tests
   - [ ] Conflict detection tests
@@ -2100,8 +2100,8 @@ await writeFile('package.json', JSON.stringify(pkgJson, null, 2));
 
 - [ ] Parser extracts inline dependencies from source files
 - [ ] Validator checks package names and semver ranges
-- [ ] SimpleMCP can access parsed dependencies
-- [ ] SimpleMCP.fromFile() parses and creates server
+- [ ] SimplyMCP can access parsed dependencies
+- [ ] SimplyMCP.fromFile() parses and creates server
 - [ ] Export to package.json format works
 - [ ] All 30 test scenarios pass
 - [ ] Examples demonstrate the feature
@@ -2127,7 +2127,7 @@ await writeFile('package.json', JSON.stringify(pkgJson, null, 2));
 
 3. **User can create server from file**
    ```typescript
-   const server = await SimpleMCP.fromFile('./server.ts');
+   const server = await SimplyMCP.fromFile('./server.ts');
    ```
 
 4. **Existing servers work without changes**
@@ -2254,12 +2254,12 @@ await writeFile('package.json', JSON.stringify(pkgJson, null, 2));
 // date-fns@^2.30.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'weather-server',
   version: '1.0.0',
 });
@@ -2292,12 +2292,12 @@ await server.start();
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'database-server',
   version: '1.0.0',
 });
@@ -2326,13 +2326,13 @@ await server.start();
 ```typescript
 #!/usr/bin/env npx tsx
 // This server uses no external dependencies
-// Just SimpleMCP and Node.js builtins
+// Just SimplyMCP and Node.js builtins
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { readFile } from 'fs/promises';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'simple-server',
   version: '1.0.0',
 });
@@ -2352,19 +2352,19 @@ server.addTool({
 await server.start();
 ```
 
-### Example 4: Using SimpleMCP.fromFile()
+### Example 4: Using SimplyMCP.fromFile()
 
 ```typescript
 #!/usr/bin/env npx tsx
 // server-loader.ts
 // This file loads a server from another file and inspects its dependencies
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
 async function loadServer(serverPath: string) {
   console.log(`Loading server from ${serverPath}...`);
 
-  const server = await SimpleMCP.fromFile(serverPath);
+  const server = await SimplyMCP.fromFile(serverPath);
 
   console.log(`Server: ${server.getInfo().name}`);
   console.log(`Version: ${server.getInfo().version}`);
@@ -2397,7 +2397,7 @@ await server.start();
 - **PEP 723-inspired format** - Clear delimiters, comment-based
 - **npm/yarn compatible** - Uses standard `package@version` syntax
 - **Programmatic access** - Read dependencies via API
-- **SimpleMCP.fromFile()** - Create servers from files with auto-parsing
+- **SimplyMCP.fromFile()** - Create servers from files with auto-parsing
 - **Validation** - Check package names and semver ranges
 - **Export utilities** - Generate package.json from inline deps
 - **Fully backward compatible** - Existing servers work unchanged
@@ -2440,7 +2440,7 @@ await server.start();
 3. **Follow the Implementation Checklist** (Section 13) in order
 4. **Start with parser.ts** (easiest to test in isolation)
 5. **Then implement validator.ts**
-6. **Integrate with SimpleMCP.ts**
+6. **Integrate with SimplyMCP.ts**
 7. **Create examples** to validate the API
 8. **Write all 30+ tests** from Section 7
 9. **Document the feature** comprehensively
@@ -2460,7 +2460,7 @@ await server.start();
 **Plan Version:** 1.0
 **Created:** 2025-10-02
 **Author:** Agent 1 (Planner)
-**For:** SimpleMCP Phase 2, Feature 2
+**For:** SimplyMCP Phase 2, Feature 2
 **Next:** Agent 2 (Implementer) executes this plan
 
 ---

@@ -1,24 +1,24 @@
 # Binary Content Migration Guide
 
-This guide helps you migrate existing MCP servers to use SimpleMCP's Binary Content Support (Phase 2, Feature 1).
+This guide helps you migrate existing MCP servers to use SimplyMCP's Binary Content Support (Phase 2, Feature 1).
 
 ## Overview
 
-SimpleMCP now supports returning images, PDFs, audio files, and other binary content from tools and resources with automatic base64 encoding, MIME type detection, and multiple input format support.
+SimplyMCP now supports returning images, PDFs, audio files, and other binary content from tools and resources with automatic base64 encoding, MIME type detection, and multiple input format support.
 
 ## Migration Scenarios
 
-### From Text-Only SimpleMCP Servers
+### From Text-Only SimplyMCP Servers
 
-If you already have a SimpleMCP server that only returns text, adding binary support is straightforward.
+If you already have a SimplyMCP server that only returns text, adding binary support is straightforward.
 
 #### Before (Text Only)
 
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -41,10 +41,10 @@ await server.start();
 #### After (With Binary Support)
 
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -58,7 +58,7 @@ server.addTool({
   execute: async (args) => {
     // Return PDF instead of text
     const pdfBuffer = await generatePDF(args.reportId);
-    return pdfBuffer;  // SimpleMCP handles it automatically!
+    return pdfBuffer;  // SimplyMCP handles it automatically!
   },
 });
 
@@ -68,11 +68,11 @@ await server.start();
 **Changes:**
 - No configuration needed
 - Just return a `Buffer` instead of a string
-- SimpleMCP auto-detects file type and encodes to base64
+- SimplyMCP auto-detects file type and encodes to base64
 
 ### From FastMCP (Python)
 
-Migrating from FastMCP's Python implementation to SimpleMCP's TypeScript binary content support.
+Migrating from FastMCP's Python implementation to SimplyMCP's TypeScript binary content support.
 
 #### FastMCP (Python)
 
@@ -91,14 +91,14 @@ def generate_chart(data: list[float]) -> Image:
     return Image.from_pil(img, format="PNG")
 ```
 
-#### SimpleMCP (TypeScript)
+#### SimplyMCP (TypeScript)
 
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 import sharp from 'sharp';  // Or your preferred image library
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -130,9 +130,9 @@ await server.start();
 ```
 
 **Key Differences:**
-- FastMCP uses custom `Image` class; SimpleMCP uses native `Buffer`
-- FastMCP requires `Image.from_pil()`; SimpleMCP auto-converts
-- SimpleMCP has more flexible input formats
+- FastMCP uses custom `Image` class; SimplyMCP uses native `Buffer`
+- FastMCP requires `Image.from_pil()`; SimplyMCP auto-converts
+- SimplyMCP has more flexible input formats
 - Both support automatic base64 encoding
 
 ### From Raw MCP SDK
@@ -175,13 +175,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 ```
 
-#### SimpleMCP
+#### SimplyMCP
 
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -191,7 +191,7 @@ server.addTool({
   description: 'Get company logo',
   parameters: z.object({}),
   execute: async (args) => {
-    // Just return the file path - SimpleMCP handles everything!
+    // Just return the file path - SimplyMCP handles everything!
     return {
       type: 'file',
       path: './logo.png',
@@ -202,7 +202,7 @@ server.addTool({
 await server.start();
 ```
 
-**Benefits of SimpleMCP:**
+**Benefits of SimplyMCP:**
 - ✅ Automatic file reading
 - ✅ Automatic base64 encoding
 - ✅ Automatic MIME type detection
@@ -229,7 +229,7 @@ execute: async (args) => {
 }
 ```
 
-**After (SimpleMCP):**
+**After (SimplyMCP):**
 ```typescript
 execute: async (args) => {
   return generateImage();  // That's it!
@@ -257,7 +257,7 @@ execute: async (args) => {
 }
 ```
 
-**After (SimpleMCP):**
+**After (SimplyMCP):**
 ```typescript
 execute: async (args) => {
   return {
@@ -285,7 +285,7 @@ execute: async (args) => {
 }
 ```
 
-**After (SimpleMCP - same structure, easier image handling):**
+**After (SimplyMCP - same structure, easier image handling):**
 ```typescript
 execute: async (args) => {
   const analysis = analyzeImage(args.imagePath);
@@ -298,7 +298,7 @@ execute: async (args) => {
     ],
   };
 }
-// SimpleMCP auto-converts Buffer to base64!
+// SimplyMCP auto-converts Buffer to base64!
 ```
 
 ### Pattern 4: Binary Resources
@@ -318,7 +318,7 @@ server.addResource({
 });
 ```
 
-**After (SimpleMCP):**
+**After (SimplyMCP):**
 ```typescript
 import { readFile } from 'fs/promises';
 
@@ -328,7 +328,7 @@ server.addResource({
   uri: 'doc://manual',
   name: 'User Manual',
   mimeType: 'application/pdf',
-  content: pdfBuffer,  // SimpleMCP handles Buffer!
+  content: pdfBuffer,  // SimplyMCP handles Buffer!
 });
 ```
 
@@ -336,7 +336,7 @@ server.addResource({
 
 ### Step 1: Update Dependencies
 
-Ensure you have the latest SimpleMCP version:
+Ensure you have the latest SimplyMCP version:
 
 ```bash
 cd mcp
@@ -368,7 +368,7 @@ return buffer;
 
 ### Step 4: Use File Paths Where Appropriate
 
-If you're reading files, let SimpleMCP handle it:
+If you're reading files, let SimplyMCP handle it:
 
 ```typescript
 // Before
@@ -450,7 +450,7 @@ execute: async (args) => {
 
 **Solution:** Use relative paths or configure basePath:
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
   basePath: '/safe/directory',  // Restrict to this directory
@@ -462,7 +462,7 @@ const server = new SimpleMCP({
 ### 1. Take Advantage of Auto-Detection
 
 ```typescript
-// Good - let SimpleMCP figure it out
+// Good - let SimplyMCP figure it out
 return buffer;
 
 // Unnecessary - extra code for no benefit
@@ -524,9 +524,9 @@ execute: async (args) => {
 
 ## Feature Comparison
 
-### SimpleMCP vs FastMCP (Python)
+### SimplyMCP vs FastMCP (Python)
 
-| Feature | SimpleMCP | FastMCP |
+| Feature | SimplyMCP | FastMCP |
 |---------|-----------|---------|
 | Input Formats | 6 types | 3 types |
 | Auto MIME Detection | Extension + Magic Bytes | Extension only |
@@ -536,7 +536,7 @@ execute: async (args) => {
 | Native Types | Buffer/Uint8Array | bytes |
 | Image Helpers | External libraries | Built-in PIL |
 
-### Advantages of SimpleMCP
+### Advantages of SimplyMCP
 
 - **More flexible** - 6 input format options
 - **Better security** - Built-in protections
@@ -545,7 +545,7 @@ execute: async (args) => {
 
 ### When to Use External Libraries
 
-SimpleMCP uses native Buffers, so you'll need libraries for image processing:
+SimplyMCP uses native Buffers, so you'll need libraries for image processing:
 
 **Image Processing:**
 - `sharp` - Fast, production-grade (recommended)
@@ -591,5 +591,5 @@ After migrating to binary content support:
 ---
 
 **Last Updated:** October 2, 2025
-**SimpleMCP Version:** 1.1.0+
+**SimplyMCP Version:** 1.1.0+
 **Migration Difficulty:** Easy (mostly removing code!)

@@ -37,7 +37,7 @@
 
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { SimpleMCP } from './SimpleMCP.js';
+import { SimplyMCP } from './SimplyMCP.js';
 import type { SingleFileMCPConfig } from './single-file-types.js';
 import { schemaToZod } from './schema-builder.js';
 import { ZodSchema } from 'zod';
@@ -127,11 +127,11 @@ async function loadConfig(configPath: string): Promise<SingleFileMCPConfig> {
 }
 
 /**
- * Create SimpleMCP server from config
+ * Create SimplyMCP server from config
  */
-function createServerFromConfig(config: SingleFileMCPConfig): SimpleMCP {
-  // Create SimpleMCP instance
-  const server = new SimpleMCP({
+function createServerFromConfig(config: SingleFileMCPConfig): SimplyMCP {
+  // Create SimplyMCP instance
+  const server = new SimplyMCP({
     name: config.name,
     version: config.version,
     port: config.port,

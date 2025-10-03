@@ -2,11 +2,11 @@
 
 ## Overview
 
-SimpleMCP's **Bundling Command** packages your MCP servers into standalone, production-ready distributions that can be deployed anywhere without external dependencies. This feature transforms your TypeScript/JavaScript server into optimized bundles ready for any deployment scenario.
+SimplyMCP's **Bundling Command** packages your MCP servers into standalone, production-ready distributions that can be deployed anywhere without external dependencies. This feature transforms your TypeScript/JavaScript server into optimized bundles ready for any deployment scenario.
 
 ### What It Does
 
-- Bundle entire SimpleMCP servers into single JavaScript files
+- Bundle entire SimplyMCP servers into single JavaScript files
 - Create standalone distributions with minimal dependencies
 - Generate executable wrapper scripts for direct execution
 - Support multiple output formats (ESM, CJS, single-file, standalone)
@@ -29,7 +29,7 @@ SimpleMCP's **Bundling Command** packages your MCP servers into standalone, prod
 ### When to Use It
 
 Use bundling when you want to:
-- Deploy SimpleMCP servers to production environments
+- Deploy SimplyMCP servers to production environments
 - Create serverless functions (AWS Lambda, Vercel, Cloudflare Workers)
 - Distribute servers to end users without Node.js expertise
 - Minimize deployment footprint (single file vs. node_modules)
@@ -47,7 +47,7 @@ Use bundling when you want to:
   - 32 dependency resolution tests
   - 21 bundler tests
   - 18+ CLI integration tests
-- **Available in**: SimpleMCP v1.4.0+
+- **Available in**: SimplyMCP v1.4.0+
 - **Integrates with**: Feature 2 (Inline Dependencies), Feature 3 (Auto-Installation)
 
 ## Quick Start
@@ -60,7 +60,7 @@ simplemcp bundle server.ts
 
 **Output:**
 ```
-SimpleMCP Bundler
+SimplyMCP Bundler
 =================
 
 Entry:    /path/to/server.ts
@@ -89,7 +89,7 @@ That's it! Your server is bundled and ready to deploy.
 
 ### Bundling Architecture
 
-SimpleMCP bundling follows a multi-stage pipeline:
+SimplyMCP bundling follows a multi-stage pipeline:
 
 ```
 ┌─────────────────┐
@@ -120,7 +120,7 @@ SimpleMCP bundling follows a multi-stage pipeline:
 
 ### Bundle Formats
 
-SimpleMCP supports 5 output formats:
+SimplyMCP supports 5 output formats:
 
 #### 1. Single-File (Default)
 
@@ -246,7 +246,7 @@ simplemcp bundle server.ts --format cjs
 
 ### Entry Point Detection
 
-SimpleMCP automatically detects entry points using multiple strategies:
+SimplyMCP automatically detects entry points using multiple strategies:
 
 #### Auto-Detection Priority
 
@@ -280,20 +280,20 @@ SimpleMCP automatically detects entry points using multiple strategies:
 
 #### Validation
 
-SimpleMCP validates that the entry point:
+SimplyMCP validates that the entry point:
 - Exists and is readable
-- Imports SimpleMCP (`import { SimpleMCP }` or similar)
-- Creates or exports a SimpleMCP instance (`new SimpleMCP(...)`)
+- Imports SimplyMCP (`import { SimplyMCP }` or similar)
+- Creates or exports a SimplyMCP instance (`new SimplyMCP(...)`)
 
 **Error if invalid:**
 ```
-Error: Entry point does not appear to import SimpleMCP: /path/to/file.ts
-Expected: import { SimpleMCP } from "simplemcp" or similar
+Error: Entry point does not appear to import SimplyMCP: /path/to/file.ts
+Expected: import { SimplyMCP } from "simplemcp" or similar
 ```
 
 ### Dependency Handling
 
-SimpleMCP intelligently handles dependencies from multiple sources:
+SimplyMCP intelligently handles dependencies from multiple sources:
 
 #### Dependency Sources (Priority Order)
 
@@ -327,7 +327,7 @@ All sources are merged, with inline dependencies taking precedence.
 
 #### Native Module Detection
 
-SimpleMCP automatically detects native modules that cannot be bundled:
+SimplyMCP automatically detects native modules that cannot be bundled:
 
 **Known native modules:**
 - `fsevents` (macOS file watching)
@@ -574,7 +574,7 @@ simplemcp bundle -h
 
 ### Config File Formats
 
-SimpleMCP supports multiple configuration formats:
+SimplyMCP supports multiple configuration formats:
 
 - `simplemcp.config.js` (JavaScript, recommended)
 - `simplemcp.config.ts` (TypeScript, type-safe)
@@ -611,7 +611,7 @@ export default {
 **simplemcp.config.ts:**
 
 ```typescript
-import { SimpleMCPConfig } from 'simplemcp/bundler';
+import { SimplyMCPConfig } from 'simplemcp/bundler';
 
 export default {
   entry: './src/server.ts',
@@ -628,7 +628,7 @@ export default {
     external: ['fsevents'],
     treeShake: true,
   },
-} satisfies SimpleMCPConfig;
+} satisfies SimplyMCPConfig;
 ```
 
 Benefits:
@@ -665,7 +665,7 @@ NODE_ENV=production simplemcp bundle
 ### Configuration Schema
 
 ```typescript
-interface SimpleMCPConfig {
+interface SimplyMCPConfig {
   // Entry point
   entry?: string;
 
@@ -1104,21 +1104,21 @@ Ensures dependencies are installed even in clean CI environments.
 
 ## Troubleshooting
 
-### Issue 1: "Entry point does not import SimpleMCP"
+### Issue 1: "Entry point does not import SimplyMCP"
 
 **Error:**
 ```
-Error: Entry point does not appear to import SimpleMCP: /path/to/file.ts
-Expected: import { SimpleMCP } from "simplemcp" or similar
+Error: Entry point does not appear to import SimplyMCP: /path/to/file.ts
+Expected: import { SimplyMCP } from "simplemcp" or similar
 ```
 
 **Solution:**
-Ensure your entry file imports and uses SimpleMCP:
+Ensure your entry file imports and uses SimplyMCP:
 
 ```typescript
-import { SimpleMCP } from './SimpleMCP';
+import { SimplyMCP } from './SimplyMCP';
 
-const server = new SimpleMCP({ name: 'my-server' });
+const server = new SimplyMCP({ name: 'my-server' });
 ```
 
 ### Issue 2: "Cannot find module" in Bundle
@@ -1348,7 +1348,7 @@ Typical bundle sizes:
 
 | Server Type | Dependencies | Bundle Size | Minified |
 |-------------|--------------|-------------|----------|
-| **Minimal** | SimpleMCP only | 120-200 KB | 80-120 KB |
+| **Minimal** | SimplyMCP only | 120-200 KB | 80-120 KB |
 | **Small** | + zod | 200-400 KB | 150-250 KB |
 | **Medium** | + axios, zod | 800 KB - 1.5 MB | 500-800 KB |
 | **Large** | + many deps | 2-5 MB | 1-3 MB |
@@ -1429,7 +1429,7 @@ simplemcp bundle server.ts \
 
 ### Q1: Can I bundle TypeScript files?
 
-**A:** Yes! SimpleMCP automatically compiles TypeScript during bundling. No separate tsc step needed.
+**A:** Yes! SimplyMCP automatically compiles TypeScript during bundling. No separate tsc step needed.
 
 ```bash
 simplemcp bundle server.ts  # TypeScript ✓
@@ -1501,7 +1501,7 @@ See [Deployment Guide](../guides/BUNDLING_DEPLOYMENT.md) for detailed strategies
 
 ### Q7: Can I bundle for browsers?
 
-**A:** SimpleMCP servers are Node.js-only (MCP protocol over stdio/HTTP). Bundling targets Node.js environments.
+**A:** SimplyMCP servers are Node.js-only (MCP protocol over stdio/HTTP). Bundling targets Node.js environments.
 
 For browser-compatible code, use `--platform neutral`, but MCP servers won't work in browsers.
 
@@ -1566,7 +1566,7 @@ simplemcp bundle server.ts --verbose
 ```
 
 Check:
-- Entry point is valid SimpleMCP server
+- Entry point is valid SimplyMCP server
 - All dependencies are installed
 - No TypeScript errors
 - Native modules are externalized
@@ -1653,13 +1653,13 @@ import { imageContent, binaryContent } from './mcp/content-helpers';
 - [Inline Dependencies](./inline-dependencies.md) - Declare dependencies in source
 - [Auto-Installation](./auto-installation.md) - Automatic package installation
 - [Binary Content](./binary-content.md) - Return images and files
-- [Quick Start Guide](../QUICK-START.md) - Get started with SimpleMCP
+- [Quick Start Guide](../QUICK-START.md) - Get started with SimplyMCP
 
 ## Comparison with Other Tools
 
-### SimpleMCP Bundling vs. Alternatives
+### SimplyMCP Bundling vs. Alternatives
 
-| Feature | SimpleMCP | @vercel/ncc | esbuild | webpack |
+| Feature | SimplyMCP | @vercel/ncc | esbuild | webpack |
 |---------|-----------|-------------|---------|---------|
 | **TypeScript** | ✅ Built-in | ✅ Built-in | ✅ Built-in | ⚠️ Needs loader |
 | **Single-file** | ✅ Default | ✅ Default | ✅ Yes | ⚠️ Complex |
@@ -1671,7 +1671,7 @@ import { imageContent, binaryContent } from './mcp/content-helpers';
 | **Speed** | ⚡ Fast (esbuild) | ⚡ Fast | ⚡ Fastest | 🐌 Slow |
 | **Simplicity** | ✅ Simple | ✅ Simple | ⚠️ Medium | ❌ Complex |
 
-**SimpleMCP advantages:**
+**SimplyMCP advantages:**
 - MCP-specific optimizations
 - Integrated with inline dependencies
 - Auto-installation support
@@ -1704,4 +1704,4 @@ Found a bug or have a feature request for bundling?
 
 **Last Updated:** October 2, 2025
 **Version:** 1.4.0
-**Maintained by:** SimpleMCP Team
+**Maintained by:** SimplyMCP Team

@@ -33,9 +33,9 @@ This directory contains a comprehensive Model Context Protocol (MCP) framework w
 - **`examples/single-file-basic.ts`** - Basic single-file example
 - **`examples/single-file-advanced.ts`** - Advanced single-file example
 
-### SimpleMCP Framework
-- **`SimpleMCP.ts`** - Programmatic MCP server API
-- **`examples/simple-server.ts`** - SimpleMCP usage example
+### SimplyMCP Framework
+- **`SimplyMCP.ts`** - Programmatic MCP server API
+- **`examples/simple-server.ts`** - SimplyMCP usage example
 
 ### Traditional Servers
 - **`configurableServer.ts`** - JSON-based stateful HTTP server
@@ -140,7 +140,7 @@ See examples:
 - `mcp/examples/single-file-basic.ts` - Using Zod directly
 - `mcp/examples/single-file-advanced.ts` - Advanced Zod patterns
 
-### SimpleMCP (Programmatic API)
+### SimplyMCP (Programmatic API)
 
 For when you need more control or want to build servers programmatically:
 
@@ -299,7 +299,7 @@ claude mcp add-json my-server '{"command":"npx","args":["tsx","mcp/examples/simp
 The official MCP Inspector provides a visual debugging interface.
 
 ```bash
-# Test SimpleMCP server
+# Test SimplyMCP server
 npx @modelcontextprotocol/inspector npx tsx mcp/examples/simple-server.ts --http --port 3000
 
 # Test class-based server
@@ -469,7 +469,7 @@ curl -X POST http://localhost:3000/mcp \
 - ✅ You're familiar with FastMCP or similar frameworks
 - ✅ You want to quickly prototype or build small servers
 
-### Use SimpleMCP (Programmatic) if:
+### Use SimplyMCP (Programmatic) if:
 - ✅ You need to build servers dynamically at runtime
 - ✅ You want programmatic control over server lifecycle
 - ✅ You're building a server generation tool

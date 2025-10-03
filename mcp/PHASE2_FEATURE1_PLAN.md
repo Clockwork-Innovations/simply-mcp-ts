@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive implementation plan for adding image and binary content support to SimpleMCP. The feature will allow tools and resources to return images, PDFs, and other binary data in addition to text content.
+This document provides a comprehensive implementation plan for adding image and binary content support to SimplyMCP. The feature will allow tools and resources to return images, PDFs, and other binary data in addition to text content.
 
 **Status**: Planning Phase
 **Priority**: MEDIUM
@@ -13,12 +13,12 @@ This document provides a comprehensive implementation plan for adding image and 
 
 ## 1. Architecture Analysis
 
-### 1.1 Current SimpleMCP Structure
+### 1.1 Current SimplyMCP Structure
 
-Based on analysis of `/mnt/Shared/cs-projects/cv-gen/mcp/SimpleMCP.ts` and `/mnt/Shared/cs-projects/cv-gen/mcp/core/types.ts`:
+Based on analysis of `/mnt/Shared/cs-projects/cv-gen/mcp/SimplyMCP.ts` and `/mnt/Shared/cs-projects/cv-gen/mcp/core/types.ts`:
 
 **Key Files:**
-- `SimpleMCP.ts` (865 lines) - Main server class
+- `SimplyMCP.ts` (865 lines) - Main server class
 - `core/types.ts` (221 lines) - Type definitions
 - `core/HandlerManager.ts` - Handler execution
 - `examples/` - Example servers
@@ -48,7 +48,7 @@ export interface ResourceDefinition {
 ```
 
 **Current normalizeResult() Method:**
-Located at line 709-731 in `SimpleMCP.ts`. Currently only handles text content:
+Located at line 709-731 in `SimplyMCP.ts`. Currently only handles text content:
 ```typescript
 private normalizeResult(result: string | HandlerResult): HandlerResult {
   // Converts string to { content: [{ type: 'text', text: result }] }
@@ -106,7 +106,7 @@ Binary content needs to be integrated into two main areas:
 ### 1.4 Files That Need Modification
 
 1. **`core/types.ts`** - Add new type definitions for binary content handling
-2. **`SimpleMCP.ts`** - Enhance `normalizeResult()` and resource handling
+2. **`SimplyMCP.ts`** - Enhance `normalizeResult()` and resource handling
 3. **`core/content-helpers.ts`** (NEW) - Binary content helper functions
 4. **`examples/binary-content-demo.ts`** (NEW) - Example demonstrating feature
 
@@ -247,7 +247,7 @@ export interface ResourceContents {
 }
 ```
 
-### 2.4 Changes to SimpleMCP.ts
+### 2.4 Changes to SimplyMCP.ts
 
 **1. Enhanced normalizeResult() Method** (line 709-731)
 
@@ -398,7 +398,7 @@ server.addTool({
     // Generate chart and get Buffer
     const chartBuffer = await generateChart(args.data);
 
-    // SimpleMCP auto-detects this is an image and converts it
+    // SimplyMCP auto-detects this is an image and converts it
     return chartBuffer;
   },
 });
@@ -438,7 +438,7 @@ server.addTool({
   execute: async (args) => {
     const pdfPath = await generateReport(args.reportId);
 
-    // SimpleMCP reads the file and converts to base64
+    // SimplyMCP reads the file and converts to base64
     return {
       type: 'file',
       path: pdfPath,
@@ -490,7 +490,7 @@ server.addResource({
   name: 'User Manual',
   description: 'Application user manual (PDF)',
   mimeType: 'application/pdf',
-  content: pdfBuffer,  // SimpleMCP handles Buffer automatically
+  content: pdfBuffer,  // SimplyMCP handles Buffer automatically
 });
 ```
 
@@ -881,7 +881,7 @@ All error messages should be:
 
 ### 6.1 Ensuring Existing Code Works
 
-**Guarantee: All existing SimpleMCP code continues to work without modification.**
+**Guarantee: All existing SimplyMCP code continues to work without modification.**
 
 **Test Cases:**
 
@@ -965,7 +965,7 @@ execute: async (args) => {
 // Simply return a Buffer
 execute: async (args) => {
   const imageBuffer = await generateImage();
-  return imageBuffer;  // SimpleMCP handles it
+  return imageBuffer;  // SimplyMCP handles it
 }
 ```
 
@@ -996,7 +996,7 @@ All additions are additive - no existing APIs are removed or changed in breaking
 
 ```
 mcp/
-├── SimpleMCP.ts                    (MODIFIED - ~900 lines, +35 lines)
+├── SimplyMCP.ts                    (MODIFIED - ~900 lines, +35 lines)
 │   ├── Enhanced normalizeResult()
 │   ├── Enhanced registerResourceHandlers()
 │   └── Updated ExecuteFunction type
@@ -1130,9 +1130,9 @@ mcp/
 - [ ] Implement `toBinaryContent()`
   - [ ] Similar to `toImageContent()`
 
-### Phase 4: SimpleMCP Integration (Day 4-5)
+### Phase 4: SimplyMCP Integration (Day 4-5)
 
-- [ ] Update `SimpleMCP.ts`
+- [ ] Update `SimplyMCP.ts`
   - [ ] Modify `normalizeResult()` method
   - [ ] Add Buffer/Uint8Array handling
   - [ ] Add file path handling
@@ -1369,7 +1369,7 @@ Fetch images from URLs:
 execute: async (args) => {
   return {
     type: 'image',
-    url: 'https://example.com/chart.png'  // SimpleMCP fetches it
+    url: 'https://example.com/chart.png'  // SimplyMCP fetches it
   };
 }
 ```
@@ -1394,15 +1394,15 @@ def create_thumbnail(image: Image) -> Image:
     return Image.from_pil(img, format="JPEG")
 ```
 
-### 12.2 SimpleMCP Approach (This Feature)
+### 12.2 SimplyMCP Approach (This Feature)
 
-**SimpleMCP (TypeScript) uses:**
+**SimplyMCP (TypeScript) uses:**
 - Native Buffer/Uint8Array support
 - Automatic base64 encoding
 - Multiple input formats (Buffer, path, base64, object)
 - Auto-detection of content type
 
-**Example (SimpleMCP):**
+**Example (SimplyMCP):**
 ```typescript
 server.addTool({
   name: 'create_thumbnail',
@@ -1413,7 +1413,7 @@ server.addTool({
 });
 ```
 
-### 12.3 Advantages of SimpleMCP Approach
+### 12.3 Advantages of SimplyMCP Approach
 
 1. **More flexible input types** - Buffer, Uint8Array, base64, file path, object
 2. **Native TypeScript types** - No need for custom Image class
@@ -1444,7 +1444,7 @@ server.addTool({
    - Recommendation: Treat as image/svg+xml, but allow text field as alternative
 
 5. **How should we handle file paths relative to process.cwd() vs basePath?**
-   - Recommendation: Relative paths resolve to basePath from SimpleMCPOptions
+   - Recommendation: Relative paths resolve to basePath from SimplyMCPOptions
 
 6. **Should we validate that base64 decodes successfully?**
    - Recommendation: Yes, catch decode errors and provide clear message
@@ -1528,14 +1528,14 @@ execute: async (args) => {
 
 **Start with:** `core/content-helpers.ts` (easiest to test in isolation)
 **Then move to:** `core/types.ts` (type definitions)
-**Finally:** `SimpleMCP.ts` (integration)
+**Finally:** `SimplyMCP.ts` (integration)
 
 ---
 
 **Plan Version:** 1.0
 **Created:** 2025-10-01
 **Author:** Agent 1 (Planner)
-**For:** SimpleMCP Phase 2, Feature 1
+**For:** SimplyMCP Phase 2, Feature 1
 **Next:** Agent 2 (Implementer) executes this plan
 
 ---

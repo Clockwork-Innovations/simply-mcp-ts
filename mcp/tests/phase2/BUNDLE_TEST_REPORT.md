@@ -37,21 +37,21 @@ Created a comprehensive test suite of **118 tests** across 5 test files totaling
 2. ✅ Detect from package.json main field
 3. ✅ Detect from convention (server.ts)
 4. ✅ Detect from convention (index.ts)
-5. ✅ Validate SimpleMCP import exists
-6. ✅ Reject non-SimpleMCP files
+5. ✅ Validate SimplyMCP import exists
+6. ✅ Reject non-SimplyMCP files
 7. ✅ Handle missing entry point
 8. ✅ Handle TypeScript files
 9. ✅ Handle JavaScript files
 10. ✅ Handle .mjs files
-11. ✅ Multiple SimpleMCP instances
+11. ✅ Multiple SimplyMCP instances
 12. ✅ Scoped package imports
 13. ✅ Invalid file paths
 14. ✅ Relative vs absolute paths
 15. ✅ basePath option handling
 16. ✅ Extract server name from constructor
 17. ✅ Extract server name fallback to filename
-18. ✅ isSimpleMCPFile returns true for valid file
-19. ✅ isSimpleMCPFile returns false for invalid file
+18. ✅ isSimplyMCPFile returns true for valid file
+19. ✅ isSimplyMCPFile returns false for invalid file
 20. ✅ ESM detection from package.json type field
 
 **Key Features**:
@@ -139,8 +139,8 @@ Created a comprehensive test suite of **118 tests** across 5 test files totaling
 - Detects server.ts by convention
 - Detects from package.json main field
 - Prefers explicit entry over convention
-- Validates SimpleMCP import in detected entry
-- Rejects files without SimpleMCP
+- Validates SimplyMCP import in detected entry
+- Rejects files without SimplyMCP
 - Handles nested directory structures
 - Resolves relative paths correctly
 - Handles TypeScript and JavaScript files
@@ -268,7 +268,7 @@ cd /mnt/Shared/cs-projects/cv-gen/mcp/tests/phase2
 
 ### ✅ All Tests Call Real Implementation
 Every test executes actual implementation code:
-- Entry detector: `detectEntryPoint()`, `validateSimpleMCPEntry()`
+- Entry detector: `detectEntryPoint()`, `validateSimplyMCPEntry()`
 - Config loader: `loadConfig()`, `mergeConfig()`, `validateBundleOptions()`
 - Dependency resolver: `resolveDependencies()`, `detectNativeModules()`
 - Bundler: `bundle()` with full esbuild integration
@@ -381,8 +381,8 @@ Test Files  1 passed (1)
 #### `entry-detector.ts` (263 lines)
 - ✅ `detectEntryPoint()` - 20 tests
 - ✅ `resolveEntryPath()` - 3 tests
-- ✅ `validateSimpleMCPEntry()` - 8 tests
-- ✅ `isSimpleMCPFile()` - 4 tests
+- ✅ `validateSimplyMCPEntry()` - 8 tests
+- ✅ `isSimplyMCPFile()` - 4 tests
 - ✅ `extractServerName()` - 4 tests
 - ✅ `isTypeScriptEntry()` - 3 tests
 - ✅ `isESMEntry()` - 3 tests
@@ -488,7 +488,7 @@ Test Files  1 passed (1)
 
 ### Test Assumptions
 
-1. SimpleMCP core is available at `$MCP_ROOT/SimpleMCP.js`
+1. SimplyMCP core is available at `$MCP_ROOT/SimplyMCP.js`
 2. CLI is available at `$MCP_ROOT/cli/index.js`
 3. Core modules are in `$MCP_ROOT/core/`
 4. Tests run from project root
@@ -531,7 +531,7 @@ Test Files  1 passed (1)
 
 ### Not Implemented (Out of Scope)
 - Actual auto-install testing (covered by Feature 3)
-- Runtime execution of bundles (would require full SimpleMCP setup)
+- Runtime execution of bundles (would require full SimplyMCP setup)
 - Deployment testing (out of scope for unit/integration tests)
 
 ---

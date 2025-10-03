@@ -1,10 +1,10 @@
-# SimpleMCP Examples
+# SimplyMCP Examples
 
-This directory contains examples demonstrating how to use SimpleMCP to create MCP servers quickly and easily.
+This directory contains examples demonstrating how to use SimplyMCP to create MCP servers quickly and easily.
 
-## What is SimpleMCP?
+## What is SimplyMCP?
 
-SimpleMCP is a simplified, FastMCP-inspired API for creating Model Context Protocol (MCP) servers. It provides a clean, intuitive interface while leveraging the existing robust MCP infrastructure in this repository.
+SimplyMCP is a simplified, FastMCP-inspired API for creating Model Context Protocol (MCP) servers. It provides a clean, intuitive interface while leveraging the existing robust MCP infrastructure in this repository.
 
 ## Key Features
 
@@ -21,7 +21,7 @@ SimpleMCP is a simplified, FastMCP-inspired API for creating Model Context Proto
 
 ### 1. Simple Server (`simple-server.ts`)
 
-Demonstrates basic SimpleMCP usage with:
+Demonstrates basic SimplyMCP usage with:
 - Simple tools (greet, calculate)
 - Structured data tools (get_user_info)
 - Context usage (log_message)
@@ -57,8 +57,8 @@ node mcp/examples/advanced-server.ts
 
 Demonstrates Phase 2 Feature 2: Inline Dependencies
 - Declaring dependencies using PEP 723-style inline metadata
-- Accessing dependencies programmatically via SimpleMCP API
-- Using SimpleMCP.getDependencies(), hasDependency(), getDependencyVersion()
+- Accessing dependencies programmatically via SimplyMCP API
+- Using SimplyMCP.getDependencies(), hasDependency(), getDependencyVersion()
 - Self-contained server with visible requirements
 - Date/time manipulation tools showcasing dependency usage
 
@@ -113,7 +113,7 @@ Demonstrates Phase 2 Feature 3: Automatic Dependency Installation (Basic)
 - Declaring dependencies using inline metadata (Feature 2)
 - Enabling auto-installation with autoInstall: true
 - Zero-configuration setup (no manual npm install)
-- Using SimpleMCP.fromFile() with auto-install option
+- Using SimplyMCP.fromFile() with auto-install option
 - Dependency status checking via checkDependencies()
 - Tools that use auto-installed packages (axios, zod)
 
@@ -179,7 +179,7 @@ npx tsx mcp/examples/auto-install-error-handling.ts
 
 ### 8. Bundling Examples
 
-Demonstrates Phase 2 Feature 4: Bundling Command - Package SimpleMCP servers into standalone distributions.
+Demonstrates Phase 2 Feature 4: Bundling Command - Package SimplyMCP servers into standalone distributions.
 
 #### Basic Bundling (`bundling/bundle-basic.md`)
 
@@ -312,7 +312,7 @@ Bundling seamlessly integrates with inline dependencies and auto-installation:
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 
@@ -329,10 +329,10 @@ simplemcp bundle server.ts --auto-install
 ### 1. Import and Create Server
 
 ```typescript
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
   port: 3000, // Default port for HTTP
@@ -395,7 +395,7 @@ await server.start({ transport: 'http', port: 3000 });
 ### Constructor Options
 
 ```typescript
-interface SimpleMCPOptions {
+interface SimplyMCPOptions {
   name: string;              // Server name
   version: string;           // Server version
   port?: number;             // Default HTTP port (default: 3000)
@@ -492,7 +492,7 @@ server.getStats()  // { tools, prompts, resources }
 
 ## Validation with Zod
 
-SimpleMCP uses Zod for parameter validation. Here are some common patterns:
+SimplyMCP uses Zod for parameter validation. Here are some common patterns:
 
 ### Basic Types
 
@@ -537,7 +537,7 @@ z.enum(['option1', 'option2', 'option3'])
 
 ## Error Handling
 
-SimpleMCP automatically handles:
+SimplyMCP automatically handles:
 - Zod validation errors (returns user-friendly messages)
 - HandlerExecutionErrors
 - Generic JavaScript errors
@@ -597,7 +597,7 @@ await server.start({ transport: 'http', port: 3000 });
 
 ## Differences from Raw MCP SDK
 
-| Feature | SimpleMCP | Raw MCP SDK |
+| Feature | SimplyMCP | Raw MCP SDK |
 |---------|-----------|-------------|
 | Setup | Single file | Multiple files + config |
 | Validation | Automatic (Zod) | Manual |
@@ -608,7 +608,7 @@ await server.start({ transport: 'http', port: 3000 });
 
 ## Integration with Existing Infrastructure
 
-SimpleMCP wraps and reuses:
+SimplyMCP wraps and reuses:
 - **HandlerManager**: For handler execution
 - **Validation system**: For input validation and sanitization
 - **Logger**: For structured logging

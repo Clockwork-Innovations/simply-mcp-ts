@@ -1,4 +1,4 @@
-# SimpleMCP
+# SimplyMCP
 
 A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript with multiple API styles and full-featured tooling support.
 
@@ -127,10 +127,10 @@ export default defineMCP({
 For dynamic server generation:
 
 ```typescript
-import { SimpleMCP } from 'simply-mcp';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'dynamic-tools',
   version: '1.0.0'
 });
@@ -171,7 +171,7 @@ await server.start({
 simply-mcp/
 ├── mcp/
 │   ├── index.ts              # Main module entry point
-│   ├── SimpleMCP.ts          # Programmatic API
+│   ├── SimplyMCP.ts          # Programmatic API
 │   ├── decorators.ts         # Decorator API
 │   ├── single-file-types.ts  # Functional API
 │   ├── core/                 # Core framework
@@ -195,7 +195,7 @@ simply-mcp/
 - **[Architecture Overview](./mcp/docs/architecture/TECHNICAL.md)** - System design and internals
 - **[API Reference](./mcp/docs/guides/HANDLER-DEVELOPMENT.md)** - Handler development guide
 - **[Deployment Guide](./mcp/docs/guides/DEPLOYMENT.md)** - Production deployment
-- **[Module Usage](./MODULE_USAGE.md)** - Using SimpleMCP as a module
+- **[Module Usage](./MODULE_USAGE.md)** - Using SimplyMCP as a module
 
 ## 🎨 API Comparison
 
@@ -380,7 +380,7 @@ If you find this project useful, please consider giving it a star ⭐
 
 ## 👥 About
 
-**SimpleMCP** is created and maintained by [Clockwork Innovations, LLC](https://cwinnov.com)
+**SimplyMCP** is created and maintained by [Clockwork Innovations, LLC](https://cwinnov.com)
 
 **Founder & Author**: Nicholas Marinkovich, MD
 
@@ -388,4 +388,4 @@ Clockwork Innovations foresees a future where the convergence of technologies re
 
 ---
 
-**Made with ❤️ by the SimpleMCP team**
+**Made with ❤️ by the SimplyMCP team**

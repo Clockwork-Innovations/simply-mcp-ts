@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This guide helps you migrate your SimpleMCP servers to use automatic dependency installation. Whether you're creating a new server from scratch or upgrading an existing one, this guide provides step-by-step instructions and best practices.
+This guide helps you migrate your SimplyMCP servers to use automatic dependency installation. Whether you're creating a new server from scratch or upgrading an existing one, this guide provides step-by-step instructions and best practices.
 
 ### Why Use Auto-Installation?
 
@@ -39,7 +39,7 @@ Before migrating, ensure you have:
 
 - Node.js 18+ installed
 - npm 9+ (or yarn/pnpm/bun)
-- SimpleMCP v1.3.0+
+- SimplyMCP v1.3.0+
 - Existing server using Feature 2 (Inline Dependencies) OR package.json
 
 ## Migration Scenarios
@@ -58,7 +58,7 @@ Choose your scenario:
 
 ### Starting Point
 
-You want to create a new SimpleMCP server with auto-installation from the beginning.
+You want to create a new SimplyMCP server with auto-installation from the beginning.
 
 ### Step-by-Step Migration
 
@@ -77,11 +77,11 @@ You want to create a new SimpleMCP server with auto-installation from the beginn
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
 // Create server - note: NOT using fromFile() yet
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'weather-server',
   version: '1.0.0',
 });
@@ -112,11 +112,11 @@ await server.start();
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
 // CHANGE: Use fromFile() with autoInstall
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'weather-server',
   version: '1.0.0',
   autoInstall: true, // ← Enable auto-installation
@@ -146,10 +146,10 @@ await server.start();
 npx tsx weather-server.ts
 
 # Output:
-# [SimpleMCP] Auto-installing dependencies...
-# [SimpleMCP] Installing 2 packages with npm...
-# [SimpleMCP] Successfully installed 2 packages
-# [SimpleMCP] Starting 'weather-server' v1.0.0
+# [SimplyMCP] Auto-installing dependencies...
+# [SimplyMCP] Installing 2 packages with npm...
+# [SimplyMCP] Successfully installed 2 packages
+# [SimplyMCP] Starting 'weather-server' v1.0.0
 ```
 
 #### Step 4: Verify Installation
@@ -165,13 +165,13 @@ ls package-lock.json
 
 # Second run - no installation (already installed)
 npx tsx weather-server.ts
-# [SimpleMCP] Starting 'weather-server' v1.0.0
+# [SimplyMCP] Starting 'weather-server' v1.0.0
 ```
 
 ### Success Checklist
 
 - [ ] Inline dependencies declared
-- [ ] Using `SimpleMCP.fromFile()` with `autoInstall: true`
+- [ ] Using `SimplyMCP.fromFile()` with `autoInstall: true`
 - [ ] Server runs without manual npm install
 - [ ] Lock file generated
 - [ ] Dependencies in node_modules
@@ -226,13 +226,13 @@ Add dependency declarations to your server file:
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import _ from 'lodash';
 import { z } from 'zod';
 
 // Existing server code
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -246,7 +246,7 @@ Change from direct construction to `fromFile()`:
 
 **Before:**
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -254,7 +254,7 @@ const server = new SimpleMCP({
 
 **After:**
 ```typescript
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'my-server',
   version: '1.0.0',
   autoInstall: true,
@@ -271,10 +271,10 @@ rm -rf node_modules package-lock.json
 npx tsx server.ts
 
 # Output:
-# [SimpleMCP] Auto-installing dependencies...
-# [SimpleMCP] Installing 3 packages with npm...
-# [SimpleMCP] Successfully installed 3 packages
-# [SimpleMCP] Starting 'my-server' v1.0.0
+# [SimplyMCP] Auto-installing dependencies...
+# [SimplyMCP] Installing 3 packages with npm...
+# [SimplyMCP] Successfully installed 3 packages
+# [SimplyMCP] Starting 'my-server' v1.0.0
 ```
 
 #### Step 5: Keep or Remove package.json
@@ -335,10 +335,10 @@ You're already using Feature 2 (Inline Dependencies) and want to add auto-instal
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -356,7 +356,7 @@ await server.start();
 
 **Before:**
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -364,7 +364,7 @@ const server = new SimpleMCP({
 
 **After:**
 ```typescript
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'my-server',
   version: '1.0.0',
   autoInstall: true, // ← Add this line
@@ -488,10 +488,10 @@ CMD ["npx", "tsx", "server.ts"]
 
 ```typescript
 // lambda/handler.ts
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
 // Auto-install on Lambda cold start
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: {
     packageManager: 'npm',
     production: true, // Production deps only
@@ -557,12 +557,12 @@ You want to deploy a server to production with auto-installation.
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'my-server',
   version: '1.0.0',
 
@@ -666,7 +666,7 @@ CMD ["npx", "tsx", "server.ts"]
 **Wrong:**
 ```typescript
 // This DOESN'T enable auto-install
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
   autoInstall: true, // ← Ignored! Wrong constructor
@@ -676,7 +676,7 @@ const server = new SimpleMCP({
 **Right:**
 ```typescript
 // Use fromFile() instead
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   name: 'my-server',
   version: '1.0.0',
   autoInstall: true, // ← Works correctly
@@ -688,7 +688,7 @@ const server = await SimpleMCP.fromFile(__filename, {
 **Wrong:**
 ```typescript
 // ESM doesn't have __filename
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   autoInstall: true
 });
 // Error: __filename is not defined
@@ -701,14 +701,14 @@ import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   autoInstall: true
 });
 ```
 
 Or use absolute path:
 ```typescript
-const server = await SimpleMCP.fromFile('./server.ts', {
+const server = await SimplyMCP.fromFile('./server.ts', {
   autoInstall: true
 });
 ```
@@ -718,7 +718,7 @@ const server = await SimpleMCP.fromFile('./server.ts', {
 **Wrong:**
 ```typescript
 // Ignores installation errors
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   autoInstall: true
 });
 ```
@@ -726,7 +726,7 @@ const server = await SimpleMCP.fromFile(__filename, {
 **Right:**
 ```typescript
 try {
-  const server = await SimpleMCP.fromFile(__filename, {
+  const server = await SimplyMCP.fromFile(__filename, {
     autoInstall: {
       onError: (error) => {
         console.error(`Failed to install ${error.packageName}:`, error.message);
@@ -752,7 +752,7 @@ try {
 // "axios": "^1.5.0"  ← Different version!
 ```
 
-**Result:** SimpleMCP uses package.json version and warns about the mismatch.
+**Result:** SimplyMCP uses package.json version and warns about the mismatch.
 
 **Right:**
 ```typescript
@@ -770,7 +770,7 @@ try {
 **Wrong:**
 ```typescript
 // Always auto-install, even in production
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   autoInstall: true // ← Dangerous in production
 });
 ```
@@ -784,7 +784,7 @@ const server = await SimpleMCP.fromFile(__filename, {
 ```typescript
 const isProduction = process.env.NODE_ENV === 'production';
 
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   autoInstall: !isProduction // Only in development
 });
 
@@ -881,10 +881,10 @@ rm -rf node_modules package-lock.json
 npx tsx server.ts
 
 # Expected output:
-# [SimpleMCP] Auto-installing dependencies...
-# [SimpleMCP] Installing X packages...
-# [SimpleMCP] Successfully installed X packages
-# [SimpleMCP] Starting server...
+# [SimplyMCP] Auto-installing dependencies...
+# [SimplyMCP] Installing X packages...
+# [SimplyMCP] Successfully installed X packages
+# [SimplyMCP] Starting server...
 ```
 
 ### Test 2: Second Run (No Install)
@@ -894,7 +894,7 @@ npx tsx server.ts
 npx tsx server.ts
 
 # Expected output:
-# [SimpleMCP] Starting server...
+# [SimplyMCP] Starting server...
 # (no installation - already installed)
 ```
 
@@ -939,7 +939,7 @@ npx tsx server.ts
 ### For All Scenarios
 
 - [ ] Inline dependencies declared (Feature 2)
-- [ ] Using `SimpleMCP.fromFile()` with `autoInstall`
+- [ ] Using `SimplyMCP.fromFile()` with `autoInstall`
 - [ ] Server runs without manual npm install
 - [ ] Lock file generated automatically
 - [ ] Dependencies verified with `checkDependencies()`
@@ -970,14 +970,14 @@ If auto-installation causes issues, you can easily rollback:
 
 **Change this:**
 ```typescript
-const server = await SimpleMCP.fromFile(__filename, {
+const server = await SimplyMCP.fromFile(__filename, {
   autoInstall: true
 });
 ```
 
 **Back to this:**
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -1036,7 +1036,7 @@ You can keep inline dependencies for documentation even without auto-install:
 
 - [Auto-Installation Documentation](../features/auto-installation.md)
 - [Example Servers](/mcp/examples/)
-- [SimpleMCP Guide](../../SIMPLE_MCP_GUIDE.md)
+- [SimplyMCP Guide](../../SIMPLE_MCP_GUIDE.md)
 - [GitHub Issues](https://github.com/your-repo/issues)
 
 ---

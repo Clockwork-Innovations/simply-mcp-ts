@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide helps you migrate your existing SimpleMCP servers to use **Inline Dependencies** (Phase 2, Feature 2). Whether you have a server using package.json or starting from scratch, this guide provides step-by-step instructions.
+This guide helps you migrate your existing SimplyMCP servers to use **Inline Dependencies** (Phase 2, Feature 2). Whether you have a server using package.json or starting from scratch, this guide provides step-by-step instructions.
 
 ## Table of Contents
 
@@ -59,7 +59,7 @@ Consider keeping package.json if you:
 
 ### Prerequisites
 
-1. **SimpleMCP v1.2.0+**
+1. **SimplyMCP v1.2.0+**
    ```bash
    # Check your version
    npm list @modelcontextprotocol/sdk
@@ -85,16 +85,16 @@ Consider keeping package.json if you:
 
 ### Scenario 1: New Server (No Dependencies)
 
-**Starting Point:** Creating a new SimpleMCP server from scratch.
+**Starting Point:** Creating a new SimplyMCP server from scratch.
 
 #### Before
 
 ```typescript
 // my-server.ts
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -117,10 +117,10 @@ await server.start();
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -161,12 +161,12 @@ npm install zod@^3.22.0
 
 **my-server.ts:**
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'api-server',
   version: '1.0.0',
 });
@@ -213,12 +213,12 @@ await server.start();
 // date-fns@^2.30.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'api-server',
   version: '1.0.0',
 });
@@ -355,7 +355,7 @@ await server.start();
 // date-fns@^2.30.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 // ... rest of imports
 ```
 
@@ -754,7 +754,7 @@ console.log('✅ No conflicts detected');
 import { readFile } from 'fs/promises';
 import { parseInlineDependencies } from './mcp/core/index.js';
 import { validateDependencies } from './mcp/core/dependency-validator.js';
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
 async function testMigration() {
   console.log('🧪 Testing inline dependencies migration...\n');
@@ -799,9 +799,9 @@ async function testMigration() {
   }
 
   // Test 4: Load server
-  console.log('4. Loading server with SimpleMCP.fromFile()...');
+  console.log('4. Loading server with SimplyMCP.fromFile()...');
   try {
-    const server = await SimpleMCP.fromFile('./my-server.ts');
+    const server = await SimplyMCP.fromFile('./my-server.ts');
     const deps = server.getDependencies();
     console.log(`✅ Server loaded with ${deps?.dependencies.length || 0} dependencies\n`);
   } catch (error) {
@@ -922,7 +922,7 @@ This way:
 // /// dependencies
 // axios@^1.6.0
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 ```
 
 ✅ **Correct:**
@@ -931,7 +931,7 @@ import { SimpleMCP } from './mcp/SimpleMCP.js';
 // axios@^1.6.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 ```
 
 **Why:** End delimiter `// ///` is required.
@@ -1117,16 +1117,16 @@ If you encounter issues during migration:
    - [Inline Dependencies Feature Doc](../features/inline-dependencies.md)
    - [Troubleshooting Section](../features/inline-dependencies.md#troubleshooting)
 
-3. **Test with SimpleMCP.fromFile():**
+3. **Test with SimplyMCP.fromFile():**
    ```typescript
-   const server = await SimpleMCP.fromFile('./my-server.ts');
+   const server = await SimplyMCP.fromFile('./my-server.ts');
    console.log('Dependencies:', server.getDependencies());
    ```
 
 4. **Open an issue:**
    - Include your inline dependencies block
    - Include error messages
-   - Include Node.js and SimpleMCP versions
+   - Include Node.js and SimplyMCP versions
 
 ## Appendix: Migration Tools
 

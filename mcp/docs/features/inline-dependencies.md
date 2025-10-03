@@ -2,13 +2,13 @@
 
 ## Overview
 
-SimpleMCP's **Inline Dependencies** feature allows you to declare npm package dependencies directly in your server file using PEP 723-style comment-based metadata. This makes your MCP servers truly self-contained and easy to share.
+SimplyMCP's **Inline Dependencies** feature allows you to declare npm package dependencies directly in your server file using PEP 723-style comment-based metadata. This makes your MCP servers truly self-contained and easy to share.
 
 ### What It Does
 
 - Declare npm dependencies directly in your TypeScript/JavaScript files
 - Use a clean, comment-based syntax inspired by Python's PEP 723
-- Access declared dependencies programmatically via SimpleMCP API
+- Access declared dependencies programmatically via SimplyMCP API
 - Generate package.json from inline declarations
 - Validate package names and semver ranges automatically
 - Enable future auto-installation (Feature 3)
@@ -39,7 +39,7 @@ Use inline dependencies when you want to:
   - 36 parser tests
   - 78 validator tests
   - 25+ integration tests
-- **Available in**: SimpleMCP v1.2.0+
+- **Available in**: SimplyMCP v1.2.0+
 
 ## Quick Start
 
@@ -51,10 +51,10 @@ Use inline dependencies when you want to:
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0',
 });
@@ -82,7 +82,7 @@ This feature is inspired by Python's [PEP 723](https://peps.python.org/pep-0723/
 # ///
 ```
 
-**TypeScript (SimpleMCP):**
+**TypeScript (SimplyMCP):**
 ```typescript
 // /// dependencies
 // axios@^1.6.0
@@ -163,7 +163,7 @@ EOL              ::= "\n" | "\r\n"
 
 ### Security Features
 
-SimpleMCP validates all inline dependencies to prevent security issues:
+SimplyMCP validates all inline dependencies to prevent security issues:
 
 1. **Package Name Validation**
    - Only npm-compliant names allowed
@@ -512,7 +512,7 @@ const axiosDeps = filterDependencies(deps, /^axios/);
 // { "axios": "^1.6.0" }
 ```
 
-### SimpleMCP Integration API
+### SimplyMCP Integration API
 
 #### `server.getDependencies()`
 
@@ -522,7 +522,7 @@ Get parsed inline dependencies from server.
 
 **Example:**
 ```typescript
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'test',
   version: '1.0.0',
 });
@@ -559,21 +559,21 @@ const version = server.getDependencyVersion('axios');
 console.log(`axios version: ${version}`);  // "^1.6.0"
 ```
 
-#### `SimpleMCP.fromFile(filePath, options?)`
+#### `SimplyMCP.fromFile(filePath, options?)`
 
-Create SimpleMCP server from file with inline dependencies.
+Create SimplyMCP server from file with inline dependencies.
 
 **Parameters:**
 - `filePath: string` - Path to server file
-- `options?: Partial<SimpleMCPOptions>` - Server options
+- `options?: Partial<SimplyMCPOptions>` - Server options
 
-**Returns:** `Promise<SimpleMCP>`
+**Returns:** `Promise<SimplyMCP>`
 
 **Example:**
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
-const server = await SimpleMCP.fromFile('./my-server.ts', {
+const server = await SimplyMCP.fromFile('./my-server.ts', {
   name: 'my-server',
   version: '1.0.0',
 });
@@ -593,11 +593,11 @@ await server.start();
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'api-client',
   version: '1.0.0',
 });
@@ -626,13 +626,13 @@ await server.start();
 // axios@^1.6.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 
 // TypeScript types available from @types/node
 import { readFile } from 'fs/promises';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'typed-server',
   version: '1.0.0',
 });
@@ -678,10 +678,10 @@ const server = new SimpleMCP({
 // ///
 
 // This server uses only Node.js builtins
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { readFile } from 'fs/promises';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'simple-server',
   version: '1.0.0',
 });
@@ -697,10 +697,10 @@ const server = new SimpleMCP({
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'deps-aware',
   version: '1.0.0',
 });
@@ -726,15 +726,15 @@ server.addTool({
 await server.start();
 ```
 
-### Example 7: Using SimpleMCP.fromFile()
+### Example 7: Using SimplyMCP.fromFile()
 
 ```typescript
 // server-loader.ts
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 
 async function loadServer(path: string) {
   // Load server and parse inline deps automatically
-  const server = await SimpleMCP.fromFile(path);
+  const server = await SimplyMCP.fromFile(path);
 
   // Check what dependencies it needs
   const deps = server.getDependencies();
@@ -860,14 +860,14 @@ console.log('Final dependencies:', merged.dependencies);
 // date-fns@^2.30.0
 // ///
 
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import _ from 'lodash';
 import pg from 'pg';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'complex-server',
   version: '1.0.0',
 });
@@ -1162,7 +1162,7 @@ npx tsx my-server.ts
 
 ### Package Name Validation
 
-SimpleMCP strictly validates package names:
+SimplyMCP strictly validates package names:
 
 ```typescript
 // ✅ Valid
@@ -1549,13 +1549,13 @@ Then configure npm authentication as usual (`.npmrc` file).
 
 - **[Auto-Installation](./auto-installation.md)** - Phase 2, Feature 3: Automatically install inline dependencies
 - **[Bundling](./bundling.md)** - Phase 2, Feature 4: Create standalone server distributions
-- **[SimpleMCP Guide](../../SIMPLE_MCP_GUIDE.md)** - Complete SimpleMCP documentation
+- **[SimplyMCP Guide](../../SIMPLE_MCP_GUIDE.md)** - Complete SimplyMCP documentation
 
 ## Comparison with Other Tools
 
-### SimpleMCP vs PEP 723 (Python)
+### SimplyMCP vs PEP 723 (Python)
 
-| Aspect | SimpleMCP | PEP 723 |
+| Aspect | SimplyMCP | PEP 723 |
 |--------|-----------|---------|
 | Language | TypeScript/JavaScript | Python |
 | Format | `// /// dependencies` | `# /// script` |
@@ -1564,7 +1564,7 @@ Then configure npm authentication as usual (`.npmrc` file).
 | Parser | Built-in | uv, pdm, pipx |
 | Auto-install | Coming (Feature 3) | Supported by uv |
 
-### SimpleMCP vs package.json
+### SimplyMCP vs package.json
 
 | Aspect | Inline Deps | package.json |
 |--------|-------------|--------------|
@@ -1575,9 +1575,9 @@ Then configure npm authentication as usual (`.npmrc` file).
 | Complex configs | ❌ Limited | ✅ Yes |
 | Team workflows | ⚠️ OK | ✅ Better |
 
-### SimpleMCP vs FastMCP (Python)
+### SimplyMCP vs FastMCP (Python)
 
-| Feature | SimpleMCP | FastMCP |
+| Feature | SimplyMCP | FastMCP |
 |---------|-----------|---------|
 | Inline deps | ✅ Phase 2 | ❌ No |
 | Language | TypeScript | Python |
@@ -1689,4 +1689,4 @@ Potential improvements for later phases:
 **Version:** 1.0.0
 **Status:** ✅ Implemented (Phase 2, Feature 2)
 **Tests:** 139+ passing (100% pass rate)
-**Maintained by:** SimpleMCP Team
+**Maintained by:** SimplyMCP Team

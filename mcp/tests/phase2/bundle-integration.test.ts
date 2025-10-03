@@ -30,8 +30,8 @@ describe('Bundling - Integration Tests', () => {
     it('detects server.ts by convention', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const entry = await detectEntryPoint(undefined, TEMP_DIR);
@@ -46,8 +46,8 @@ describe('Bundling - Integration Tests', () => {
       await mkdir(join(TEMP_DIR, 'src'), { recursive: true });
       await writeFile(
         join(TEMP_DIR, 'src/index.ts'),
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const entry = await detectEntryPoint(undefined, TEMP_DIR);
@@ -57,24 +57,24 @@ describe('Bundling - Integration Tests', () => {
     it('prefers explicit entry over convention', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'convention', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'convention', version: '1.0.0' });`
       );
       await writeFile(
         join(TEMP_DIR, 'explicit.ts'),
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'explicit', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'explicit', version: '1.0.0' });`
       );
 
       const entry = await detectEntryPoint('explicit.ts', TEMP_DIR);
       expect(entry).toContain('explicit.ts');
     });
 
-    it('validates SimpleMCP import in detected entry', async () => {
+    it('validates SimplyMCP import in detected entry', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `import { SimpleMCP } from 'simplemcp';
-         const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+        `import { SimplyMCP } from 'simplemcp';
+         const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
          export default server;`
       );
 
@@ -82,10 +82,10 @@ describe('Bundling - Integration Tests', () => {
       expect(entry).toBeTruthy();
     });
 
-    it('rejects files without SimpleMCP', async () => {
+    it('rejects files without SimplyMCP', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `console.log('Not a SimpleMCP server');`
+        `console.log('Not a SimplyMCP server');`
       );
 
       await expect(async () => {
@@ -97,8 +97,8 @@ describe('Bundling - Integration Tests', () => {
       await mkdir(join(TEMP_DIR, 'src/servers'), { recursive: true });
       await writeFile(
         join(TEMP_DIR, 'src/servers/main.ts'),
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const entry = await detectEntryPoint('src/servers/main.ts', TEMP_DIR);
@@ -108,8 +108,8 @@ describe('Bundling - Integration Tests', () => {
     it('resolves relative paths correctly', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const entry = await detectEntryPoint('./server.ts', TEMP_DIR);
@@ -120,8 +120,8 @@ describe('Bundling - Integration Tests', () => {
     it('handles TypeScript and JavaScript files', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.js'),
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const entry = await detectEntryPoint('server.js', TEMP_DIR);
@@ -138,8 +138,8 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // axios@^1.6.0
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const deps = await resolveDependencies({ entryPoint: serverFile });
@@ -159,8 +159,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const deps = await resolveDependencies({
@@ -185,8 +185,8 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // axios@^1.6.0
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const deps = await resolveDependencies({
@@ -204,8 +204,8 @@ describe('Bundling - Integration Tests', () => {
          // fsevents@^2.3.0
          // axios@^1.6.0
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const deps = await resolveDependencies({ entryPoint: serverFile });
@@ -225,8 +225,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const deps = await resolveDependencies({
@@ -243,8 +243,8 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // invalid-syntax
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const deps = await resolveDependencies({ entryPoint: serverFile });
@@ -255,8 +255,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const deps = await resolveDependencies({ entryPoint: serverFile });
@@ -283,8 +283,8 @@ describe('Bundling - Integration Tests', () => {
          // axios@^1.6.0
          // zod@^3.22.0
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const deps = await resolveDependencies({
@@ -397,8 +397,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+        `import { SimplyMCP } from 'simplemcp';
+         const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
          server.addTool({
            name: 'test',
            description: 'Test tool',
@@ -423,8 +423,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -441,8 +441,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -458,8 +458,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -489,8 +489,8 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // invalid@syntax
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -507,8 +507,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -528,8 +528,8 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // axios@^1.6.0
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+         import { SimplyMCP } from 'simplemcp';
+         const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
          server.addTool({
            name: 'fetch',
            description: 'Fetch data',
@@ -559,8 +559,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -579,8 +579,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -598,8 +598,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -617,8 +617,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const unminified = await bundle({
@@ -643,8 +643,8 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // axios@^1.6.0
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -665,8 +665,8 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // fsevents@^2.3.0
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -697,8 +697,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         const server = new SimpleMCP({ name: 'test' version: '1.0.0' }); // Missing comma
+        `import { SimplyMCP } from 'simplemcp';
+         const server = new SimplyMCP({ name: 'test' version: '1.0.0' }); // Missing comma
          export default server;`
       );
 
@@ -715,8 +715,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         const server = new SimpleMCP({ name: 'test' version: '1.0.0' });
+        `import { SimplyMCP } from 'simplemcp';
+         const server = new SimplyMCP({ name: 'test' version: '1.0.0' });
          export default server;`
       );
 
@@ -735,8 +735,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       // Try to write to root (should fail on Unix systems)
@@ -775,8 +775,8 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // invalid-dep-syntax
          // ///
-         import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+         import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       const result = await bundle({
@@ -797,8 +797,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       await bundle({
@@ -816,8 +816,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       await bundle({
@@ -838,8 +838,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       await bundle({
@@ -860,8 +860,8 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimpleMCP } from 'simplemcp';
-         export default new SimpleMCP({ name: 'test', version: '1.0.0' });`
+        `import { SimplyMCP } from 'simplemcp';
+         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
       );
 
       await bundle({

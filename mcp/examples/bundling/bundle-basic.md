@@ -1,16 +1,16 @@
 # Basic Bundling Example
 
-This guide demonstrates basic bundling of SimpleMCP servers into standalone distributions.
+This guide demonstrates basic bundling of SimplyMCP servers into standalone distributions.
 
 ## Prerequisites
 
-- SimpleMCP server file (e.g., `server.ts`)
+- SimplyMCP server file (e.g., `server.ts`)
 - Node.js 18+ installed
 - npm/yarn/pnpm package manager
 
 ## Simple Single-File Bundle
 
-The simplest way to bundle a SimpleMCP server:
+The simplest way to bundle a SimplyMCP server:
 
 ```bash
 simplemcp bundle server.ts
@@ -23,7 +23,7 @@ This creates `dist/bundle.js` with:
 
 **Output:**
 ```
-SimpleMCP Bundler
+SimplyMCP Bundler
 =================
 
 Entry:    /path/to/server.ts
@@ -82,14 +82,14 @@ Perfect for development - the bundle rebuilds automatically when you edit files.
 
 ## Example: Complete Workflow
 
-### 1. Create a SimpleMCP Server
+### 1. Create a SimplyMCP Server
 
 ```typescript
 // server.ts
-import { SimpleMCP } from './SimpleMCP';
+import { SimplyMCP } from './SimplyMCP';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'my-server',
   version: '1.0.0'
 });
@@ -168,7 +168,7 @@ Create `/etc/systemd/system/my-server.service`:
 
 ```ini
 [Unit]
-Description=My SimpleMCP Server
+Description=My SimplyMCP Server
 After=network.target
 
 [Service]

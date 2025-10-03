@@ -4,7 +4,7 @@ Use configuration files for complex bundling setups and repeatable builds.
 
 ## Configuration File Formats
 
-SimpleMCP supports multiple config file formats:
+SimplyMCP supports multiple config file formats:
 
 - `simplemcp.config.js` (JavaScript)
 - `simplemcp.config.ts` (TypeScript)
@@ -49,7 +49,7 @@ The CLI automatically finds and uses the config file!
 Create `simplemcp.config.ts`:
 
 ```typescript
-import { SimpleMCPConfig } from 'simplemcp/bundler';
+import { SimplyMCPConfig } from 'simplemcp/bundler';
 
 export default {
   entry: './src/server.ts',
@@ -65,7 +65,7 @@ export default {
     target: 'node20',
     external: ['fsevents', 'better-sqlite3'],
   },
-} satisfies SimpleMCPConfig;
+} satisfies SimplyMCPConfig;
 ```
 
 Benefits:
@@ -271,7 +271,7 @@ export default {
     ],
     treeShake: true,
     banner: `
-// SimpleMCP Server
+// SimplyMCP Server
 // Generated: ${new Date().toISOString()}
 // Environment: ${isProd ? 'production' : 'development'}
     `.trim(),
@@ -346,7 +346,7 @@ export default {
   bundle: {
     banner: `
 /**
- * SimpleMCP Server v${version}
+ * SimplyMCP Server v${version}
  * Copyright (c) 2025
  * Licensed under MIT
  */
@@ -360,7 +360,7 @@ export default {
 Full TypeScript interface:
 
 ```typescript
-interface SimpleMCPConfig {
+interface SimplyMCPConfig {
   entry?: string;
   output?: {
     dir?: string;

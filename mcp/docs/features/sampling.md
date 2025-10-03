@@ -20,10 +20,10 @@ Sampling allows MCP servers to request LLM completions from connected clients. T
 ### 1. Enable Sampling in Server
 
 ```typescript
-import { SimpleMCP } from './SimpleMCP.js';
+import { SimplyMCP } from './SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'ai-assistant-server',
   version: '1.0.0',
   capabilities: {

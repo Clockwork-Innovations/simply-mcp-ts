@@ -6,7 +6,7 @@
 
 ## Overview
 
-Phase 2 development has been successfully completed, delivering **FastMCP parity** and establishing SimpleMCP as a production-ready, single-file MCP framework for TypeScript/Node.js.
+Phase 2 development has been successfully completed, delivering **FastMCP parity** and establishing SimplyMCP as a production-ready, single-file MCP framework for TypeScript/Node.js.
 
 ## Features Delivered
 
@@ -43,7 +43,7 @@ Phase 2 development has been successfully completed, delivering **FastMCP parity
 
 ## FastMCP Parity: ACHIEVED ✅
 
-SimpleMCP now matches or exceeds Python's FastMCP in all areas:
+SimplyMCP now matches or exceeds Python's FastMCP in all areas:
 - ✅ Sampling & Progress (Phase 1)
 - ✅ Enhanced Context & Logging (Phase 1)
 - ✅ Binary Content Support (Phase 2)
@@ -53,7 +53,7 @@ SimpleMCP now matches or exceeds Python's FastMCP in all areas:
 
 ## Production Readiness
 
-SimpleMCP is now production-ready with:
+SimplyMCP is now production-ready with:
 - ✅ 6 deployment platforms documented (VPS, Docker, AWS Lambda, Vercel, GitHub Actions, executables)
 - ✅ Security best practices throughout
 - ✅ Performance optimization guides
@@ -70,10 +70,10 @@ SimpleMCP is now production-ready with:
 // sharp@^0.32.0
 // ///
 
-import { SimpleMCP } from './SimpleMCP.js';
+import { SimplyMCP } from './SimplyMCP.js';
 import { imageContent } from './core/content-helpers.js';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'photo-api',
   version: '1.0.0'
 });
@@ -136,7 +136,7 @@ See [Phase 3 Planning](./PHASE3_ROADMAP.md) (if created)
 - [Bundling Deployment](./docs/guides/BUNDLING_DEPLOYMENT.md)
 
 ### Main Guide
-- [SimpleMCP Complete Guide](./SIMPLE_MCP_GUIDE.md)
+- [SimplyMCP Complete Guide](./SIMPLE_MCP_GUIDE.md)
 
 ## Testing
 
@@ -187,4 +187,4 @@ Run all Phase 2 tests:
 **Ready for Production:** ✅ YES
 **FastMCP Parity:** ✅ ACHIEVED & EXCEEDED
 
-🎉 **Thank you for using SimpleMCP!**
+🎉 **Thank you for using SimplyMCP!**

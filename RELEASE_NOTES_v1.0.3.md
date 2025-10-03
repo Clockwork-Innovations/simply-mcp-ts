@@ -109,8 +109,8 @@ All three APIs are now production-ready:
 
 1. **Programmatic API** ✅
 ```typescript
-import { SimpleMCP } from 'simply-mcp';
-const server = new SimpleMCP({ name: 'my-server', version: '1.0.0' });
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
 // ...
 ```
 

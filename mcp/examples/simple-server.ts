@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * SimpleMCP Example Server
+ * SimplyMCP Example Server
  *
- * This example demonstrates how to use SimpleMCP to create a simple MCP server
+ * This example demonstrates how to use SimplyMCP to create a simple MCP server
  * with tools, prompts, and resources - all in a single file.
  *
  * Usage:
@@ -13,11 +13,11 @@
  *   node mcp/examples/simple-server.ts --http --port 3000
  */
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 
-// Create a new SimpleMCP server with optional enhanced capabilities
-const server = new SimpleMCP({
+// Create a new SimplyMCP server with optional enhanced capabilities
+const server = new SimplyMCP({
   name: 'simple-example-server',
   version: '1.0.0',
   port: 3000, // Default port for HTTP transport
@@ -39,7 +39,7 @@ server.addTool({
   }),
   execute: async (args) => {
     const greeting = args.formal ? 'Good day' : 'Hello';
-    return `${greeting}, ${args.name}! Welcome to SimpleMCP!`;
+    return `${greeting}, ${args.name}! Welcome to SimplyMCP!`;
   },
 });
 
@@ -214,11 +214,11 @@ server.addResource({
 server.addResource({
   uri: 'doc://readme',
   name: 'README',
-  description: 'SimpleMCP README document',
+  description: 'SimplyMCP README document',
   mimeType: 'text/plain',
-  content: `SimpleMCP Example Server
+  content: `SimplyMCP Example Server
 
-This is an example server demonstrating SimpleMCP capabilities.
+This is an example server demonstrating SimplyMCP capabilities.
 
 Available Tools:
 - greet: Greet a user
@@ -233,7 +233,7 @@ Available Resources:
 - config://server: Server configuration
 - doc://readme: This document
 
-For more information, see the SimpleMCP documentation.`,
+For more information, see the SimplyMCP documentation.`,
 });
 
 // Parse command line arguments

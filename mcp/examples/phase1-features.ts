@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SimpleMCP Phase 1 Features Example
+ * SimplyMCP Phase 1 Features Example
  *
  * This example demonstrates the new Phase 1 features:
  * 1. Sampling/LLM Completion Support
@@ -12,11 +12,11 @@
  *   node mcp/examples/phase1-features.ts
  */
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 
-// Create a new SimpleMCP server with enhanced capabilities
-const server = new SimpleMCP({
+// Create a new SimplyMCP server with enhanced capabilities
+const server = new SimplyMCP({
   name: 'phase1-features-server',
   version: '1.0.0',
   capabilities: {

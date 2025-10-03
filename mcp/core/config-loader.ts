@@ -1,5 +1,5 @@
 /**
- * Configuration file loader for SimpleMCP bundling
+ * Configuration file loader for SimplyMCP bundling
  * Supports .js, .ts, .mjs, and .json config files
  */
 
@@ -7,10 +7,10 @@ import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, extname } from 'path';
 import { pathToFileURL } from 'url';
-import { SimpleMCPConfig, BundleOptions } from './bundle-types.js';
+import { SimplyMCPConfig, BundleOptions } from './bundle-types.js';
 
 /**
- * Load SimpleMCP configuration from file
+ * Load SimplyMCP configuration from file
  *
  * Search order (if no config path provided):
  * 1. simplymcp.config.js
@@ -36,7 +36,7 @@ import { SimpleMCPConfig, BundleOptions } from './bundle-types.js';
 export async function loadConfig(
   configPath?: string,
   basePath: string = process.cwd()
-): Promise<SimpleMCPConfig | null> {
+): Promise<SimplyMCPConfig | null> {
   // 1. Determine config file path(s) to check
   const paths = configPath
     ? [configPath]
@@ -74,7 +74,7 @@ export async function loadConfig(
  * @param path - Absolute path to config file
  * @returns Parsed config
  */
-async function loadConfigFile(path: string): Promise<SimpleMCPConfig> {
+async function loadConfigFile(path: string): Promise<SimplyMCPConfig> {
   const ext = extname(path);
 
   // JSON config
@@ -102,7 +102,7 @@ async function loadConfigFile(path: string): Promise<SimpleMCPConfig> {
  * @param config - Raw config object
  * @returns Validated config
  */
-function validateConfig(config: any): SimpleMCPConfig {
+function validateConfig(config: any): SimplyMCPConfig {
   if (!config || typeof config !== 'object') {
     throw new Error('Config must be an object');
   }
@@ -146,7 +146,7 @@ function validateConfig(config: any): SimpleMCPConfig {
     throw new Error('config.autoInstall must be a boolean');
   }
 
-  return config as SimpleMCPConfig;
+  return config as SimplyMCPConfig;
 }
 
 /**
@@ -167,7 +167,7 @@ function validateConfig(config: any): SimpleMCPConfig {
  * ```
  */
 export function mergeConfig(
-  config: SimpleMCPConfig | null,
+  config: SimplyMCPConfig | null,
   cliOptions: Partial<BundleOptions>
 ): BundleOptions {
   if (!config) {
@@ -216,9 +216,9 @@ export function mergeConfig(
 /**
  * Create a default config object
  *
- * @returns Default SimpleMCP config
+ * @returns Default SimplyMCP config
  */
-export function createDefaultConfig(): SimpleMCPConfig {
+export function createDefaultConfig(): SimplyMCPConfig {
   return {
     output: {
       dir: 'dist',
@@ -244,7 +244,7 @@ export function createDefaultConfig(): SimpleMCPConfig {
  * @param format - File format (js, ts, json)
  */
 export async function writeConfig(
-  config: SimpleMCPConfig,
+  config: SimplyMCPConfig,
   path: string,
   format: 'js' | 'ts' | 'json' = 'js'
 ): Promise<void> {
@@ -253,9 +253,9 @@ export async function writeConfig(
   if (format === 'json') {
     content = JSON.stringify(config, null, 2);
   } else if (format === 'ts') {
-    content = `import { SimpleMCPConfig } from 'simply-mcp';
+    content = `import { SimplyMCPConfig } from 'simply-mcp';
 
-export default ${JSON.stringify(config, null, 2)} satisfies SimpleMCPConfig;
+export default ${JSON.stringify(config, null, 2)} satisfies SimplyMCPConfig;
 `;
   } else {
     // JavaScript

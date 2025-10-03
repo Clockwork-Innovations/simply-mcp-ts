@@ -2,7 +2,7 @@
 /**
  * Inline Dependencies Demo Server
  *
- * This example demonstrates how to declare inline dependencies in a SimpleMCP server
+ * This example demonstrates how to declare inline dependencies in a SimplyMCP server
  * using PEP 723-style comment-based metadata.
  *
  * To run this server:
@@ -19,13 +19,13 @@
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from '../SimpleMCP.js';
+import { SimplyMCP } from '../SimplyMCP.js';
 import { z } from 'zod';
 
 /**
- * Create the SimpleMCP server
+ * Create the SimplyMCP server
  */
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'inline-deps-demo',
   version: '1.0.0',
   capabilities: {

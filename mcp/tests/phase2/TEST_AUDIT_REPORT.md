@@ -68,11 +68,11 @@ The "integration tests" DO NOT call the actual implementation. Instead, they use
 run_test "cd '$MCP_DIR' && grep -q 'generate_chart' examples/binary-content-demo.ts" \
   "Verify generate_chart tool exists"
 
-run_test "cd '$MCP_DIR' && grep -q 'normalizeResult' SimpleMCP.ts" \
+run_test "cd '$MCP_DIR' && grep -q 'normalizeResult' SimplyMCP.ts" \
   "Verify normalizeResult method exists"
 
-run_test "cd '$MCP_DIR' && grep -q 'isBuffer' SimpleMCP.ts" \
-  "Verify Buffer detection in SimpleMCP"
+run_test "cd '$MCP_DIR' && grep -q 'isBuffer' SimplyMCP.ts" \
+  "Verify Buffer detection in SimplyMCP"
 ```
 
 **Why This Is Cheating:**
@@ -86,7 +86,7 @@ All 25 "integration tests" are fake and provide ZERO actual validation.
 
 **Required Fix:**
 Rewrite ALL integration tests to:
-1. Start the actual SimpleMCP server
+1. Start the actual SimplyMCP server
 2. Make real MCP protocol calls
 3. Verify actual responses
 4. Check real data correctness
@@ -103,13 +103,13 @@ All 7 E2E tests fail with module import errors. NOT A SINGLE E2E TEST RUNS.
 
 **Evidence:**
 ```
-Error: Cannot find module '../../SimpleMCP.js'
+Error: Cannot find module '../../SimplyMCP.js'
 Require stack:
 - /tmp/mcp-e2e-tests-32245/e2e-client.ts
 ```
 
 **Root Cause:**
-E2E test creates a TypeScript file in `/tmp/` and tries to import from relative path `../../SimpleMCP.js`, but:
+E2E test creates a TypeScript file in `/tmp/` and tries to import from relative path `../../SimplyMCP.js`, but:
 - The temp directory is not at the expected location relative to mcp/
 - TypeScript file needs .ts extension, not .js
 - Module resolution fails completely
@@ -176,12 +176,12 @@ run_test "readBinaryFileTooLarge" "Reject file >50MB" \
 **Location:** `/mcp/tests/phase2/test-binary-integration.sh` (lines 13-33)
 
 **Description:**
-The script header claims to test "SimpleMCP server with binary content through real MCP protocol calls" but this is completely false.
+The script header claims to test "SimplyMCP server with binary content through real MCP protocol calls" but this is completely false.
 
 **Evidence:**
 ```bash
 # Header claims:
-# Tests SimpleMCP server with binary content through real MCP protocol calls.
+# Tests SimplyMCP server with binary content through real MCP protocol calls.
 
 # But later admits:
 echo -e "${YELLOW}Note: Full integration tests require MCP client infrastructure.${NC}"
@@ -322,7 +322,7 @@ Documentation matches reality.
 **What to do:**
 1. Remove ALL grep-based "tests" (lines 337-379)
 2. Create real integration tests that:
-   - Start SimpleMCP server with binary-content-demo
+   - Start SimplyMCP server with binary-content-demo
    - Make actual MCP protocol calls via stdio or HTTP
    - Verify responses contain correct binary data
    - Decode base64 and compare with original files
@@ -358,10 +358,10 @@ kill $SERVER_PID
 1. Fix module import in e2e-client.ts:
    ```typescript
    // WRONG:
-   import { SimpleMCP } from '../../SimpleMCP.js';
+   import { SimplyMCP } from '../../SimplyMCP.js';
 
    // CORRECT:
-   import { SimpleMCP } from '../../SimpleMCP.ts';
+   import { SimplyMCP } from '../../SimplyMCP.ts';
    // OR use absolute path
    ```
 2. Test file creation in correct location
@@ -437,7 +437,7 @@ Failed:       7  (All fail with module import errors)
 
 **Error:**
 ```
-Error: Cannot find module '../../SimpleMCP.js'
+Error: Cannot find module '../../SimplyMCP.js'
 ```
 
 ### Overall Result: ❌ REJECTED

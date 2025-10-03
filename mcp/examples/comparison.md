@@ -1,6 +1,6 @@
-# SimpleMCP vs Traditional MCP Server Comparison
+# SimplyMCP vs Traditional MCP Server Comparison
 
-This document shows side-by-side comparisons of creating the same server using the traditional config-based approach vs SimpleMCP.
+This document shows side-by-side comparisons of creating the same server using the traditional config-based approach vs SimplyMCP.
 
 ## Example: Weather Server
 
@@ -124,15 +124,15 @@ node mcp/configurableServer.ts config/weather-server.json
 
 ---
 
-### SimpleMCP Approach
+### SimplyMCP Approach
 
 **File 1: weather-server.ts**
 ```typescript
 #!/usr/bin/env node
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({
+const server = new SimplyMCP({
   name: 'weather-server',
   version: '1.0.0',
   port: 3000,
@@ -196,7 +196,7 @@ node weather-server.ts
 
 ## Key Differences
 
-| Aspect | Traditional | SimpleMCP |
+| Aspect | Traditional | SimplyMCP |
 |--------|------------|-----------|
 | **Files needed** | 4+ (config + handlers) | 1 |
 | **Lines of code** | ~100 | ~50 |
@@ -217,7 +217,7 @@ node weather-server.ts
 - Handler 2: ~25 lines
 - **Total: ~105 lines across 3 files**
 
-### SimpleMCP
+### SimplyMCP
 - Server file: ~50 lines (everything)
 - **Total: ~50 lines in 1 file**
 
@@ -278,13 +278,13 @@ export default async function multiply(args) {
 }
 ```
 
-### SimpleMCP (1 file, 30 lines)
+### SimplyMCP (1 file, 30 lines)
 
 ```typescript
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({ name: 'calculator', version: '1.0.0' });
+const server = new SimplyMCP({ name: 'calculator', version: '1.0.0' });
 
 const numberPair = z.object({
   a: z.number(),
@@ -319,7 +319,7 @@ await server.start();
 - ✅ You need to hot-reload individual handlers without restart
 - ✅ Your organization requires separation of config and code
 
-### Use SimpleMCP When:
+### Use SimplyMCP When:
 - ✅ You want rapid development
 - ✅ You prefer type safety and autocomplete
 - ✅ You're building a single-purpose server
@@ -330,7 +330,7 @@ await server.start();
 
 ## Migration Path
 
-### From Traditional to SimpleMCP
+### From Traditional to SimplyMCP
 
 1. **Create new TypeScript file**
 2. **Copy tool definitions from config.json**
@@ -351,7 +351,7 @@ await server.start();
 4. **Inline handler functions**
 5. **Test and deploy**
 
-### From SimpleMCP to Traditional
+### From SimplyMCP to Traditional
 
 1. **Extract execute functions to separate files**
 2. **Convert Zod schemas to JSON Schema** (use zod-to-json-schema)
@@ -360,9 +360,9 @@ await server.start();
 
 ## Performance
 
-Both approaches have identical runtime performance since SimpleMCP uses the same underlying infrastructure (HandlerManager, validation, etc.).
+Both approaches have identical runtime performance since SimplyMCP uses the same underlying infrastructure (HandlerManager, validation, etc.).
 
-| Metric | Traditional | SimpleMCP |
+| Metric | Traditional | SimplyMCP |
 |--------|------------|-----------|
 | Startup time | Same | Same |
 | Request handling | Same | Same |
@@ -373,7 +373,7 @@ The only difference is development experience and code organization.
 
 ## Summary
 
-**SimpleMCP** offers:
+**SimplyMCP** offers:
 - 50-60% less code
 - 67% fewer files
 - Full type safety

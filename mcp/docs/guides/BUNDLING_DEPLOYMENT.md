@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This guide provides comprehensive deployment strategies for SimpleMCP server bundles. Learn how to deploy your bundled servers to various platforms including traditional servers, containers, serverless environments, and edge functions.
+This guide provides comprehensive deployment strategies for SimplyMCP server bundles. Learn how to deploy your bundled servers to various platforms including traditional servers, containers, serverless environments, and edge functions.
 
 ### What You'll Learn
 
@@ -16,7 +16,7 @@ This guide provides comprehensive deployment strategies for SimpleMCP server bun
 
 ### Prerequisites
 
-- SimpleMCP server bundled with `simplemcp bundle`
+- SimplyMCP server bundled with `simplemcp bundle`
 - Basic knowledge of your target deployment platform
 - SSH access (for server deployments) or platform credentials
 
@@ -24,7 +24,7 @@ This guide provides comprehensive deployment strategies for SimpleMCP server bun
 
 ### Scenario 1: Traditional Server (VPS/Dedicated)
 
-Deploy bundled SimpleMCP servers to traditional Linux servers.
+Deploy bundled SimplyMCP servers to traditional Linux servers.
 
 #### Prerequisites
 
@@ -90,7 +90,7 @@ sudo nano /etc/systemd/system/myserver.service
 **Content:**
 ```ini
 [Unit]
-Description=SimpleMCP Server
+Description=SimplyMCP Server
 After=network.target
 
 [Service]
@@ -204,7 +204,7 @@ curl https://your-domain.com
 
 ### Scenario 2: Docker Container
 
-Containerize SimpleMCP servers for portable deployments.
+Containerize SimplyMCP servers for portable deployments.
 
 #### Prerequisites
 
@@ -386,7 +386,7 @@ docker-compose down
 
 ### Scenario 3: AWS Lambda (Serverless)
 
-Deploy SimpleMCP servers as AWS Lambda functions.
+Deploy SimplyMCP servers as AWS Lambda functions.
 
 #### Prerequisites
 
@@ -416,7 +416,7 @@ export const handler = async (event, context) => {
   try {
     console.log('Event:', JSON.stringify(event, null, 2));
 
-    // SimpleMCP servers use stdio by default
+    // SimplyMCP servers use stdio by default
     // For Lambda, we need HTTP/REST adapter
     const result = await serverHandler(event, context);
 
@@ -600,7 +600,7 @@ simplemcp bundle server.ts \
 
 **api/server.js** (already bundled):
 ```javascript
-// Your bundled SimpleMCP server
+// Your bundled SimplyMCP server
 export default async function handler(req, res) {
   // Handle MCP requests
   // Vercel provides req/res objects
@@ -841,7 +841,7 @@ jobs:
 
 ### Scenario 6: End-User Distribution
 
-Package SimpleMCP servers for end users without Node.js expertise.
+Package SimplyMCP servers for end users without Node.js expertise.
 
 #### Step 1: Create Executable Bundle
 
@@ -867,7 +867,7 @@ myserver-v1.0.0/
 
 **README.md:**
 ```markdown
-# MyServer - SimpleMCP Server
+# MyServer - SimplyMCP Server
 
 ## Installation
 
@@ -1405,7 +1405,7 @@ app.use(compression());
 
 ## Summary
 
-This guide covered comprehensive deployment strategies for SimpleMCP bundles:
+This guide covered comprehensive deployment strategies for SimplyMCP bundles:
 
 1. **Traditional Servers** - systemd services with Nginx
 2. **Docker** - Containerized deployments
@@ -1438,4 +1438,4 @@ This guide covered comprehensive deployment strategies for SimpleMCP bundles:
 
 **Last Updated:** October 2, 2025
 **Version:** 1.4.0
-**Maintained by:** SimpleMCP Team
+**Maintained by:** SimplyMCP Team

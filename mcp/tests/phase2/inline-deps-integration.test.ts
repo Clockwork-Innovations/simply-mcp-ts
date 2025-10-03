@@ -1,7 +1,7 @@
 /**
  * Integration Tests for Inline Dependencies
  *
- * Tests SimpleMCP integration and end-to-end workflows
+ * Tests SimplyMCP integration and end-to-end workflows
  * These tests actually call the implementation (no mocking!)
  */
 
@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
-import { SimpleMCP } from '../../SimpleMCP.js';
+import { SimplyMCP } from '../../SimplyMCP.js';
 import {
   parseInlineDependencies,
   extractDependencyBlock,
@@ -41,13 +41,13 @@ describe('Inline Dependencies - Integration Tests', () => {
   });
 
   // ========================================================================
-  // SimpleMCP.fromFile() Integration Tests
+  // SimplyMCP.fromFile() Integration Tests
   // ========================================================================
 
-  describe('SimpleMCP.fromFile()', () => {
+  describe('SimplyMCP.fromFile()', () => {
     it('should parse inline dependencies from file', async () => {
       const filePath = join(FIXTURES_DIR, 'real-server.ts');
-      const server = await SimpleMCP.fromFile(filePath, {
+      const server = await SimplyMCP.fromFile(filePath, {
         name: 'test-server',
         version: '1.0.0',
       });
@@ -60,7 +60,7 @@ describe('Inline Dependencies - Integration Tests', () => {
 
     it('should work with files without inline deps', async () => {
       const filePath = join(FIXTURES_DIR, 'no-deps.txt');
-      const server = await SimpleMCP.fromFile(filePath, {
+      const server = await SimplyMCP.fromFile(filePath, {
         name: 'test',
         version: '1.0.0',
       });
@@ -78,7 +78,7 @@ describe('Inline Dependencies - Integration Tests', () => {
       );
 
       await expect(
-        SimpleMCP.fromFile(tempFile, {
+        SimplyMCP.fromFile(tempFile, {
           name: 'test',
           version: '1.0.0',
           parseOptions: { strict: true },
@@ -88,12 +88,12 @@ describe('Inline Dependencies - Integration Tests', () => {
   });
 
   // ========================================================================
-  // SimpleMCP Dependency Access Tests
+  // SimplyMCP Dependency Access Tests
   // ========================================================================
 
-  describe('SimpleMCP Dependency Access', () => {
+  describe('SimplyMCP Dependency Access', () => {
     it('hasDependency() should return true for existing deps', () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {
@@ -114,7 +114,7 @@ describe('Inline Dependencies - Integration Tests', () => {
     });
 
     it('getDependencyVersion() should return correct version', () => {
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: {
@@ -146,7 +146,7 @@ describe('Inline Dependencies - Integration Tests', () => {
         raw: '',
       };
 
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'test',
         version: '1.0.0',
         dependencies: inlineDeps,
@@ -461,16 +461,16 @@ describe('Inline Dependencies - Integration Tests', () => {
 // zod@^3.22.0
 // ///
 
-import { SimpleMCP } from '../../../SimpleMCP.js';
+import { SimplyMCP } from '../../../SimplyMCP.js';
 import { z } from 'zod';
 
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
+const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 export default server;
 `
       );
 
       // Load server
-      const server = await SimpleMCP.fromFile(serverFile, {
+      const server = await SimplyMCP.fromFile(serverFile, {
         name: 'test',
         version: '1.0.0',
       });
@@ -526,7 +526,7 @@ export default server;
 
     it('should maintain backward compatibility', () => {
       // Server without inline deps should work fine
-      const server = new SimpleMCP({
+      const server = new SimplyMCP({
         name: 'old-server',
         version: '1.0.0',
       });

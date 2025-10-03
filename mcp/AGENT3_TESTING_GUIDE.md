@@ -48,14 +48,14 @@ Test scenarios:
 7. Case-insensitive duplicates
 8. Length limits
 
-### Priority 3: Integration Tests (`SimpleMCP.ts`)
+### Priority 3: Integration Tests (`SimplyMCP.ts`)
 
 **File:** `/mcp/tests/phase2/test-inline-deps-integration.ts`
 
 Test scenarios (Section 7.3):
-21. SimpleMCP.fromFile() parses dependencies
-22. SimpleMCP.hasDependency() works correctly
-23. SimpleMCP.getDependencyVersion() returns correct version
+21. SimplyMCP.fromFile() parses dependencies
+22. SimplyMCP.hasDependency() works correctly
+23. SimplyMCP.getDependencyVersion() returns correct version
 24. Export to package.json format
 25. Detect conflicts with package.json
 
@@ -117,11 +117,11 @@ console.log('INVALID:', validatePackageName('INVALID'));
 console.log('^1.0.0:', validateSemverRange('^1.0.0'));
 "
 
-# Test SimpleMCP.fromFile
+# Test SimplyMCP.fromFile
 npx tsx -e "
-import { SimpleMCP } from './mcp/SimpleMCP.js';
+import { SimplyMCP } from './mcp/SimplyMCP.js';
 (async () => {
-  const s = await SimpleMCP.fromFile('./examples/inline-deps-demo.ts');
+  const s = await SimplyMCP.fromFile('./examples/inline-deps-demo.ts');
   console.log('Deps:', s.getDependencies()?.map);
 })();
 "
@@ -192,7 +192,7 @@ Expected test output:
 ✓ Parser: Parse with comments (2ms)
 ✓ Validator: Valid package names (1ms)
 ✓ Validator: Invalid package names (1ms)
-✓ Integration: SimpleMCP.fromFile() (10ms)
+✓ Integration: SimplyMCP.fromFile() (10ms)
 ...
 
 Test Files  1 passed (1)
