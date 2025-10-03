@@ -9,7 +9,7 @@ Version:      1.1.0
 Author:       Nicholas Marinkovich, MD
 Organization: Clockwork Innovations, LLC
 License:      MIT
-Repository:   github.com/clockwork-innovations/simple-mcp
+Repository:   github.com/clockwork-innovations/simply-mcp
 
 STATUS
 ──────
@@ -61,7 +61,7 @@ git add .
 git commit -F .git-commit-message.txt
 
 # 2. Push to GitHub
-git remote add origin https://github.com/clockwork-innovations/simple-mcp.git
+git remote add origin https://github.com/clockwork-innovations/simply-mcp.git
 git branch -M main
 git push -u origin main
 
@@ -78,7 +78,7 @@ npm publish  # if using simply-mcp
 VERIFY DEPLOYMENT
 ─────────────────
 # Check GitHub
-Visit: https://github.com/clockwork-innovations/simple-mcp
+Visit: https://github.com/clockwork-innovations/simply-mcp
 
 # Check npm
 npm view simply-mcp

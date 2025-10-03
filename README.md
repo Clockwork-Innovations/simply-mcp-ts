@@ -5,7 +5,7 @@ A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![CI](https://github.com/clockwork-innovations/simple-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/clockwork-innovations/simple-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/clockwork-innovations/simply-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/clockwork-innovations/simply-mcp/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/simply-mcp.svg)](https://www.npmjs.com/package/simply-mcp)
 
 ## 🚀 Features
@@ -346,7 +346,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
-- [Issue Tracker](https://github.com/clockwork-innovations/simple-mcp/issues)
+- [Issue Tracker](https://github.com/clockwork-innovations/simply-mcp/issues)
 - [Clockwork Innovations](https://cwinnov.com)
 
 ## 🔄 Contributing & Releases
@@ -369,8 +369,8 @@ See [Release Documentation](./.github/RELEASE.md) for complete CI/CD and publish
 ## 📧 Support
 
 - 📖 [Documentation](./mcp/docs/INDEX.md)
-- 🐛 [Report Bug](https://github.com/clockwork-innovations/simple-mcp/issues)
-- 💡 [Request Feature](https://github.com/clockwork-innovations/simple-mcp/issues)
+- 🐛 [Report Bug](https://github.com/clockwork-innovations/simply-mcp/issues)
+- 💡 [Request Feature](https://github.com/clockwork-innovations/simply-mcp/issues)
 
 ## 🌟 Star History
 

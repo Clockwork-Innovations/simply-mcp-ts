@@ -111,8 +111,8 @@ import type { ImageInput } from 'simply-mcp';
 ## 🔗 Related
 
 - **Fixed Issue**: [Issue #2 - Type Export Error](ISSUES-FOR-MAINTAINERS.md)
-- **Previous Release**: [v1.0.1 - Zod Compatibility Fix](https://github.com/clockwork-innovations/simple-mcp/releases/tag/v1.0.1)
-- **Repository**: https://github.com/clockwork-innovations/simple-mcp
+- **Previous Release**: [v1.0.1 - Zod Compatibility Fix](https://github.com/clockwork-innovations/simply-mcp/releases/tag/v1.0.1)
+- **Repository**: https://github.com/clockwork-innovations/simply-mcp
 - **npm Package**: https://www.npmjs.com/package/simply-mcp
 
 ## 📝 Changelog
@@ -129,4 +129,4 @@ import type { ImageInput } from 'simply-mcp';
 
 ---
 
-**Full Changelog**: https://github.com/clockwork-innovations/simple-mcp/compare/v1.0.1...v1.0.2
+**Full Changelog**: https://github.com/clockwork-innovations/simply-mcp/compare/v1.0.1...v1.0.2

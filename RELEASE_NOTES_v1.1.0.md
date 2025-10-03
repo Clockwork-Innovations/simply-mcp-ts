@@ -249,8 +249,8 @@ export default class MyServer {
 ## 🔗 Related
 
 - **Fixed Issue**: [Issue #4 - Decorator Import Path](ISSUE-DECORATOR-IMPORTS-v1.0.4.md)
-- **Previous Release**: [v1.0.3 - Decorator Compatibility Fix](https://github.com/clockwork-innovations/simple-mcp/releases/tag/v1.0.3)
-- **Repository**: https://github.com/clockwork-innovations/simple-mcp
+- **Previous Release**: [v1.0.3 - Decorator Compatibility Fix](https://github.com/clockwork-innovations/simply-mcp/releases/tag/v1.0.3)
+- **Repository**: https://github.com/clockwork-innovations/simply-mcp
 - **npm Package**: https://www.npmjs.com/package/simply-mcp
 
 ---
@@ -320,6 +320,6 @@ Technically this could be `2.0.0`, but `1.1.0` better reflects that it's the sam
 
 ---
 
-**Full Changelog**: https://github.com/clockwork-innovations/simple-mcp/compare/v1.0.3...v1.1.0
+**Full Changelog**: https://github.com/clockwork-innovations/simply-mcp/compare/v1.0.3...v1.1.0
 
 🎉 **Enjoy the simpler, cleaner `simply-mcp`!**

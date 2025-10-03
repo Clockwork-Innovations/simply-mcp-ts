@@ -107,5 +107,5 @@ We use [Semantic Versioning](https://semver.org/):
 
 ---
 
-[Unreleased]: https://github.com/clockwork-innovations/simple-mcp/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/clockwork-innovations/simple-mcp/releases/tag/v1.0.0
+[Unreleased]: https://github.com/clockwork-innovations/simply-mcp/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/clockwork-innovations/simply-mcp/releases/tag/v1.0.0

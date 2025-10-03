@@ -17,7 +17,7 @@ Thank you for your interest in contributing to SimpleMCP! This document provides
 
 ```bash
 # Fork the repository on GitHub, then:
-git clone https://github.com/clockwork-innovations/simple-mcp.git
+git clone https://github.com/clockwork-innovations/simply-mcp.git
 cd simple-mcp
 ```
 
@@ -339,8 +339,8 @@ Report issues to project maintainers.
 ## 🙋 Questions?
 
 - **Documentation**: Check the [docs](./mcp/docs/INDEX.md)
-- **Issues**: Search [existing issues](https://github.com/clockwork-innovations/simple-mcp/issues)
-- **Discussions**: Start a [discussion](https://github.com/clockwork-innovations/simple-mcp/discussions)
+- **Issues**: Search [existing issues](https://github.com/clockwork-innovations/simply-mcp/issues)
+- **Discussions**: Start a [discussion](https://github.com/clockwork-innovations/simply-mcp/discussions)
 
 ## 🎉 Thank You!
 

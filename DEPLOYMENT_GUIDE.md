@@ -116,7 +116,7 @@ git commit -m "Initial commit: SimpleMCP v1.0.0
 
 ```bash
 # Add remote
-git remote add origin https://github.com/clockwork-innovations/simple-mcp.git
+git remote add origin https://github.com/clockwork-innovations/simply-mcp.git
 
 # Rename branch to main (if needed)
 git branch -M main
@@ -160,7 +160,7 @@ git push origin v1.0.0
 
 ### Step 5: Create GitHub Release
 
-1. Go to: `https://github.com/clockwork-innovations/simple-mcp/releases/new`
+1. Go to: `https://github.com/clockwork-innovations/simply-mcp/releases/new`
 2. Choose tag: `v1.0.0`
 3. Release title: `SimpleMCP v1.0.0`
 4. Description: Copy from `CHANGELOG.md`
@@ -362,7 +362,7 @@ A modern, type-safe Model Context Protocol server framework for TypeScript.
 
 #MCP #TypeScript #AI #Claude
 
-https://github.com/clockwork-innovations/simple-mcp
+https://github.com/clockwork-innovations/simply-mcp
 ```
 
 **Where to Post:**

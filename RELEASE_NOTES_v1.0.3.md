@@ -136,8 +136,8 @@ export default class MyServer {
 ## 🔗 Related
 
 - **Fixed Issue**: [Issue #3 - Decorator JSDoc Extraction Bug](FINAL-TEST-REPORT-v1.0.2.md)
-- **Previous Release**: [v1.0.2 - Type Export Fix](https://github.com/clockwork-innovations/simple-mcp/releases/tag/v1.0.2)
-- **Repository**: https://github.com/clockwork-innovations/simple-mcp
+- **Previous Release**: [v1.0.2 - Type Export Fix](https://github.com/clockwork-innovations/simply-mcp/releases/tag/v1.0.2)
+- **Repository**: https://github.com/clockwork-innovations/simply-mcp
 - **npm Package**: https://www.npmjs.com/package/simply-mcp
 
 ## 📝 Changelog
@@ -187,6 +187,6 @@ All APIs are backward compatible - no breaking changes!
 
 ---
 
-**Full Changelog**: https://github.com/clockwork-innovations/simple-mcp/compare/v1.0.2...v1.0.3
+**Full Changelog**: https://github.com/clockwork-innovations/simply-mcp/compare/v1.0.2...v1.0.3
 
 🎉 **All three APIs are now fully functional and production-ready!**
