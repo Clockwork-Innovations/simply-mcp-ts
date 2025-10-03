@@ -1,12 +1,12 @@
-# Using simple-mcp as a Module
+# Using simply-mcp as a Module
 
-This document explains how to use `simple-mcp` as a module in other applications.
+This document explains how to use `simply-mcp` as a module in other applications.
 
 ## Installation
 
 ### As an npm package (if published)
 ```bash
-npm install simple-mcp
+npm install simply-mcp
 ```
 
 ### From local directory
@@ -18,7 +18,7 @@ npm install /path/to/simple-mcp
 cd /path/to/simple-mcp
 npm link
 cd /path/to/your-project
-npm link simple-mcp
+npm link simply-mcp
 ```
 
 ## Building
@@ -38,7 +38,7 @@ This will create the `dist/` directory with compiled JavaScript and TypeScript d
 ### Decorator API (Recommended)
 
 ```typescript
-import { MCPServer } from 'simple-mcp';
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer({ name: 'my-server', version: '1.0.0' })
 class MyServer {
@@ -56,7 +56,7 @@ class MyServer {
 ### Functional API
 
 ```typescript
-import { defineMCP } from 'simple-mcp';
+import { defineMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 export default defineMCP({
@@ -84,7 +84,7 @@ export default defineMCP({
 ### Programmatic API
 
 ```typescript
-import { SimpleMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimpleMCP({
@@ -128,7 +128,7 @@ import type {
   ToolHandler,
   ServerConfig,
   SingleFileTool
-} from 'simple-mcp';
+} from 'simply-mcp';
 
 const myTool: SingleFileTool = {
   name: 'example',

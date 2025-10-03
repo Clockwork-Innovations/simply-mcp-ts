@@ -8,7 +8,7 @@
  *   npx tsx mcp/class-adapter.ts mcp/examples/class-basic.ts --http --port 3000
  */
 
-import { MCPServer, tool, prompt, resource } from 'simple-mcp';
+import { MCPServer, tool, prompt, resource } from 'simply-mcp';
 
 /**
  * My Awesome Server

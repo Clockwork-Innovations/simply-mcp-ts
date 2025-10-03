@@ -109,20 +109,20 @@ All three APIs are now production-ready:
 
 1. **Programmatic API** ✅
 ```typescript
-import { SimpleMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
 const server = new SimpleMCP({ name: 'my-server', version: '1.0.0' });
 // ...
 ```
 
 2. **Functional API** ✅
 ```typescript
-import { defineMCP } from 'simple-mcp';
+import { defineMCP } from 'simply-mcp';
 export default defineMCP({ name: 'my-server', tools: [/* ... */] });
 ```
 
 3. **Decorator API** ✅ (NOW FIXED!)
 ```typescript
-import { MCPServer, tool } from 'simple-mcp';
+import { MCPServer, tool } from 'simply-mcp';
 
 @MCPServer({ name: 'my-server', version: '1.0.0' })
 export default class MyServer {
@@ -138,7 +138,7 @@ export default class MyServer {
 - **Fixed Issue**: [Issue #3 - Decorator JSDoc Extraction Bug](FINAL-TEST-REPORT-v1.0.2.md)
 - **Previous Release**: [v1.0.2 - Type Export Fix](https://github.com/clockwork-innovations/simple-mcp/releases/tag/v1.0.2)
 - **Repository**: https://github.com/clockwork-innovations/simple-mcp
-- **npm Package**: https://www.npmjs.com/package/simple-mcp
+- **npm Package**: https://www.npmjs.com/package/simply-mcp
 
 ## 📝 Changelog
 
@@ -162,7 +162,7 @@ No changes required! The decorator API that was broken in v1.0.2 is now fixed:
 
 ```typescript
 // This now works in v1.0.3! 🎉
-import { MCPServer, tool, prompt, resource } from 'simple-mcp';
+import { MCPServer, tool, prompt, resource } from 'simply-mcp';
 
 @MCPServer({ name: 'calculator', version: '1.0.0' })
 export default class Calculator {

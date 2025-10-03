@@ -7,7 +7,7 @@
 ### Option A: If you have access to clockwork-innovations org
 
 1. Go to: https://github.com/organizations/clockwork-innovations/repositories/new
-2. Name: `simple-mcp`
+2. Name: `simply-mcp`
 3. Public repository
 4. **Do NOT** initialize with README
 5. Click "Create repository"
@@ -15,7 +15,7 @@
 ### Option B: Use personal account first
 
 1. Go to: https://github.com/new
-2. Name: `simple-mcp`
+2. Name: `simply-mcp`
 3. Public repository
 4. **Do NOT** initialize with README
 5. Click "Create repository"
@@ -24,7 +24,7 @@
 ## Step 2: Push Code (3 min)
 
 ```bash
-cd /mnt/Shared/cs-projects/simple-mcp
+cd /mnt/Shared/cs-projects/simply-mcp
 
 # Stage all files
 git add .
@@ -51,7 +51,7 @@ git push origin v1.0.0
 
 ### Check name availability:
 ```bash
-npm view simple-mcp
+npm view simply-mcp
 # If you see "404 Not Found" - name is available!
 ```
 
@@ -60,7 +60,7 @@ npm view simple-mcp
 Edit `package.json`:
 ```json
 {
-  "name": "simple-mcp"
+  "name": "simply-mcp"
 }
 ```
 
@@ -83,14 +83,14 @@ npm publish
 # Visit: https://github.com/clockwork-innovations/simple-mcp
 
 # Check npm
-npm view simple-mcp
+npm view simply-mcp
 
 # Test installation
 cd /tmp
 mkdir test-install
 cd test-install
 npm init -y
-npm install simple-mcp
+npm install simply-mcp
 # Should complete without errors
 ```
 
@@ -98,8 +98,8 @@ npm install simple-mcp
 
 Your package is now:
 - ✅ On GitHub: `github.com/clockwork-innovations/simple-mcp`
-- ✅ On npm: `npmjs.com/package/simple-mcp`
-- ✅ Ready for users: `npm install simple-mcp`
+- ✅ On npm: `npmjs.com/package/simply-mcp`
+- ✅ Ready for users: `npm install simply-mcp`
 
 ## Next Steps
 

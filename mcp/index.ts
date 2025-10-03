@@ -8,7 +8,7 @@
  *
  * @example Decorator API
  * ```typescript
- * import { MCPServer } from 'simple-mcp';
+ * import { MCPServer } from 'simply-mcp';
  *
  * @MCPServer({ name: 'my-server', version: '1.0.0' })
  * class MyServer {
@@ -20,7 +20,7 @@
  *
  * @example Functional API
  * ```typescript
- * import { defineMCP } from 'simple-mcp';
+ * import { defineMCP } from 'simply-mcp';
  * import { z } from 'zod';
  *
  * export default defineMCP({
@@ -37,7 +37,7 @@
  *
  * @example Programmatic API
  * ```typescript
- * import { SimpleMCP } from 'simple-mcp';
+ * import { SimpleMCP } from 'simply-mcp';
  * import { z } from 'zod';
  *
  * const server = new SimpleMCP({ name: 'my-server', version: '1.0.0' });

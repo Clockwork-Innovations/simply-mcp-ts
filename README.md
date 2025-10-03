@@ -6,7 +6,7 @@ A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![CI](https://github.com/clockwork-innovations/simple-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/clockwork-innovations/simple-mcp/actions/workflows/ci.yml)
-[![npm version](https://badge.fury.io/js/simple-mcp.svg)](https://www.npmjs.com/package/simple-mcp)
+[![npm version](https://badge.fury.io/js/simply-mcp.svg)](https://www.npmjs.com/package/simply-mcp)
 
 ## 🚀 Features
 
@@ -35,14 +35,14 @@ A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript
 ### As a Dependency
 
 ```bash
-npm install simple-mcp
+npm install simply-mcp
 ```
 
 ### For Development
 
 ```bash
 git clone <repository-url>
-cd simple-mcp
+cd simply-mcp
 npm install --legacy-peer-deps
 npm run build
 ```
@@ -54,7 +54,7 @@ npm run build
 Write classes, get MCP servers automatically:
 
 ```typescript
-import { MCPServer } from 'simple-mcp';
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer({ name: 'calculator', version: '1.0.0' })
 class Calculator {
@@ -89,7 +89,7 @@ npx tsx my-server.ts
 Clean, declarative configuration:
 
 ```typescript
-import { defineMCP } from 'simple-mcp';
+import { defineMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 export default defineMCP({
@@ -127,7 +127,7 @@ export default defineMCP({
 For dynamic server generation:
 
 ```typescript
-import { SimpleMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimpleMCP({
@@ -168,7 +168,7 @@ await server.start({
 ## 🏗️ Project Structure
 
 ```
-simple-mcp/
+simply-mcp/
 ├── mcp/
 │   ├── index.ts              # Main module entry point
 │   ├── SimpleMCP.ts          # Programmatic API

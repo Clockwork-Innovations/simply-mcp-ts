@@ -4,7 +4,7 @@
 
 ### Breaking Change: Package Name Simplified
 
-**Changed**: Package name from `@clockwork-innovations/simple-mcp` to `simple-mcp`
+**Changed**: Package name from `@clockwork-innovations/simply-mcp` to `simply-mcp`
 
 This is a **BREAKING CHANGE** that significantly improves developer experience by making the package easier to discover and use.
 
@@ -14,25 +14,25 @@ This is a **BREAKING CHANGE** that significantly improves developer experience b
 
 ### Old Package (Deprecated)
 ```bash
-npm install @clockwork-innovations/simple-mcp
+npm install @clockwork-innovations/simply-mcp
 ```
 
 ```typescript
-import { SimpleMCP } from '@clockwork-innovations/simple-mcp';
+import { SimpleMCP } from '@clockwork-innovations/simply-mcp';
 ```
 
 ### New Package (v1.1.0+)
 ```bash
-npm install simple-mcp
+npm install simply-mcp
 ```
 
 ```typescript
-import { SimpleMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
 ```
 
 ### Why This Change?
 
-1. **Easier to remember**: `simple-mcp` vs `@clockwork-innovations/simple-mcp`
+1. **Easier to remember**: `simply-mcp` vs `@clockwork-innovations/simply-mcp`
 2. **Faster to type**: Saves 23 characters per import
 3. **Better discoverability**: Unscoped packages rank higher in npm search
 4. **Cleaner code**: More readable import statements
@@ -49,7 +49,7 @@ Users had to use awkward deep imports for decorator-based servers:
 
 ```typescript
 // ❌ Broken in v1.0.3
-import { MCPServer, tool } from './node_modules/@clockwork-innovations/simple-mcp/mcp/decorators.js';
+import { MCPServer, tool } from './node_modules/@clockwork-innovations/simply-mcp/mcp/decorators.js';
 
 @MCPServer({ name: 'my-server', version: '1.0.0' })
 export default class MyServer {
@@ -66,7 +66,7 @@ Clean, simple imports from the package name:
 
 ```typescript
 // ✅ FIXED in v1.1.0
-import { MCPServer, tool } from 'simple-mcp';
+import { MCPServer, tool } from 'simply-mcp';
 
 @MCPServer({ name: 'my-server', version: '1.0.0' })
 export default class MyServer {
@@ -105,11 +105,11 @@ All existing tests continue to pass:
 Simply install the new package:
 
 ```bash
-npm install simple-mcp
+npm install simply-mcp
 ```
 
 ```typescript
-import { SimpleMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
 ```
 
 ### For Existing Users (Upgrading from v1.0.x)
@@ -118,36 +118,36 @@ import { SimpleMCP } from 'simple-mcp';
 
 #### 1. Uninstall old package
 ```bash
-npm uninstall @clockwork-innovations/simple-mcp
+npm uninstall @clockwork-innovations/simply-mcp
 ```
 
 #### 2. Install new package
 ```bash
-npm install simple-mcp
+npm install simply-mcp
 ```
 
 #### 3. Update all imports
 
 **Before (v1.0.x)**:
 ```typescript
-import { SimpleMCP } from '@clockwork-innovations/simple-mcp';
-import { MCPServer, tool } from '@clockwork-innovations/simple-mcp';
-import { defineMCP } from '@clockwork-innovations/simple-mcp';
+import { SimpleMCP } from '@clockwork-innovations/simply-mcp';
+import { MCPServer, tool } from '@clockwork-innovations/simply-mcp';
+import { defineMCP } from '@clockwork-innovations/simply-mcp';
 ```
 
 **After (v1.1.0)**:
 ```typescript
-import { SimpleMCP } from 'simple-mcp';
-import { MCPServer, tool } from 'simple-mcp';
-import { defineMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
+import { MCPServer, tool } from 'simply-mcp';
+import { defineMCP } from 'simply-mcp';
 ```
 
 #### 4. Search and replace
 
 You can use this regex to find/replace in your project:
 
-**Find**: `@clockwork-innovations/simple-mcp`
-**Replace**: `simple-mcp`
+**Find**: `@clockwork-innovations/simply-mcp`
+**Replace**: `simply-mcp`
 
 ---
 
@@ -156,7 +156,7 @@ You can use this regex to find/replace in your project:
 ### Files Changed
 
 1. **package.json**
-   - Changed `name` from `@clockwork-innovations/simple-mcp` to `simple-mcp`
+   - Changed `name` from `@clockwork-innovations/simply-mcp` to `simply-mcp`
    - Updated `version` from `1.0.3` to `1.1.0`
    - Added `./decorators` export path
 
@@ -166,7 +166,7 @@ You can use this regex to find/replace in your project:
    - Added type imports for TypeScript compilation
 
 3. **mcp/examples/class-basic.ts**
-   - Updated import from `'../decorators.js'` to `'simple-mcp'`
+   - Updated import from `'../decorators.js'` to `'simply-mcp'`
 
 4. **Documentation** (5 files updated by automation)
    - README.md
@@ -203,7 +203,7 @@ All three APIs are production-ready:
 
 ### 1. Programmatic API ✅
 ```typescript
-import { SimpleMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimpleMCP({ name: 'my-server', version: '1.0.0' });
@@ -217,7 +217,7 @@ await server.start();
 
 ### 2. Functional API ✅
 ```typescript
-import { defineMCP } from 'simple-mcp';
+import { defineMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 export default defineMCP({
@@ -233,7 +233,7 @@ export default defineMCP({
 
 ### 3. Decorator API ✅
 ```typescript
-import { MCPServer, tool } from 'simple-mcp';
+import { MCPServer, tool } from 'simply-mcp';
 
 @MCPServer({ name: 'my-server', version: '1.0.0' })
 export default class MyServer {
@@ -251,18 +251,18 @@ export default class MyServer {
 - **Fixed Issue**: [Issue #4 - Decorator Import Path](ISSUE-DECORATOR-IMPORTS-v1.0.4.md)
 - **Previous Release**: [v1.0.3 - Decorator Compatibility Fix](https://github.com/clockwork-innovations/simple-mcp/releases/tag/v1.0.3)
 - **Repository**: https://github.com/clockwork-innovations/simple-mcp
-- **npm Package**: https://www.npmjs.com/package/simple-mcp
+- **npm Package**: https://www.npmjs.com/package/simply-mcp
 
 ---
 
 ## 📝 Changelog
 
 ### Changed (BREAKING)
-- **Package name**: `@clockwork-innovations/simple-mcp` → `simple-mcp`
+- **Package name**: `@clockwork-innovations/simply-mcp` → `simply-mcp`
 - **Major version bump**: Now v1.1.0 to indicate breaking change
 
 ### Fixed
-- Decorator API import path issue - can now use `import { MCPServer } from 'simple-mcp'`
+- Decorator API import path issue - can now use `import { MCPServer } from 'simply-mcp'`
 - class-adapter.ts now uses compiled decorators for consistent metadata
 - Added `/decorators` export path to package.json
 
@@ -279,7 +279,7 @@ export default class MyServer {
 
 | Feature | v1.0.3 | v1.1.0 |
 |---------|---------|---------|
-| Package Name | `@clockwork-innovations/simple-mcp` | `simple-mcp` ✨ |
+| Package Name | `@clockwork-innovations/simply-mcp` | `simply-mcp` ✨ |
 | Import Length | 40 characters | 17 characters ⚡ |
 | Decorator Imports | Deep node_modules path | Clean package import ✅ |
 | Programmatic API | ✅ Working | ✅ Working |
@@ -292,7 +292,7 @@ export default class MyServer {
 
 ### Old Package Status
 
-The old `@clockwork-innovations/simple-mcp` package will remain on npm but is now **deprecated**. All future updates will be published to `simple-mcp`.
+The old `@clockwork-innovations/simply-mcp` package will remain on npm but is now **deprecated**. All future updates will be published to `simply-mcp`.
 
 ###No Automatic Migration
 
@@ -322,4 +322,4 @@ Technically this could be `2.0.0`, but `1.1.0` better reflects that it's the sam
 
 **Full Changelog**: https://github.com/clockwork-innovations/simple-mcp/compare/v1.0.3...v1.1.0
 
-🎉 **Enjoy the simpler, cleaner `simple-mcp`!**
+🎉 **Enjoy the simpler, cleaner `simply-mcp`!**

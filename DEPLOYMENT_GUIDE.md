@@ -17,7 +17,7 @@ Before deploying, ensure you have:
 ### 1. Verify Build
 
 ```bash
-cd /mnt/Shared/cs-projects/simple-mcp
+cd /mnt/Shared/cs-projects/simply-mcp
 
 # Install dependencies
 npm install --legacy-peer-deps
@@ -53,16 +53,16 @@ Create a test project to verify the module works:
 
 ```bash
 # Create test directory
-mkdir /tmp/test-simple-mcp
-cd /tmp/test-simple-mcp
+mkdir /tmp/test-simply-mcp
+cd /tmp/test-simply-mcp
 npm init -y
 
 # Install from local directory
-npm install /mnt/Shared/cs-projects/simple-mcp
+npm install /mnt/Shared/cs-projects/simply-mcp
 
 # Create test file
 cat > test.js << 'EOF'
-import { SimpleMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
 console.log('SimpleMCP imported successfully!');
 EOF
 
@@ -78,7 +78,7 @@ node test.js
    - Or create under your personal account if you don't have org access yet
 
 2. **Repository Settings**:
-   - Name: `simple-mcp`
+   - Name: `simply-mcp`
    - Description: "A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript"
    - Visibility: **Public**
    - ❌ Do NOT initialize with README (we have one)
@@ -88,7 +88,7 @@ node test.js
 ### Step 2: Prepare Git Repository
 
 ```bash
-cd /mnt/Shared/cs-projects/simple-mcp
+cd /mnt/Shared/cs-projects/simply-mcp
 
 # Check current status
 git status
@@ -171,22 +171,22 @@ git push origin v1.0.0
 ### Step 1: Check Package Name Availability
 
 ```bash
-# Check if 'simple-mcp' is available
-npm view simple-mcp
+# Check if 'simply-mcp' is available
+npm view simply-mcp
 
 # If taken, you'll see package info
 # If available, you'll see: npm ERR! 404 Not Found
 ```
 
 **If name is taken**, choose alternative:
-- `simple-mcp-server` (recommended)
+- `simply-mcp-server` (recommended)
 - `simplemcp`
 - `mcp-server-framework`
 
 **To use alternative package name**, update `package.json`:
 ```json
 {
-  "name": "simple-mcp-server"
+  "name": "simply-mcp-server"
 }
 ```
 
@@ -213,7 +213,7 @@ npm pack --dry-run
 npm pack
 
 # Extract and inspect
-tar -tzf simple-mcp-1.0.0.tgz
+tar -tzf simply-mcp-1.0.0.tgz
 
 # Should include:
 # - dist/
@@ -237,19 +237,19 @@ npm publish --access public
 
 **Expected output:**
 ```
-+ simple-mcp@1.0.0
++ simply-mcp@1.0.0
 ```
 
 ### Step 5: Verify Publication
 
 ```bash
 # View on npm
-npm view simple-mcp
+npm view simply-mcp
 
 # Install in test project
 cd /tmp/test-publish
 npm init -y
-npm install simple-mcp
+npm install simply-mcp
 ```
 
 ## 🔍 Post-Deployment Verification
@@ -267,11 +267,11 @@ npm install simple-mcp
 
 ### npm Checks
 
-- [ ] Package appears on npm: `https://www.npmjs.com/package/simple-mcp`
+- [ ] Package appears on npm: `https://www.npmjs.com/package/simply-mcp`
 - [ ] Documentation tab shows README
 - [ ] Version is 1.0.0
 - [ ] All files are present
-- [ ] Can be installed: `npm install simple-mcp`
+- [ ] Can be installed: `npm install simply-mcp`
 
 ### Functional Tests
 
@@ -282,11 +282,11 @@ cd /tmp/test-deployment
 npm init -y
 
 # Install published package
-npm install simple-mcp
+npm install simply-mcp
 
 # Test Decorator API
 cat > test-decorator.ts << 'EOF'
-import { MCPServer } from 'simple-mcp';
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer({ name: 'test', version: '1.0.0' })
 class TestServer {
@@ -298,7 +298,7 @@ EOF
 
 # Test Functional API
 cat > test-functional.ts << 'EOF'
-import { defineMCP } from 'simple-mcp';
+import { defineMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 export default defineMCP({
@@ -315,7 +315,7 @@ EOF
 
 # Test Programmatic API
 cat > test-programmatic.ts << 'EOF'
-import { SimpleMCP } from 'simple-mcp';
+import { SimpleMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimpleMCP({ name: 'test', version: '1.0.0' });
@@ -358,7 +358,7 @@ A modern, type-safe Model Context Protocol server framework for TypeScript.
 ✨ 3 API styles (Decorator, Functional, Programmatic)
 🔌 Multiple transports (stdio, HTTP, SSE)
 💪 Full TypeScript + Zod validation
-📦 npm install simple-mcp
+📦 npm install simply-mcp
 
 #MCP #TypeScript #AI #Claude
 
@@ -395,7 +395,7 @@ https://github.com/clockwork-innovations/simple-mcp
 - Try: `git push -u origin main --force` (only for first push)
 
 **3. Package name taken**
-- Use alternative name: `simple-mcp-server`
+- Use alternative name: `simply-mcp-server`
 - Choose different name
 - Contact npm support if you own the namespace
 
