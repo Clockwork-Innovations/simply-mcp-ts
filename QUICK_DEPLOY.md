@@ -60,7 +60,7 @@ npm view simple-mcp
 Edit `package.json`:
 ```json
 {
-  "name": "@clockwork-innovations/simple-mcp"
+  "name": "simple-mcp"
 }
 ```
 
@@ -84,7 +84,6 @@ npm publish
 
 # Check npm
 npm view simple-mcp
-# Or: npm view @clockwork-innovations/simple-mcp
 
 # Test installation
 cd /tmp

@@ -6,7 +6,7 @@ A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![CI](https://github.com/clockwork-innovations/simple-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/clockwork-innovations/simple-mcp/actions/workflows/ci.yml)
-[![npm version](https://badge.fury.io/js/@clockwork-innovations%2Fsimple-mcp.svg)](https://www.npmjs.com/package/@clockwork-innovations/simple-mcp)
+[![npm version](https://badge.fury.io/js/simple-mcp.svg)](https://www.npmjs.com/package/simple-mcp)
 
 ## 🚀 Features
 

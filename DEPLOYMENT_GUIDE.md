@@ -179,14 +179,14 @@ npm view simple-mcp
 ```
 
 **If name is taken**, choose alternative:
-- `@clockwork-innovations/simple-mcp` (scoped, recommended)
+- `simple-mcp-server` (recommended)
 - `simplemcp`
 - `mcp-server-framework`
 
-**To use scoped package**, update `package.json`:
+**To use alternative package name**, update `package.json`:
 ```json
 {
-  "name": "@clockwork-innovations/simple-mcp"
+  "name": "simple-mcp-server"
 }
 ```
 
@@ -395,7 +395,7 @@ https://github.com/clockwork-innovations/simple-mcp
 - Try: `git push -u origin main --force` (only for first push)
 
 **3. Package name taken**
-- Use scoped package: `@clockwork-innovations/simple-mcp`
+- Use alternative name: `simple-mcp-server`
 - Choose different name
 - Contact npm support if you own the namespace
 

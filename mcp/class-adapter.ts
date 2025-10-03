@@ -12,10 +12,26 @@
  */
 
 import 'reflect-metadata';
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { SimpleMCP } from './SimpleMCP.js';
-import {
+import { resolve, dirname } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+
+// Import types from source (compile-time only)
+import type { SimpleMCP as SimpleMCPType } from './SimpleMCP.js';
+import type {
+  ToolMetadata,
+  PromptMetadata,
+  ResourceMetadata,
+  ParameterInfo,
+} from './decorators.js';
+import { parseTypeScriptFileWithCache, getMethodParameterTypes, type ParsedClass } from './type-parser.js';
+
+// Import runtime from compiled dist to match user imports from 'simple-mcp'
+// This ensures decorator metadata is shared between class-adapter and user code
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const distPath = resolve(__dirname, '../dist/mcp');
+
+const { SimpleMCP } = await import(pathToFileURL(resolve(distPath, 'SimpleMCP.js')).href);
+const {
   getServerConfig,
   getTools,
   getPrompts,
@@ -24,12 +40,7 @@ import {
   getParameterInfo,
   inferZodSchema,
   extractJSDoc,
-  type ToolMetadata,
-  type PromptMetadata,
-  type ResourceMetadata,
-  type ParameterInfo,
-} from './decorators.js';
-import { parseTypeScriptFileWithCache, getMethodParameterTypes, type ParsedClass } from './type-parser.js';
+} = await import(pathToFileURL(resolve(distPath, 'decorators.js')).href);
 
 /**
  * Parse command line arguments
@@ -150,7 +161,7 @@ function mergeParameterTypes(
 /**
  * Create SimpleMCP server from decorated class
  */
-function createServerFromClass(ServerClass: any, sourceFilePath: string): SimpleMCP {
+function createServerFromClass(ServerClass: any, sourceFilePath: string): SimpleMCPType {
   const config = getServerConfig(ServerClass);
 
   if (!config) {

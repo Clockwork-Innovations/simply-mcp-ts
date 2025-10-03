@@ -1,6 +1,6 @@
 {
-  "name": "@clockwork-innovations/simple-mcp",
-  "version": "1.0.3",
+  "name": "simple-mcp",
+  "version": "1.1.0",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",
@@ -12,6 +12,11 @@
       "types": "./dist/mcp/index.d.ts",
       "import": "./dist/mcp/index.js",
       "default": "./dist/mcp/index.js"
+    },
+    "./decorators": {
+      "types": "./dist/mcp/decorators.d.ts",
+      "import": "./dist/mcp/decorators.js",
+      "default": "./dist/mcp/decorators.js"
     },
     "./package.json": "./package.json"
   },

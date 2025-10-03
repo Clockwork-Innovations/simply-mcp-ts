@@ -95,8 +95,8 @@ No changes required! The fix is backward compatible. Type imports that worked be
 
 ```typescript
 // Both of these still work:
-import { SimpleMCP } from '@clockwork-innovations/simple-mcp';
-import type { ImageInput } from '@clockwork-innovations/simple-mcp';
+import { SimpleMCP } from 'simple-mcp';
+import type { ImageInput } from 'simple-mcp';
 ```
 
 ## 📦 What's Included
@@ -111,9 +111,9 @@ import type { ImageInput } from '@clockwork-innovations/simple-mcp';
 ## 🔗 Related
 
 - **Fixed Issue**: [Issue #2 - Type Export Error](ISSUES-FOR-MAINTAINERS.md)
-- **Previous Release**: [v1.0.1 - Zod Compatibility Fix](https://github.com/Clockwork-Innovations/simple-mcp/releases/tag/v1.0.1)
-- **Repository**: https://github.com/Clockwork-Innovations/simple-mcp
-- **npm Package**: https://www.npmjs.com/package/@clockwork-innovations/simple-mcp
+- **Previous Release**: [v1.0.1 - Zod Compatibility Fix](https://github.com/clockwork-innovations/simple-mcp/releases/tag/v1.0.1)
+- **Repository**: https://github.com/clockwork-innovations/simple-mcp
+- **npm Package**: https://www.npmjs.com/package/simple-mcp
 
 ## 📝 Changelog
 
@@ -129,4 +129,4 @@ import type { ImageInput } from '@clockwork-innovations/simple-mcp';
 
 ---
 
-**Full Changelog**: https://github.com/Clockwork-Innovations/simple-mcp/compare/v1.0.1...v1.0.2
+**Full Changelog**: https://github.com/clockwork-innovations/simple-mcp/compare/v1.0.1...v1.0.2
