@@ -7,11 +7,15 @@ export * from './errors.js';
 export * from './logger.js';
 export * from './HandlerManager.js';
 
-// Export content helpers, excluding duplicate types already in types.js
+// Export content helpers runtime functions
 export {
   createImageContent,
   createAudioContent,
   createBlobContent,
+} from './content-helpers.js';
+
+// Export content helper types separately (type-only)
+export type {
   ImageInput,
   AudioInput,
   BinaryInput,
