@@ -34,7 +34,10 @@
     "dev:class": "npx tsx mcp/class-adapter.ts mcp/examples/class-minimal.ts",
     "test": "bash mcp/tests/run-all-tests.sh",
     "test:stdio": "bash mcp/tests/test-stdio.sh",
-    "test:http": "bash mcp/tests/test-stateful-http.sh"
+    "test:http": "bash mcp/tests/test-stateful-http.sh",
+    "release:patch": "bash scripts/release.sh patch",
+    "release:minor": "bash scripts/release.sh minor",
+    "release:major": "bash scripts/release.sh major"
   },
   "author": {
     "name": "Nicholas Marinkovich, MD",
@@ -71,21 +74,21 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.18.2",
+    "@modelcontextprotocol/sdk": "^1.19.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "reflect-metadata": "^0.2.2",
-    "zod": "^4.1.11",
+    "zod": "^3.23.8",
     "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/yargs": "^17.0.33",
-    "esbuild": "^0.20.2",
+    "esbuild": "^0.25.10",
     "tsx": "^4.20.6",
     "typescript": "^5",
-    "yargs": "^17.7.2"
+    "yargs": "^18.0.0"
   }
 }

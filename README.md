@@ -5,6 +5,8 @@ A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
+[![CI](https://github.com/clockwork-innovations/simple-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/clockwork-innovations/simple-mcp/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/@clockwork-innovations%2Fsimple-mcp.svg)](https://www.npmjs.com/package/@clockwork-innovations/simple-mcp)
 
 ## 🚀 Features
 
@@ -346,6 +348,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
 - [Issue Tracker](https://github.com/clockwork-innovations/simple-mcp/issues)
 - [Clockwork Innovations](https://cwinnov.com)
+
+## 🔄 Contributing & Releases
+
+### Making a Release
+
+```bash
+# Patch release (1.0.0 -> 1.0.1)
+npm run release:patch
+
+# Minor release (1.0.0 -> 1.1.0)
+npm run release:minor
+
+# Major release (1.0.0 -> 2.0.0)
+npm run release:major
+```
+
+See [Release Documentation](./.github/RELEASE.md) for complete CI/CD and publishing guide.
 
 ## 📧 Support
 
