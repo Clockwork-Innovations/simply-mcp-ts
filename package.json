@@ -49,12 +49,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clockwork-innovations/simple-mcp.git"
+    "url": "git+https://github.com/Clockwork-Innovations/simple-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/clockwork-innovations/simple-mcp/issues"
+    "url": "https://github.com/Clockwork-Innovations/simple-mcp/issues"
   },
-  "homepage": "https://github.com/clockwork-innovations/simple-mcp#readme",
+  "homepage": "https://github.com/Clockwork-Innovations/simple-mcp#readme",
   "keywords": [
     "mcp",
     "model-context-protocol",
