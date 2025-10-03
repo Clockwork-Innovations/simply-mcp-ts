@@ -36,3 +36,4 @@ coverage/
 tmp/
 temp/
 *.tmp
+mcp/tests/TEST-REPORT.md
