@@ -44,6 +44,10 @@ claude.md
 **/.claude.md
 **/claude.md
 
+# AI Agent working directory
+.agents/
+**/.agents/
+
 # MCP configuration files (may contain API keys/secrets)
 .mcp.json
 *.mcp.json

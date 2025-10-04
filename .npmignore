@@ -30,6 +30,7 @@ docs/releases/
 *.mcp.json
 .claude.md
 claude.md
+.agents/
 
 # Scripts
 scripts/
