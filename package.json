@@ -1,44 +1,44 @@
 {
   "name": "simply-mcp",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",
-  "main": "./dist/mcp/index.js",
-  "module": "./dist/mcp/index.js",
-  "types": "./dist/mcp/index.d.ts",
+  "main": "./dist/src/index.js",
+  "module": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/mcp/index.d.ts",
-      "import": "./dist/mcp/index.js",
-      "default": "./dist/mcp/index.js"
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
     },
     "./decorators": {
-      "types": "./dist/mcp/decorators.d.ts",
-      "import": "./dist/mcp/decorators.js",
-      "default": "./dist/mcp/decorators.js"
+      "types": "./dist/src/decorators.d.ts",
+      "import": "./dist/src/decorators.js",
+      "default": "./dist/src/decorators.js"
     },
     "./config": {
-      "types": "./dist/mcp/config.d.ts",
-      "import": "./dist/mcp/config.js",
-      "default": "./dist/mcp/config.js"
+      "types": "./dist/src/config.d.ts",
+      "import": "./dist/src/config.js",
+      "default": "./dist/src/config.js"
     },
     "./package.json": "./package.json"
   },
   "bin": {
-    "simplymcp": "./dist/mcp/cli/index.js",
-    "simplymcp-run": "./dist/mcp/cli/run-bin.js",
-    "simplymcp-class": "./dist/mcp/cli/class-bin.js",
-    "simplymcp-func": "./dist/mcp/cli/func-bin.js",
-    "simplymcp-bundle": "./dist/mcp/cli/bundle-bin.js"
+    "simplymcp": "./dist/src/cli/index.js",
+    "simplymcp-run": "./dist/src/cli/run-bin.js",
+    "simplymcp-class": "./dist/src/cli/class-bin.js",
+    "simplymcp-func": "./dist/src/cli/func-bin.js",
+    "simplymcp-bundle": "./dist/src/cli/bundle-bin.js"
   },
   "files": [
     "dist",
-    "mcp/*.js",
-    "mcp/*.ts",
-    "mcp/*.d.ts",
-    "mcp/cli",
-    "mcp/core",
+    "src/*.js",
+    "src/*.ts",
+    "src/*.d.ts",
+    "src/cli",
+    "src/core",
     "README.md",
     "LICENSE"
   ],
@@ -47,12 +47,12 @@
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "prepublishOnly": "npm run build",
-    "dev": "npx tsx mcp/examples/simple-server.ts",
-    "dev:http": "npx tsx mcp/examples/simple-server.ts --http --port 3000",
-    "dev:class": "npx tsx mcp/class-adapter.ts mcp/examples/class-minimal.ts",
-    "test": "bash mcp/tests/run-all-tests.sh",
-    "test:stdio": "bash mcp/tests/test-stdio.sh",
-    "test:http": "bash mcp/tests/test-stateful-http.sh",
+    "dev": "npx tsx examples/simple-server.ts",
+    "dev:http": "npx tsx examples/simple-server.ts --http --port 3000",
+    "dev:class": "npx tsx src/class-adapter.ts examples/class-minimal.ts",
+    "test": "bash tests/run-all-tests.sh",
+    "test:stdio": "bash tests/test-stdio.sh",
+    "test:http": "bash tests/test-stateful-http.sh",
     "release:patch": "bash scripts/release.sh patch",
     "release:minor": "bash scripts/release.sh minor",
     "release:major": "bash scripts/release.sh major"

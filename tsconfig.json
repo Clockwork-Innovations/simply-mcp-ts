@@ -48,20 +48,20 @@
     "skipLibCheck": true
   },
   "include": [
-    "mcp/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "mcp/tests/**/*",
-    "mcp/examples/**/*",
+    "tests/**/*",
+    "examples/**/*",
     "**/*.test.ts",
     "**/*.spec.ts",
     "test-*.ts",
-    "mcp/servers/**/*",
-    "mcp/configurableServer.ts",
-    "mcp/adapter.ts",
-    "mcp/validation/**/*",
-    "mcp/handlers/**/*"
+    "src/servers/**/*",
+    "src/configurableServer.ts",
+    "src/adapter.ts",
+    "src/validation/**/*",
+    "src/handlers/**/*"
   ]
 }

@@ -1,0 +1,170 @@
+{
+  "name": "configurable-mcp-server",
+  "version": "1.0.0",
+  "port": 3001,
+  "security": {
+    "authentication": {
+      "enabled": true,
+      "apiKeys": [
+        {
+          "key": "dev-key-12345-test-only",
+          "name": "Development Key",
+          "permissions": ["tools:*", "prompts:*", "resources:*"]
+        },
+        {
+          "key": "readonly-key-67890",
+          "name": "Read-Only Key",
+          "permissions": ["prompts:get", "resources:read"]
+        }
+      ]
+    },
+    "rateLimit": {
+      "enabled": true,
+      "global": {
+        "window": 60000,
+        "maxRequests": 100
+      },
+      "perTool": {
+        "calculate": {
+          "window": 60000,
+          "maxRequests": 20
+        }
+      }
+    },
+    "audit": {
+      "enabled": true,
+      "logFile": "./logs/audit.log",
+      "logLevel": "info"
+    }
+  },
+  "tools": [
+    {
+      "name": "greet",
+      "description": "A simple greeting tool",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name to greet"
+          }
+        },
+        "required": ["name"]
+      },
+      "handler": {
+        "type": "file",
+        "path": "./src/handlers/examples/greetHandler.ts"
+      }
+    },
+    {
+      "name": "calculate",
+      "description": "Performs basic calculations",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation to perform",
+            "enum": ["add", "subtract", "multiply", "divide"]
+          },
+          "a": {
+            "type": "number",
+            "description": "First number"
+          },
+          "b": {
+            "type": "number",
+            "description": "Second number"
+          }
+        },
+        "required": ["operation", "a", "b"]
+      },
+      "handler": {
+        "type": "file",
+        "path": "./src/handlers/examples/calculateHandler.ts"
+      }
+    },
+    {
+      "name": "fetch-joke",
+      "description": "Fetches a random joke from an API",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "handler": {
+        "type": "http",
+        "url": "https://official-joke-api.appspot.com/random_joke",
+        "method": "GET",
+        "timeout": 5000
+      }
+    },
+    {
+      "name": "echo",
+      "description": "Echoes back the input",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Message to echo"
+          }
+        },
+        "required": ["message"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Echo: ${args.message}` }] })"
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "greeting-template",
+      "description": "A simple greeting prompt template",
+      "arguments": [
+        {
+          "name": "name",
+          "description": "Name to include in greeting",
+          "required": true
+        }
+      ],
+      "template": "Please greet {{name}} in a friendly manner."
+    },
+    {
+      "name": "code-review",
+      "description": "A code review prompt template",
+      "arguments": [
+        {
+          "name": "language",
+          "description": "Programming language",
+          "required": true
+        },
+        {
+          "name": "context",
+          "description": "Additional context",
+          "required": false
+        }
+      ],
+      "template": "Please review the following {{language}} code. {{context}}"
+    }
+  ],
+  "resources": [
+    {
+      "uri": "https://example.com/greetings/default",
+      "name": "Default Greeting",
+      "description": "A simple greeting resource",
+      "mimeType": "text/plain",
+      "content": "Hello, world!"
+    },
+    {
+      "uri": "https://example.com/api/info",
+      "name": "API Information",
+      "description": "Information about this API",
+      "mimeType": "application/json",
+      "content": {
+        "version": "1.0.0",
+        "endpoints": ["/mcp"],
+        "capabilities": ["tools", "prompts", "resources"]
+      }
+    }
+  ]
+}
