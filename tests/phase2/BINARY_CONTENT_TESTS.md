@@ -62,16 +62,18 @@ The `generate-test-assets.sh` script creates real binary files for testing:
 - `test-archive.zip` - Empty ZIP archive (22 bytes)
 
 ### Special Files
+- `test-invalid.txt` - Text file with invalid content (in `phase2/assets/`)
+- `test-empty.bin` - 0-byte file for edge case testing (in `phase2/assets/`)
+
+### Large Files (in `tests/assets/`)
 - `test-large.bin` - 15MB random data (tests >10MB warning threshold, <50MB limit)
-- `test-very-large.bin` - 57MB random data (tests >50MB hard limit rejection)
-- `test-invalid.txt` - Text file with invalid content
-- `test-empty.bin` - 0-byte file (edge case testing)
+- `test-very-large.bin` - 55MB random data (tests >50MB hard limit rejection)
 
 **Total: 15 test files** covering all major binary formats.
 
 **Note on size limit files:**
-- `test-large.bin` (15MB) - Should pass with warning
-- `test-very-large.bin` (57MB) - Should be rejected (exceeds 50MB limit)
+- `test-large.bin` (15MB) - Should pass with warning (stored in `tests/assets/`)
+- `test-very-large.bin` (55MB) - Should be rejected (exceeds 50MB limit, stored in `tests/assets/`)
 
 ## Unit Tests (test-binary-helpers.sh)
 

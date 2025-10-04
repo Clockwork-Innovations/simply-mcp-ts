@@ -59,3 +59,7 @@ claude.md
 # Large test assets (regenerate with generate-test-assets.sh)
 tests/phase2/assets/test-very-large.bin
 tests/phase2/assets/test-large.bin
+tests/assets/*.bin
+tests/assets/*.zip
+tests/assets/*.pdf
+!tests/assets/README.md

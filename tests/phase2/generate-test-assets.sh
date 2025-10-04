@@ -12,6 +12,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ASSETS_DIR="$SCRIPT_DIR/assets"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LARGE_ASSETS_DIR="$PROJECT_ROOT/tests/assets"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -25,8 +27,9 @@ echo -e "${BLUE}Generating Test Assets for Phase 2${NC}"
 echo -e "${BLUE}==========================================${NC}"
 echo ""
 
-# Create assets directory
+# Create assets directories
 mkdir -p "$ASSETS_DIR"
+mkdir -p "$LARGE_ASSETS_DIR"
 
 # Function to create a minimal PNG image
 create_png() {
@@ -206,8 +209,9 @@ echo -e "${BLUE}Archive Files:${NC}"
 create_zip "$ASSETS_DIR/test-archive.zip"
 echo ""
 
-echo -e "${BLUE}Large Files (for size limit testing):${NC}"
-create_large_file "$ASSETS_DIR/test-large.bin" 15
+echo -e "${BLUE}Large Files (stored in tests/assets/ - shared across all test suites):${NC}"
+create_large_file "$LARGE_ASSETS_DIR/test-large.bin" 15
+create_large_file "$LARGE_ASSETS_DIR/test-very-large.bin" 55
 echo ""
 
 echo -e "${BLUE}Invalid Files (for error testing):${NC}"
@@ -223,7 +227,11 @@ echo -e "${GREEN}==========================================${NC}"
 echo -e "${GREEN}✓ Test asset generation complete!${NC}"
 echo -e "${GREEN}==========================================${NC}"
 echo ""
-echo "Generated $(ls -1 "$ASSETS_DIR" | wc -l) test files in: $ASSETS_DIR"
+echo "Generated $(ls -1 "$ASSETS_DIR" | wc -l) small test files in: $ASSETS_DIR"
+echo "Generated $(ls -1 "$LARGE_ASSETS_DIR" | wc -l) large test files in: $LARGE_ASSETS_DIR"
 echo ""
-echo "File listing:"
+echo "Small files (tests/phase2/assets/):"
 ls -lh "$ASSETS_DIR"
+echo ""
+echo "Large files (tests/assets/):"
+ls -lh "$LARGE_ASSETS_DIR"

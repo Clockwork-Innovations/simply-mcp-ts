@@ -1,10 +1,12 @@
 # Test Assets
 
-This directory contains test assets for Phase 2 binary content testing.
+This directory contains small test assets for Phase 2 binary content testing.
+
+**Note:** Large binary files (`test-large.bin` and `test-very-large.bin`) are stored in the centralized `tests/assets/` directory and are shared across all test suites.
 
 ## Regenerating Test Assets
 
-Large binary files (`test-large.bin` and `test-very-large.bin`) are excluded from the repository to keep it lightweight. To regenerate all test assets:
+To regenerate all test assets (both small files here and large files in `tests/assets/`):
 
 ```bash
 cd tests/phase2
@@ -33,8 +35,10 @@ bash generate-test-assets.sh
 
 ### Binary Files (Generated)
 - `test-empty.bin` - Empty binary file
+
+**Large files** (stored in `tests/assets/`):
 - `test-large.bin` - 15MB binary file (excluded from git, regenerate with script)
-- `test-very-large.bin` - 57MB binary file (excluded from git, regenerate with script)
+- `test-very-large.bin` - 55MB binary file (excluded from git, regenerate with script)
 
 ### Invalid Files
 - `test-invalid.txt` - Invalid binary data for error testing
