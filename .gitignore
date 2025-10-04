@@ -43,3 +43,15 @@ mcp/tests/TEST-REPORT.md
 claude.md
 **/.claude.md
 **/claude.md
+
+# MCP configuration files (may contain API keys/secrets)
+.mcp.json
+*.mcp.json
+
+# Sensitive files
+*secret*
+*credential*
+*password*
+*.key
+*.pem
+.env.production
