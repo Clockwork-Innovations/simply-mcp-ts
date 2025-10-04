@@ -59,7 +59,7 @@ npx tsx mcp/class-adapter.ts mcp/examples/class-minimal.ts --http --port 3000
 
 **Example server (automatic tool registration!):**
 ```typescript
-import { MCPServer } from './mcp/decorators';
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer()  // Uses class name as server name
 export default class MyServer {
@@ -109,8 +109,7 @@ npx tsx mcp/adapter.ts mcp/examples/single-file-basic.ts --http --port 3000
 
 **Example config file (clean interface-based schemas):**
 ```typescript
-import { defineMCP } from './mcp/single-file-types';
-import { Schema } from './mcp/schema-builder';
+import { defineMCP, Schema } from 'simply-mcp';
 
 export default defineMCP({
   name: 'my-server',

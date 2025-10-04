@@ -286,10 +286,10 @@ We use [Semantic Versioning](https://semver.org/):
 
 ---
 
-[Unreleased]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.3.0...HEAD
-[2.3.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.2.0...v2.3.0
-[2.2.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.1.0...v2.2.0
-[2.1.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.0.1...v2.1.0
-[2.0.1]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v1.0.0...v2.0.0
-[1.0.0]: https://github.com/clockwork-innovations/simply-mcp/releases/tag/v1.0.0
+[Unreleased]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.2.0...v2.3.0
+[2.2.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.1.0...v2.2.0
+[2.1.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.0.1...v2.1.0
+[2.0.1]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v1.0.0...v2.0.0
+[1.0.0]: https://github.com/clockwork-innovations/simply-mcp-ts/releases/tag/v1.0.0

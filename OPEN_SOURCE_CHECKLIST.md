@@ -73,7 +73,7 @@ git add .
 git commit -m "Initial commit"
 
 # Add remote
-git remote add origin https://github.com/clockwork-innovations/simply-mcp.git
+git remote add origin https://github.com/clockwork-innovations/simply-mcp-ts.git
 git branch -M main
 git push -u origin main
 
@@ -140,7 +140,7 @@ Consider for future releases:
 ### Before First Publish
 
 1. **Check Package Name**: Verify `simple-mcp` is available on npm, or choose alternative
-2. **URLs Updated**: All GitHub URLs now point to `clockwork-innovations/simply-mcp`
+2. **URLs Updated**: All GitHub URLs now point to `clockwork-innovations/simply-mcp-ts`
 3. **Test Thoroughly**: Install in a test project and verify all APIs work
 4. **Version Strategy**: Using semantic versioning (v1.0.0)
 

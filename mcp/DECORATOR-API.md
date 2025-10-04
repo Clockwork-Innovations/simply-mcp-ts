@@ -9,7 +9,7 @@ The decorator-based API provides the cleanest and most intuitive way to create M
 ### Minimal Example (Zero Config!)
 
 ```typescript
-import { MCPServer } from './mcp/decorators';
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer()  // Uses class name as server name
 export default class MyServer {
@@ -199,7 +199,7 @@ class MyServer {
 ### Example 1: Minimal Server
 
 ```typescript
-import { MCPServer } from './mcp/decorators';
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer()
 export default class Calculator {
@@ -216,7 +216,7 @@ export default class Calculator {
 ### Example 2: With Explicit Decorators
 
 ```typescript
-import { MCPServer, tool, prompt, resource } from './mcp/decorators';
+import { MCPServer, tool, prompt, resource } from 'simply-mcp';
 
 @MCPServer({ name: 'advanced-calc', version: '2.0.0' })
 export default class AdvancedCalculator {
@@ -245,7 +245,7 @@ export default class AdvancedCalculator {
 ### Example 3: With JSDoc
 
 ```typescript
-import { MCPServer } from './mcp/decorators';
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer()
 export default class StringUtils {

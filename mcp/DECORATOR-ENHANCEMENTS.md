@@ -204,7 +204,7 @@ npx tsx mcp/class-adapter.ts mcp/examples/class-advanced.ts --http --port 3400
 
 **Example Server in Production:**
 ```typescript
-import { MCPServer, tool } from './mcp/decorators';
+import { MCPServer, tool } from 'simply-mcp';
 
 @MCPServer({ name: 'production-api', version: '1.0.0' })
 export default class ProductionAPI {

@@ -51,7 +51,7 @@ Use inline dependencies when you want to:
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({
@@ -571,7 +571,7 @@ Create SimplyMCP server from file with inline dependencies.
 
 **Example:**
 ```typescript
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 
 const server = await SimplyMCP.fromFile('./my-server.ts', {
   name: 'my-server',
@@ -593,7 +593,7 @@ await server.start();
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import axios from 'axios';
 import { z } from 'zod';
 
@@ -626,7 +626,7 @@ await server.start();
 // axios@^1.6.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import axios from 'axios';
 
 // TypeScript types available from @types/node
@@ -678,7 +678,7 @@ const server = new SimplyMCP({
 // ///
 
 // This server uses only Node.js builtins
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { readFile } from 'fs/promises';
 
 const server = new SimplyMCP({
@@ -697,7 +697,7 @@ const server = new SimplyMCP({
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({
@@ -730,7 +730,7 @@ await server.start();
 
 ```typescript
 // server-loader.ts
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 
 async function loadServer(path: string) {
   // Load server and parse inline deps automatically
@@ -860,7 +860,7 @@ console.log('Final dependencies:', merged.dependencies);
 // date-fns@^2.30.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -1486,7 +1486,7 @@ npm install
 // zod@^3.22.0
 // ///
 
-import { MCPServer, Tool } from './mcp/decorators.js';
+import { MCPServer, Tool } from 'simply-mcp';
 import { z } from 'zod';
 
 @MCPServer({ name: 'my-server', version: '1.0.0' })

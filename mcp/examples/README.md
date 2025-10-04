@@ -312,7 +312,7 @@ Bundling seamlessly integrates with inline dependencies and auto-installation:
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import axios from 'axios';
 import { z } from 'zod';
 

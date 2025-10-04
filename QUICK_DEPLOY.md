@@ -33,10 +33,10 @@ git add .
 git commit -F .git-commit-message.txt
 
 # Add remote (use the URL from GitHub)
-git remote add origin https://github.com/clockwork-innovations/simply-mcp.git
+git remote add origin https://github.com/clockwork-innovations/simply-mcp-ts.git
 
 # Or for personal account:
-# git remote add origin https://github.com/YOUR-USERNAME/simple-mcp.git
+# git remote add origin https://github.com/YOUR-USERNAME/simply-mcp-ts.git
 
 # Push to GitHub
 git branch -M main
@@ -80,7 +80,7 @@ npm publish
 
 ```bash
 # Check GitHub
-# Visit: https://github.com/clockwork-innovations/simply-mcp
+# Visit: https://github.com/clockwork-innovations/simply-mcp-ts
 
 # Check npm
 npm view simply-mcp
@@ -97,7 +97,7 @@ npm install simply-mcp
 ## 🎉 Done!
 
 Your package is now:
-- ✅ On GitHub: `github.com/clockwork-innovations/simply-mcp`
+- ✅ On GitHub: `github.com/clockwork-innovations/simply-mcp-ts`
 - ✅ On npm: `npmjs.com/package/simply-mcp`
 - ✅ Ready for users: `npm install simply-mcp`
 

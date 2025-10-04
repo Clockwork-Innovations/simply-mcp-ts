@@ -14,7 +14,7 @@
 
 **Package**: `simply-mcp`
 **NPM**: https://www.npmjs.com/package/simply-mcp
-**Repository**: https://github.com/Clockwork-Innovations/simply-mcp
+**Repository**: https://github.com/Clockwork-Innovations/simply-mcp-ts
 
 ---
 

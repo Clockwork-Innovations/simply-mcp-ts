@@ -280,4 +280,4 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed changes.
 
 ---
 
-**Questions or Issues?** Please report at https://github.com/clockwork-innovations/simply-mcp/issues
+**Questions or Issues?** Please report at https://github.com/clockwork-innovations/simply-mcp-ts/issues

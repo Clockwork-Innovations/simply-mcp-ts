@@ -129,7 +129,7 @@ node mcp/configurableServer.ts config/weather-server.json
 **File 1: weather-server.ts**
 ```typescript
 #!/usr/bin/env node
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({
@@ -281,7 +281,7 @@ export default async function multiply(args) {
 ### SimplyMCP (1 file, 30 lines)
 
 ```typescript
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({ name: 'calculator', version: '1.0.0' });

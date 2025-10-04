@@ -15,7 +15,7 @@ If you already have a SimplyMCP server that only returns text, adding binary sup
 #### Before (Text Only)
 
 ```typescript
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({
@@ -41,7 +41,7 @@ await server.start();
 #### After (With Binary Support)
 
 ```typescript
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({
@@ -94,7 +94,7 @@ def generate_chart(data: list[float]) -> Image:
 #### SimplyMCP (TypeScript)
 
 ```typescript
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 import sharp from 'sharp';  // Or your preferred image library
 
@@ -178,7 +178,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 #### SimplyMCP
 
 ```typescript
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({

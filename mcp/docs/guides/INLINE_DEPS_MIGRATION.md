@@ -91,7 +91,7 @@ Consider keeping package.json if you:
 
 ```typescript
 // my-server.ts
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({
@@ -117,7 +117,7 @@ await server.start();
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({
@@ -161,7 +161,7 @@ npm install zod@^3.22.0
 
 **my-server.ts:**
 ```typescript
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -213,7 +213,7 @@ await server.start();
 // date-fns@^2.30.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -355,7 +355,7 @@ await server.start();
 // date-fns@^2.30.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 // ... rest of imports
 ```
 
@@ -754,7 +754,7 @@ console.log('✅ No conflicts detected');
 import { readFile } from 'fs/promises';
 import { parseInlineDependencies } from './mcp/core/index.js';
 import { validateDependencies } from './mcp/core/dependency-validator.js';
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 
 async function testMigration() {
   console.log('🧪 Testing inline dependencies migration...\n');
@@ -922,7 +922,7 @@ This way:
 // /// dependencies
 // axios@^1.6.0
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 ```
 
 ✅ **Correct:**
@@ -931,7 +931,7 @@ import { SimplyMCP } from './mcp/SimplyMCP.js';
 // axios@^1.6.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 ```
 
 **Why:** End delimiter `// ///` is required.

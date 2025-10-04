@@ -66,7 +66,7 @@ The test suite shows some failures in unit and E2E tests due to test infrastruct
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 
 // Load server with auto-install - that's it!
 const server = await SimplyMCP.fromFile(__filename, {
@@ -727,7 +727,7 @@ See full example: [/mcp/examples/auto-install-error-handling.ts](/mcp/examples/a
 Check dependencies first, install manually if needed:
 
 ```typescript
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 
 const server = await SimplyMCP.fromFile('./server.ts');
 

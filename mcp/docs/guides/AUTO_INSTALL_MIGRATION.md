@@ -77,7 +77,7 @@ You want to create a new SimplyMCP server with auto-installation from the beginn
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 // Create server - note: NOT using fromFile() yet
@@ -112,7 +112,7 @@ await server.start();
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 // CHANGE: Use fromFile() with autoInstall
@@ -226,7 +226,7 @@ Add dependency declarations to your server file:
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import axios from 'axios';
 import _ from 'lodash';
 import { z } from 'zod';
@@ -335,7 +335,7 @@ You're already using Feature 2 (Inline Dependencies) and want to add auto-instal
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const server = new SimplyMCP({
@@ -488,7 +488,7 @@ CMD ["npx", "tsx", "server.ts"]
 
 ```typescript
 // lambda/handler.ts
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 
 // Auto-install on Lambda cold start
 const server = await SimplyMCP.fromFile('./server.ts', {
@@ -557,7 +557,7 @@ You want to deploy a server to production with auto-installation.
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from './mcp/SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 const isProduction = process.env.NODE_ENV === 'production';

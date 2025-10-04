@@ -17,8 +17,8 @@ Thank you for your interest in contributing to SimplyMCP! This document provides
 
 ```bash
 # Fork the repository on GitHub, then:
-git clone https://github.com/clockwork-innovations/simply-mcp.git
-cd simply-mcp
+git clone https://github.com/clockwork-innovations/simply-mcp-ts.git
+cd simply-mcp-ts
 ```
 
 ### 2. Install Dependencies
@@ -339,8 +339,8 @@ Report issues to project maintainers.
 ## 🙋 Questions?
 
 - **Documentation**: Check the [docs](./mcp/docs/INDEX.md)
-- **Issues**: Search [existing issues](https://github.com/clockwork-innovations/simply-mcp/issues)
-- **Discussions**: Start a [discussion](https://github.com/clockwork-innovations/simply-mcp/discussions)
+- **Issues**: Search [existing issues](https://github.com/clockwork-innovations/simply-mcp-ts/issues)
+- **Discussions**: Start a [discussion](https://github.com/clockwork-innovations/simply-mcp-ts/discussions)
 
 ## 🎉 Thank You!
 
