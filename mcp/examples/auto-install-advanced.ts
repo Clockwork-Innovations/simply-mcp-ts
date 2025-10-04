@@ -19,7 +19,7 @@
 // chalk@^5.3.0
 // ///
 
-import { SimplyMCP } from '../SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { InstallProgressEvent } from '../core/installation-types.js';
 import { z } from 'zod';
 

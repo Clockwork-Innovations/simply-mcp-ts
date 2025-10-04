@@ -13,7 +13,7 @@
  *   node mcp/examples/advanced-server.ts
  */
 
-import { SimplyMCP } from '../SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';

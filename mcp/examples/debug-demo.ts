@@ -13,7 +13,7 @@
  * - VS Code: Attach to port 9229 (or your custom port)
  */
 
-import { defineMCP, Schema } from '../single-file-types.js';
+import { defineMCP, Schema } from 'simply-mcp';
 
 // This function will be called during tool execution
 // Set a breakpoint here to inspect the execution

@@ -10,6 +10,41 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 import { parseCommonArgs, startServer, displayServerInfo } from './adapter-utils.js';
 
 /**
+ * Dynamically load TypeScript file
+ * If tsx is loaded as Node loader, use direct import for decorator support
+ * Otherwise use tsImport API
+ */
+async function loadTypeScriptFile(absolutePath: string): Promise<any> {
+  // Check if tsx is loaded as Node loader (via --import tsx)
+  const tsxLoaded = process.execArgv.some(arg => arg.includes('tsx') || arg.includes('--import tsx'));
+
+  if (tsxLoaded) {
+    // tsx is loaded as loader, use direct import for full decorator support
+    const { pathToFileURL } = await import('node:url');
+    const fileUrl = pathToFileURL(absolutePath).href;
+    return await import(fileUrl);
+  }
+
+  // Fallback to tsImport API (for backwards compatibility)
+  try {
+    const { tsImport } = await import('tsx/esm/api');
+    return await tsImport(absolutePath, import.meta.url);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Cannot find module')) {
+      console.error('Error: tsx package is required to load TypeScript files');
+      console.error('');
+      console.error('Solutions:');
+      console.error('  1. Install tsx: npm install tsx');
+      console.error('  2. Use bundled output: simplymcp bundle ' + absolutePath);
+      console.error('  3. Compile to .js first: tsc ' + absolutePath);
+      console.error('');
+      process.exit(1);
+    }
+    throw error;
+  }
+}
+
+/**
  * Main entry point
  */
 async function main() {
@@ -40,6 +75,33 @@ Example:
     process.exit(1);
   }
 
+  // Check if we need TypeScript support and tsx is not already loaded
+  const needsTypeScript = classFile.endsWith('.ts');
+  const tsxLoaded = process.execArgv.some(arg => arg.includes('tsx') || arg.includes('--import tsx'));
+
+  if (needsTypeScript && !tsxLoaded) {
+    // Re-exec with tsx loader for proper decorator support
+    const { spawn } = await import('node:child_process');
+    const nodeArgs = ['--import', 'tsx'];
+    const scriptPath = fileURLToPath(import.meta.url);
+    const scriptArgs = [scriptPath, ...args];
+
+    const child = spawn('node', [...nodeArgs, ...scriptArgs], {
+      stdio: 'inherit',
+      env: process.env,
+    });
+
+    return new Promise((resolve) => {
+      child.on('exit', (code) => {
+        process.exit(code || 0);
+      });
+      child.on('error', (error) => {
+        console.error('[ClassAdapter] Failed to start with tsx:', error);
+        process.exit(1);
+      });
+    });
+  }
+
   const { useHttp, port } = parseCommonArgs(args);
 
   // Import runtime from compiled dist
@@ -65,10 +127,9 @@ Example:
   // Load the class
   console.error('[ClassAdapter] Loading class from:', classFile);
   const absolutePath = resolve(process.cwd(), classFile);
-  const fileUrl = pathToFileURL(absolutePath).href;
 
   try {
-    const module = await import(fileUrl);
+    const module = await loadTypeScriptFile(absolutePath);
 
     const ServerClass =
       module.default ||

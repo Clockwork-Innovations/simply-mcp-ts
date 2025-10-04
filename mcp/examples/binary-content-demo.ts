@@ -21,7 +21,7 @@
  *   npx tsx mcp/examples/binary-content-demo.ts --http --port 3000
  */
 
-import { SimplyMCP } from '../SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 import { readFile, writeFile } from 'fs/promises';
 import { resolve } from 'path';

@@ -12,7 +12,7 @@
  *   node mcp/examples/phase1-features.ts
  */
 
-import { SimplyMCP } from '../SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 // Create a new SimplyMCP server with enhanced capabilities

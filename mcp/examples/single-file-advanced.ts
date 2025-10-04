@@ -14,7 +14,7 @@
  *   simplymcp-func mcp/examples/single-file-advanced.ts
  */
 
-import { createMCP } from '../single-file-types.js';
+import { createMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 // Create server using builder pattern

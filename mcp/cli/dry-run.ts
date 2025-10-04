@@ -8,6 +8,40 @@ import { pathToFileURL } from 'node:url';
 import type { APIStyle } from './run.js';
 
 /**
+ * Dynamically load TypeScript file
+ * If tsx is loaded as Node loader, use direct import for decorator support
+ * Otherwise use tsImport API
+ */
+async function loadTypeScriptFile(absolutePath: string): Promise<any> {
+  // Check if tsx is loaded as Node loader (via --import tsx)
+  const tsxLoaded = process.execArgv.some(arg => arg.includes('tsx') || arg.includes('--import tsx'));
+
+  if (tsxLoaded) {
+    // tsx is loaded as loader, use direct import for full decorator support
+    const fileUrl = pathToFileURL(absolutePath).href;
+    return await import(fileUrl);
+  }
+
+  // Fallback to tsImport API (for backwards compatibility)
+  try {
+    const { tsImport } = await import('tsx/esm/api');
+    return await tsImport(absolutePath, import.meta.url);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Cannot find module')) {
+      console.error('Error: tsx package is required to load TypeScript files');
+      console.error('');
+      console.error('Solutions:');
+      console.error('  1. Install tsx: npm install tsx');
+      console.error('  2. Use bundled output: simplymcp bundle ' + absolutePath);
+      console.error('  3. Compile to .js first: tsc ' + absolutePath);
+      console.error('');
+      process.exit(1);
+    }
+    throw error;
+  }
+}
+
+/**
  * Result of dry-run validation
  */
 export interface DryRunResult {
@@ -128,8 +162,7 @@ async function dryRunDecorator(filePath: string, useHttp: boolean, port: number)
 
     // Load the class
     const absolutePath = resolve(process.cwd(), filePath);
-    const fileUrl = pathToFileURL(absolutePath).href;
-    const module = await import(fileUrl);
+    const module = await loadTypeScriptFile(absolutePath);
 
     const ServerClass =
       module.default ||
@@ -320,8 +353,7 @@ async function dryRunFunctional(filePath: string, useHttp: boolean, port: number
   try {
     // Load config
     const absolutePath = resolve(process.cwd(), filePath);
-    const fileUrl = pathToFileURL(absolutePath).href;
-    const module = await import(fileUrl);
+    const module = await loadTypeScriptFile(absolutePath);
     const config = module.default;
 
     if (!config) {

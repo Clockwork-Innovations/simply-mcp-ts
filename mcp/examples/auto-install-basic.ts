@@ -14,7 +14,7 @@
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from '../SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 async function main() {

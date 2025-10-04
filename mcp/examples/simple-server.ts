@@ -13,7 +13,7 @@
  *   node mcp/examples/simple-server.ts --http --port 3000
  */
 
-import { SimplyMCP } from '../SimplyMCP.js';
+import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 // Create a new SimplyMCP server with optional enhanced capabilities

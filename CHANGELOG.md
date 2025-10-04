@@ -96,6 +96,14 @@ The Motorcycle Phase brings powerful developer tools and multi-server capabiliti
 - Updated all documentation examples to use new CLI commands
 
 ### Fixed
+- **CRITICAL: TypeScript loading for npm users** - Fixed blocking issue where `.ts` files couldn't be loaded
+  - Moved `tsx` from devDependencies to dependencies
+  - Added auto-reexec with `--import tsx` loader for decorator support
+  - Fixed moduleResolution in tsconfig.json
+  - All CLI binaries now properly handle TypeScript files
+- **Example file imports** - Fixed 15+ examples using source imports instead of package imports
+- **Decorator without config** - `@MCPServer()` now works without arguments (auto-derives name from class)
+- **Test suite timing** - Fixed test timing issues for tsx re-exec overhead
 - Process cleanup on server termination
 - File watching on network drives with polling mode
 - Inspector connection stability

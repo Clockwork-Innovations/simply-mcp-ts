@@ -3,6 +3,7 @@
  * Auto-detects API style and runs the appropriate adapter
  */
 
+import 'reflect-metadata';
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -21,6 +22,40 @@ import {
  * API style types
  */
 export type APIStyle = 'decorator' | 'functional' | 'programmatic';
+
+/**
+ * Dynamically load TypeScript file
+ * If tsx is loaded as Node loader, use direct import for decorator support
+ * Otherwise use tsImport API
+ */
+async function loadTypeScriptFile(absolutePath: string): Promise<any> {
+  // Check if tsx is loaded as Node loader (via --import tsx)
+  const tsxLoaded = process.execArgv.some(arg => arg.includes('tsx') || arg.includes('--import tsx'));
+
+  if (tsxLoaded) {
+    // tsx is loaded as loader, use direct import for full decorator support
+    const fileUrl = pathToFileURL(absolutePath).href;
+    return await import(fileUrl);
+  }
+
+  // Fallback to tsImport API (for backwards compatibility)
+  try {
+    const { tsImport } = await import('tsx/esm/api');
+    return await tsImport(absolutePath, import.meta.url);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Cannot find module')) {
+      console.error('Error: tsx package is required to load TypeScript files');
+      console.error('');
+      console.error('Solutions:');
+      console.error('  1. Install tsx: npm install tsx');
+      console.error('  2. Use bundled output: simplymcp bundle ' + absolutePath);
+      console.error('  3. Compile to .js first: tsc ' + absolutePath);
+      console.error('');
+      process.exit(1);
+    }
+    throw error;
+  }
+}
 
 /**
  * Detect the API style from a server file
@@ -68,8 +103,7 @@ async function runFunctionalAdapter(
 
   // Load config
   const absolutePath = resolve(process.cwd(), filePath);
-  const fileUrl = pathToFileURL(absolutePath).href;
-  const module = await import(fileUrl);
+  const module = await loadTypeScriptFile(absolutePath);
   const config = module.default;
 
   if (!config) {
@@ -175,8 +209,7 @@ async function runDecoratorAdapter(
 
   // Load the class
   const absolutePath = resolve(process.cwd(), filePath);
-  const fileUrl = pathToFileURL(absolutePath).href;
-  const module = await import(fileUrl);
+  const module = await loadTypeScriptFile(absolutePath);
 
   const ServerClass =
     module.default ||
@@ -364,10 +397,9 @@ async function runProgrammaticAdapter(
   // For programmatic API, just import and execute the file
   // The file itself handles server creation and startup
   const absolutePath = resolve(process.cwd(), filePath);
-  const fileUrl = pathToFileURL(absolutePath).href;
 
   try {
-    await import(fileUrl);
+    await loadTypeScriptFile(absolutePath);
   } catch (error) {
     console.error('[RunCommand] Failed to run server:', error);
     process.exit(2);
@@ -548,6 +580,46 @@ export const runCommand: CommandModule = {
     const files = Array.isArray(argv.file) ? argv.file : [argv.file];
     const configPath = argv.config as string | undefined;
 
+    // Check if we need TypeScript support and tsx is not already loaded
+    const needsTypeScript = files.some((f: string) => f.endsWith('.ts'));
+    const tsxLoaded = process.execArgv.some(arg => arg.includes('tsx') || arg.includes('--import tsx'));
+
+    if (needsTypeScript && !tsxLoaded) {
+      // Re-exec with tsx loader for proper decorator support
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const cliPath = resolve(__dirname, 'index.js');
+
+      const nodeArgs = ['--import', 'tsx'];
+      const scriptArgs = [cliPath, 'run', ...files];
+
+      // Pass through all flags
+      if (argv.config) scriptArgs.push('--config', argv.config);
+      if (argv.http) scriptArgs.push('--http');
+      if (argv.port) scriptArgs.push('--port', String(argv.port));
+      if (argv.style) scriptArgs.push('--style', argv.style);
+      if (argv.verbose) scriptArgs.push('--verbose');
+      if (argv['dry-run']) scriptArgs.push('--dry-run');
+      if (argv.watch) scriptArgs.push('--watch');
+      if (argv['watch-poll']) scriptArgs.push('--watch-poll');
+      if (argv['watch-interval']) scriptArgs.push('--watch-interval', String(argv['watch-interval']));
+
+      const child = spawn('node', [...nodeArgs, ...scriptArgs], {
+        stdio: 'inherit',
+        env: process.env,
+      });
+
+      return new Promise((resolve) => {
+        child.on('exit', (code) => {
+          process.exit(code || 0);
+        });
+        child.on('error', (error) => {
+          console.error('[RunCommand] Failed to start with tsx:', error);
+          process.exit(1);
+        });
+      });
+    }
+
     try {
       // Load config file (if exists)
       const config = await loadCLIConfig(configPath);
@@ -664,7 +736,7 @@ export const runCommand: CommandModule = {
       if (verbose) {
         console.error(`[RunCommand] Detected API style: ${style}`);
         if (forceStyle) {
-          console.error(`[RunCommand] Style was forced via ${configFilePath ? 'config or' : ''} --style flag`);
+          console.error(`[RunCommand] Style was forced via --style flag`);
         }
       }
 

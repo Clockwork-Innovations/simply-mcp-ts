@@ -26,13 +26,13 @@
  *   simplymcp-class mcp/examples/class-minimal.ts
  */
 
-import { MCPServer } from '../decorators.js';
+import { MCPServer } from 'simply-mcp';
 
 /**
  * Weather Service
  * A simple weather information service
  */
-@MCPServer() // No config needed! Uses "weather-service" as name
+@MCPServer() // No config needed! Uses "weather-service" as name (from class name)
 export default class WeatherService {
   // Public methods are automatically registered as tools!
 

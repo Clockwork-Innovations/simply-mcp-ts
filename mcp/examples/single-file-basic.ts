@@ -24,7 +24,7 @@
  *   simplymcp-func mcp/examples/single-file-basic.ts
  */
 
-import { defineMCP } from '../single-file-types.js';
+import { defineMCP } from 'simply-mcp';
 import { z } from 'zod';
 
 export default defineMCP({

@@ -21,7 +21,7 @@
  *   simplymcp-class mcp/examples/class-advanced.ts --http --port 3400
  */
 
-import { MCPServer, tool } from '../decorators.js';
+import { MCPServer, tool } from 'simply-mcp';
 
 /**
  * Advanced Calculator Service

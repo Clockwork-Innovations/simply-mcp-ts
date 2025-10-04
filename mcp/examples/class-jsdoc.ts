@@ -9,7 +9,7 @@
  *   simplymcp-class mcp/examples/class-jsdoc.ts --http --port 3011
  */
 
-import { MCPServer } from '../decorators.js';
+import { MCPServer } from 'simply-mcp';
 
 /**
  * Weather Service with JSDoc
@@ -17,7 +17,7 @@ import { MCPServer } from '../decorators.js';
  * A comprehensive weather information service that demonstrates
  * automatic JSDoc parsing for tool descriptions and parameters.
  */
-@MCPServer()
+@MCPServer({ name: 'weather-jsdoc', version: '1.0.0' })
 export default class WeatherServiceWithJSDoc {
   /**
    * Get the current temperature for a specific city

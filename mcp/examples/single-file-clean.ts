@@ -10,7 +10,7 @@
  *   simplymcp-func mcp/examples/single-file-clean.ts
  */
 
-import { defineMCP, Schema } from '../single-file-types.js';
+import { defineMCP, Schema } from 'simply-mcp';
 
 export default defineMCP({
   name: 'clean-example',

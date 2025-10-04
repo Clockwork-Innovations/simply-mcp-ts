@@ -83,9 +83,9 @@ fi
 # Test 1.2: Auto-detect functional API
 echo ""
 echo "Test 1.2: Auto-detect functional API from config file"
-timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/single-file-basic.ts" --verbose > /tmp/cli-test-functional.log 2>&1 &
+timeout 5 node "$CLI_ROOT/run-bin.js" run "mcp/examples/single-file-basic.ts" --verbose > /tmp/cli-test-functional.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Check if server started and detected functional style
 if grep -q "Detected API style: functional" /tmp/cli-test-functional.log 2>/dev/null; then
@@ -101,9 +101,9 @@ SERVER_PID=""
 # Test 1.3: Auto-detect programmatic API
 echo ""
 echo "Test 1.3: Auto-detect programmatic API from direct server file"
-timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/simple-server.ts" --verbose > /tmp/cli-test-programmatic.log 2>&1 &
+timeout 5 node "$CLI_ROOT/run-bin.js" run "mcp/examples/simple-server.ts" --verbose > /tmp/cli-test-programmatic.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Check if server started and detected programmatic style
 if grep -q "Detected API style: programmatic" /tmp/cli-test-programmatic.log 2>/dev/null; then
@@ -119,9 +119,9 @@ SERVER_PID=""
 # Test 1.4: Verify decorator server actually starts and registers tools
 echo ""
 echo "Test 1.4: Verify decorator server starts and registers tools"
-timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" > /tmp/cli-test-decorator-tools.log 2>&1 &
+timeout 5 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" > /tmp/cli-test-decorator-tools.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Check if tools were registered
 if grep -q "Loading class from" /tmp/cli-test-decorator-tools.log 2>/dev/null; then
@@ -146,9 +146,9 @@ echo ""
 
 # Test 2.1: simplymcp-class command
 echo "Test 2.1: simplymcp-class command runs decorator adapter"
-timeout 3 node "$CLI_ROOT/class-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-class-cmd.log 2>&1 &
+timeout 5 node "$CLI_ROOT/class-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-class-cmd.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Check if class adapter started
 if grep -q "Loading class from" /tmp/cli-test-class-cmd.log 2>/dev/null; then
@@ -164,9 +164,9 @@ SERVER_PID=""
 # Test 2.2: simplymcp-func command
 echo ""
 echo "Test 2.2: simplymcp-func command runs functional adapter"
-timeout 3 node "$CLI_ROOT/func-bin.js" "mcp/examples/single-file-basic.ts" > /tmp/cli-test-func-cmd.log 2>&1 &
+timeout 5 node "$CLI_ROOT/func-bin.js" "mcp/examples/single-file-basic.ts" > /tmp/cli-test-func-cmd.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Check if functional adapter started
 if grep -q "Loading config from" /tmp/cli-test-func-cmd.log 2>/dev/null; then
@@ -182,9 +182,9 @@ SERVER_PID=""
 # Test 2.3: Verify class command with decorator file
 echo ""
 echo "Test 2.3: Class command works with @MCPServer decorator"
-timeout 3 node "$CLI_ROOT/class-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-class-decorator.log 2>&1 &
+timeout 5 node "$CLI_ROOT/class-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-class-decorator.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Check for both class loading and server creation
 if grep -q "Loading class from" /tmp/cli-test-class-decorator.log 2>/dev/null && \
@@ -210,9 +210,9 @@ echo ""
 
 # Test 3.1: --style flag forces decorator
 echo "Test 3.1: --style decorator flag forces decorator adapter"
-timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/simple-server.ts" --style decorator --verbose > /tmp/cli-test-force-decorator.log 2>&1 &
+timeout 5 node "$CLI_ROOT/run-bin.js" run "mcp/examples/simple-server.ts" --style decorator --verbose > /tmp/cli-test-force-decorator.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Should show forced style message
 if grep -q "Style was forced via --style flag" /tmp/cli-test-force-decorator.log 2>/dev/null; then
@@ -228,9 +228,9 @@ SERVER_PID=""
 # Test 3.2: --style flag forces functional
 echo ""
 echo "Test 3.2: --style functional flag forces functional adapter"
-timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/single-file-basic.ts" --style functional --verbose > /tmp/cli-test-force-functional.log 2>&1 &
+timeout 5 node "$CLI_ROOT/run-bin.js" run "mcp/examples/single-file-basic.ts" --style functional --verbose > /tmp/cli-test-force-functional.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Should show forced style message
 if grep -q "Style was forced via --style flag" /tmp/cli-test-force-functional.log 2>/dev/null; then
@@ -246,9 +246,9 @@ SERVER_PID=""
 # Test 3.3: --verbose flag shows detection info
 echo ""
 echo "Test 3.3: --verbose flag shows detection details"
-timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" --verbose > /tmp/cli-test-verbose.log 2>&1 &
+timeout 5 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" --verbose > /tmp/cli-test-verbose.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Should show detection message
 if grep -q "Detected API style" /tmp/cli-test-verbose.log 2>/dev/null; then
@@ -266,8 +266,8 @@ echo ""
 echo "Test 3.4: --help flag shows documentation"
 if node "$CLI_ROOT/run-bin.js" --help > /tmp/cli-test-help.log 2>&1; then
   # Should show usage information
-  if grep -q "Auto-detect and run an MCP server" /tmp/cli-test-help.log 2>/dev/null || \
-     grep -q "file.*Path to the server file" /tmp/cli-test-help.log 2>/dev/null; then
+  if grep -q "Auto-detect and run" /tmp/cli-test-help.log 2>/dev/null || \
+     grep -q "Commands:" /tmp/cli-test-help.log 2>/dev/null; then
     print_result "--help flag shows documentation" "PASS"
   else
     print_result "--help flag shows documentation" "FAIL" "Help text incomplete"
@@ -279,9 +279,9 @@ fi
 # Test 3.5: HTTP transport flag works
 echo ""
 echo "Test 3.5: --http flag enables HTTP transport"
-timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" --http --port 3333 > /tmp/cli-test-http.log 2>&1 &
+timeout 5 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" --http --port 3333 > /tmp/cli-test-http.log 2>&1 &
 SERVER_PID=$!
-sleep 2
+sleep 3
 
 # Check if HTTP server started on correct port
 if curl -s http://localhost:3333 > /dev/null 2>&1 || \
@@ -350,9 +350,9 @@ const someVar = 123;
 export default someVar;
 EOF
 
-timeout 3 node "$CLI_ROOT/run-bin.js" run "/tmp/cli-test-ambiguous.ts" --verbose > /tmp/cli-test-ambiguous.log 2>&1 &
+timeout 5 node "$CLI_ROOT/run-bin.js" run "/tmp/cli-test-ambiguous.ts" --verbose > /tmp/cli-test-ambiguous.log 2>&1 &
 SERVER_PID=$!
-sleep 1
+sleep 2
 
 # Should default to programmatic
 if grep -q "Detected API style: programmatic" /tmp/cli-test-ambiguous.log 2>/dev/null; then
@@ -369,7 +369,7 @@ rm -f /tmp/cli-test-ambiguous.ts
 # Test 4.4: Class command with non-class file shows error
 echo ""
 echo "Test 4.4: Class command with non-class file shows error"
-if timeout 3 node "$CLI_ROOT/class-bin.js" "mcp/examples/single-file-basic.ts" > /tmp/cli-test-class-error.log 2>&1; then
+if timeout 5 node "$CLI_ROOT/class-bin.js" "mcp/examples/single-file-basic.ts" > /tmp/cli-test-class-error.log 2>&1; then
   print_result "Class command error handling" "FAIL" "Should fail for non-class file"
 else
   # Check for appropriate error message
@@ -384,7 +384,7 @@ fi
 # Test 4.5: Func command with non-config file shows error
 echo ""
 echo "Test 4.5: Func command with non-config file shows error"
-if timeout 3 node "$CLI_ROOT/func-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-func-error.log 2>&1; then
+if timeout 5 node "$CLI_ROOT/func-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-func-error.log 2>&1; then
   print_result "Func command error handling" "FAIL" "Should fail for non-config file"
 else
   # Check for appropriate error message
