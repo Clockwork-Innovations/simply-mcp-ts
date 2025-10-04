@@ -1,10 +1,10 @@
-# Source files (keeping compiled dist/ only)
+# Source TypeScript files (only ship compiled dist/)
 *.ts
 !*.d.ts
 tsconfig.json
 
 # Tests
-mcp/tests/
+tests/
 test-*.ts
 test-*.js
 *.test.ts
@@ -13,41 +13,81 @@ test-*.js
 *.spec.js
 
 # Examples (optional - remove these lines if you want to include examples)
-mcp/examples/
+examples/
 
-# Documentation (optional - remove these lines if you want to include docs)
-mcp/docs/
+# Development documentation
+docs/development/
+docs/releases/
 *.md
 !README.md
 
 # Development files
 .git/
 .gitignore
+.npmignore
 .mcp.json
+.mcp.json.example
+*.mcp.json
+.claude.md
+claude.md
+
+# Scripts
+scripts/
 run-mcp.sh
-test-adapter.js
-test-mcp-client.ts
-test-simple.ts
-test-zod-native.ts
-view-tool-defs.ts
+demo-multi-server.sh
+test-*.sh
 
-# Config files
-mcp/config*.json
-mcp/*.config.js
-mcp/*.config.example.js
+# Config files (test configs should not be published)
+config/
+src/config-test*.json
+src/config-validation-examples.json
+src/my-first-config.json
+src/simplemcp.config.example.js
 
-# Planning and implementation docs
-mcp/*_PLAN.md
-mcp/*_IMPLEMENTATION.md
-mcp/*_SUMMARY.md
-mcp/*_GUIDE.md
-mcp/*_TESTING_GUIDE.md
+# Test framework files
+src/test-framework.sh
+src/test-llm-errors.sh
 
-# Node modules (handled by npm automatically but included for clarity)
+# Development and planning docs
+src/PHASE*.md
+*_PLAN.md
+*_IMPLEMENTATION.md
+*_SUMMARY.md
+*_GUIDE.md
+*_TESTING_GUIDE.md
+DEPLOYMENT_SUMMARY.txt
+PUBLISH_COMMAND.txt
+.git-commit-message.txt
+
+# Security and validation (internal use only)
+src/validation/
+src/security/
+
+# Handlers examples (optional - include if you want users to see examples)
+src/handlers/examples/
+
+# Server implementations (optional - these are specialized)
+src/servers/
+src/configurableServer.ts
+src/simpleStreamableHttp.ts
+
+# Adapters (deprecated)
+src/adapter.ts
+src/class-adapter.ts
+
+# Node modules and build artifacts
 node_modules/
-
-# Build artifacts
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
