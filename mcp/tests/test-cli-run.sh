@@ -70,7 +70,7 @@ echo ""
 # Test 1.1: Auto-detect decorator API
 echo "Test 1.1: Auto-detect decorator API from class file"
 # Run command with timeout and capture output
-(timeout 2 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "mcp/examples/class-minimal.ts" --verbose 2>&1 || true) | tee /tmp/cli-test-decorator.log | head -5 > /dev/null &
+(timeout 2 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" --verbose 2>&1 || true) | tee /tmp/cli-test-decorator.log | head -5 > /dev/null &
 sleep 1.5
 
 # Check if server started and detected decorator style
@@ -83,7 +83,7 @@ fi
 # Test 1.2: Auto-detect functional API
 echo ""
 echo "Test 1.2: Auto-detect functional API from config file"
-timeout 3 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "mcp/examples/single-file-basic.ts" --verbose > /tmp/cli-test-functional.log 2>&1 &
+timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/single-file-basic.ts" --verbose > /tmp/cli-test-functional.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -101,7 +101,7 @@ SERVER_PID=""
 # Test 1.3: Auto-detect programmatic API
 echo ""
 echo "Test 1.3: Auto-detect programmatic API from direct server file"
-timeout 3 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "mcp/examples/simple-server.ts" --verbose > /tmp/cli-test-programmatic.log 2>&1 &
+timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/simple-server.ts" --verbose > /tmp/cli-test-programmatic.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -119,7 +119,7 @@ SERVER_PID=""
 # Test 1.4: Verify decorator server actually starts and registers tools
 echo ""
 echo "Test 1.4: Verify decorator server starts and registers tools"
-timeout 3 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "mcp/examples/class-minimal.ts" > /tmp/cli-test-decorator-tools.log 2>&1 &
+timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" > /tmp/cli-test-decorator-tools.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -146,7 +146,7 @@ echo ""
 
 # Test 2.1: simplymcp-class command
 echo "Test 2.1: simplymcp-class command runs decorator adapter"
-timeout 3 npx tsx "$MCP_ROOT/cli/class-bin.ts" "mcp/examples/class-minimal.ts" > /tmp/cli-test-class-cmd.log 2>&1 &
+timeout 3 node "$CLI_ROOT/class-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-class-cmd.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -164,7 +164,7 @@ SERVER_PID=""
 # Test 2.2: simplymcp-func command
 echo ""
 echo "Test 2.2: simplymcp-func command runs functional adapter"
-timeout 3 npx tsx "$MCP_ROOT/cli/func-bin.ts" "mcp/examples/single-file-basic.ts" > /tmp/cli-test-func-cmd.log 2>&1 &
+timeout 3 node "$CLI_ROOT/func-bin.js" "mcp/examples/single-file-basic.ts" > /tmp/cli-test-func-cmd.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -182,7 +182,7 @@ SERVER_PID=""
 # Test 2.3: Verify class command with decorator file
 echo ""
 echo "Test 2.3: Class command works with @MCPServer decorator"
-timeout 3 npx tsx "$MCP_ROOT/cli/class-bin.ts" "mcp/examples/class-minimal.ts" > /tmp/cli-test-class-decorator.log 2>&1 &
+timeout 3 node "$CLI_ROOT/class-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-class-decorator.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -210,7 +210,7 @@ echo ""
 
 # Test 3.1: --style flag forces decorator
 echo "Test 3.1: --style decorator flag forces decorator adapter"
-timeout 3 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "mcp/examples/simple-server.ts" --style decorator --verbose > /tmp/cli-test-force-decorator.log 2>&1 &
+timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/simple-server.ts" --style decorator --verbose > /tmp/cli-test-force-decorator.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -228,7 +228,7 @@ SERVER_PID=""
 # Test 3.2: --style flag forces functional
 echo ""
 echo "Test 3.2: --style functional flag forces functional adapter"
-timeout 3 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "mcp/examples/single-file-basic.ts" --style functional --verbose > /tmp/cli-test-force-functional.log 2>&1 &
+timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/single-file-basic.ts" --style functional --verbose > /tmp/cli-test-force-functional.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -246,7 +246,7 @@ SERVER_PID=""
 # Test 3.3: --verbose flag shows detection info
 echo ""
 echo "Test 3.3: --verbose flag shows detection details"
-timeout 3 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "mcp/examples/class-minimal.ts" --verbose > /tmp/cli-test-verbose.log 2>&1 &
+timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" --verbose > /tmp/cli-test-verbose.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -264,7 +264,7 @@ SERVER_PID=""
 # Test 3.4: --help flag shows documentation
 echo ""
 echo "Test 3.4: --help flag shows documentation"
-if npx tsx "$MCP_ROOT/cli/run-bin.ts" --help > /tmp/cli-test-help.log 2>&1; then
+if node "$CLI_ROOT/run-bin.js" --help > /tmp/cli-test-help.log 2>&1; then
   # Should show usage information
   if grep -q "Auto-detect and run an MCP server" /tmp/cli-test-help.log 2>/dev/null || \
      grep -q "file.*Path to the server file" /tmp/cli-test-help.log 2>/dev/null; then
@@ -279,7 +279,7 @@ fi
 # Test 3.5: HTTP transport flag works
 echo ""
 echo "Test 3.5: --http flag enables HTTP transport"
-timeout 3 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "mcp/examples/class-minimal.ts" --http --port 3333 > /tmp/cli-test-http.log 2>&1 &
+timeout 3 node "$CLI_ROOT/run-bin.js" run "mcp/examples/class-minimal.ts" --http --port 3333 > /tmp/cli-test-http.log 2>&1 &
 SERVER_PID=$!
 sleep 2
 
@@ -313,7 +313,7 @@ echo ""
 
 # Test 4.1: File not found error
 echo "Test 4.1: Handle missing file error"
-if npx tsx "$MCP_ROOT/cli/run-bin.ts" run "/tmp/nonexistent-file-12345.ts" > /tmp/cli-test-notfound.log 2>&1; then
+if node "$CLI_ROOT/run-bin.js" run "/tmp/nonexistent-file-12345.ts" > /tmp/cli-test-notfound.log 2>&1; then
   print_result "File not found error" "FAIL" "Should have failed for missing file"
 else
   # Check if proper error message was shown
@@ -329,7 +329,7 @@ fi
 echo ""
 echo "Test 4.2: Handle invalid file type"
 echo "console.log('test')" > /tmp/cli-test-invalid.js
-if npx tsx "$MCP_ROOT/cli/run-bin.ts" run "/tmp/cli-test-invalid.js" --verbose > /tmp/cli-test-invalid-type.log 2>&1; then
+if node "$CLI_ROOT/run-bin.js" run "/tmp/cli-test-invalid.js" --verbose > /tmp/cli-test-invalid-type.log 2>&1; then
   # If it runs, at least verify it tried to detect the style
   if grep -q "Detected API style" /tmp/cli-test-invalid-type.log 2>/dev/null; then
     print_result "Handle non-TypeScript file" "PASS"
@@ -350,7 +350,7 @@ const someVar = 123;
 export default someVar;
 EOF
 
-timeout 3 npx tsx "$MCP_ROOT/cli/run-bin.ts" run "/tmp/cli-test-ambiguous.ts" --verbose > /tmp/cli-test-ambiguous.log 2>&1 &
+timeout 3 node "$CLI_ROOT/run-bin.js" run "/tmp/cli-test-ambiguous.ts" --verbose > /tmp/cli-test-ambiguous.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
@@ -369,7 +369,7 @@ rm -f /tmp/cli-test-ambiguous.ts
 # Test 4.4: Class command with non-class file shows error
 echo ""
 echo "Test 4.4: Class command with non-class file shows error"
-if timeout 3 npx tsx "$MCP_ROOT/cli/class-bin.ts" "mcp/examples/single-file-basic.ts" > /tmp/cli-test-class-error.log 2>&1; then
+if timeout 3 node "$CLI_ROOT/class-bin.js" "mcp/examples/single-file-basic.ts" > /tmp/cli-test-class-error.log 2>&1; then
   print_result "Class command error handling" "FAIL" "Should fail for non-class file"
 else
   # Check for appropriate error message
@@ -384,7 +384,7 @@ fi
 # Test 4.5: Func command with non-config file shows error
 echo ""
 echo "Test 4.5: Func command with non-config file shows error"
-if timeout 3 npx tsx "$MCP_ROOT/cli/func-bin.ts" "mcp/examples/class-minimal.ts" > /tmp/cli-test-func-error.log 2>&1; then
+if timeout 3 node "$CLI_ROOT/func-bin.js" "mcp/examples/class-minimal.ts" > /tmp/cli-test-func-error.log 2>&1; then
   print_result "Func command error handling" "FAIL" "Should fail for non-config file"
 else
   # Check for appropriate error message
