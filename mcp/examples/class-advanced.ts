@@ -8,7 +8,17 @@
  * - Complex parameter types
  *
  * Usage:
- *   npx tsx mcp/class-adapter.ts mcp/examples/class-advanced.ts --http --port 3400
+ *   # Auto-detect and run
+ *   simplymcp run mcp/examples/class-advanced.ts
+ *
+ *   # Development with auto-restart
+ *   simplymcp run mcp/examples/class-advanced.ts --watch --http --port 3400
+ *
+ *   # Debug with Chrome DevTools
+ *   simplymcp run mcp/examples/class-advanced.ts --inspect --http --port 3400
+ *
+ *   # Or explicit decorator command
+ *   simplymcp-class mcp/examples/class-advanced.ts --http --port 3400
  */
 
 import { MCPServer, tool } from '../decorators.js';

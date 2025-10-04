@@ -4,9 +4,18 @@
  */
 
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { resolve, dirname } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
 import type { CommandModule } from 'yargs';
+import {
+  loadCLIConfig,
+  mergeRunConfig,
+  mergeServerConfig,
+  getConfigFilePath,
+  resolveServerConfig,
+  type RunConfig,
+} from './cli-config-loader.js';
 
 /**
  * API style types
@@ -366,27 +375,127 @@ async function runProgrammaticAdapter(
 }
 
 /**
+ * Spawn a child process with Node.js inspector enabled
+ * This allows developers to debug their MCP servers using Chrome DevTools or VS Code
+ */
+async function spawnWithInspector(
+  inspectFlag: string,
+  inspectPort: number,
+  argv: any
+): Promise<void> {
+  // Get the current CLI script path
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const cliPath = resolve(__dirname, 'index.js');
+
+  // Build the command arguments
+  const nodeArgs = [`${inspectFlag}=${inspectPort}`];
+
+  // Check if we need TypeScript support
+  const files = Array.isArray(argv.file) ? argv.file : [argv.file];
+  const needsTypeScript = files.some((f: string) => f.endsWith('.ts'));
+
+  // If TypeScript files are used, use tsx with --import (Node 20.6.0+)
+  if (needsTypeScript) {
+    nodeArgs.push('--import', 'tsx');
+  }
+
+  const scriptArgs = [cliPath, 'run'];
+
+  // Add all relevant flags back
+  scriptArgs.push(...files);
+
+  if (argv.config) scriptArgs.push('--config', argv.config);
+  if (argv.http) scriptArgs.push('--http');
+  if (argv.port) scriptArgs.push('--port', String(argv.port));
+  if (argv.style) scriptArgs.push('--style', argv.style);
+  if (argv.verbose) scriptArgs.push('--verbose');
+  if (argv['dry-run']) scriptArgs.push('--dry-run');
+  if (argv.watch) scriptArgs.push('--watch');
+  if (argv['watch-poll']) scriptArgs.push('--watch-poll');
+  if (argv['watch-interval']) scriptArgs.push('--watch-interval', String(argv['watch-interval']));
+
+  console.error('[Debug] Starting server with Node.js inspector...');
+  console.error(`[Debug] Inspector will listen on port ${inspectPort}`);
+  if (needsTypeScript) {
+    console.error('[Debug] TypeScript support enabled (using tsx loader)');
+  }
+  console.error('[Debug] Waiting for debugger to attach...\n');
+
+  // Spawn the child process
+  const child = spawn('node', [...nodeArgs, ...scriptArgs], {
+    stdio: ['inherit', 'inherit', 'pipe'],
+    env: process.env,
+  });
+
+  let inspectorUrlShown = false;
+
+  // Listen for inspector URL in stderr
+  child.stderr?.on('data', (data) => {
+    const output = data.toString();
+
+    // Forward stderr to parent process
+    process.stderr.write(output);
+
+    // Extract and highlight inspector URL
+    if (!inspectorUrlShown) {
+      const urlMatch = output.match(/ws:\/\/[^\s]+/);
+      if (urlMatch) {
+        console.error(`\n[Debug] Inspector URL: ${urlMatch[0]}`);
+        console.error('[Debug] Open chrome://inspect in Chrome to debug');
+        console.error('[Debug] Or connect your IDE debugger to port', inspectPort);
+        if (inspectFlag === '--inspect-brk') {
+          console.error('[Debug] Execution paused. Attach debugger to continue.\n');
+        } else {
+          console.error('[Debug] Debugger attached. Server starting...\n');
+        }
+        inspectorUrlShown = true;
+      }
+    }
+  });
+
+  // Handle child process exit
+  return new Promise((resolve) => {
+    child.on('exit', (code, signal) => {
+      if (signal) {
+        console.error(`\n[Debug] Process killed with signal: ${signal}`);
+        process.exit(1);
+      } else {
+        process.exit(code || 0);
+      }
+    });
+
+    child.on('error', (error) => {
+      console.error('[Debug] Failed to start child process:', error);
+      process.exit(1);
+    });
+  });
+}
+
+/**
  * Yargs command definition for the run command
  */
 export const runCommand: CommandModule = {
-  command: 'run <file>',
-  describe: 'Auto-detect and run an MCP server',
+  command: 'run <file..>',
+  describe: 'Auto-detect and run MCP server(s)',
   builder: (yargs) => {
     return yargs
       .positional('file', {
-        describe: 'Path to the server file',
+        describe: 'Path to the server file(s)',
         type: 'string',
         demandOption: true,
+      })
+      .option('config', {
+        describe: 'Path to config file (auto-detected if not specified)',
+        type: 'string',
       })
       .option('http', {
         describe: 'Use HTTP transport instead of stdio',
         type: 'boolean',
-        default: false,
       })
       .option('port', {
         describe: 'Port for HTTP server',
         type: 'number',
-        default: 3000,
       })
       .option('style', {
         describe: 'Force specific API style',
@@ -394,27 +503,199 @@ export const runCommand: CommandModule = {
         type: 'string',
       })
       .option('verbose', {
-        describe: 'Show detection details',
+        describe: 'Show detection details and config info',
+        type: 'boolean',
+      })
+      .option('inspect', {
+        describe: 'Enable Node.js inspector for debugging',
         type: 'boolean',
         default: false,
+      })
+      .option('inspect-brk', {
+        describe: 'Enable Node.js inspector and break on first line',
+        type: 'boolean',
+        default: false,
+      })
+      .option('inspect-port', {
+        describe: 'Port for Node.js inspector',
+        type: 'number',
+        default: 9229,
+      })
+      .option('dry-run', {
+        describe: 'Validate configuration without starting server',
+        type: 'boolean',
+        default: false,
+      })
+      .option('json', {
+        describe: 'Output as JSON (with --dry-run)',
+        type: 'boolean',
+        default: false,
+      })
+      .option('watch', {
+        describe: 'Watch for file changes and auto-restart',
+        type: 'boolean',
+      })
+      .option('watch-poll', {
+        describe: 'Use polling mode for file watching (useful for network drives)',
+        type: 'boolean',
+      })
+      .option('watch-interval', {
+        describe: 'Polling interval in milliseconds',
+        type: 'number',
       });
   },
   handler: async (argv: any) => {
-    const filePath = argv.file as string;
-    const useHttp = argv.http as boolean;
-    const port = argv.port as number;
-    const forceStyle = argv.style as APIStyle | undefined;
-    const verbose = argv.verbose as boolean;
+    const files = Array.isArray(argv.file) ? argv.file : [argv.file];
+    const configPath = argv.config as string | undefined;
 
     try {
+      // Load config file (if exists)
+      const config = await loadCLIConfig(configPath);
+      const configFilePath = await getConfigFilePath(configPath);
+
+      // CLI options passed directly
+      const cliOptions: Partial<RunConfig> = {
+        http: argv.http,
+        port: argv.port,
+        style: argv.style,
+        verbose: argv.verbose,
+        watch: argv.watch,
+        watchPoll: argv['watch-poll'],
+        watchInterval: argv['watch-interval'],
+      };
+
+      // Check if the file is a named server in config
+      let resolvedFiles = [...files];
+      let serverConfigs: Array<{ entry: string; merged: RunConfig }> = [];
+
+      // Resolve each file (could be file path or server name)
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const serverConfig = resolveServerConfig(file, config);
+
+        if (serverConfig) {
+          // Named server found
+          const merged = mergeServerConfig(
+            serverConfig.config,
+            config?.defaults || null,
+            cliOptions
+          );
+          serverConfigs.push({ entry: serverConfig.entry, merged });
+          resolvedFiles[i] = serverConfig.entry;
+
+          if (cliOptions.verbose !== false) {
+            console.error(`[Config] Resolved server "${file}" to: ${serverConfig.entry}`);
+          }
+        } else {
+          // Regular file path
+          const merged = mergeRunConfig(config, cliOptions);
+          serverConfigs.push({ entry: file, merged });
+        }
+      }
+
+      // Use the first server's config for single-server mode
+      const mergedOptions = serverConfigs[0]?.merged || mergeRunConfig(config, cliOptions);
+
+      // Extract merged values
+      let useHttp = mergedOptions.http ?? false;
+      const port = mergedOptions.port ?? 3000;
+      const forceStyle = mergedOptions.style;
+      const verbose = mergedOptions.verbose ?? false;
+      const watch = mergedOptions.watch ?? false;
+      const watchPoll = mergedOptions.watchPoll ?? false;
+      const watchInterval = mergedOptions.watchInterval ?? 100;
+      const dryRun = argv['dry-run'] as boolean;
+      const inspect = argv.inspect as boolean;
+      const inspectBrk = argv['inspect-brk'] as boolean;
+      const inspectPort = argv['inspect-port'] as number;
+
+      // Multi-server mode requires HTTP transport
+      if (files.length > 1 && !useHttp) {
+        console.error('[RunCommand] Multi-server mode detected, enabling HTTP transport automatically');
+        useHttp = true;
+      }
+
+      // Show config info in verbose mode
+      if (verbose) {
+        if (configFilePath) {
+          console.error(`[Config] Loaded from: ${configFilePath}`);
+          console.error(`[Config] Run options:`, config?.run || {});
+        } else {
+          console.error(`[Config] No config file found (using CLI args and defaults)`);
+        }
+      }
+
+      // Multi-server mode
+      if (files.length > 1) {
+        if (verbose) {
+          console.error(`[RunCommand] Multi-server mode: running ${files.length} servers`);
+        }
+
+        // Watch mode not supported with multi-server yet
+        if (watch) {
+          console.error('[RunCommand] Error: Watch mode is not yet supported with multi-server');
+          process.exit(1);
+        }
+
+        // Dry-run not supported with multi-server
+        if (dryRun) {
+          console.error('[RunCommand] Error: Dry-run mode is not supported with multi-server');
+          process.exit(1);
+        }
+
+        // Run multi-server
+        const { runMultipleServers } = await import('./multi-server-runner.js');
+        await runMultipleServers({
+          files,
+          useHttp,
+          startPort: port,
+          verbose,
+          forceStyle,
+        });
+        return;
+      }
+
+      // Single server mode
+      const filePath = resolvedFiles[0];
+
       // Detect or use forced style
       const style = forceStyle || (await detectAPIStyle(filePath));
 
       if (verbose) {
         console.error(`[RunCommand] Detected API style: ${style}`);
         if (forceStyle) {
-          console.error(`[RunCommand] Style was forced via --style flag`);
+          console.error(`[RunCommand] Style was forced via ${configFilePath ? 'config or' : ''} --style flag`);
         }
+      }
+
+      // If watch mode is enabled, start watch mode manager
+      if (watch) {
+        const { startWatchMode } = await import('./watch-mode.js');
+        await startWatchMode({
+          file: filePath,
+          style,
+          http: useHttp,
+          port,
+          poll: watchPoll,
+          interval: watchInterval,
+          verbose,
+        });
+        return;
+      }
+
+      // If dry-run mode is enabled, validate without starting server
+      if (dryRun) {
+        const jsonOutput = argv.json as boolean;
+        const { runDryRun } = await import('./dry-run.js');
+        await runDryRun(filePath, style, useHttp, port, jsonOutput);
+        return;
+      }
+
+      // If inspect mode is enabled, spawn a child process with inspector
+      if (inspect || inspectBrk) {
+        const inspectFlag = inspectBrk ? '--inspect-brk' : '--inspect';
+        await spawnWithInspector(inspectFlag, inspectPort, argv);
+        return; // Never reached, spawnWithInspector exits the process
       }
 
       // Run appropriate adapter

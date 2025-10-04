@@ -26,11 +26,17 @@ A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript
 
 - **Developer Experience**:
   - Simple CLI with auto-detection (`simplymcp run`)
+  - Watch mode with auto-restart (`--watch`)
+  - Debug support with Chrome DevTools (`--inspect`)
+  - Dry-run validation (`--dry-run`)
+  - Configuration file support (`simplymcp.config.ts`)
+  - Multi-server orchestration (`list`, `stop` commands)
   - Production bundling (`simplemcp bundle`)
   - Automatic type inference from JSDoc comments
   - Built-in dependency management
   - Comprehensive error handling
   - Production-ready logging
+  - Performance optimizations with caching
 
 ## 📦 Installation
 
@@ -86,6 +92,15 @@ Run it:
 # Auto-detect and run
 simplymcp run my-server.ts
 
+# Development with auto-restart
+simplymcp run my-server.ts --watch
+
+# Debug with Chrome DevTools
+simplymcp run my-server.ts --inspect
+
+# Validate configuration
+simplymcp run my-server.ts --dry-run
+
 # Or explicit decorator command
 simplymcp-class my-server.ts
 
@@ -135,6 +150,9 @@ Run it:
 ```bash
 # Auto-detect and run
 simplymcp run my-server.ts
+
+# Development with watch mode
+simplymcp run my-server.ts --watch
 
 # Or explicit functional command
 simplymcp-func my-server.ts
@@ -219,6 +237,156 @@ simply-mcp/
 - **[Deployment Guide](./mcp/docs/guides/DEPLOYMENT.md)** - Production deployment
 - **[Module Usage](./MODULE_USAGE.md)** - Using SimplyMCP as a module
 
+## 🚀 Developer Features
+
+### Watch Mode
+
+Automatically restart your server when files change:
+
+```bash
+# Basic watch mode
+simplymcp run server.ts --watch
+
+# Watch mode with HTTP transport
+simplymcp run server.ts --watch --http --port 3000
+
+# Use polling for network drives
+simplymcp run server.ts --watch --watch-poll --watch-interval 200
+```
+
+Watch mode monitors your server file and its dependencies, automatically restarting when changes are detected. Perfect for rapid development iterations.
+
+### Debug Support
+
+Debug with Chrome DevTools or VS Code:
+
+```bash
+# Start with inspector
+simplymcp run server.ts --inspect
+
+# Break before code starts
+simplymcp run server.ts --inspect-brk
+
+# Custom inspector port
+simplymcp run server.ts --inspect --inspect-port 9230
+```
+
+**Chrome DevTools:**
+1. Run with `--inspect`
+2. Open `chrome://inspect` in Chrome
+3. Click "Configure" and add `localhost:9229`
+4. Click "inspect" to open DevTools
+
+**VS Code:**
+1. Add to `.vscode/launch.json`:
+```json
+{
+  "type": "node",
+  "request": "attach",
+  "name": "Attach to SimpleMCP",
+  "port": 9229
+}
+```
+2. Run server with `--inspect`
+3. Press F5 to attach debugger
+
+See [Debugging Guide](mcp/docs/DEBUGGING.md) for details.
+
+### Dry-Run Validation
+
+Validate your configuration without starting the server:
+
+```bash
+# Validate configuration
+simplymcp run server.ts --dry-run
+
+# JSON output for CI/CD
+simplymcp run server.ts --dry-run --json
+```
+
+Perfect for:
+- CI/CD pipelines
+- Pre-deployment validation
+- Configuration testing
+- Quick syntax checks
+
+### Configuration Files
+
+Define defaults in `simplymcp.config.ts`:
+
+```typescript
+export default {
+  servers: {
+    weather: {
+      entry: 'services/weather.ts',
+      port: 3000
+    },
+    calculator: {
+      entry: 'services/calc.ts',
+      port: 3001
+    },
+  },
+  defaults: {
+    watch: true,
+    verbose: true,
+    http: true
+  }
+};
+```
+
+Then run by name:
+```bash
+# Run configured server
+simplymcp run weather
+
+# Override config settings
+simplymcp run weather --port 4000
+```
+
+Supports `.ts`, `.js`, `.mjs`, and `.json` formats.
+
+### Multi-Server Support
+
+Run and manage multiple servers simultaneously:
+
+```bash
+# Run multiple servers
+simplymcp run server1.ts server2.ts server3.ts --http --port 3000
+# Servers run on ports 3000, 3001, 3002
+
+# List running servers
+simplymcp list
+simplymcp list --verbose
+simplymcp list --json
+
+# Stop servers
+simplymcp stop all
+simplymcp stop <pid>
+simplymcp stop <name>
+simplymcp stop --force
+```
+
+Features:
+- Auto port assignment
+- Color-coded aggregated logging
+- Process tracking and management
+- Graceful shutdown handling
+
+See [Multi-Server Quick Start](MULTI_SERVER_QUICKSTART.md) for details.
+
+### Performance Optimizations
+
+Built-in optimizations for faster startup:
+
+- **Detection caching**: 11.9x faster API style detection
+- **Lazy loading**: Adapter modules loaded only when needed
+- **Performance metrics**: Track startup time and bottlenecks
+
+```bash
+# View performance metrics
+simplymcp run server.ts --verbose
+```
+
 ## 🤖 Using with Claude Code/Desktop
 
 SimplyMCP servers work with Claude Code CLI and Claude Desktop. Create `.mcp.json` in your project root:
@@ -289,23 +457,126 @@ The `simplymcp` CLI automatically detects your API style and runs your server:
 # Auto-detect API style (recommended)
 simplymcp run server.ts
 
+# Multiple servers
+simplymcp run server1.ts server2.ts server3.ts
+
 # With flags
-simplymcp run server.ts --http --port 3000
-simplymcp run server.ts --style decorator --verbose
+simplymcp run server.ts --http --port 3000 --watch
+simplymcp run server.ts --style decorator --verbose --inspect
 
 # Explicit commands (skip auto-detection)
 simplymcp-class server.ts    # For @MCPServer classes
 simplymcp-func server.ts     # For defineMCP() configs
 
+# Server management
+simplymcp list              # List running servers
+simplymcp stop all          # Stop all servers
+
 # Get help
 simplymcp run --help
 ```
+
+**Available Commands:**
+- `simplymcp run <file..>` - Run one or more MCP servers
+- `simplymcp bundle [entry]` - Bundle server for distribution
+- `simplymcp list` - List running servers
+- `simplymcp stop <target>` - Stop running servers
+- `simplymcp config <action>` - Manage configuration
 
 **Available Flags:**
 - `--http` - Use HTTP transport instead of stdio
 - `--port <number>` - Port for HTTP server (default: 3000)
 - `--style <type>` - Override auto-detection (decorator|functional|programmatic)
 - `--verbose` - Show detailed detection and startup information
+- `--watch` - Watch for file changes and auto-restart
+- `--watch-poll` - Use polling mode for file watching
+- `--watch-interval <ms>` - Polling interval in milliseconds
+- `--inspect` - Enable Node.js debugger (opens inspector on port 9229)
+- `--inspect-brk` - Enable debugger and break before code starts
+- `--inspect-port <number>` - Custom port for debugger (default: 9229)
+- `--dry-run` - Validate configuration without starting server
+- `--json` - Output as JSON (with --dry-run or list command)
+- `--config <path>` - Path to config file (auto-detected if not specified)
+
+### Migration from Old CLI Commands
+
+If you're upgrading from an earlier version, here's how to update your commands:
+
+**BEFORE (Old Adapter Commands):**
+```bash
+# Class-based servers
+npx tsx node_modules/simply-mcp/mcp/class-adapter.ts server.ts
+npx tsx mcp/class-adapter.ts server.ts
+
+# Functional servers
+npx tsx node_modules/simply-mcp/mcp/adapter.ts server.ts
+npx tsx mcp/adapter.ts server.ts
+
+# With HTTP transport
+npx tsx mcp/class-adapter.ts server.ts --http --port 3000
+```
+
+**AFTER (New Simplified Commands):**
+```bash
+# Auto-detect (recommended)
+simplymcp run server.ts
+
+# Or explicit commands
+simplymcp-class server.ts
+simplymcp-func server.ts
+
+# With HTTP transport
+simplymcp run server.ts --http --port 3000
+```
+
+**Note:** The old adapter commands still work but are deprecated and will be removed in a future version.
+
+### Debugging Your Server
+
+SimpleMCP has built-in debugging support using the Node.js inspector. This allows you to use Chrome DevTools or VS Code to debug your server.
+
+**Quick Start:**
+```bash
+# Start server with debugger
+simplymcp run server.ts --inspect
+
+# Break before code runs (useful for debugging startup)
+simplymcp run server.ts --inspect-brk
+
+# Use custom debugger port
+simplymcp run server.ts --inspect --inspect-port 9230
+```
+
+**Connect with Chrome DevTools:**
+1. Run your server with `--inspect`
+2. Open Chrome and navigate to `chrome://inspect`
+3. Click "Configure" and add `localhost:9229`
+4. Your server will appear under "Remote Target"
+5. Click "inspect" to open DevTools
+
+**Connect with VS Code:**
+1. Add to `.vscode/launch.json`:
+```json
+{
+  "type": "node",
+  "request": "attach",
+  "name": "Attach to SimpleMCP",
+  "port": 9229,
+  "skipFiles": ["<node_internals>/**"]
+}
+```
+2. Start server with `--inspect`
+3. Press F5 in VS Code or use "Run and Debug" panel
+
+**Debugging Features:**
+- Set breakpoints in your tool implementations
+- Inspect variables and call stacks
+- Step through code execution
+- Debug async operations
+- Profile performance
+- Use `debugger;` statements for programmatic breakpoints
+
+For complete debugging documentation, see [mcp/docs/DEBUGGING.md](mcp/docs/DEBUGGING.md).
 
 ### Bundling for Production
 

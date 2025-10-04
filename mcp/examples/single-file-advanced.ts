@@ -9,10 +9,9 @@
  * - Builder pattern (alternative to defineMCP)
  *
  * To run this server:
- *   npx tsx mcp/adapter.ts mcp/examples/single-file-advanced.ts
- *
- * Or with HTTP transport:
- *   npx tsx mcp/adapter.ts mcp/examples/single-file-advanced.ts --http --port 3001
+ *   simplymcp run mcp/examples/single-file-advanced.ts
+ *   simplymcp run mcp/examples/single-file-advanced.ts --http --port 3001
+ *   simplymcp-func mcp/examples/single-file-advanced.ts
  */
 
 import { createMCP } from '../single-file-types.js';

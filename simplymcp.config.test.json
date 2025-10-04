@@ -1,0 +1,14 @@
+{
+  "run": {
+    "http": false,
+    "port": 3002,
+    "verbose": false
+  },
+  "bundle": {
+    "entry": "./server.ts",
+    "output": "dist/bundle.js",
+    "format": "single-file",
+    "minify": false,
+    "platform": "node"
+  }
+}

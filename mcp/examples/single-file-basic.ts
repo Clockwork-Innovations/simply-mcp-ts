@@ -4,11 +4,24 @@
  * This demonstrates the simplest way to define an MCP server in a single file.
  * Inspired by FastMCP's Python API.
  *
- * To run this server:
- *   npx tsx mcp/adapter.ts mcp/examples/single-file-basic.ts
+ * Usage:
+ *   # Auto-detect and run
+ *   simplymcp run mcp/examples/single-file-basic.ts
  *
- * Or with HTTP transport:
- *   npx tsx mcp/adapter.ts mcp/examples/single-file-basic.ts --http --port 3000
+ *   # Development with watch mode
+ *   simplymcp run mcp/examples/single-file-basic.ts --watch
+ *
+ *   # Debug with Chrome DevTools
+ *   simplymcp run mcp/examples/single-file-basic.ts --inspect
+ *
+ *   # Validate configuration
+ *   simplymcp run mcp/examples/single-file-basic.ts --dry-run
+ *
+ *   # HTTP transport
+ *   simplymcp run mcp/examples/single-file-basic.ts --http --port 3000
+ *
+ *   # Or explicit functional command
+ *   simplymcp-func mcp/examples/single-file-basic.ts
  */
 
 import { defineMCP } from '../single-file-types.js';

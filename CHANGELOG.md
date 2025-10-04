@@ -7,6 +7,120 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2025-10-03 - Motorcycle Phase: Developer Experience & Multi-Server
+
+The Motorcycle Phase brings powerful developer tools and multi-server capabilities to SimpleMCP.
+
+### Added
+
+#### Watch Mode
+- **Auto-restart on file changes** - Monitor server and dependencies for changes
+- **Debouncing** - Prevent restart storms with intelligent debouncing (100ms default)
+- **Polling mode** (`--watch-poll`) - Support for network drives and special filesystems
+- **Custom intervals** (`--watch-interval`) - Configurable polling intervals
+- Graceful restart with cleanup and state preservation
+
+#### Debug Support
+- **Node.js Inspector integration** - Full debugging support with `--inspect` flag
+- **Chrome DevTools** - Debug with Chrome's DevTools interface
+- **VS Code debugging** - Attach VS Code debugger to running servers
+- **Break on start** (`--inspect-brk`) - Pause execution before code runs
+- **Custom inspector port** (`--inspect-port`) - Configure inspector port (default: 9229)
+- **TypeScript debugging** - Full source map support with tsx loader
+- Comprehensive debugging documentation
+
+#### Dry-Run Mode
+- **Configuration validation** (`--dry-run`) - Validate without starting server
+- **JSON output** (`--json`) - Machine-readable validation results
+- **CI/CD integration** - Perfect for pre-deployment validation
+- Comprehensive validation checks:
+  - File existence and readability
+  - API style detection
+  - Configuration structure
+  - Tool/prompt/resource definitions
+  - Import resolution
+
+#### Configuration File Support
+- **`simplymcp.config.ts`** - TypeScript configuration with full type safety
+- **Multiple formats** - Support for `.ts`, `.js`, `.mjs`, `.json`
+- **Named server configs** - Define multiple servers with names
+- **Global defaults** - Set default options for all servers
+- **Config management** - `simplymcp config` command for setup
+- **Auto-detection** - Finds config automatically if present
+- **Override support** - CLI flags override config settings
+
+#### Multi-Server Support
+- **Run multiple servers** - `simplymcp run server1.ts server2.ts server3.ts`
+- **Auto port assignment** - Automatically assigns sequential ports
+- **Aggregated logging** - Color-coded output from all servers
+- **Process tracking** - Registry-based server tracking
+- **`list` command** - View all running servers with status
+  - Verbose mode (`--verbose`) - Detailed server information
+  - JSON output (`--json`) - Machine-readable format
+  - Cleanup mode (`--cleanup`) - Remove stale entries
+- **`stop` command** - Stop servers by name, PID, or all
+  - Stop all servers (`simplymcp stop all`)
+  - Stop by PID (`simplymcp stop 12345`)
+  - Stop by name (`simplymcp stop weather`)
+  - Force kill (`--force`) - SIGKILL for unresponsive servers
+- **Group management** - Servers started together tracked as a group
+- **HTTP transport required** - Multi-server mode uses HTTP (stdio is single-server only)
+
+#### Performance Optimizations
+- **Detection caching** - 11.9x faster API style detection
+  - Cache detection results in `/tmp/simplymcp/cache/`
+  - Invalidation on file changes
+  - Reduced startup time from ~600ms to ~50ms
+- **Lazy loading** - Adapter modules loaded only when needed
+- **Performance metrics** - Track and display startup timings
+- **Startup optimizations** - Target < 100ms startup time
+- **Memory efficiency** - Optimized memory usage for multi-server scenarios
+
+#### CLI Enhancements
+- **CLI Simplification (Bicycle Phase)**
+  - `simplymcp run` command with automatic API style detection
+  - `simplymcp-run` bin alias for direct execution
+  - `simplymcp-class` bin alias for decorator API servers
+  - `simplymcp-func` bin alias for functional API servers
+  - Auto-detection of decorator, functional, and programmatic API styles
+  - `--style` flag to override auto-detection
+  - `--verbose` flag to show detection details
+
+### Changed
+- `simplymcp run` now accepts multiple server files as arguments
+- HTTP transport auto-enabled for multi-server mode (with port auto-assignment)
+- Improved error messages with actionable suggestions
+- Enhanced developer feedback with color-coded status messages
+- Better process management with graceful shutdown handling
+- Improved CLI user experience with shorter, cleaner commands
+- Updated all documentation examples to use new CLI commands
+
+### Fixed
+- Process cleanup on server termination
+- File watching on network drives with polling mode
+- Inspector connection stability
+- Multi-server port conflict resolution
+- Config file loading edge cases
+
+### Documentation
+- **New Guides:**
+  - `DEBUGGING.md` - Complete debugging guide
+  - `MULTI_SERVER_QUICKSTART.md` - Multi-server getting started
+  - `MULTI_SERVER_IMPLEMENTATION.md` - Implementation details
+- **Updated Guides:**
+  - `README.md` - Added Developer Features section
+  - `QUICK-START.md` - Added watch/debug examples
+  - Example files - Updated with new CLI usage patterns
+
+### Deprecated
+- Old adapter commands (`npx tsx mcp/adapter.ts` and `npx tsx mcp/class-adapter.ts`) still work but are deprecated
+
+### Performance Metrics
+- API style detection: 11.9x faster with caching
+- Startup time: < 100ms (from ~600ms)
+- Multi-server startup: < 200ms for 3 servers
+- Watch mode restart: < 150ms
+
 ## [2.2.0] - 2025-10-03
 
 ### Added
@@ -164,7 +278,8 @@ We use [Semantic Versioning](https://semver.org/):
 
 ---
 
-[Unreleased]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/clockwork-innovations/simply-mcp/compare/v2.0.0...v2.0.1

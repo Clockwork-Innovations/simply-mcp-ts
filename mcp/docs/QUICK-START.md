@@ -560,7 +560,13 @@ pwd  # Should show: /path/to/cv-gen
 ### Testing with Claude CLI (Easiest!) 🌟
 
 ```bash
-# Add your server to Claude CLI
+# Add your server to Claude CLI (using new simplified commands)
+claude mcp add my-server "simplymcp run mcp/examples/simple-server.ts"
+
+# Or with watch mode for development
+claude mcp add my-server-dev "simplymcp run mcp/examples/simple-server.ts --watch"
+
+# Or with old commands (still supported)
 claude mcp add my-server "npx tsx mcp/examples/simple-server.ts"
 
 # Test interactively
@@ -575,13 +581,35 @@ echo "Calculate 123 multiplied by 456" | claude --print --dangerously-skip-permi
 echo "What tools are available?" | claude --print \
   --strict-mcp-config \
   --dangerously-skip-permissions \
-  --mcp-config '{"mcpServers":{"test":{"command":"npx","args":["tsx","mcp/examples/simple-server.ts"]}}}'
+  --mcp-config '{"mcpServers":{"test":{"command":"simplymcp","args":["run","mcp/examples/simple-server.ts"]}}}'
 
 # List configured servers
 claude mcp list
 
 # Remove a server
 claude mcp remove my-server
+```
+
+### Development Workflow with Motorcycle Features
+
+```bash
+# Watch mode - auto-restart on changes
+simplymcp run server.ts --watch
+
+# Debug mode - attach debugger
+simplymcp run server.ts --inspect
+
+# Dry-run - validate before running
+simplymcp run server.ts --dry-run
+
+# Multiple servers
+simplymcp run api.ts auth.ts data.ts --http --port 3000
+
+# List running servers
+simplymcp list --verbose
+
+# Stop all servers
+simplymcp stop all
 ```
 
 ### Common Commands
@@ -642,7 +670,50 @@ curl -X POST http://localhost:3002/mcp \
 ✅ How to call tools via the MCP protocol
 ✅ How to troubleshoot common issues
 
+**Motorcycle Phase Features (New!):**
+✅ Use watch mode for auto-restart during development
+✅ Debug servers with Chrome DevTools or VS Code
+✅ Validate configurations with dry-run mode
+✅ Run multiple servers simultaneously
+✅ Manage servers with list and stop commands
+✅ Use configuration files for defaults
+
 **You're now ready to build powerful MCP-based tools!** 🎉
+
+---
+
+## Next: Explore Motorcycle Features
+
+**Watch Mode:**
+```bash
+simplymcp run server.ts --watch
+```
+Auto-restart when files change. Perfect for rapid development!
+
+**Debug Mode:**
+```bash
+simplymcp run server.ts --inspect
+```
+Debug with Chrome DevTools or VS Code. See [DEBUGGING.md](DEBUGGING.md).
+
+**Multi-Server:**
+```bash
+simplymcp run s1.ts s2.ts s3.ts --http --port 3000
+```
+Run multiple servers on different ports. See [MULTI_SERVER_QUICKSTART.md](../MULTI_SERVER_QUICKSTART.md).
+
+**Configuration Files:**
+Create `simplymcp.config.ts` to define defaults:
+```typescript
+export default {
+  servers: {
+    api: { entry: 'api.ts', port: 3000 }
+  },
+  defaults: { watch: true, verbose: true }
+};
+```
+
+Then run: `simplymcp run api`
 
 ---
 

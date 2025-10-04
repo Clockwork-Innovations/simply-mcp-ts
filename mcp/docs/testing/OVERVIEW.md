@@ -139,8 +139,10 @@ npx tsx mcp/examples/simple-server.ts
 # SimplyMCP server (HTTP)
 npx tsx mcp/examples/simple-server.ts --http --port 3000
 
-# Class-based server
-npx tsx mcp/class-adapter.ts mcp/examples/class-minimal.ts
+# Class-based server (new simplified CLI)
+simplymcp run mcp/examples/class-minimal.ts
+# Or explicit:
+simplymcp-class mcp/examples/class-minimal.ts
 
 # Configurable server
 npx tsx mcp/configurableServer.ts mcp/config.json

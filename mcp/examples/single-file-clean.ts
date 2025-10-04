@@ -5,10 +5,9 @@
  * our interface-based schema builder instead of Zod directly.
  *
  * To run this server:
- *   npx tsx mcp/adapter.ts mcp/examples/single-file-clean.ts
- *
- * Or with HTTP transport:
- *   npx tsx mcp/adapter.ts mcp/examples/single-file-clean.ts --http --port 3000
+ *   simplymcp run mcp/examples/single-file-clean.ts
+ *   simplymcp run mcp/examples/single-file-clean.ts --http --port 3000
+ *   simplymcp-func mcp/examples/single-file-clean.ts
  */
 
 import { defineMCP, Schema } from '../single-file-types.js';

@@ -56,12 +56,6 @@ import type { SingleFileMCPConfig } from './single-file-types.js';
 import { schemaToZod } from './schema-builder.js';
 import { ZodSchema } from 'zod';
 
-// Deprecation warning on startup
-console.warn('\n⚠️  WARNING: This adapter is DEPRECATED and will be removed in a future version.');
-console.warn('   Please use the new CLI commands instead:');
-console.warn('   - simplymcp run <file>       (auto-detect)');
-console.warn('   - simplymcp-func <file>      (explicit functional API)\n');
-
 /**
  * Parse command line arguments
  */
@@ -111,45 +105,40 @@ Config File Format:
 
 /**
  * Load and validate the config file
+ * @param configPath - Path to the config file (relative or absolute)
+ * @returns Promise resolving to the loaded and validated config
  */
-async function loadConfig(configPath: string): Promise<SingleFileMCPConfig> {
-  try {
-    // Resolve the config path to an absolute path
-    const absolutePath = resolve(process.cwd(), configPath);
+export async function loadConfig(configPath: string): Promise<SingleFileMCPConfig> {
+  // Resolve the config path to an absolute path
+  const absolutePath = resolve(process.cwd(), configPath);
 
-    // Convert to file URL for ESM import
-    const fileUrl = pathToFileURL(absolutePath).href;
+  // Convert to file URL for ESM import
+  const fileUrl = pathToFileURL(absolutePath).href;
 
-    // Dynamic import of the config file
-    const module = await import(fileUrl);
+  // Dynamic import of the config file
+  const module = await import(fileUrl);
 
-    // Get the default export
-    const config = module.default;
+  // Get the default export
+  const config = module.default;
 
-    if (!config) {
-      throw new Error('Config file must have a default export');
-    }
-
-    // Validate config structure
-    if (!config.name || !config.version) {
-      throw new Error('Config must have "name" and "version" properties');
-    }
-
-    return config as SingleFileMCPConfig;
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error(`Error loading config file: ${error.message}`);
-    } else {
-      console.error('Error loading config file:', error);
-    }
-    process.exit(1);
+  if (!config) {
+    throw new Error('Config file must have a default export');
   }
+
+  // Validate config structure
+  if (!config.name || !config.version) {
+    throw new Error('Config must have "name" and "version" properties');
+  }
+
+  return config as SingleFileMCPConfig;
 }
 
 /**
  * Create SimplyMCP server from config
+ * @param config - The validated config object
+ * @returns SimplyMCP server instance
  */
-function createServerFromConfig(config: SingleFileMCPConfig): SimplyMCP {
+export function createServerFromConfig(config: SingleFileMCPConfig): SimplyMCP {
   // Create SimplyMCP instance
   const server = new SimplyMCP({
     name: config.name,
@@ -210,10 +199,26 @@ function createServerFromConfig(config: SingleFileMCPConfig): SimplyMCP {
  * Main entry point
  */
 async function main() {
+  // Deprecation warning on startup
+  console.warn('\n⚠️  WARNING: This adapter is DEPRECATED and will be removed in a future version.');
+  console.warn('   Please use the new CLI commands instead:');
+  console.warn('   - simplymcp run <file>       (auto-detect)');
+  console.warn('   - simplymcp-func <file>      (explicit functional API)\n');
+
   const { configPath, useHttp, port } = parseArgs();
 
   console.error('[Adapter] Loading config from:', configPath);
-  const config = await loadConfig(configPath);
+  let config: SingleFileMCPConfig;
+  try {
+    config = await loadConfig(configPath);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error loading config file: ${error.message}`);
+    } else {
+      console.error('Error loading config file:', error);
+    }
+    process.exit(1);
+  }
 
   console.error(`[Adapter] Creating server: ${config.name} v${config.version}`);
   const server = createServerFromConfig(config);
@@ -241,8 +246,10 @@ async function main() {
   }
 }
 
-// Run the adapter
-main().catch((error) => {
-  console.error('[Adapter] Fatal error:', error);
-  process.exit(1);
-});
+// Run the adapter only when executed as a script (not when imported as a module)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error('[Adapter] Fatal error:', error);
+    process.exit(1);
+  });
+}

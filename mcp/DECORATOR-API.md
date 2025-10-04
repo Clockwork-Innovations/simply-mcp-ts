@@ -27,6 +27,11 @@ export default class MyServer {
 
 **Run it:**
 ```bash
+# New simplified CLI (recommended)
+simplymcp run my-server.ts --http --port 3000
+# Or: simplymcp-class my-server.ts --http --port 3000
+
+# Old command (still works but deprecated)
 npx tsx mcp/class-adapter.ts my-server.ts --http --port 3000
 ```
 
@@ -267,18 +272,32 @@ export default class StringUtils {
 ### Stdio Transport (Default)
 
 ```bash
+# New simplified CLI (recommended)
+simplymcp run my-server.ts
+# Or: simplymcp-class my-server.ts
+
+# Old command (still works but deprecated)
 npx tsx mcp/class-adapter.ts my-server.ts
 ```
 
 ### HTTP Transport
 
 ```bash
+# New simplified CLI (recommended)
+simplymcp run my-server.ts --http --port 3000
+# Or: simplymcp-class my-server.ts --http --port 3000
+
+# Old command (still works but deprecated)
 npx tsx mcp/class-adapter.ts my-server.ts --http --port 3000
 ```
 
 ### With Environment Variables
 
 ```bash
+# New simplified CLI
+PORT=4000 simplymcp run my-server.ts --http
+
+# Old command (still works but deprecated)
 PORT=4000 npx tsx mcp/class-adapter.ts my-server.ts --http
 ```
 

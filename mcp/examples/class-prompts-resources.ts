@@ -5,7 +5,8 @@
  * using the Decorator API.
  *
  * Usage:
- *   npx tsx mcp/class-adapter.ts mcp/examples/class-prompts-resources.ts
+ *   simplymcp run mcp/examples/class-prompts-resources.ts
+ *   simplymcp-class mcp/examples/class-prompts-resources.ts
  */
 
 import { MCPServer, tool, prompt, resource } from 'simply-mcp';

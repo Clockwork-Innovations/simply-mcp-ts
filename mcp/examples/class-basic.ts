@@ -4,8 +4,23 @@
  * The cleanest way to define an MCP server - just a TypeScript class!
  *
  * Usage:
- *   npx tsx mcp/class-adapter.ts mcp/examples/class-basic.ts
- *   npx tsx mcp/class-adapter.ts mcp/examples/class-basic.ts --http --port 3000
+ *   # Auto-detect and run
+ *   simplymcp run mcp/examples/class-basic.ts
+ *
+ *   # Development with auto-restart
+ *   simplymcp run mcp/examples/class-basic.ts --watch
+ *
+ *   # Debug with Chrome DevTools
+ *   simplymcp run mcp/examples/class-basic.ts --inspect
+ *
+ *   # Validate configuration
+ *   simplymcp run mcp/examples/class-basic.ts --dry-run
+ *
+ *   # HTTP transport
+ *   simplymcp run mcp/examples/class-basic.ts --http --port 3000
+ *
+ *   # Or explicit decorator command
+ *   simplymcp-class mcp/examples/class-basic.ts
  */
 
 import { MCPServer, tool, prompt, resource } from 'simply-mcp';

@@ -35,11 +35,12 @@ console.log('Server running on http://localhost:3000');
 ### Using CLI
 
 ```bash
-# With class-based server
-npx tsx mcp/class-adapter.ts my-server.ts --http --port 3000
+# Auto-detect and run with HTTP (recommended)
+simplymcp run my-server.ts --http --port 3000
 
-# With functional server
-node my-server.js --http --port 3000
+# Or explicit commands
+simplymcp-class my-server.ts --http --port 3000
+simplymcp-func my-server.ts --http --port 3000
 ```
 
 ---

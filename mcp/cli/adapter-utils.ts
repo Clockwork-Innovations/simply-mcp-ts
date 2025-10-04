@@ -6,63 +6,156 @@
 import type { SimplyMCP } from '../SimplyMCP.js';
 
 /**
- * Common arguments parsed from CLI
+ * Adapter options parsed from command line arguments
  */
-export interface CommonArgs {
-  useHttp: boolean;
-  port: number;
+export interface AdapterOptions {
+  http?: boolean;
+  port?: number;
+  verbose?: boolean;
 }
 
 /**
- * Parse common command line arguments shared across adapters
- * @param argv Command line arguments (typically process.argv.slice(2))
- * @returns Parsed common arguments
+ * Options for starting the server
  */
-export function parseCommonArgs(argv: string[]): CommonArgs {
-  const useHttp = argv.includes('--http');
-  const portIndex = argv.indexOf('--port');
-  const port = portIndex !== -1 ? parseInt(argv[portIndex + 1], 10) : 3000;
+export interface StartOptions extends AdapterOptions {
+  useHttp?: boolean; // Backward compatibility alias for 'http'
+}
 
-  // Validate port if HTTP is enabled
-  if (useHttp && isNaN(port)) {
-    console.error('Error: Invalid port number');
-    process.exit(1);
+/**
+ * Options for displaying server information
+ */
+export interface DisplayOptions {
+  transport: 'stdio' | 'http';
+  port?: number;
+  verbose?: boolean;
+}
+
+/**
+ * Parse common command line arguments
+ * Parses --http, --port, --verbose flags from argv
+ *
+ * @param argv Command line arguments (typically process.argv.slice(2))
+ * @returns Structured options object with parsed flags
+ *
+ * @example
+ * ```typescript
+ * const args = process.argv.slice(2); // ['server.ts', '--http', '--port', '3000']
+ * const options = parseCommonArgs(args);
+ * // Returns: { http: true, port: 3000, verbose: false, file: 'server.ts' }
+ * ```
+ */
+export function parseCommonArgs(argv: string[]): AdapterOptions & { file?: string; useHttp?: boolean } {
+  const http = argv.includes('--http');
+  const verbose = argv.includes('--verbose') || argv.includes('-v');
+
+  // Parse port argument
+  const portIndex = argv.indexOf('--port');
+  let port: number | undefined = 3000;
+
+  if (portIndex !== -1 && portIndex + 1 < argv.length) {
+    const parsedPort = parseInt(argv[portIndex + 1], 10);
+    if (isNaN(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+      console.error('Error: Invalid port number. Must be between 1 and 65535.');
+      process.exit(1);
+    }
+    port = parsedPort;
   }
 
-  return { useHttp, port };
+  // Extract file path (first non-flag argument)
+  const file = argv.find(arg => !arg.startsWith('--') && !arg.startsWith('-'));
+
+  return {
+    http,
+    port,
+    verbose,
+    file,
+    useHttp: http, // Backward compatibility alias
+  };
 }
 
 /**
- * Start an MCP server with the specified transport options
+ * Start an MCP server with the specified options
+ * Handles transport selection (stdio vs HTTP), signal handlers, and error handling
+ *
  * @param server SimplyMCP instance to start
- * @param options Transport options
+ * @param options Start options including transport type and port
+ * @returns Promise that resolves when server is started
+ *
+ * @example
+ * ```typescript
+ * const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
+ * await startServer(server, { http: true, port: 3000 });
+ * ```
  */
 export async function startServer(
   server: SimplyMCP,
-  options: { useHttp: boolean; port?: number }
+  options: StartOptions
 ): Promise<void> {
+  const useHttp = options.http ?? options.useHttp ?? false;
+  const port = options.port ?? 3000;
+
+  // Set up signal handlers for graceful shutdown
+  const handleShutdown = async (signal: string) => {
+    if (options.verbose) {
+      console.error(`\n[Adapter] Received ${signal}, shutting down gracefully...`);
+    }
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+
   try {
+    // Start the server with selected transport
     await server.start({
-      transport: options.useHttp ? 'http' : 'stdio',
-      port: options.useHttp ? options.port : undefined,
+      transport: useHttp ? 'http' : 'stdio',
+      port: useHttp ? port : undefined,
     });
 
-    if (options.useHttp) {
-      console.error(`[Adapter] Server running on http://localhost:${options.port}`);
+    // Display startup message
+    if (useHttp) {
+      console.error(`[Adapter] Server running on http://localhost:${port}`);
+      if (options.verbose) {
+        console.error('[Adapter] Transport: HTTP');
+        console.error(`[Adapter] Port: ${port}`);
+      }
     } else {
       console.error('[Adapter] Server running on stdio');
+      if (options.verbose) {
+        console.error('[Adapter] Transport: STDIO');
+      }
     }
   } catch (error) {
-    console.error('[Adapter] Failed to start server:', error);
+    // Handle startup errors gracefully
+    if (error instanceof Error) {
+      console.error(`[Adapter] Failed to start server: ${error.message}`);
+      if (options.verbose && error.stack) {
+        console.error('[Adapter] Stack trace:', error.stack);
+      }
+    } else {
+      console.error('[Adapter] Failed to start server:', error);
+    }
     process.exit(1);
   }
 }
 
 /**
  * Display server information to stderr
+ * Shows server name, version, transport info, and available resources count
+ *
  * @param server SimplyMCP instance
+ * @param options Display options (optional)
+ *
+ * @example
+ * ```typescript
+ * const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
+ * displayServerInfo(server, { transport: 'http', port: 3000, verbose: true });
+ * ```
  */
-export function displayServerInfo(server: SimplyMCP): void {
+export function displayServerInfo(
+  server: SimplyMCP,
+  options?: DisplayOptions
+): void {
   const info = server.getInfo();
   const stats = server.getStats();
 
@@ -70,4 +163,23 @@ export function displayServerInfo(server: SimplyMCP): void {
   console.error(
     `[Adapter] Loaded: ${stats.tools} tools, ${stats.prompts} prompts, ${stats.resources} resources`
   );
+
+  // Display additional transport information if options provided
+  if (options) {
+    if (options.verbose) {
+      console.error(`[Adapter] Transport: ${options.transport.toUpperCase()}`);
+      if (options.transport === 'http' && options.port) {
+        console.error(`[Adapter] HTTP Port: ${options.port}`);
+      }
+    }
+  }
+}
+
+/**
+ * Common arguments interface (backward compatibility)
+ * @deprecated Use AdapterOptions instead
+ */
+export interface CommonArgs {
+  useHttp: boolean;
+  port: number;
 }

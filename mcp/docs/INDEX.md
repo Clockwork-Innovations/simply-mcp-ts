@@ -15,20 +15,22 @@ The **MCP (Model Context Protocol) Framework** is a comprehensive, production-re
 
 ## 📚 Start Here
 
-New to the MCP Framework? Begin with these documents:
+New to SimpleMCP? Begin with these documents:
 
 | Document | Time | Description |
 |----------|------|-------------|
-| **[Quick Start](../README.md#quick-start)** | 5 min | Get your first server running in minutes |
-| **[README Overview](../README.md)** | 15 min | Framework overview, features, and basic concepts |
-| **[API Examples](./guides/API-INTEGRATION.md)** | 20 min | Working examples with curl, TypeScript, and Python |
-| **[Configuration Format](../README.md#configuration-format)** | 10 min | Learn how to define tools, prompts, and resources |
+| **[README Overview](../../README.md)** | 15 min | Framework overview, features, and API styles |
+| **[Quick Start](./QUICK-START.md)** | 10 min | Get your first server running in minutes |
+| **[Features Matrix](../../FEATURES.md)** | 10 min | Complete feature overview and capabilities |
+| **[Debugging Guide](./DEBUGGING.md)** | 15 min | Debug with Chrome DevTools or VS Code |
+| **[Multi-Server Quick Start](../../MULTI_SERVER_QUICKSTART.md)** | 10 min | Run and manage multiple servers |
 
-**Recommended First Hour:**
-1. Read the Quick Start (5 min)
-2. Run the simple server example (10 min)
-3. Review API Examples (20 min)
-4. Modify the example config and test (25 min)
+**Recommended First Hour (Motorcycle Phase):**
+1. Read the README overview (15 min)
+2. Run your first server (10 min)
+3. Try watch mode: `simplymcp run server.ts --watch` (10 min)
+4. Explore debugging: `simplymcp run server.ts --inspect` (10 min)
+5. Test multi-server: `simplymcp run s1.ts s2.ts --http` (15 min)
 
 ---
 
@@ -52,7 +54,14 @@ Deep dive into the system design and component interactions:
 
 ## 🛠️ Developer Guides
 
-Practical guides for building with the framework:
+Practical guides for building with SimpleMCP:
+
+### Core Development
+| Document | Time | What You'll Learn |
+|----------|------|-------------------|
+| **[Debugging Guide](./DEBUGGING.md)** | 20 min | Debug servers with Chrome DevTools, VS Code, set breakpoints, inspect variables |
+| **[Multi-Server Guide](../../MULTI_SERVER_QUICKSTART.md)** | 15 min | Run multiple servers, manage processes, aggregated logging |
+| **[Multi-Server Implementation](../../MULTI_SERVER_IMPLEMENTATION.md)** | 30 min | Deep dive into multi-server architecture and implementation |
 
 ### Handler Development
 | Document | Time | What You'll Learn |
@@ -197,6 +206,15 @@ Referenced throughout the documentation as a real-world example of:
 
 | Goal | Document | Section |
 |------|----------|---------|
+| **Get started quickly** | QUICK-START.md | Step-by-step tutorial |
+| **Debug my server** | DEBUGGING.md | Chrome DevTools / VS Code |
+| **Auto-restart on changes** | README.md | Watch Mode |
+| **Run multiple servers** | MULTI_SERVER_QUICKSTART.md | Multi-Server Support |
+| **Validate without running** | README.md | Dry-Run Validation |
+| **Use config files** | README.md | Configuration Files |
+| **List running servers** | MULTI_SERVER_QUICKSTART.md | List Command |
+| **Stop servers** | MULTI_SERVER_QUICKSTART.md | Stop Command |
+| **See all features** | FEATURES.md | Feature Matrix |
 | Get started in 5 minutes | README.md | Quick Start |
 | Understand what MCP is | README.md | Overview |
 | Call a tool via API | API-EXAMPLES.md | Tool Calling |
@@ -224,38 +242,54 @@ Referenced throughout the documentation as a real-world example of:
 ## 📂 Documentation Structure
 
 ```
-/mcp/
-├── README.md                          # Framework overview & quick start
-├── /docs/
-│   ├── INDEX.md                       # This file - complete documentation guide
-│   ├── QUICK-START.md                 # 5-minute getting started guide
-│   ├── TROUBLESHOOTING.md             # Common issues and solutions
-│   ├── /architecture/
-│   │   ├── OVERVIEW.md                # Implementation plan & roadmap
-│   │   ├── DESIGN.md                  # System design document
-│   │   └── TECHNICAL.md               # Technical architecture & diagrams
-│   ├── /guides/
-│   │   ├── HANDLER-DEVELOPMENT.md     # Handler development guide
-│   │   ├── INPUT-VALIDATION.md        # Input validation reference
-│   │   ├── API-INTEGRATION.md         # Client integration examples
-│   │   └── DEPLOYMENT.md              # Production deployment guide
-│   ├── /reference/
-│   │   ├── TRANSPORTS.md              # Transport comparison
-│   │   └── LLM-INTEGRATION.md         # LLM-friendly errors
-│   └── /testing/
-│       └── OVERVIEW.md                # Test suite documentation
-├── /examples/
-│   ├── basic-config.json
-│   ├── development-config.json
-│   ├── production-config.json
-│   ├── secure-config.json
-│   └── high-performance-config.json
-├── /tests/
-│   ├── README.md                      # Test documentation
-│   └── TEST-REPORT.md                 # Latest test results
-└── /validation/
-    ├── README.md                      # Validation system overview
-    └── IMPLEMENTATION.md              # Validation architecture
+/
+├── README.md                          # Main overview with Motorcycle features
+├── CHANGELOG.md                       # Version history (v2.3.0 Motorcycle)
+├── FEATURES.md                        # Feature matrix and capabilities
+├── MULTI_SERVER_QUICKSTART.md         # Multi-server quick start
+├── MULTI_SERVER_IMPLEMENTATION.md     # Multi-server implementation
+│
+├── /mcp/
+│   ├── /docs/
+│   │   ├── INDEX.md                   # This file - complete documentation guide
+│   │   ├── QUICK-START.md             # 5-minute getting started guide
+│   │   ├── DEBUGGING.md               # Debug guide (Motorcycle)
+│   │   ├── HTTP-TRANSPORT.md          # HTTP transport guide
+│   │   ├── TROUBLESHOOTING.md         # Common issues and solutions
+│   │   ├── /architecture/
+│   │   │   ├── OVERVIEW.md            # Implementation plan & roadmap
+│   │   │   ├── DESIGN.md              # System design document
+│   │   │   └── TECHNICAL.md           # Technical architecture & diagrams
+│   │   ├── /guides/
+│   │   │   ├── HANDLER-DEVELOPMENT.md # Handler development guide
+│   │   │   ├── INPUT-VALIDATION.md    # Input validation reference
+│   │   │   ├── API-INTEGRATION.md     # Client integration examples
+│   │   │   └── DEPLOYMENT.md          # Production deployment guide
+│   │   ├── /reference/
+│   │   │   ├── TRANSPORTS.md          # Transport comparison
+│   │   │   └── LLM-INTEGRATION.md     # LLM-friendly errors
+│   │   └── /testing/
+│   │       └── OVERVIEW.md            # Test suite documentation
+│   │
+│   ├── /examples/                     # Example servers
+│   │   ├── class-basic.ts             # Basic decorator API
+│   │   ├── class-minimal.ts           # Minimal decorator API
+│   │   ├── class-advanced.ts          # Advanced decorator features
+│   │   ├── single-file-basic.ts       # Basic functional API
+│   │   └── ...                        # More examples
+│   │
+│   ├── /cli/                          # CLI implementation
+│   │   ├── run.ts                     # Run command with auto-detect
+│   │   ├── list.ts                    # List running servers
+│   │   ├── stop.ts                    # Stop servers
+│   │   ├── watch-mode.ts              # Watch mode implementation
+│   │   ├── dry-run.ts                 # Dry-run validation
+│   │   ├── multi-server-runner.ts     # Multi-server orchestration
+│   │   └── ...                        # More CLI modules
+│   │
+│   └── /tests/                        # Test suite
+│       ├── benchmark-cli-startup.ts   # Performance benchmarks
+│       └── test-multi-server.sh       # Multi-server tests
 ```
 
 ---
@@ -328,12 +362,22 @@ See [ARCHITECTURE.md - Extension Points](./architecture/TECHNICAL.md#extension-p
 
 | Category | Documents | Total Pages | Est. Reading Time |
 |----------|-----------|-------------|-------------------|
-| Getting Started | 2 | ~10 | 30 min |
+| Getting Started | 4 | ~15 | 60 min |
+| Motorcycle Features | 4 | ~25 | 90 min |
 | Architecture | 3 | ~45 | 135 min |
-| Developer Guides | 4 | ~60 | 165 min |
-| Reference | 3 | ~20 | 60 min |
-| Examples | 5 configs | N/A | 30 min |
-| **Total** | **17** | **~135** | **~7 hours** |
+| Developer Guides | 6 | ~80 | 230 min |
+| Reference | 4 | ~30 | 90 min |
+| Examples | 15+ files | N/A | 60 min |
+| **Total** | **36+** | **~195** | **~11 hours** |
+
+**New in v2.3.0 (Motorcycle Phase):**
+- FEATURES.md - Comprehensive feature matrix
+- DEBUGGING.md - Debug guide
+- MULTI_SERVER_QUICKSTART.md - Multi-server quick start
+- MULTI_SERVER_IMPLEMENTATION.md - Implementation details
+- Updated README.md with Developer Features section
+- Updated QUICK-START.md with Motorcycle features
+- Updated all examples with new CLI usage
 
 ---
 

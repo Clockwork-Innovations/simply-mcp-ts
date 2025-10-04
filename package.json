@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",
@@ -17,6 +17,11 @@
       "types": "./dist/mcp/decorators.d.ts",
       "import": "./dist/mcp/decorators.js",
       "default": "./dist/mcp/decorators.js"
+    },
+    "./config": {
+      "types": "./dist/mcp/config.d.ts",
+      "import": "./dist/mcp/config.js",
+      "default": "./dist/mcp/config.js"
     },
     "./package.json": "./package.json"
   },

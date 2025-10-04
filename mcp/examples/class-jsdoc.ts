@@ -5,7 +5,8 @@
  * All JSDoc comments are automatically extracted and used in the MCP tools.
  *
  * Usage:
- *   npx tsx mcp/class-adapter.ts mcp/examples/class-jsdoc.ts --http --port 3011
+ *   simplymcp run mcp/examples/class-jsdoc.ts --http --port 3011
+ *   simplymcp-class mcp/examples/class-jsdoc.ts --http --port 3011
  */
 
 import { MCPServer } from '../decorators.js';

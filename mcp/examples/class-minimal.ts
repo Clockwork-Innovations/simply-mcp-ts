@@ -7,7 +7,23 @@
  * - Methods starting with _ are private (not registered)
  *
  * Usage:
- *   npx tsx mcp/class-adapter.ts mcp/examples/class-minimal.ts --http --port 3000
+ *   # Auto-detect and run
+ *   simplymcp run mcp/examples/class-minimal.ts
+ *
+ *   # Development with auto-restart
+ *   simplymcp run mcp/examples/class-minimal.ts --watch
+ *
+ *   # Debug with Chrome DevTools
+ *   simplymcp run mcp/examples/class-minimal.ts --inspect
+ *
+ *   # Validate configuration
+ *   simplymcp run mcp/examples/class-minimal.ts --dry-run
+ *
+ *   # HTTP transport
+ *   simplymcp run mcp/examples/class-minimal.ts --http --port 3000
+ *
+ *   # Or explicit decorator command
+ *   simplymcp-class mcp/examples/class-minimal.ts
  */
 
 import { MCPServer } from '../decorators.js';

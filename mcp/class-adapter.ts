@@ -29,12 +29,6 @@ import 'reflect-metadata';
 import { resolve, dirname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
-// Deprecation warning on startup
-console.warn('\n⚠️  WARNING: This adapter is DEPRECATED and will be removed in a future version.');
-console.warn('   Please use the new CLI commands instead:');
-console.warn('   - simplymcp run <file>       (auto-detect)');
-console.warn('   - simplymcp-class <file>     (explicit decorator API)\n');
-
 // Import types from source (compile-time only)
 import type { SimplyMCP as SimplyMCPType } from './SimplyMCP.js';
 import type {
@@ -102,27 +96,24 @@ Example:
 
 /**
  * Load class from file
+ * @param classFile - Path to the class file (relative or absolute)
+ * @returns Promise resolving to the loaded class
  */
-async function loadClass(classFile: string): Promise<any> {
-  try {
-    const absolutePath = resolve(process.cwd(), classFile);
-    const fileUrl = pathToFileURL(absolutePath).href;
-    const module = await import(fileUrl);
+export async function loadClass(classFile: string): Promise<any> {
+  const absolutePath = resolve(process.cwd(), classFile);
+  const fileUrl = pathToFileURL(absolutePath).href;
+  const module = await import(fileUrl);
 
-    // Get the default export or first exported class
-    const ServerClass = module.default || Object.values(module).find(
-      (exp: any) => typeof exp === 'function' && exp.prototype
-    );
+  // Get the default export or first exported class
+  const ServerClass = module.default || Object.values(module).find(
+    (exp: any) => typeof exp === 'function' && exp.prototype
+  );
 
-    if (!ServerClass) {
-      throw new Error('No class found in module');
-    }
-
-    return ServerClass;
-  } catch (error) {
-    console.error('Error loading class:', error);
-    process.exit(1);
+  if (!ServerClass) {
+    throw new Error('No class found in module');
   }
+
+  return ServerClass;
 }
 
 /**
@@ -180,8 +171,11 @@ function mergeParameterTypes(
 
 /**
  * Create SimplyMCP server from decorated class
+ * @param ServerClass - The class decorated with @MCPServer
+ * @param sourceFilePath - Absolute path to the source file (for type parsing)
+ * @returns SimplyMCP server instance
  */
-function createServerFromClass(ServerClass: any, sourceFilePath: string): SimplyMCPType {
+export function createServerFromClass(ServerClass: any, sourceFilePath: string): SimplyMCPType {
   const config = getServerConfig(ServerClass);
 
   if (!config) {
@@ -312,10 +306,22 @@ function createServerFromClass(ServerClass: any, sourceFilePath: string): Simply
  * Main entry point
  */
 async function main() {
+  // Deprecation warning on startup
+  console.warn('\n⚠️  WARNING: This adapter is DEPRECATED and will be removed in a future version.');
+  console.warn('   Please use the new CLI commands instead:');
+  console.warn('   - simplymcp run <file>       (auto-detect)');
+  console.warn('   - simplymcp-class <file>     (explicit decorator API)\n');
+
   const { classFile, useHttp, port } = parseArgs();
 
   console.error('[ClassAdapter] Loading class from:', classFile);
-  const ServerClass = await loadClass(classFile);
+  let ServerClass: any;
+  try {
+    ServerClass = await loadClass(classFile);
+  } catch (error) {
+    console.error('Error loading class:', error);
+    process.exit(1);
+  }
 
   const config = getServerConfig(ServerClass);
   console.error(`[ClassAdapter] Creating server: ${config?.name} v${config?.version}`);
@@ -344,7 +350,10 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error('[ClassAdapter] Fatal error:', error);
-  process.exit(1);
-});
+// Run the adapter only when executed as a script (not when imported as a module)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error('[ClassAdapter] Fatal error:', error);
+    process.exit(1);
+  });
+}
