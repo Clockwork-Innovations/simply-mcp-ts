@@ -55,3 +55,7 @@ claude.md
 *.key
 *.pem
 .env.production
+
+# Large test assets (regenerate with generate-test-assets.sh)
+tests/phase2/assets/test-very-large.bin
+tests/phase2/assets/test-large.bin
