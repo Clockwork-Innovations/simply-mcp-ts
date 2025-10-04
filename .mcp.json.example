@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "example-server": {
+      "command": "npx",
+      "args": ["tsx", "examples/simple-server.ts"]
+    },
+    "example-http-server": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp"
+    },
+    "example-sse-server": {
+      "type": "sse",
+      "url": "http://localhost:3000/sse",
+      "headers": {
+        "X-API-Key": "your-api-key-here"
+      }
+    }
+  }
+}
