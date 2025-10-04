@@ -37,3 +37,9 @@ tmp/
 temp/
 *.tmp
 mcp/tests/TEST-REPORT.md
+
+# Claude Code files
+.claude.md
+claude.md
+**/.claude.md
+**/claude.md
