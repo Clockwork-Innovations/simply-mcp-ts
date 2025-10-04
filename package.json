@@ -34,7 +34,11 @@
   },
   "files": [
     "dist",
-    "mcp",
+    "mcp/*.js",
+    "mcp/*.ts",
+    "mcp/*.d.ts",
+    "mcp/cli",
+    "mcp/core",
     "README.md",
     "LICENSE"
   ],
