@@ -45,6 +45,7 @@ npm install simply-mcp
 
 ```typescript
 import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
 
 const server = new SimplyMCP({
   name: 'my-server',
@@ -55,14 +56,10 @@ const server = new SimplyMCP({
 server.addTool({
   name: 'greet',
   description: 'Greet a user',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      name: { type: 'string', description: 'User name' }
-    },
-    required: ['name']
-  },
-  handler: async ({ name }) => ({
+  parameters: z.object({
+    name: z.string().describe('User name')
+  }),
+  execute: async ({ name }) => ({
     content: [{ type: 'text', text: `Hello, ${name}!` }]
   })
 });
@@ -202,12 +199,8 @@ const server = new SimplyMCP({
 // Start the server (uses configuration from constructor)
 await server.start();
 
-// Or override at start time
-await server.start({
-  transport: 'http',
-  port: 3001,
-  stateful: true
-});
+// Or override port at start time
+// await server.start({ port: 3001 });
 ```
 
 ### Stateless HTTP for Serverless
@@ -247,15 +240,14 @@ await server.start();
 ### Resource Handler
 
 ```typescript
+const config = { key: 'value' };
+
 server.addResource({
   uri: 'file://data/config',
   name: 'config',
   description: 'Server configuration',
-  handler: async () => ({
-    uri: 'file://data/config',
-    mimeType: 'application/json',
-    text: JSON.stringify(config, null, 2)
-  })
+  mimeType: 'application/json',
+  content: JSON.stringify(config, null, 2)
 });
 ```
 
