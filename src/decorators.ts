@@ -20,10 +20,14 @@ import 'reflect-metadata';
 import { z } from 'zod';
 
 // Metadata keys
-const TOOLS_KEY = Symbol('mcp:tools');
-const PROMPTS_KEY = Symbol('mcp:prompts');
-const RESOURCES_KEY = Symbol('mcp:resources');
-const SERVER_CONFIG_KEY = Symbol('mcp:config');
+// CRITICAL: Use Symbol.for() to register symbols in the global symbol registry.
+// This ensures symbols are shared across module instances, which is essential when
+// the decorators module might be loaded multiple times (e.g., when tsx transpiles
+// user code to CommonJS while importing from an ESM package).
+const TOOLS_KEY = Symbol.for('mcp:tools');
+const PROMPTS_KEY = Symbol.for('mcp:prompts');
+const RESOURCES_KEY = Symbol.for('mcp:resources');
+const SERVER_CONFIG_KEY = Symbol.for('mcp:config');
 
 /**
  * Server configuration for @MCPServer decorator
