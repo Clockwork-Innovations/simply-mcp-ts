@@ -55,7 +55,7 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
       .option('format', {
         alias: 'f',
         describe: 'Output format',
-        choices: ['single-file', 'standalone', 'executable', 'esm', 'cjs'] as const,
+        choices: ['single-file', 'standalone', 'esm', 'cjs'] as const,
         default: 'single-file' as const,
       })
       .option('minify', {
@@ -118,15 +118,6 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
         type: 'boolean',
         default: false,
       })
-      .option('platforms', {
-        describe: 'Target platforms for executable (comma-separated: linux,macos,windows)',
-        type: 'string',
-      })
-      .option('compress', {
-        describe: 'Compress executable with GZip',
-        type: 'boolean',
-        default: true,
-      })
       .option('assets', {
         describe: 'Include assets in bundle (comma-separated file paths)',
         type: 'string',
@@ -150,7 +141,7 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
       .example('$0 bundle -o dist/server.js', 'Auto-detect entry and bundle')
       .example('$0 bundle server.ts -o dist/server.js', 'Bundle with custom output')
       .example('$0 bundle server.ts -f standalone', 'Create standalone distribution')
-      .example('$0 bundle server.ts -f executable --platforms linux,macos', 'Create native executables')
+      .example('$0 bundle server.ts -f esm', 'Create ESM bundle')
       .example('$0 bundle server.ts -w --watch-restart', 'Watch mode with auto-restart')
       .example('$0 bundle server.ts --assets data.json,config.yaml', 'Bundle with asset files');
   },
@@ -224,9 +215,7 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
         treeShake,
         watch: argv.watch,
         autoInstall: argv['auto-install'],
-        platforms,
         includeAssets,
-        compress: argv.compress,
         watchOptions: {
           poll: argv['watch-poll'],
           interval: argv['watch-interval'],

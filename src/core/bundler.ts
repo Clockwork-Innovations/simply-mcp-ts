@@ -10,7 +10,6 @@ import { detectEntryPoint } from './entry-detector.js';
 import { resolveDependencies, getBuiltinModules } from './dependency-resolver.js';
 import { formatOutput } from './output-formatter.js';
 import { createStandaloneBundle } from './formatters/standalone-formatter.js';
-import { createExecutable } from './formatters/executable-builder.js';
 import { handleSourceMap } from './formatters/sourcemap-handler.js';
 import { startWatch } from './formatters/watch-manager.js';
 
@@ -165,27 +164,8 @@ export async function bundle(options: BundleOptions): Promise<BundleResult> {
       });
       outputPath = standaloneResult.outputDir;
       outputSize = await getDirectorySize(standaloneResult.files);
-    } else if (options.format === 'executable') {
-      if (options.onProgress) {
-        options.onProgress('Creating executable...');
-      }
-      const execResult = await createExecutable({
-        bundlePath: options.output,
-        outputPath: options.output.replace(/\.js$/, ''),
-        platforms: options.platforms || ['linux'],
-        compress: options.compress ?? true,
-        assets: options.includeAssets,
-      });
-      outputPath = execResult.executables[0];
-      outputSize = execResult.size;
     } else {
-      // Single-file, esm, or cjs format - use existing behavior
-      if (options.format && ['standalone', 'executable'].includes(options.format)) {
-        if (options.onProgress) {
-          options.onProgress('Formatting output...');
-        }
-        await formatOutput(options, result, deps);
-      }
+      // Single-file, esm, or cjs format - already handled by esbuild
       outputSize = await getOutputSize(options.output);
     }
 

@@ -8,7 +8,7 @@ SimplyMCP's **Bundling Command** packages your MCP servers into standalone, prod
 
 - Bundle entire SimplyMCP servers into single JavaScript files
 - Create standalone distributions with minimal dependencies
-- Generate executable wrapper scripts for direct execution
+- Generate optimized bundles for deployment
 - Support multiple output formats (ESM, CJS, single-file, standalone)
 - Automatically detect and externalize native modules
 - Integrate seamlessly with inline dependencies (Feature 2) and auto-installation (Feature 3)
@@ -175,39 +175,7 @@ dist/
 └── NATIVE_MODULES.md  # Native deps (if any)
 ```
 
-#### 3. Executable Format
-
-Wrapper script for direct execution:
-
-```bash
-simplemcp bundle server.ts --format executable --output dist/server
-```
-
-**Characteristics:**
-- Executable wrapper script (chmod +x)
-- Bundle file alongside
-- Can run without `node` prefix
-- README with usage instructions
-
-**Use cases:**
-- CLI tools
-- System services
-- Easy end-user distribution
-
-**Output:**
-```
-dist/
-├── server          # Executable wrapper (chmod +x)
-├── server.js       # Bundle
-└── README.md       # Usage instructions
-```
-
-**Run:**
-```bash
-./dist/server  # Direct execution
-```
-
-#### 4. ESM Format
+#### 3. ESM Format
 
 Modern ECMAScript modules:
 
@@ -417,12 +385,11 @@ simplemcp bundle server.ts -o build/bundle.js
 
 #### `-f, --format <format>`
 
-Output format: `single-file` | `standalone` | `executable` | `esm` | `cjs`
+Output format: `single-file` | `standalone` | `esm` | `cjs`
 
 ```bash
 simplemcp bundle server.ts --format single-file
 simplemcp bundle server.ts --format standalone
-simplemcp bundle server.ts --format executable
 simplemcp bundle server.ts --format esm
 simplemcp bundle server.ts -f cjs
 ```
@@ -695,7 +662,7 @@ interface SimplyMCPConfig {
   dependencies?: Record<string, string>;
 }
 
-type BundleFormat = 'single-file' | 'standalone' | 'executable' | 'esm' | 'cjs';
+type BundleFormat = 'single-file' | 'standalone' | 'esm' | 'cjs';
 type Platform = 'node' | 'neutral';
 type Target = 'node18' | 'node20' | 'node22' | 'esnext' | 'es2020' | 'es2021' | 'es2022';
 type SourceMapType = 'inline' | 'external' | 'both' | false;
@@ -793,30 +760,7 @@ dist/
 └── .gitignore
 ```
 
-### Example 5: Executable Format
-
-Create executable server:
-
-```bash
-simplemcp bundle server.ts \
-  --format executable \
-  --output dist/myserver
-```
-
-**Output:**
-```
-dist/
-├── myserver        (executable)
-├── myserver.js     (bundle)
-└── README.md
-```
-
-**Run:**
-```bash
-./dist/myserver
-```
-
-### Example 6: ESM Bundle
+### Example 5: ESM Bundle
 
 Modern ECMAScript modules:
 
@@ -826,7 +770,7 @@ simplemcp bundle server.ts \
   --output dist/server.mjs
 ```
 
-### Example 7: Multiple Formats
+### Example 6: Multiple Formats
 
 Build multiple formats:
 
@@ -837,11 +781,11 @@ simplemcp bundle server.ts --output lambda/index.js --format single-file
 # Standalone for Docker
 simplemcp bundle server.ts --output docker/ --format standalone
 
-# Executable for end users
-simplemcp bundle server.ts --output bin/server --format executable
+# ESM bundle for modern deployments
+simplemcp bundle server.ts --output dist/ --format esm
 ```
 
-### Example 8: CI/CD Pipeline
+### Example 7: CI/CD Pipeline
 
 Auto-install and bundle in CI:
 
@@ -1681,7 +1625,7 @@ import { imageContent, binaryContent } from './mcp/content-helpers';
 ## Version History
 
 - **v1.4.0** (Oct 2025) - Initial bundling implementation
-  - Single-file, standalone, executable formats
+  - Single-file, standalone formats
   - ESM/CJS support
   - Auto-detection and validation
   - Native module handling

@@ -6,7 +6,7 @@
 /**
  * Supported bundle output formats
  */
-export type BundleFormat = 'single-file' | 'standalone' | 'executable' | 'esm' | 'cjs';
+export type BundleFormat = 'single-file' | 'standalone' | 'esm' | 'cjs';
 
 /**
  * Target platform for bundle
@@ -120,22 +120,10 @@ export interface BundleOptions {
   onError?: (error: BundleError) => void;
 
   /**
-   * Target platforms for executable format
-   * @default ['linux']
-   */
-  platforms?: string[];
-
-  /**
    * Include assets in standalone bundle (file paths or glob patterns)
    * @default []
    */
   includeAssets?: string[];
-
-  /**
-   * Compress executable with GZip (for executable format)
-   * @default true
-   */
-  compress?: boolean;
 
   /**
    * Watch mode options

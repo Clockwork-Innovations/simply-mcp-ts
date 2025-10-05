@@ -1,7 +1,7 @@
 # MCP Framework - Transport Test Report
 
-**Generated:** 2025-10-04 17:22:14
-**Duration:** 76s
+**Generated:** 2025-10-04 23:18:41
+**Duration:** 78s
 
 ## Summary
 
@@ -14,13 +14,13 @@
 
 | Transport Type | Status | Duration |
 |----------------|--------|----------|
-| Stdio Transport | ✅ PASS | 1s |
+| Stdio Transport | ✅ PASS | 2s |
 | Decorator API | ✅ PASS | 3s |
-| Stateless HTTP Transport | ✅ PASS | 9s |
-| Stateful HTTP Transport | ✅ PASS | 5s |
-| HTTP Modes (Stateful/Stateless) | ✅ PASS | 4s |
-| SSE Transport (Legacy) | ✅ PASS | 14s |
-| CLI Commands | ✅ PASS | 28s |
+| Stateless HTTP Transport | ✅ PASS | 8s |
+| Stateful HTTP Transport | ✅ PASS | 6s |
+| HTTP Modes (Stateful/Stateless) | ✅ PASS | 5s |
+| SSE Transport (Legacy) | ✅ PASS | 13s |
+| CLI Commands | ✅ PASS | 29s |
 
 ## Test Categories
 

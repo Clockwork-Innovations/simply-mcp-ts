@@ -31,10 +31,6 @@ export async function formatOutput(
       await formatStandalone(options, buildResult, deps);
       break;
 
-    case 'executable':
-      await formatExecutable(options, buildResult, deps);
-      break;
-
     case 'esm':
     case 'cjs':
       // Already handled by esbuild format option - nothing to do
@@ -104,66 +100,6 @@ Note: Native modules must be installed for the target platform.
 `;
     await writeFile(join(outputDir, 'NATIVE_MODULES.md'), nativeNote);
   }
-}
-
-/**
- * Format output as executable (creates wrapper script)
- * Note: Full executable generation would require pkg or nexe
- */
-async function formatExecutable(
-  options: BundleOptions,
-  buildResult: esbuild.BuildResult,
-  deps: ResolvedDependencies
-): Promise<void> {
-  // For MVP, create a wrapper script that can be executed directly
-  const bundlePath = options.output;
-  const wrapperPath = bundlePath.replace(/\.js$/, '');
-
-  // Create wrapper script
-  const wrapperScript = `#!/usr/bin/env node
-require('${bundlePath}');
-`;
-
-  await writeFile(wrapperPath, wrapperScript);
-
-  // Make executable
-  await chmod(wrapperPath, 0o755);
-
-  // Create README explaining how to use
-  const readme = `# Executable SimplyMCP Server
-
-## Usage
-
-Run the server directly:
-\`\`\`bash
-./${basename(wrapperPath)}
-\`\`\`
-
-Or with Node.js:
-\`\`\`bash
-node ${basename(bundlePath)}
-\`\`\`
-
-## Requirements
-
-- Node.js 18+
-${deps.nativeModules.length > 0 ? `- Native modules: ${deps.nativeModules.join(', ')}` : ''}
-
-## Deployment
-
-Copy both files to your server:
-- ${basename(wrapperPath)} (executable wrapper)
-- ${basename(bundlePath)} (bundle)
-
-${deps.nativeModules.length > 0 ? `
-Note: Native modules must be installed on the target system:
-\`\`\`bash
-npm install ${deps.nativeModules.join(' ')}
-\`\`\`
-` : ''}
-`;
-
-  await writeFile(join(dirname(bundlePath), 'README.md'), readme);
 }
 
 /**
