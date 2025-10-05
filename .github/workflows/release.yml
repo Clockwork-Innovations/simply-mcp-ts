@@ -48,8 +48,11 @@ jobs:
 
       - name: Bump version
         run: |
-          npm version ${{ github.event.inputs.version }} -m "chore(release): v%s"
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
           echo "NEW_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+          git add package.json package-lock.json
+          git commit -m "chore(release): v$(node -p "require('./package.json').version")"
+          git tag "v$(node -p "require('./package.json').version")"
 
       - name: Push changes
         run: |
