@@ -31,8 +31,13 @@ import { MCPServer } from 'simply-mcp';
 /**
  * Weather Service
  * A simple weather information service
+ *
+ * Smart defaults in action:
+ * - name: "weather-service" (kebab-case from class name)
+ * - version: auto-detected from package.json
+ * - No other configuration needed!
  */
-@MCPServer() // No config needed! Uses "weather-service" as name (from class name)
+@MCPServer() // Zero configuration needed!
 export default class WeatherService {
   // Public methods are automatically registered as tools!
 

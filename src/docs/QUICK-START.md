@@ -1,16 +1,16 @@
 # Quick Start Guide
 
-Get your first MCP server running with a custom tool in **under 10 minutes**!
+Get your first MCP server running in **under 5 minutes** with zero configuration!
 
 ## What You'll Learn
 
 This guide will walk you through:
-- Starting a basic MCP server
-- Creating a custom tool with inline handlers
-- Testing your tool with real requests
-- Understanding the MCP request/response flow
+- Creating a server with the decorator-first API (zero config!)
+- Understanding smart defaults
+- Adding tools with automatic schema generation
+- Testing your server
 
-**Time estimate:** 5-10 minutes
+**Time estimate:** 5 minutes
 
 ## Prerequisites
 
@@ -49,106 +49,96 @@ This installs:
 
 ---
 
-## Step 2: Create Your First Configuration
+## Step 2: Create Your First Server (Zero Config!)
 
-Create a new configuration file to define your MCP server and tools. Let's create a simple config with a calculator tool.
+Create a new file `my-first-server.ts`:
 
-Create a file named `my-first-config.json` in the `mcp` directory:
+```typescript
+import { MCPServer } from 'simply-mcp/decorators';
 
-```bash
-touch mcp/my-first-config.json
-```
+@MCPServer()  // Zero config - uses smart defaults!
+export default class Calculator {
+  /**
+   * Add two numbers together
+   * @param a - First number
+   * @param b - Second number
+   */
+  add(a: number, b: number): number {
+    return a + b;
+  }
 
-Add this complete configuration:
-
-```json
-{
-  "name": "my-first-mcp-server",
-  "version": "1.0.0",
-  "port": 3002,
-  "tools": [
-    {
-      "name": "add",
-      "description": "Adds two numbers together",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "a": {
-            "type": "number",
-            "description": "First number"
-          },
-          "b": {
-            "type": "number",
-            "description": "Second number"
-          }
-        },
-        "required": ["a", "b"]
-      },
-      "handler": {
-        "type": "inline",
-        "code": "async (args) => ({ content: [{ type: 'text', text: `Result: ${args.a} + ${args.b} = ${args.a + args.b}` }] })"
-      }
-    },
-    {
-      "name": "greet",
-      "description": "Greets someone by name",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Name of person to greet"
-          }
-        },
-        "required": ["name"]
-      },
-      "handler": {
-        "type": "inline",
-        "code": "async (args) => ({ content: [{ type: 'text', text: `Hello, ${args.name}! Welcome to MCP!` }] })"
-      }
-    }
-  ]
+  /**
+   * Greet someone by name
+   * @param name - Name of person to greet
+   */
+  greet(name: string): string {
+    return `Hello, ${name}! Welcome to MCP!`;
+  }
 }
 ```
 
-### Understanding the Configuration
+### Understanding Smart Defaults
 
-Let's break down what each part does:
+The `@MCPServer()` decorator automatically configures your server:
 
-- **`name` & `version`**: Identifies your server
-- **`port`**: The port your server will run on (3002 in this case)
-- **`tools`**: Array of tools your server provides
-  - **`name`**: Unique identifier for the tool
-  - **`description`**: Explains what the tool does (helps LLMs understand when to use it)
-  - **`inputSchema`**: JSON Schema defining the tool's parameters
-  - **`handler`**: The code that runs when the tool is called
-    - **`type: "inline"`**: Code is embedded directly in the config
-    - **`code`**: An async function that receives args and returns a response
+- **`name`**: 'calculator' (auto-generated from class name in kebab-case)
+- **`version`**: Auto-detected from your package.json or defaults to '1.0.0'
+- **`transport`**: stdio (can be overridden with CLI flags)
+- **`capabilities`**: Empty (can be enabled as needed)
 
-💡 **Note:** Inline handlers are great for simple logic. For complex handlers, use file-based handlers (we'll cover that in the Handler Guide).
+**JSDoc Comments** are automatically parsed:
+- Method description becomes tool description
+- `@param` tags become parameter descriptions
+- Type annotations generate JSON Schema validation
+
+### Want More Control?
+
+You can override defaults:
+
+```typescript
+@MCPServer({
+  name: 'my-calculator',
+  version: '2.0.0',
+  transport: {
+    type: 'http',
+    port: 3000,
+    stateful: true
+  },
+  capabilities: {
+    logging: true
+  }
+})
+export default class Calculator {
+  // ... your tools
+}
+```
 
 ---
 
 ## Step 3: Start Your Server
 
-Now let's start your MCP server with the configuration you just created:
+Now let's start your MCP server:
 
 ```bash
-npx tsx mcp/configurableServer.ts mcp/my-first-config.json
+# Run with stdio (default)
+simplymcp run my-first-server.ts
+
+# Or run with HTTP for testing
+simplymcp run my-first-server.ts --http --port 3000
 ```
 
-**Expected output:**
+**Expected output (HTTP mode):**
 
 ```
-🚀 MCP Server 'my-first-mcp-server' starting...
-✅ Loaded 2 tools
-✅ Loaded 0 prompts
-✅ Loaded 0 resources
-🌐 Server running on http://localhost:3002
-📍 MCP endpoint: http://localhost:3002/mcp
+Server "calculator" v1.0.0 starting...
+✅ Registered 2 tools: add, greet
+🌐 HTTP server running on http://localhost:3000
 ```
 
-✅ **Success!** Your MCP server is now running.
+✅ **Success!** Your MCP server is now running with:
+- **2 tools** automatically registered from your class methods
+- **Auto-generated schemas** from TypeScript types
+- **Smart defaults** from class name and package.json
 
 ⚠️ **Keep this terminal window open** - the server needs to stay running to handle requests.
 

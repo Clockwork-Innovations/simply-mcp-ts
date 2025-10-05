@@ -20,17 +20,19 @@ New to SimpleMCP? Begin with these documents:
 | Document | Time | Description |
 |----------|------|-------------|
 | **[README Overview](../../README.md)** | 15 min | Framework overview, features, and API styles |
-| **[Quick Start](./QUICK-START.md)** | 10 min | Get your first server running in minutes |
+| **[Quick Start](./QUICK-START.md)** | 5 min | Get your first server running with zero config |
+| **[Decorator API Guide](../../docs/development/DECORATOR-API.md)** | 15 min | Complete guide to decorator-first API |
 | **[Features Matrix](../../FEATURES.md)** | 10 min | Complete feature overview and capabilities |
 | **[Debugging Guide](./DEBUGGING.md)** | 15 min | Debug with Chrome DevTools or VS Code |
 | **[Multi-Server Quick Start](../../MULTI_SERVER_QUICKSTART.md)** | 10 min | Run and manage multiple servers |
 
-**Recommended First Hour (Motorcycle Phase):**
+**Recommended First Hour:**
 1. Read the README overview (15 min)
-2. Run your first server (10 min)
-3. Try watch mode: `simplymcp run server.ts --watch` (10 min)
-4. Explore debugging: `simplymcp run server.ts --inspect` (10 min)
-5. Test multi-server: `simplymcp run s1.ts s2.ts --http` (15 min)
+2. Create your first server with `@MCPServer()` (5 min - zero config!)
+3. Run it: `simplymcp run my-server.ts --http --port 3000` (5 min)
+4. Try watch mode: `simplymcp run my-server.ts --watch` (10 min)
+5. Explore debugging: `simplymcp run my-server.ts --inspect` (10 min)
+6. Learn about smart defaults and configuration options (15 min)
 
 ---
 
@@ -206,7 +208,12 @@ Referenced throughout the documentation as a real-world example of:
 
 | Goal | Document | Section |
 |------|----------|---------|
-| **Get started quickly** | QUICK-START.md | Step-by-step tutorial |
+| **Get started with zero config** | QUICK-START.md | Step 2: Create Your First Server |
+| **Understand smart defaults** | DECORATOR-API.md | @MCPServer Smart Defaults |
+| **Override default configuration** | DECORATOR-API.md | Full Configuration |
+| **Use decorator API** | DECORATOR-API.md | Core Decorators |
+| **Use functional API** | README.md | Basic Example |
+| **Configure transport** | DECORATOR-API.md | Transport Configuration |
 | **Debug my server** | DEBUGGING.md | Chrome DevTools / VS Code |
 | **Auto-restart on changes** | README.md | Watch Mode |
 | **Run multiple servers** | MULTI_SERVER_QUICKSTART.md | Multi-Server Support |
@@ -215,8 +222,6 @@ Referenced throughout the documentation as a real-world example of:
 | **List running servers** | MULTI_SERVER_QUICKSTART.md | List Command |
 | **Stop servers** | MULTI_SERVER_QUICKSTART.md | Stop Command |
 | **See all features** | FEATURES.md | Feature Matrix |
-| Get started in 5 minutes | README.md | Quick Start |
-| Understand what MCP is | README.md | Overview |
 | Call a tool via API | API-EXAMPLES.md | Tool Calling |
 | Create a custom handler | HANDLER-GUIDE.md | File Handlers |
 | Add input validation | VALIDATION-GUIDE.md | String/Number Validation |

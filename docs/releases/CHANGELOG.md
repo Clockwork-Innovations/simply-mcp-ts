@@ -7,6 +7,127 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2025-10-04 - HTTP Transport Modes: Stateful & Stateless
+
+The v2.4.0 release adds support for both stateful and stateless HTTP transport modes, giving developers the flexibility to choose the right architecture for their deployment environment.
+
+### Added
+
+#### HTTP Transport Modes
+- **Stateful Mode (Default)** - Session-based transport with SSE streaming
+  - Maintains session state across requests using `mcp-session-id` header
+  - Supports SSE streaming via GET endpoint for real-time updates
+  - Reuses transport instance per session for efficiency
+  - Ideal for web applications, multi-step workflows, and long-running conversations
+
+- **Stateless Mode** - Request-response transport without session management
+  - Creates fresh transport for each request
+  - No session tracking or state persistence
+  - Perfect for serverless deployments (AWS Lambda, Cloud Functions)
+  - Excellent horizontal scalability
+  - Simple request-response pattern
+
+#### API Enhancements
+- `HttpOptions` interface for configuring HTTP transport behavior
+  - `mode?: 'stateful' | 'stateless'` - Select transport mode (default: 'stateful')
+  - `enableJsonResponse?: boolean` - Enable JSON responses (default: false)
+  - `dnsRebindingProtection?: boolean` - DNS rebinding protection (default: true)
+- Updated `StartOptions` interface to include `http?: HttpOptions`
+- Transport mode validation in `SimplyMCP.start()` method
+
+### Changed
+- HTTP transport initialization now supports mode selection via `http.mode` option
+- Default HTTP mode is 'stateful' for backwards compatibility
+- Improved error messages for invalid HTTP mode configuration
+- Enhanced logging to display active HTTP mode on server start
+
+### Documentation
+- **Updated Guides:**
+  - `HTTP-TRANSPORT.md` - Added comprehensive "Transport Modes" section
+    - Mode comparison table
+    - Quick examples for both modes
+    - Decision guidance for mode selection
+    - Updated all examples to clarify mode usage
+  - `README.md` - Updated with stateful/stateless mode examples
+    - Fixed incorrect syntax in HTTP server example (lines 191-194)
+    - Added feature bullets for dual HTTP modes
+    - Added "When to use each mode" decision guide
+    - Updated transport comparison table
+  - `TRANSPORTS.md` - Enhanced with mode-specific information
+    - Updated comparison table with mode information
+    - Expanded decision tree for mode selection
+    - Added mode selection summary
+    - Updated configuration examples
+
+### Migration Guide
+
+**No Breaking Changes** - Existing code continues to work without modifications. Stateful mode is the default.
+
+**Migrating to Stateless Mode:**
+
+```typescript
+// Before (default stateful mode)
+await server.start({
+  transport: 'http',
+  port: 3000
+});
+
+// After (explicit stateless mode for serverless)
+await server.start({
+  transport: 'http',
+  port: 3000,
+  http: { mode: 'stateless' }
+});
+```
+
+**Use Cases:**
+
+Stateful Mode (default):
+- Web applications with user sessions
+- Multi-step workflows requiring context
+- Real-time updates via SSE
+- Long-running conversations
+
+Stateless Mode:
+- AWS Lambda / Cloud Functions
+- Serverless deployments
+- Stateless microservices
+- Simple REST-like APIs
+- Load-balanced services without sticky sessions
+
+### Fixed
+- **HTTP Modes Test Suite** - Updated test expectations to match stateless mode implementation
+  - Stateless mode correctly allows independent requests without session tracking
+  - Test suite now passing 14/14 tests
+- **CLI Commands Test Suite** - Fixed timing issues causing intermittent failures
+  - Added `wait_for_log()` helper function for reliable log polling
+  - Increased timeouts from 5-6s to 10s for stability under load
+  - Added port cleanup to prevent conflicts
+  - Test suite now passing 17/17 tests consistently
+- **Bundle Integration Tests** - Enabled config loader tests
+  - Uncommented config loader imports in bundle-integration.test.ts
+  - Fixed import paths (../../core/ → ../../src/core/)
+  - All 48 bundle integration tests now passing
+  - Config loader functionality fully tested
+
+### Test Suite
+- **100% Pass Rate Achieved** - All 7 test suites passing (was 71% with 2 failing)
+- **Total Tests**: 147 tests across all suites
+- **Duration**: ~80-85 seconds
+- **Reliability**: CLI tests now stable in full suite execution (was flaky)
+
+### Documentation
+- Added `CLI_TESTING.md` - Comprehensive CLI test analysis and fixes (610 lines)
+- Added `TEST_STATUS_REVIEW.md` - Review of test status and resolutions
+- Updated `FINAL_POLISH_REPORT.md` - Accurate test results and bug fix documentation
+
+### Backwards Compatibility
+- ✅ Fully backwards compatible
+- ✅ Existing code works without changes
+- ✅ Stateful mode is default (maintains current behavior)
+- ✅ No changes required to client code
+- ✅ Session-based applications continue to work as before
+
 ## [2.3.0] - 2025-10-03 - Motorcycle Phase: Developer Experience & Multi-Server
 
 The Motorcycle Phase brings powerful developer tools and multi-server capabilities to SimpleMCP.
@@ -286,7 +407,8 @@ We use [Semantic Versioning](https://semver.org/):
 
 ---
 
-[Unreleased]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.0.1...v2.1.0

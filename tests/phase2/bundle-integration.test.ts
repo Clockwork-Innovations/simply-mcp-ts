@@ -5,11 +5,11 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { bundle } from '../../core/bundler.js';
-import { detectEntryPoint } from '../../core/entry-detector.js';
-import { resolveDependencies } from '../../core/dependency-resolver.js';
-// import { loadConfig, mergeConfig } from '../../core/config-loader.js'; // TODO: Config loader not yet implemented
-import { formatOutput } from '../../core/output-formatter.js';
+import { bundle } from '../../src/core/bundler.js';
+import { detectEntryPoint } from '../../src/core/entry-detector.js';
+import { resolveDependencies } from '../../src/core/dependency-resolver.js';
+import { loadConfig, mergeConfig } from '../../src/core/config-loader.js';
+import { formatOutput } from '../../src/core/output-formatter.js';
 import { writeFile, mkdir, rm, readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -296,7 +296,7 @@ describe('Bundling - Integration Tests', () => {
   });
 
   // Group 3: Config Loading Integration (8 tests)
-  describe.skip('Configuration Loading', () => {
+  describe('Configuration Loading', () => {
     it('loads configuration from .js file', async () => {
       await writeFile(
         join(TEMP_DIR, 'simplemcp.config.js'),
@@ -368,8 +368,10 @@ describe('Bundling - Integration Tests', () => {
     });
 
     it('handles missing config gracefully', async () => {
-      const config = await loadConfig('nonexistent.js', TEMP_DIR);
-      expect(config).toBeNull();
+      // When explicit path is provided but doesn't exist, should throw
+      await expect(async () => {
+        await loadConfig('nonexistent.js', TEMP_DIR);
+      }).rejects.toThrow('Config file not found');
     });
 
     it('supports multiple config file formats', async () => {

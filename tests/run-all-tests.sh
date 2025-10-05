@@ -87,6 +87,8 @@ run_suite "Stateless HTTP Transport" "tests/test-stateless-http.sh"
 sleep 2  # Allow server cleanup
 run_suite "Stateful HTTP Transport" "tests/test-stateful-http.sh"
 sleep 2  # Allow server cleanup
+run_suite "HTTP Modes (Stateful/Stateless)" "tests/test-http-modes.sh"
+sleep 2  # Allow server cleanup
 run_suite "SSE Transport (Legacy)" "tests/test-sse.sh"
 sleep 2  # Allow server cleanup
 run_suite "CLI Commands" "tests/test-cli-run.sh"
@@ -114,7 +116,7 @@ echo "-------------------------------------------"
 printf "% -30s | %s\n" "Test Suite" "Result"
 echo "-------------------------------------------"
 
-for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)" "CLI Commands"; do
+for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "SSE Transport (Legacy)" "CLI Commands"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -161,7 +163,7 @@ cat > "$REPORT_FILE" << EOF
 |----------------|--------|----------|
 EOF
 
-for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "SSE Transport (Legacy)" "CLI Commands"; do
+for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "SSE Transport (Legacy)" "CLI Commands"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 

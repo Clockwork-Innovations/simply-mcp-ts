@@ -9,9 +9,10 @@ The decorator-based API provides the cleanest and most intuitive way to create M
 ### Minimal Example (Zero Config!)
 
 ```typescript
-import { MCPServer } from 'simply-mcp';
+import { MCPServer } from 'simply-mcp/decorators';
 
-@MCPServer()  // Uses class name as server name
+// Zero config - uses smart defaults!
+@MCPServer()
 export default class MyServer {
   // Public methods are automatically registered as tools!
 
@@ -24,6 +25,12 @@ export default class MyServer {
   }
 }
 ```
+
+**Smart Defaults Applied:**
+- `name`: 'my-server' (kebab-case from class name)
+- `version`: Auto-detected from package.json or '1.0.0'
+- `transport`: stdio by default
+- `capabilities`: Empty (can be enabled as needed)
 
 **Run it:**
 ```bash
@@ -41,16 +48,73 @@ That's it! Your server is running with 2 tools automatically registered.
 
 ### `@MCPServer(config?)`
 
-Marks a class as an MCP server.
+Marks a class as an MCP server with smart defaults.
 
+**Smart Defaults:**
+- `name`: Automatically generated from class name in kebab-case
+  - `WeatherService` -> `weather-service`
+  - `MyServer` -> `my-server`
+- `version`: Auto-detected from package.json or defaults to '1.0.0'
+- All configuration is optional!
+
+**Basic Usage:**
+```typescript
+// Minimal - uses all defaults
+@MCPServer()
+export default class WeatherService { }
+// Results in: { name: 'weather-service', version: '1.0.0' (or from package.json) }
+
+// With custom name
+@MCPServer({ name: 'custom-weather' })
+export default class WeatherService { }
+
+// With version override
+@MCPServer({ version: '2.0.0' })
+export default class WeatherService { }
+```
+
+**Full Configuration:**
 ```typescript
 @MCPServer({
-  name: 'my-server',      // Optional: defaults to kebab-case class name
-  version: '1.0.0',       // Optional: defaults to '1.0.0'
-  port: 3000,             // Optional: default HTTP port
-  description: 'My awesome server'  // Optional
+  name: 'my-server',           // Optional: override auto-generated name
+  version: '1.0.0',            // Optional: override package.json version
+  description: 'My awesome server',  // Optional: server description
+
+  // Transport configuration (optional)
+  transport: {
+    type: 'http',              // 'stdio' | 'http'
+    port: 3000,                // HTTP port (default: 3000)
+    stateful: true             // Stateful mode (default: true)
+  },
+
+  // Capabilities (optional)
+  capabilities: {
+    sampling: true,            // Enable LLM sampling
+    logging: true              // Enable logging notifications
+  }
 })
 export default class MyServer { }
+```
+
+**Migration from Old API:**
+```typescript
+// Old API (still works)
+@MCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  port: 3000  // Top-level port (deprecated)
+})
+
+// New API (recommended)
+@MCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  transport: {
+    type: 'http',
+    port: 3000,      // Nested under transport
+    stateful: true
+  }
+})
 ```
 
 ### `@tool(description?)`
@@ -194,14 +258,105 @@ class MyServer {
 }
 ```
 
-## Examples
+## Smart Defaults in Detail
 
-### Example 1: Minimal Server
+### Auto-Generated Server Name
+
+The decorator automatically converts your class name to kebab-case:
 
 ```typescript
-import { MCPServer } from 'simply-mcp';
+@MCPServer()
+class WeatherService { }
+// name: 'weather-service'
 
 @MCPServer()
+class MyAPIServer { }
+// name: 'my-api-server'
+
+@MCPServer()
+class SimpleCalculator { }
+// name: 'simple-calculator'
+```
+
+### Auto-Detected Version
+
+The decorator looks for `package.json` in:
+1. Current directory
+2. Parent directories (up to 10 levels)
+3. Falls back to '1.0.0' if not found
+
+```typescript
+// If package.json has { "version": "2.5.1" }
+@MCPServer()
+class MyServer { }
+// version: '2.5.1'
+
+// No package.json found
+@MCPServer()
+class MyServer { }
+// version: '1.0.0' (fallback)
+
+// Override auto-detection
+@MCPServer({ version: '3.0.0' })
+class MyServer { }
+// version: '3.0.0'
+```
+
+### Configuration Consolidation
+
+The new API consolidates configuration under logical groups:
+
+```typescript
+@MCPServer({
+  // Server identity (optional - smart defaults)
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'My awesome server',
+
+  // Transport configuration (optional - nested object)
+  transport: {
+    type: 'http',      // or 'stdio'
+    port: 3000,        // HTTP only
+    stateful: true     // HTTP only (default: true)
+  },
+
+  // Capabilities (optional - feature flags)
+  capabilities: {
+    sampling: true,    // Enable LLM sampling
+    logging: true      // Enable logging notifications
+  }
+})
+```
+
+**Backwards Compatibility:**
+The old flat structure still works but is deprecated:
+```typescript
+// Old API (deprecated but works)
+@MCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  port: 3000  // Top-level port
+})
+
+// New API (recommended)
+@MCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  transport: {
+    type: 'http',
+    port: 3000  // Nested under transport
+  }
+})
+```
+
+## Examples
+
+### Example 1: Minimal Server (Zero Config)
+
+```typescript
+import { MCPServer } from 'simply-mcp/decorators';
+
+@MCPServer()  // All defaults!
 export default class Calculator {
   add(a: number, b: number): number {
     return a + b;
@@ -212,6 +367,12 @@ export default class Calculator {
   }
 }
 ```
+
+**What you get:**
+- `name`: 'calculator'
+- `version`: Auto-detected from package.json or '1.0.0'
+- `transport`: stdio (can override with CLI flags)
+- No configuration needed!
 
 ### Example 2: With Explicit Decorators
 
@@ -435,11 +596,108 @@ class StatefulServer {
 }
 ```
 
+## Migration Guide
+
+### From Old Decorator API
+
+If you're using the old API, here's how to migrate:
+
+**Old API:**
+```typescript
+@MCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  port: 3000  // Top-level port
+})
+export default class MyServer {
+  @tool()
+  myTool() { }
+}
+```
+
+**New API (Option 1 - Minimal):**
+```typescript
+// Let smart defaults handle it!
+@MCPServer()
+export default class MyServer {
+  @tool()
+  myTool() { }
+}
+```
+
+**New API (Option 2 - Explicit):**
+```typescript
+@MCPServer({
+  name: 'my-server',  // Optional - defaults to 'my-server' from class name
+  version: '1.0.0',   // Optional - auto-detected from package.json
+  transport: {
+    type: 'http',
+    port: 3000,       // Nested under transport
+    stateful: true
+  }
+})
+export default class MyServer {
+  @tool()
+  myTool() { }
+}
+```
+
+### From Functional API
+
+**Functional API:**
+```typescript
+import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
+
+const server = new SimplyMCP({
+  name: 'calculator',
+  version: '1.0.0'
+});
+
+server.addTool({
+  name: 'add',
+  description: 'Add two numbers',
+  parameters: z.object({
+    a: z.number(),
+    b: z.number()
+  }),
+  execute: async (args) => {
+    return args.a + args.b;
+  }
+});
+
+await server.start({ transport: 'http', port: 3000 });
+```
+
+**Decorator API:**
+```typescript
+import { MCPServer } from 'simply-mcp/decorators';
+
+@MCPServer()  // Zero config!
+export default class Calculator {
+  /**
+   * Add two numbers
+   * @param a - First number
+   * @param b - Second number
+   */
+  add(a: number, b: number): number {
+    return a + b;
+  }
+}
+
+// Run with: simplymcp run calculator.ts --http --port 3000
+```
+
+**Benefits:**
+- Less boilerplate (no manual schema definition)
+- Type safety from TypeScript types
+- Auto-generated descriptions from JSDoc
+- Smart defaults reduce configuration
+
 ## See Also
 
-- [Single-File API Guide](./SIMPLE_MCP_GUIDE.md)
-- [Examples](./examples/)
-  - [class-minimal.ts](./examples/class-minimal.ts) - Minimal example
-  - [class-basic.ts](./examples/class-basic.ts) - With decorators
-  - [class-jsdoc.ts](./examples/class-jsdoc.ts) - JSDoc examples
-  - [class-advanced.ts](./examples/class-advanced.ts) - Advanced features
+- [Functional API Guide (README.md)](../../README.md#basic-example)
+- [Quick Start Guide](../../src/docs/QUICK-START.md)
+- [Examples](../../examples/)
+  - [simple-server.ts](../../examples/simple-server.ts) - Functional API example
+  - [class-examples/](../../examples/) - Decorator API examples

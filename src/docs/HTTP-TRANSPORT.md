@@ -1,6 +1,6 @@
 # HTTP Transport Guide
 
-The HTTP transport in SimplyMCP uses **stateful sessions** with Server-Sent Events (SSE) for bidirectional communication.
+The HTTP transport in SimplyMCP supports both **stateful** and **stateless** modes, giving you flexibility to choose the right architecture for your use case.
 
 ---
 
@@ -45,6 +45,158 @@ simplymcp-func my-server.ts --http --port 3000
 
 ---
 
+## Transport Modes
+
+SimplyMCP's HTTP transport supports two modes:
+
+### Stateful Mode (Default)
+
+Stateful mode maintains session state across requests using session IDs. This is ideal for web applications, long-running conversations, and scenarios requiring context preservation.
+
+**How it works:**
+1. Client initializes with POST to `/mcp`
+2. Server returns a `mcp-session-id` header
+3. Client includes session ID in subsequent requests
+4. Server reuses the same transport instance for that session
+5. Optional SSE stream via GET for real-time updates
+
+**When to use:**
+- Web applications with user sessions
+- Multi-step workflows requiring context
+- Long-running conversations
+- Real-time updates via SSE
+
+**Example:**
+```typescript
+// Start stateful HTTP server (default)
+await server.start({
+  transport: 'http',
+  port: 3000,
+  stateful: true  // or omit - stateful is default
+});
+```
+
+### Stateless Mode
+
+Stateless mode creates a fresh transport for each request. No session tracking or state persistence. Perfect for serverless environments and simple APIs.
+
+**How it works:**
+1. Each request is independent
+2. No session ID required or returned
+3. New transport created per request
+4. Cleaned up after response
+5. No SSE support (request-response only)
+
+**When to use:**
+- AWS Lambda / Cloud Functions
+- Serverless deployments
+- Stateless microservices
+- Simple REST-like APIs
+- Load-balanced services without sticky sessions
+
+**Example:**
+```typescript
+// Start stateless HTTP server
+await server.start({
+  transport: 'http',
+  port: 3000,
+  stateful: false
+});
+```
+
+### Mode Comparison
+
+| Feature | Stateful Mode | Stateless Mode |
+|---------|---------------|----------------|
+| **Session Tracking** | Yes (session ID header) | No |
+| **State Persistence** | Across requests | None |
+| **SSE Support** | Yes (GET /mcp) | No |
+| **Transport Lifecycle** | Reused per session | Created per request |
+| **Overhead** | Low (after init) | Medium (per request) |
+| **Scalability** | Good (with session affinity) | Excellent (any server) |
+| **Use Case** | Web apps, workflows | Serverless, APIs |
+| **Cleanup** | On session end | After each request |
+
+### Quick Examples
+
+**Stateful Client:**
+```typescript
+// Initialize and get session
+const initResponse = await fetch('http://localhost:3000/mcp', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: { /* ... */ }
+  })
+});
+
+const sessionId = initResponse.headers.get('mcp-session-id');
+
+// Use session for subsequent requests
+await fetch('http://localhost:3000/mcp', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'mcp-session-id': sessionId
+  },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    id: 2,
+    method: 'tools/list',
+    params: {}
+  })
+});
+```
+
+**Stateless Client:**
+```typescript
+// Each request is independent - no session ID needed
+await fetch('http://localhost:3000/mcp', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: { /* ... */ }
+  })
+});
+
+// Another independent request
+await fetch('http://localhost:3000/mcp', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    id: 2,
+    method: 'tools/list',
+    params: {}
+  })
+});
+```
+
+### Decision Guidance
+
+**Choose Stateful Mode if:**
+- You need to maintain conversation context
+- You want SSE streaming for real-time updates
+- You have user sessions or multi-step workflows
+- Your infrastructure supports session affinity
+- You want lower per-request overhead after initialization
+
+**Choose Stateless Mode if:**
+- You're deploying to serverless platforms (Lambda, Cloud Functions)
+- You need maximum horizontal scalability
+- Each request is independent
+- You want simpler client implementation
+- You're behind a load balancer without sticky sessions
+- You don't need SSE or real-time updates
+
+---
+
 ## HTTP Endpoints
 
 SimplyMCP exposes three endpoints for MCP protocol communication:
@@ -57,7 +209,9 @@ SimplyMCP exposes three endpoints for MCP protocol communication:
 
 ---
 
-## Session Management
+## Session Management (Stateful Mode Only)
+
+Sessions are only used in stateful mode. In stateless mode, each request is independent with no session tracking.
 
 ### Session Flow
 
@@ -79,7 +233,9 @@ mcp-session-id: <session-uuid>
 
 ## Example Client Implementation
 
-### Node.js Client
+This example demonstrates stateful mode with session management. For stateless mode examples, see the "Transport Modes" section above.
+
+### Node.js Client (Stateful Mode)
 
 ```typescript
 import fetch from 'node-fetch';
@@ -572,14 +728,15 @@ app.use('/mcp', (req, res, next) => {
 
 ## Comparison: HTTP vs stdio
 
-| Feature | HTTP Transport | stdio Transport |
-|---------|---------------|-----------------|
-| Use Case | Web clients, remote access | CLI tools, local processes |
-| Session | Stateful (session ID) | Stateless (single connection) |
-| Network | TCP/IP | stdin/stdout pipes |
-| Scalability | Multiple concurrent clients | Single client only |
-| Debugging | Browser DevTools, Postman | Terminal logs |
-| Complexity | Medium (sessions, SSE) | Low (pipe I/O) |
+| Feature | HTTP Stateful | HTTP Stateless | stdio Transport |
+|---------|---------------|----------------|-----------------|
+| Use Case | Web apps, workflows | Serverless, APIs | CLI tools, local |
+| Session | Yes (session ID) | No | Per-process |
+| Network | TCP/IP | TCP/IP | stdin/stdout pipes |
+| Scalability | Good (session affinity) | Excellent | Single client only |
+| SSE Support | Yes | No | No |
+| Debugging | Browser DevTools, Postman | Browser DevTools, Postman | Terminal logs |
+| Complexity | Medium (sessions, SSE) | Low (request-response) | Low (pipe I/O) |
 
 ---
 

@@ -20,11 +20,13 @@ The MCP framework supports four transport types:
 | **Bidirectional** | Yes | No (request/response) | Yes (with GET for SSE) | Yes |
 | **Streaming** | Yes | No | Yes (SSE on GET) | Yes |
 | **State Persistence** | In-process | None | Server-side | Server-side |
-| **Best For** | CLI tools, local | Serverless, stateless | Web apps, persistence | Legacy systems |
+| **Transport Mode** | N/A | Stateless | Stateful | Legacy |
+| **Transport Lifecycle** | Process lifetime | Created per request | Reused per session | Persistent connection |
+| **Best For** | CLI tools, local | Serverless, Lambda | Web apps, persistence | Legacy systems |
 | **Complexity** | Low | Low | Medium | High |
 | **Performance** | Excellent | Good | Good | Moderate |
 | **Network Required** | No | Yes | Yes | Yes |
-| **Scalability** | Single process | Excellent | Good | Moderate |
+| **Scalability** | Single process | Excellent (any server) | Good (session affinity) | Moderate |
 
 ## Detailed Comparison
 
@@ -315,14 +317,61 @@ Is this a CLI tool or local process?
 ├─ Yes → Use Stdio Transport
 └─ No ↓
 
-Does your application need to maintain state?
-├─ No → Use Stateless HTTP Transport
+Is this a web/network application?
+├─ No → Re-evaluate: Stdio might be appropriate
 └─ Yes ↓
+
+Are you deploying to serverless (Lambda, Cloud Functions)?
+├─ Yes → Use HTTP with Stateless Mode
+│         • No session management overhead
+│         • Perfect for FaaS environments
+│         • Horizontal scaling
+└─ No ↓
+
+Does your application need to maintain state across requests?
+├─ No → Use HTTP with Stateless Mode
+│         • Simple request-response
+│         • Easier load balancing
+│         • Lower complexity
+└─ Yes ↓
+
+Do you need SSE streaming or real-time updates?
+├─ Yes → Use HTTP with Stateful Mode
+│         • Session-based state
+│         • SSE streaming support
+│         • Multi-step workflows
+└─ No, but need state → Use HTTP with Stateful Mode
 
 Are you integrating with legacy systems?
 ├─ Yes, requires SSE → Use SSE Transport (Legacy)
-└─ No → Use Stateful HTTP Transport
+│                      (consider migrating to Stateful HTTP)
+└─ No → You've made your choice above
 ```
+
+### Mode Selection Summary
+
+**Use HTTP Stateless Mode if:**
+- Deploying to AWS Lambda, Google Cloud Functions, Azure Functions
+- Each request is fully independent
+- You need maximum horizontal scalability
+- You're behind a load balancer without sticky sessions
+- You want simplest possible implementation
+- You don't need SSE or real-time updates
+
+**Use HTTP Stateful Mode if:**
+- Building a web application with user sessions
+- Multi-step workflows requiring context
+- Need SSE streaming for real-time updates
+- Want to maintain conversation state
+- Have infrastructure supporting session affinity
+- Need lower per-request overhead after initialization
+
+**Use Stdio if:**
+- Building CLI tools
+- Editor integrations (VS Code, etc.)
+- Local automation scripts
+- Subprocess communication
+- Development and testing
 
 ## Performance Characteristics
 
@@ -512,25 +561,28 @@ bash mcp/tests/run-all-tests.sh
 ```typescript
 // Stdio - No additional config needed
 // Uses config.json, port ignored
+await server.start({ transport: 'stdio' });
 
 // Stateless HTTP
-{
-  "port": 3003,  // HTTP port
-  // No session settings needed
-}
+await server.start({
+  transport: 'http',
+  port: 3003,
+  http: { mode: 'stateless' }
+});
 
-// Stateful HTTP
-{
-  "port": 3002,  // HTTP port
-  "sessionTimeout": 3600  // Optional: session timeout in seconds
-}
+// Stateful HTTP (default mode)
+await server.start({
+  transport: 'http',
+  port: 3002,
+  http: {
+    mode: 'stateful',  // default, can be omitted
+    enableJsonResponse: false,  // default
+    dnsRebindingProtection: true  // default
+  }
+});
 
-// SSE
-{
-  "port": 3004,  // HTTP port
-  "sseEndpoint": "/mcp",  // SSE connection endpoint
-  "messageEndpoint": "/messages"  // Message posting endpoint
-}
+// SSE (Legacy) - Not directly supported via SimplyMCP
+// Use custom implementation or migrate to Stateful HTTP
 ```
 
 ## Troubleshooting

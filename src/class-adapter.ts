@@ -190,7 +190,9 @@ export function createServerFromClass(ServerClass: any, sourceFilePath: string):
   const server = new SimplyMCP({
     name: config.name!,
     version: config.version!,
-    port: config.port,
+    description: config.description,
+    transport: config.transport,
+    capabilities: config.capabilities,
   });
 
   const instance = new ServerClass();

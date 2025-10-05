@@ -25,9 +25,22 @@ import { MCPServer, tool } from 'simply-mcp';
 
 /**
  * Advanced Calculator Service
- * Demonstrates all enhanced decorator features
+ * Demonstrates all enhanced decorator features with full configuration
  */
-@MCPServer({ name: 'advanced-calculator', version: '2.0.0' })
+@MCPServer({
+  name: 'advanced-calculator',
+  version: '2.0.0',
+  description: 'Advanced calculator with shape calculations',
+  transport: {
+    type: 'http',
+    port: 3400,
+    stateful: true
+  },
+  capabilities: {
+    logging: true,
+    sampling: false
+  }
+})
 export default class AdvancedCalculator {
   /**
    * Calculate the area of different shapes

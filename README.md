@@ -11,7 +11,9 @@
 
 ✨ **Multiple Transport Support**
 - 📡 Stdio (standard input/output)
-- 🌐 HTTP (stateless & stateful)
+- 🌐 HTTP with dual modes:
+  - **Stateful**: Session-based with SSE streaming (default)
+  - **Stateless**: Perfect for serverless/Lambda deployments
 - 🔄 SSE (Server-Sent Events)
 
 🎨 **Decorator API**
@@ -74,10 +76,8 @@ await server.start('stdio');
 ```typescript
 import { MCPServer, tool } from 'simply-mcp/decorators';
 
-@MCPServer({
-  name: 'calculator',
-  version: '1.0.0'
-})
+// Zero config! Automatically uses class name and package.json version
+@MCPServer()
 class Calculator {
   /**
    * Add two numbers
@@ -100,6 +100,12 @@ class Calculator {
   }
 }
 ```
+
+**Smart Defaults:**
+- `name`: Auto-generated from class name (Calculator -> calculator)
+- `version`: Auto-detected from package.json or defaults to '1.0.0'
+- `transport`: Optional configuration under nested `transport` object
+- `capabilities`: Optional configuration for advanced features
 
 ## CLI Usage
 
@@ -158,12 +164,13 @@ simply-mcp/
 
 ## Transport Comparison
 
-| Feature | Stdio | Stateless HTTP | Stateful HTTP | SSE |
-|---------|-------|----------------|---------------|-----|
-| Session | Per-process | None | Header-based | Query-based |
-| Use Case | CLI tools | REST APIs | Long-running | Streaming |
-| Streaming | No | No | Yes | Yes |
-| Complexity | Low | Low | Medium | Medium |
+| Feature | Stdio | HTTP Stateful | HTTP Stateless | SSE |
+|---------|-------|---------------|----------------|-----|
+| Session | Per-process | Header-based | None | Query-based |
+| Use Case | CLI tools | Web apps, workflows | Serverless, APIs | Streaming (legacy) |
+| Streaming | No | Yes (SSE) | No | Yes |
+| State | In-process | Across requests | None | Across requests |
+| Complexity | Low | Medium | Low | Medium |
 
 ## Examples
 
@@ -182,17 +189,60 @@ await server.start('stdio');
 ```typescript
 const server = new SimplyMCP({
   name: 'api-server',
-  version: '1.0.0'
+  version: '1.0.0',
+  transport: {
+    type: 'http',
+    port: 3000,
+    stateful: true  // Default
+  }
 });
 
 // Add tools...
 
-// Start stateful HTTP server on port 3000
-await server.start('http', {
-  port: 3000,
+// Start the server (uses configuration from constructor)
+await server.start();
+
+// Or override at start time
+await server.start({
+  transport: 'http',
+  port: 3001,
   stateful: true
 });
 ```
+
+### Stateless HTTP for Serverless
+
+```typescript
+const server = new SimplyMCP({
+  name: 'lambda-server',
+  version: '1.0.0',
+  transport: {
+    type: 'http',
+    port: 3000,
+    stateful: false  // Stateless for serverless
+  }
+});
+
+// Add tools...
+
+// Start stateless HTTP server (perfect for AWS Lambda, Cloud Functions)
+await server.start();
+```
+
+**When to use each mode:**
+
+**Stateful Mode** (default):
+- Web applications with user sessions
+- Multi-step workflows requiring context
+- Real-time updates via SSE
+- Long-running conversations
+
+**Stateless Mode**:
+- AWS Lambda / Cloud Functions
+- Serverless deployments
+- Stateless microservices
+- Simple REST-like APIs
+- Load-balanced services without sticky sessions
 
 ### Resource Handler
 

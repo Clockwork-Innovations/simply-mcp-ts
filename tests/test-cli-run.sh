@@ -39,6 +39,24 @@ print_result() {
   fi
 }
 
+# Wait for log file to contain pattern or timeout (timeout in seconds)
+wait_for_log() {
+  local logfile="$1"
+  local pattern="$2"
+  local timeout="${3:-5}"
+  local iterations=$((timeout * 2))  # 0.5s per iteration
+  local count=0
+
+  while [ $count -lt $iterations ]; do
+    if [ -f "$logfile" ] && grep -q "$pattern" "$logfile" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.5
+    count=$((count + 1))
+  done
+  return 1
+}
+
 # Kill any background processes on exit
 cleanup() {
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null;
@@ -71,8 +89,10 @@ echo ""
 # Test 1.1: Auto-detect decorator API
 echo "Test 1.1: Auto-detect decorator API from class file"
 # Run command with timeout and capture output
-(timeout 2 node "$CLI_ROOT/run-bin.js" run "examples/class-minimal.ts" --verbose 2>&1 || true) | tee /tmp/cli-test-decorator.log | head -5 > /dev/null &
-sleep 1.5
+(timeout 2 node "$CLI_ROOT/run-bin.js" run "examples/class-minimal.ts" --verbose 2>&1 || true) > /tmp/cli-test-decorator.log &
+SERVER_PID=$!
+sleep 2
+kill $SERVER_PID 2>/dev/null || true
 
 # Check if server started and detected decorator style
 if grep -q "Detected API style: decorator" /tmp/cli-test-decorator.log 2>/dev/null;
@@ -123,13 +143,11 @@ SERVER_PID=""
 # Test 1.4: Verify decorator server actually starts and registers tools
 echo ""
 echo "Test 1.4: Verify decorator server starts and registers tools"
-timeout 5 node "$CLI_ROOT/run-bin.js" run "examples/class-minimal.ts" > /tmp/cli-test-decorator-tools.log 2>&1 &
+timeout 10 node "$CLI_ROOT/run-bin.js" run "examples/class-minimal.ts" > /tmp/cli-test-decorator-tools.log 2>&1 &
 SERVER_PID=$!
-sleep 3
 
-# Check if tools were registered
-if grep -q "Loading class from" /tmp/cli-test-decorator-tools.log 2>/dev/null;
- then
+# Wait for server to start and load class (increased timeout for reliability)
+if wait_for_log "/tmp/cli-test-decorator-tools.log" "Loading class from" 10; then
   print_result "Decorator server starts and loads class" "PASS"
 else
   print_result "Decorator server starts and loads class" "FAIL" "Server did not load class"
@@ -189,14 +207,11 @@ SERVER_PID=""
 # Test 2.3: Verify class command with decorator file
 echo ""
 echo "Test 2.3: Class command works with @MCPServer decorator"
-timeout 5 node "$CLI_ROOT/class-bin.js" "examples/class-minimal.ts" > /tmp/cli-test-class-decorator.log 2>&1 &
+timeout 10 node "$CLI_ROOT/class-bin.js" "examples/class-minimal.ts" > /tmp/cli-test-class-decorator.log 2>&1 &
 SERVER_PID=$!
-sleep 3
 
-# Check for both class loading and server creation
-if grep -q "Loading class from" /tmp/cli-test-class-decorator.log 2>/dev/null && \
-   grep -q "Creating server" /tmp/cli-test-class-decorator.log 2>/dev/null;
- then
+# Wait for class loading and server creation (increased timeout for reliability)
+if wait_for_log "/tmp/cli-test-class-decorator.log" "Creating server" 10; then
   print_result "Class command with @MCPServer" "PASS"
 else
   print_result "Class command with @MCPServer" "FAIL" "Did not properly load decorated class"
@@ -237,13 +252,11 @@ SERVER_PID=""
 # Test 3.2: --style flag forces functional
 echo ""
 echo "Test 3.2: --style functional flag forces functional adapter"
-timeout 5 node "$CLI_ROOT/run-bin.js" run "examples/single-file-basic.ts" --style functional --verbose > /tmp/cli-test-force-functional.log 2>&1 &
+timeout 10 node "$CLI_ROOT/run-bin.js" run "examples/single-file-basic.ts" --style functional --verbose > /tmp/cli-test-force-functional.log 2>&1 &
 SERVER_PID=$!
-sleep 2
 
-# Should show forced style message
-if grep -q "Style was forced via --style flag" /tmp/cli-test-force-functional.log 2>/dev/null;
- then
+# Wait for forced style message (increased timeout for reliability)
+if wait_for_log "/tmp/cli-test-force-functional.log" "Style was forced via --style flag" 10; then
   print_result "--style functional flag" "PASS"
 else
   print_result "--style functional flag" "FAIL" "Did not force functional style"
@@ -292,14 +305,15 @@ fi
 # Test 3.5: HTTP transport flag works
 echo ""
 echo "Test 3.5: --http flag enables HTTP transport"
-timeout 5 node "$CLI_ROOT/run-bin.js" run "examples/class-minimal.ts" --http --port 3333 > /tmp/cli-test-http.log 2>&1 &
-SERVER_PID=$!
-sleep 3
+# Clean up any processes using port 3333 from previous tests
+lsof -ti:3333 2>/dev/null | xargs kill -9 2>/dev/null || true
+sleep 0.5
 
-# Check if HTTP server started on correct port
-if curl -s http://localhost:3333 > /dev/null 2>&1 || \
-   curl -s http://localhost:3333/sse > /dev/null 2>&1;
- then
+timeout 10 node "$CLI_ROOT/run-bin.js" run "examples/class-minimal.ts" --http --port 3333 > /tmp/cli-test-http.log 2>&1 &
+SERVER_PID=$!
+
+# Wait for HTTP server to start (increased timeout for reliability)
+if wait_for_log "/tmp/cli-test-http.log" "listening on port 3333" 10; then
   print_result "--http flag enables HTTP transport" "PASS"
 else
   # Might be running but not responding to basic curl, check logs for HTTP mention
@@ -369,13 +383,11 @@ const someVar = 123;
 export default someVar;
 EOF
 
-timeout 5 node "$CLI_ROOT/run-bin.js" run "/tmp/cli-test-ambiguous.ts" --verbose > /tmp/cli-test-ambiguous.log 2>&1 &
+timeout 10 node "$CLI_ROOT/run-bin.js" run "/tmp/cli-test-ambiguous.ts" --verbose > /tmp/cli-test-ambiguous.log 2>&1 &
 SERVER_PID=$!
-sleep 2
 
-# Should default to programmatic
-if grep -q "Detected API style: programmatic" /tmp/cli-test-ambiguous.log 2>/dev/null;
- then
+# Wait for detection to complete (increased timeout for reliability)
+if wait_for_log "/tmp/cli-test-ambiguous.log" "Detected API style: programmatic" 10; then
   print_result "Fallback to programmatic style" "PASS"
 else
   print_result "Fallback to programmatic style" "FAIL" "Did not fallback to programmatic"

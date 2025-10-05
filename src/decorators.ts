@@ -26,13 +26,25 @@ const RESOURCES_KEY = Symbol('mcp:resources');
 const SERVER_CONFIG_KEY = Symbol('mcp:config');
 
 /**
- * Server configuration
+ * Server configuration for @MCPServer decorator
  */
 export interface ServerConfig {
-  name?: string;
-  version?: string;
-  port?: number;
-  description?: string;
+  name?: string;           // Defaults to kebab-case class name
+  version?: string;        // Defaults to package.json version or '1.0.0'
+  description?: string;    // Optional server description
+
+  // Transport configuration
+  transport?: {
+    type?: 'stdio' | 'http';
+    port?: number;         // HTTP port (default: 3000)
+    stateful?: boolean;    // HTTP stateful mode (default: true)
+  };
+
+  // Server capabilities
+  capabilities?: {
+    sampling?: boolean;    // Enable LLM sampling
+    logging?: boolean;     // Enable logging notifications
+  };
 }
 
 /**
@@ -87,18 +99,77 @@ function toKebabCase(str: string): string {
 }
 
 /**
+ * Get version from package.json
+ * Looks for package.json in current directory or parent directories
+ */
+function getPackageVersion(): string {
+  try {
+    // Try to find package.json in current directory or parents
+    const { existsSync, readFileSync } = require('node:fs');
+    const { resolve, dirname } = require('node:path');
+
+    let currentDir = process.cwd();
+    let attempts = 0;
+    const maxAttempts = 10; // Prevent infinite loop
+
+    while (attempts < maxAttempts) {
+      const packagePath = resolve(currentDir, 'package.json');
+      if (existsSync(packagePath)) {
+        const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'));
+        if (packageJson.version) {
+          return packageJson.version;
+        }
+      }
+
+      const parentDir = dirname(currentDir);
+      if (parentDir === currentDir) break; // Reached root
+      currentDir = parentDir;
+      attempts++;
+    }
+  } catch (error) {
+    // Silently fail if package.json not found or can't be read
+  }
+
+  return '1.0.0'; // Fallback version
+}
+
+/**
  * MCPServer class decorator
- * Marks a class as an MCP server
- * If config is not provided, uses defaults based on class name
+ * Marks a class as an MCP server with smart defaults:
+ * - name: kebab-case of class name (e.g., WeatherService -> weather-service)
+ * - version: from package.json or '1.0.0'
+ * - All other config optional
+ *
+ * @example
+ * // Minimal - uses all defaults
+ * @MCPServer()
+ * class MyServer { }
+ *
+ * @example
+ * // With custom name
+ * @MCPServer({ name: 'custom-server' })
+ * class MyServer { }
+ *
+ * @example
+ * // With full configuration
+ * @MCPServer({
+ *   name: 'my-server',
+ *   version: '2.0.0',
+ *   description: 'My custom server',
+ *   transport: { type: 'http', port: 3001, stateful: true },
+ *   capabilities: { sampling: true, logging: true }
+ * })
+ * class MyServer { }
  */
 export function MCPServer(config: ServerConfig = {}) {
   return function <T extends { new (...args: any[]): {} }>(constructor: T) {
-    // Apply defaults if not provided
+    // Apply smart defaults
     const finalConfig: ServerConfig = {
       name: config.name || toKebabCase(constructor.name),
-      version: config.version || '1.0.0',
-      port: config.port,
+      version: config.version || getPackageVersion(),
       description: config.description,
+      transport: config.transport,
+      capabilities: config.capabilities,
     };
 
     Reflect.defineMetadata(SERVER_CONFIG_KEY, finalConfig, constructor);

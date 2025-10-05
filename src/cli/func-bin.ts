@@ -87,9 +87,9 @@ function createServerFromConfig(config: SingleFileMCPConfig): SimplyMCP {
   const server = new SimplyMCP({
     name: config.name,
     version: config.version,
-    port: config.port,
     basePath: config.basePath,
     defaultTimeout: config.defaultTimeout,
+    transport: config.port ? { port: config.port } : undefined,
   });
 
   // Register tools
