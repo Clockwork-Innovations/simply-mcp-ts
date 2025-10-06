@@ -47,25 +47,27 @@ npm install simply-mcp
 import { SimplyMCP } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimplyMCP({
-  name: 'my-server',
-  version: '1.0.0'
-});
+(async () => {
+  const server = new SimplyMCP({
+    name: 'my-server',
+    version: '1.0.0'
+  });
 
-// Add a tool
-server.addTool({
-  name: 'greet',
-  description: 'Greet a user',
-  parameters: z.object({
-    name: z.string().describe('User name')
-  }),
-  execute: async ({ name }) => ({
-    content: [{ type: 'text', text: `Hello, ${name}!` }]
-  })
-});
+  // Add a tool
+  server.addTool({
+    name: 'greet',
+    description: 'Greet a user',
+    parameters: z.object({
+      name: z.string().describe('User name')
+    }),
+    execute: async ({ name }) => ({
+      content: [{ type: 'text', text: `Hello, ${name}!` }]
+    })
+  });
 
-// Start stdio server
-await server.start('stdio');
+  // Start stdio server (default transport)
+  await server.start();
+})().catch(console.error);
 ```
 
 ### Decorator API Example
@@ -177,8 +179,10 @@ simply-mcp/
 import { SimplyMCP } from 'simply-mcp';
 import config from './config.json';
 
-const server = new SimplyMCP(config);
-await server.start('stdio');
+(async () => {
+  const server = new SimplyMCP(config);
+  await server.start();
+})().catch(console.error);
 ```
 
 ### HTTP Server with Sessions

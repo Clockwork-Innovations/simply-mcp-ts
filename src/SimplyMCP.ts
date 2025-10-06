@@ -210,6 +210,27 @@ export class SimplyMCP {
   }
 
   /**
+   * Get the server name (BUG-004 FIX)
+   */
+  get name(): string {
+    return this.options.name;
+  }
+
+  /**
+   * Get the server version (BUG-004 FIX)
+   */
+  get version(): string {
+    return this.options.version;
+  }
+
+  /**
+   * Get the server description (additional getter)
+   */
+  get description(): string | undefined {
+    return this.options.description;
+  }
+
+  /**
    * Add a tool to the server
    * @param definition Tool definition with Zod schema and execute function
    * @returns this for chaining
@@ -641,6 +662,49 @@ export class SimplyMCP {
         exposedHeaders: ['Mcp-Session-Id'],
       })
     );
+
+    // Health check endpoint (BUG-006 FIX)
+    app.get('/health', (req, res) => {
+      res.json({
+        status: 'ok',
+        server: {
+          name: this.options.name,
+          version: this.options.version,
+          description: this.options.description,
+        },
+        transport: {
+          type: 'http',
+          mode: isStateful ? 'stateful' : 'stateless',
+          sessions: this.transports.size,
+          port: port,
+        },
+        capabilities: this.options.capabilities,
+        resources: {
+          tools: this.tools.size,
+          prompts: this.prompts.size,
+          resources: this.resources.size,
+        },
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+      });
+    });
+
+    // Root endpoint with server info
+    app.get('/', (req, res) => {
+      res.json({
+        message: `${this.options.name} v${this.options.version} - MCP Server`,
+        description: this.options.description,
+        endpoints: {
+          mcp: '/mcp',
+          health: '/health',
+        },
+        transport: {
+          type: 'http',
+          mode: isStateful ? 'stateful' : 'stateless',
+        },
+        documentation: 'https://github.com/Clockwork-Innovations/simply-mcp-ts',
+      });
+    });
 
     // Security: Origin header validation middleware (DNS rebinding protection)
     app.use('/mcp', (req, res, next) => {

@@ -100,6 +100,17 @@ export {
 // ============================================================================
 // Core Types
 // ============================================================================
+
+// Export MCP definition types (BUG-002 FIX)
+export type {
+  ToolDefinition,
+  PromptDefinition,
+  ResourceDefinition,
+  SimplyMCPOptions,
+  ExecuteFunction,
+} from './SimplyMCP.js';
+
+// Export handler types
 export type {
   HandlerContext,
   HandlerResult,

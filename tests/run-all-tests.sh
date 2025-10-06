@@ -79,6 +79,8 @@ echo "Timestamp: $TIMESTAMP"
 echo ""
 
 # Run all test suites
+run_suite "v2.4.5 Bug Fixes" "npx tsx tests/test-bug-fixes-v2.4.5.ts"
+sleep 2  # Allow server cleanup
 run_suite "Stdio Transport" "tests/test-stdio.sh"
 sleep 2  # Allow server cleanup
 run_suite "Decorator API" "tests/test-decorators.sh"
@@ -116,7 +118,7 @@ echo "-------------------------------------------"
 printf "% -30s | %s\n" "Test Suite" "Result"
 echo "-------------------------------------------"
 
-for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "SSE Transport (Legacy)" "CLI Commands"; do
+for suite in "v2.4.5 Bug Fixes" "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "SSE Transport (Legacy)" "CLI Commands"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -163,7 +165,7 @@ cat > "$REPORT_FILE" << EOF
 |----------------|--------|----------|
 EOF
 
-for suite in "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "SSE Transport (Legacy)" "CLI Commands"; do
+for suite in "v2.4.5 Bug Fixes" "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "SSE Transport (Legacy)" "CLI Commands"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 

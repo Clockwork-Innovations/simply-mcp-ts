@@ -151,7 +151,7 @@ MCP uses sessions to manage client connections. First, you need to initialize a 
 Open a **new terminal window** (keep the server running in the first one) and run:
 
 ```bash
-curl -X POST http://localhost:3002/mcp \
+curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
@@ -204,7 +204,7 @@ Now let's test the tools you created. Replace `YOUR_SESSION_ID` with the actual 
 First, let's see what tools are available:
 
 ```bash
-curl -X POST http://localhost:3002/mcp \
+curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \
@@ -256,7 +256,7 @@ curl -X POST http://localhost:3002/mcp \
 Let's add two numbers:
 
 ```bash
-curl -X POST http://localhost:3002/mcp \
+curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \
@@ -296,7 +296,7 @@ curl -X POST http://localhost:3002/mcp \
 Let's greet someone:
 
 ```bash
-curl -X POST http://localhost:3002/mcp \
+curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \
@@ -490,12 +490,12 @@ When you're ready to deploy:
 
 ### ❌ Port Already in Use
 
-**Error:** `Error: listen EADDRINUSE: address already in use :::3002`
+**Error:** `Error: listen EADDRINUSE: address already in use :::3000`
 
 **Solution:**
 1. Kill the process using the port:
    ```bash
-   lsof -ti:3002 | xargs kill -9
+   lsof -ti:3000 | xargs kill -9
    ```
 2. Or change the port in your config file
 
@@ -618,20 +618,20 @@ npx @modelcontextprotocol/inspector npx tsx mcp/examples/simple-server.ts
 bash mcp/tests/run-all-tests.sh
 
 # Initialize session (manual HTTP testing)
-curl -X POST http://localhost:3002/mcp \
+curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}'
 
 # List tools
-curl -X POST http://localhost:3002/mcp \
+curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
 
 # Call a tool
-curl -X POST http://localhost:3002/mcp \
+curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -H "Mcp-Session-Id: YOUR_SESSION_ID" \

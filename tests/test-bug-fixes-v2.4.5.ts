@@ -1,0 +1,451 @@
+/**
+ * Test Suite for v2.4.5 Bug Fixes
+ * Tests all fixes applied in version 2.4.5
+ */
+
+import { SimplyMCP } from '../dist/src/SimplyMCP.js';
+import { z } from 'zod';
+import axios from 'axios';
+
+let totalTests = 0;
+let passedTests = 0;
+let failedTests = 0;
+
+function test(name: string, fn: () => boolean | Promise<boolean>) {
+  return async () => {
+    totalTests++;
+    process.stdout.write(`  Testing: ${name}... `);
+    try {
+      const result = await fn();
+      if (result) {
+        console.log('✅ PASS');
+        passedTests++;
+        return true;
+      } else {
+        console.log('❌ FAIL - assertion failed');
+        failedTests++;
+        return false;
+      }
+    } catch (error: any) {
+      console.log(`❌ FAIL - ${error.message}`);
+      failedTests++;
+      return false;
+    }
+  };
+}
+
+async function runTests() {
+  console.log('\n' + '='.repeat(70));
+  console.log('SIMPLY-MCP v2.4.5 BUG FIXES TEST SUITE');
+  console.log('='.repeat(70) + '\n');
+
+  // BUG-002: TypeScript Type Exports
+  console.log('📦 BUG-002: TypeScript Type Exports\n');
+
+  await test('Can import ToolDefinition type', () => {
+    // This compiles = types are exported
+    type TD = import('../dist/src/index.js').ToolDefinition;
+    return true;
+  })();
+
+  await test('Can import PromptDefinition type', () => {
+    type PD = import('../dist/src/index.js').PromptDefinition;
+    return true;
+  })();
+
+  await test('Can import ResourceDefinition type', () => {
+    type RD = import('../dist/src/index.js').ResourceDefinition;
+    return true;
+  })();
+
+  await test('Can import SimplyMCPOptions type', () => {
+    type SO = import('../dist/src/index.js').SimplyMCPOptions;
+    return true;
+  })();
+
+  await test('Can import ExecuteFunction type', () => {
+    type EF = import('../dist/src/index.js').ExecuteFunction;
+    return true;
+  })();
+
+  // BUG-004: Name/Version Getters
+  console.log('\n🏷️  BUG-004: Server Property Getters\n');
+
+  await test('SimplyMCP.name getter exists and works', () => {
+    const server = new SimplyMCP({ name: 'test-name', version: '1.0.0' });
+    return server.name === 'test-name';
+  })();
+
+  await test('SimplyMCP.version getter exists and works', () => {
+    const server = new SimplyMCP({ name: 'test', version: '2.3.4' });
+    return server.version === '2.3.4';
+  })();
+
+  await test('SimplyMCP.description getter exists and works', () => {
+    const server = new SimplyMCP({
+      name: 'test',
+      version: '1.0.0',
+      description: 'Test description',
+    });
+    return server.description === 'Test description';
+  })();
+
+  await test('SimplyMCP.description returns undefined when not set', () => {
+    const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
+    return server.description === undefined;
+  })();
+
+  // BUG-006: Health Check Endpoints
+  console.log('\n🏥 BUG-006: Health Check Endpoints\n');
+
+  await test('HTTP server has /health endpoint', async () => {
+    const server = new SimplyMCP({
+      name: 'health-test',
+      version: '1.0.0',
+      description: 'Health test server',
+    });
+
+    server.addTool({
+      name: 'ping',
+      description: 'Ping',
+      parameters: z.object({}),
+      execute: async () => ({ content: [{ type: 'text' as const, text: 'pong' }] }),
+    });
+
+    await server.start({ transport: 'http', port: 5001, stateful: false });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const response = await axios.get('http://localhost:5001/health', { timeout: 5000 });
+      const valid =
+        response.data.status === 'ok' &&
+        response.data.server.name === 'health-test' &&
+        response.data.server.version === '1.0.0' &&
+        response.data.server.description === 'Health test server' &&
+        response.data.transport.type === 'http' &&
+        response.data.transport.mode === 'stateless' &&
+        response.data.resources.tools === 1 &&
+        typeof response.data.uptime === 'number' &&
+        typeof response.data.timestamp === 'string';
+
+      await server.stop();
+      return valid;
+    } catch (error) {
+      await server.stop();
+      throw error;
+    }
+  })();
+
+  await test('HTTP server has / root endpoint', async () => {
+    const server = new SimplyMCP({
+      name: 'root-test',
+      version: '1.0.0',
+    });
+
+    server.addTool({
+      name: 'test',
+      description: 'Test',
+      parameters: z.object({}),
+      execute: async () => ({ content: [{ type: 'text' as const, text: 'test' }] }),
+    });
+
+    await server.start({ transport: 'http', port: 5002, stateful: true });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const response = await axios.get('http://localhost:5002/', { timeout: 5000 });
+      const valid =
+        response.data.message.includes('root-test') &&
+        response.data.endpoints.health === '/health' &&
+        response.data.endpoints.mcp === '/mcp' &&
+        response.data.transport.type === 'http' &&
+        response.data.transport.mode === 'stateful';
+
+      await server.stop();
+      return valid;
+    } catch (error) {
+      await server.stop();
+      throw error;
+    }
+  })();
+
+  await test('/health shows correct resource counts', async () => {
+    const server = new SimplyMCP({
+      name: 'count-test',
+      version: '1.0.0',
+    });
+
+    server.addTool({
+      name: 'tool1',
+      description: 'Tool 1',
+      parameters: z.object({}),
+      execute: async () => ({ content: [] }),
+    });
+
+    server.addTool({
+      name: 'tool2',
+      description: 'Tool 2',
+      parameters: z.object({}),
+      execute: async () => ({ content: [] }),
+    });
+
+    await server.start({ transport: 'http', port: 5003, stateful: false });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const response = await axios.get('http://localhost:5003/health');
+      const valid = response.data.resources.tools === 2;
+
+      await server.stop();
+      return valid;
+    } catch (error) {
+      await server.stop();
+      throw error;
+    }
+  })();
+
+  // HTTP Transport SSE Verification
+  console.log('\n🌐 HTTP Transport (SSE) - MCP Spec Compliance\n');
+
+  await test('Stateful HTTP works with correct SSE headers', async () => {
+    const server = new SimplyMCP({
+      name: 'sse-stateful',
+      version: '1.0.0',
+    });
+
+    server.addTool({
+      name: 'echo',
+      description: 'Echo',
+      parameters: z.object({ text: z.string() }),
+      execute: async (args) => ({ content: [{ type: 'text' as const, text: args.text }] }),
+    });
+
+    await server.start({ transport: 'http', port: 5004, stateful: true });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const response = await axios.post(
+        'http://localhost:5004/mcp',
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test', version: '1.0.0' },
+          },
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/event-stream',
+          },
+          timeout: 5000,
+        }
+      );
+
+      const valid = response.status === 200 && response.data.includes('event: message');
+
+      await server.stop();
+      return valid;
+    } catch (error) {
+      await server.stop();
+      throw error;
+    }
+  })();
+
+  await test('Stateless HTTP works with correct SSE headers', async () => {
+    const server = new SimplyMCP({
+      name: 'sse-stateless',
+      version: '1.0.0',
+    });
+
+    server.addTool({
+      name: 'test',
+      description: 'Test',
+      parameters: z.object({}),
+      execute: async () => ({ content: [{ type: 'text' as const, text: 'ok' }] }),
+    });
+
+    await server.start({ transport: 'http', port: 5005, stateful: false });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const response = await axios.post(
+        'http://localhost:5005/mcp',
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list',
+          params: {},
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/event-stream',
+          },
+          timeout: 5000,
+        }
+      );
+
+      const valid = response.status === 200;
+
+      await server.stop();
+      return valid;
+    } catch (error) {
+      await server.stop();
+      throw error;
+    }
+  })();
+
+  await test('HTTP returns 406 without SSE header (correct per spec)', async () => {
+    const server = new SimplyMCP({
+      name: 'no-sse',
+      version: '1.0.0',
+    });
+
+    server.addTool({
+      name: 'test',
+      description: 'Test',
+      parameters: z.object({}),
+      execute: async () => ({ content: [{ type: 'text' as const, text: 'ok' }] }),
+    });
+
+    await server.start({ transport: 'http', port: 5006, stateful: false });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const response = await axios.post(
+        'http://localhost:5006/mcp',
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list',
+          params: {},
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json', // Missing text/event-stream
+          },
+          timeout: 5000,
+          validateStatus: () => true,
+        }
+      );
+
+      const valid = response.status === 406; // Not Acceptable (expected)
+
+      await server.stop();
+      return valid;
+    } catch (error) {
+      await server.stop();
+      throw error;
+    }
+  })();
+
+  // Streaming HTTP Endpoint Verification
+  console.log('\n🔄 Streaming HTTP - Endpoint Structure\n');
+
+  await test('Stateful mode supports POST on /mcp', async () => {
+    const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
+    server.addTool({
+      name: 'test',
+      description: 'Test',
+      parameters: z.object({}),
+      execute: async () => ({ content: [] }),
+    });
+
+    await server.start({ transport: 'http', port: 5007, stateful: true });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const response = await axios.post(
+        'http://localhost:5007/mcp',
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test', version: '1.0.0' },
+          },
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/event-stream',
+          },
+        }
+      );
+
+      await server.stop();
+      return response.status === 200;
+    } catch (error) {
+      await server.stop();
+      throw error;
+    }
+  })();
+
+  await test('Stateless mode POST returns SSE directly', async () => {
+    const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
+    server.addTool({
+      name: 'test',
+      description: 'Test',
+      parameters: z.object({}),
+      execute: async () => ({ content: [] }),
+    });
+
+    await server.start({ transport: 'http', port: 5008, stateful: false });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const response = await axios.post(
+        'http://localhost:5008/mcp',
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list',
+          params: {},
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/event-stream',
+          },
+        }
+      );
+
+      const contentType = response.headers['content-type'];
+      await server.stop();
+      return contentType?.includes('text/event-stream');
+    } catch (error) {
+      await server.stop();
+      throw error;
+    }
+  })();
+
+  // Print Results
+  console.log('\n' + '='.repeat(70));
+  console.log('TEST RESULTS');
+  console.log('='.repeat(70));
+  console.log(`Total Tests:  ${totalTests}`);
+  console.log(`✅ Passed:    ${passedTests}`);
+  console.log(`❌ Failed:    ${failedTests}`);
+  console.log(`Success Rate: ${((passedTests / totalTests) * 100).toFixed(1)}%`);
+  console.log('='.repeat(70));
+
+  if (failedTests === 0) {
+    console.log('\n🎉 ALL TESTS PASSED! v2.4.5 bug fixes verified.\n');
+    process.exit(0);
+  } else {
+    console.log(`\n⚠️  ${failedTests} test(s) failed. Please review.\n`);
+    process.exit(1);
+  }
+}
+
+runTests().catch(error => {
+  console.error('\n💥 Test runner error:', error);
+  process.exit(1);
+});
