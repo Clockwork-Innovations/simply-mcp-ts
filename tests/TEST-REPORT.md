@@ -1,12 +1,12 @@
 # MCP Framework - Transport Test Report
 
-**Generated:** 2025-10-04 23:18:41
-**Duration:** 78s
+**Generated:** 2025-10-05 21:44:42
+**Duration:** 95s
 
 ## Summary
 
-- **Total Test Suites:** 7
-- **Passed:** 7
+- **Total Test Suites:** 8
+- **Passed:** 8
 - **Failed:** 0
 - **Success Rate:** 100%
 
@@ -14,6 +14,7 @@
 
 | Transport Type | Status | Duration |
 |----------------|--------|----------|
+| v2.4.5 Bug Fixes | ✅ PASS | 15s |
 | Stdio Transport | ✅ PASS | 2s |
 | Decorator API | ✅ PASS | 3s |
 | Stateless HTTP Transport | ✅ PASS | 8s |

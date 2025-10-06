@@ -30,12 +30,12 @@ Demonstrates basic SimplyMCP usage with:
 
 **Run with stdio:**
 ```bash
-node mcp/examples/simple-server.ts
+npx simply-mcp run examples/simple-server.ts
 ```
 
 **Run with HTTP:**
 ```bash
-node mcp/examples/simple-server.ts --http --port 3000
+npx simply-mcp run examples/simple-server.ts --http --port 3000
 ```
 
 ### 2. Advanced Server (`advanced-server.ts`)
@@ -50,7 +50,7 @@ Shows more advanced features:
 
 **Run:**
 ```bash
-node mcp/examples/advanced-server.ts
+npx simply-mcp run examples/advanced-server.ts
 ```
 
 ### 3. Inline Dependencies Demo (`inline-deps-demo.ts`)
@@ -70,12 +70,12 @@ Demonstrates Phase 2 Feature 2: Inline Dependencies
 
 **Run with stdio:**
 ```bash
-npx tsx mcp/examples/inline-deps-demo.ts
+npx simply-mcp run examples/inline-deps-demo.ts
 ```
 
 **Run with HTTP:**
 ```bash
-npx tsx mcp/examples/inline-deps-demo.ts --http --port 3000
+npx simply-mcp run examples/inline-deps-demo.ts --http --port 3000
 ```
 
 ### 4. Binary Content Demo (`binary-content-demo.ts`)
@@ -99,12 +99,12 @@ Demonstrates Phase 2 Feature 1: Image & Binary Content Support
 
 **Run with stdio:**
 ```bash
-npx tsx mcp/examples/binary-content-demo.ts
+npx simply-mcp run examples/binary-content-demo.ts
 ```
 
 **Run with HTTP:**
 ```bash
-npx tsx mcp/examples/binary-content-demo.ts --http --port 3000
+npx simply-mcp run examples/binary-content-demo.ts --http --port 3000
 ```
 
 ### 5. Auto-Installation Basic (`auto-install-basic.ts`)
@@ -126,7 +126,7 @@ Demonstrates Phase 2 Feature 3: Automatic Dependency Installation (Basic)
 
 **Run with stdio:**
 ```bash
-npx tsx mcp/examples/auto-install-basic.ts
+npx simply-mcp run examples/auto-install-basic.ts
 ```
 
 ### 6. Auto-Installation Advanced (`auto-install-advanced.ts`)
@@ -150,7 +150,7 @@ Demonstrates Phase 2 Feature 3: Automatic Dependency Installation (Advanced)
 
 **Run with stdio:**
 ```bash
-npx tsx mcp/examples/auto-install-advanced.ts
+npx simply-mcp run examples/auto-install-advanced.ts
 ```
 
 ### 7. Auto-Installation Error Handling (`auto-install-error-handling.ts`)
@@ -174,7 +174,7 @@ Demonstrates Phase 2 Feature 3: Error Handling & Recovery
 
 **Run with stdio:**
 ```bash
-npx tsx mcp/examples/auto-install-error-handling.ts
+npx simply-mcp run examples/auto-install-error-handling.ts
 ```
 
 ### 8. Bundling Examples
@@ -621,8 +621,8 @@ This means you get all the benefits of the existing infrastructure (security, va
 
 1. Try the examples:
    ```bash
-   node mcp/examples/simple-server.ts
-   node mcp/examples/advanced-server.ts
+   npx simply-mcp run examples/simple-server.ts
+   npx simply-mcp run examples/advanced-server.ts
    ```
 
 2. Create your own server based on these examples

@@ -26,7 +26,10 @@
     "./package.json": "./package.json"
   },
   "bin": {
+    "simply-mcp": "./dist/src/cli/index.js",
     "simplymcp": "./dist/src/cli/index.js",
+    "SimplyMCP": "./dist/src/cli/index.js",
+    "simplyMCP": "./dist/src/cli/index.js",
     "simplymcp-run": "./dist/src/cli/run-bin.js",
     "simplymcp-class": "./dist/src/cli/class-bin.js",
     "simplymcp-func": "./dist/src/cli/func-bin.js",

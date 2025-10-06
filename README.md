@@ -41,41 +41,14 @@
 npm install simply-mcp
 ```
 
-### Basic Example
+### Create Your First Server
+
+**That's it - just one file, zero configuration!**
 
 ```typescript
-import { SimplyMCP } from 'simply-mcp';
-import { z } from 'zod';
-
-(async () => {
-  const server = new SimplyMCP({
-    name: 'my-server',
-    version: '1.0.0'
-  });
-
-  // Add a tool
-  server.addTool({
-    name: 'greet',
-    description: 'Greet a user',
-    parameters: z.object({
-      name: z.string().describe('User name')
-    }),
-    execute: async ({ name }) => ({
-      content: [{ type: 'text', text: `Hello, ${name}!` }]
-    })
-  });
-
-  // Start stdio server (default transport)
-  await server.start();
-})().catch(console.error);
-```
-
-### Decorator API Example
-
-```typescript
+// server.ts
 import { MCPServer, tool } from 'simply-mcp/decorators';
 
-// Zero config! Automatically uses class name and package.json version
 @MCPServer()
 class Calculator {
   /**
@@ -100,29 +73,177 @@ class Calculator {
 }
 ```
 
+**Run it:**
+
+```bash
+npx simply-mcp run server.ts
+```
+
+**That's all you need!** No `package.json`, no `tsconfig.json`, no configuration files.
+
 **Smart Defaults:**
 - `name`: Auto-generated from class name (Calculator -> calculator)
 - `version`: Auto-detected from package.json or defaults to '1.0.0'
-- `transport`: Optional configuration under nested `transport` object
-- `capabilities`: Optional configuration for advanced features
+- `transport`: stdio (override with `--http` flag)
+- `capabilities`: Automatically configured based on your tools
+
+### Programmatic API (Alternative)
+
+You can also use the programmatic API:
+
+```typescript
+import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
+
+const server = new SimplyMCP({
+  name: 'my-server',
+  version: '1.0.0'
+});
+
+// Add a tool
+server.addTool({
+  name: 'greet',
+  description: 'Greet a user',
+  parameters: z.object({
+    name: z.string().describe('User name')
+  }),
+  execute: async ({ name }) => ({
+    content: [{ type: 'text', text: `Hello, ${name}!` }]
+  })
+});
+
+// Start stdio server (default transport)
+await server.start();
+```
+
+**Run it:**
+
+```bash
+npx simply-mcp run server.ts
+```
+
+**Same command works for all API styles!**
 
 ## CLI Usage
 
-Simply MCP provides powerful CLI tools for running servers:
+Simply MCP's CLI automatically detects your API style and runs your server with zero configuration.
+
+### Basic Usage
 
 ```bash
-# Auto-detect and run a server
-npx simplymcp run server.ts
+# Run any server (auto-detects decorator/programmatic/functional API)
+npx simply-mcp run server.ts
+```
 
-# Run with decorator API
+### With Options
+
+```bash
+# HTTP transport
+npx simply-mcp run server.ts --http --port 3000
+
+# Watch mode (auto-restart on file changes)
+npx simply-mcp run server.ts --watch
+
+# Debug mode (attach Chrome DevTools)
+npx simply-mcp run server.ts --inspect
+
+# Verbose output
+npx simply-mcp run server.ts --verbose
+
+# Multiple servers
+npx simply-mcp run server1.ts server2.ts server3.ts
+```
+
+### Advanced Options
+
+```bash
+# Validate without running
+npx simply-mcp run server.ts --dry-run
+
+# Force specific API style
+npx simply-mcp run server.ts --style decorator
+
+# Use configuration file
+npx simply-mcp run server.ts --config simplymcp.config.json
+```
+
+### Alternative Commands (Advanced)
+
+For users who need explicit control over the API style:
+
+```bash
+# Explicitly use decorator API
 npx simplymcp-class MyServer.ts
 
-# Run with HTTP transport
-npx simplymcp run server.ts --http --port 3000
-
-# Show verbose output
-npx simplymcp run server.ts --verbose
+# Explicitly use functional API
+npx simplymcp-func server.ts
 ```
+
+**Note:** We recommend using `simply-mcp run` for all use cases as it auto-detects the API style and provides more features.
+
+## TypeScript Configuration (Optional)
+
+### How SimpleMCP Handles TypeScript
+
+SimpleMCP uses [tsx](https://github.com/esbuild-kit/tsx) to run TypeScript directly with **zero configuration required**. This means:
+
+- No compilation step needed
+- Decorators work automatically
+- Your `tsconfig.json` is **NOT used** at runtime
+- Modern ES features supported out of the box
+
+**Bottom line:** You can write and run TypeScript servers without any configuration files!
+
+### Running Your Server
+
+No configuration needed:
+
+```bash
+npx simply-mcp run server.ts
+```
+
+tsx handles all TypeScript transpilation using sensible defaults, regardless of whether you have a `tsconfig.json` or what settings it contains.
+
+### Type Checking (Optional)
+
+If you want IDE IntelliSense and type checking with `tsc`, you can optionally create a `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true
+  }
+}
+```
+
+This is completely optional and only affects:
+- IDE IntelliSense and autocomplete
+- `tsc --noEmit` type checking
+- Build-time type errors
+
+**It does NOT affect how SimpleMCP runs your server.**
+
+### Module Type (Not Required)
+
+You do NOT need to set `"type": "module"` in your `package.json`. SimpleMCP handles module resolution automatically.
+
+```json
+// package.json - module type is optional
+{
+  "name": "my-server",
+  "scripts": {
+    "dev": "simply-mcp run server.ts"
+  }
+}
+```
+
+### Summary
+
+**To run your server:** Just write TypeScript and run it - zero config needed!
+
+**For type checking:** Optionally create `tsconfig.json` for IDE support.
 
 ## Documentation
 
@@ -282,7 +403,7 @@ npm run build
 npm run dev
 
 # Run examples
-npx tsx examples/simple-server.ts
+npx simply-mcp run examples/simple-server.ts
 ```
 
 ## Contributing

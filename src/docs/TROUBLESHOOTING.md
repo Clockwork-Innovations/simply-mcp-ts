@@ -226,22 +226,19 @@ npm install tsx --save-dev
 # Bad:  import { Server } from './types'
 # Good: import { Server } from './types.js'
 
-# 2. Verify package.json has type: module
-cat package.json | grep '"type"'
+# 2. Use simply-mcp run (recommended - handles everything automatically)
+npx simply-mcp run server.ts
 
-# 3. Check tsconfig.json module settings
-cat tsconfig.json | jq '.compilerOptions.module'
+# 3. For programmatic servers, tsx handles TypeScript execution
+npx tsx server.ts
 
-# 4. Use tsx for TypeScript execution
-npx tsx mcp/configurableServer.ts mcp/config.json
-
-# NOT: node mcp/configurableServer.ts (won't work)
+# NOT: node server.ts (won't work with TypeScript)
 ```
 
 **Prevention:**
 - Always use `.js` extensions in TypeScript imports
-- Keep `"type": "module"` in package.json
-- Use tsx for development, compile for production
+- Use `simply-mcp run` for decorator/class-based servers
+- SimpleMCP handles all TypeScript transpilation automatically
 
 **Related:** [ARCHITECTURE.md - Module System](../ARCHITECTURE.md)
 

@@ -49,20 +49,23 @@ This installs:
 
 ---
 
-## Step 2: Create Your First Server (Zero Config!)
+## Step 2: Create Your First Server
+
+**Just one file - zero configuration needed!**
 
 Create a new file `my-first-server.ts`:
 
 ```typescript
-import { MCPServer } from 'simply-mcp/decorators';
+import { MCPServer, tool } from 'simply-mcp/decorators';
 
 @MCPServer()  // Zero config - uses smart defaults!
-export default class Calculator {
+class Calculator {
   /**
    * Add two numbers together
    * @param a - First number
    * @param b - Second number
    */
+  @tool()
   add(a: number, b: number): number {
     return a + b;
   }
@@ -71,18 +74,21 @@ export default class Calculator {
    * Greet someone by name
    * @param name - Name of person to greet
    */
+  @tool()
   greet(name: string): string {
     return `Hello, ${name}! Welcome to MCP!`;
   }
 }
 ```
 
+**That's it!** No `package.json` required, no `tsconfig.json` required, no configuration files needed at all.
+
 ### Understanding Smart Defaults
 
 The `@MCPServer()` decorator automatically configures your server:
 
 - **`name`**: 'calculator' (auto-generated from class name in kebab-case)
-- **`version`**: Auto-detected from your package.json or defaults to '1.0.0'
+- **`version`**: Auto-detected from package.json or defaults to '1.0.0'
 - **`transport`**: stdio (can be overridden with CLI flags)
 - **`capabilities`**: Empty (can be enabled as needed)
 
@@ -108,7 +114,7 @@ You can override defaults:
     logging: true
   }
 })
-export default class Calculator {
+class Calculator {
   // ... your tools
 }
 ```
@@ -121,10 +127,10 @@ Now let's start your MCP server:
 
 ```bash
 # Run with stdio (default)
-simplymcp run my-first-server.ts
+npx simply-mcp run my-first-server.ts
 
 # Or run with HTTP for testing
-simplymcp run my-first-server.ts --http --port 3000
+npx simply-mcp run my-first-server.ts --http --port 3000
 ```
 
 **Expected output (HTTP mode):**
@@ -336,35 +342,35 @@ curl -X POST http://localhost:3000/mcp \
 
 ## Step 6: Try the Pre-Built Examples
 
-The framework includes several example configurations you can try:
+The framework includes several example servers you can try:
 
-### Basic Example (Inline Handlers)
-
-```bash
-npx tsx mcp/configurableServer.ts mcp/examples/basic-config.json
-```
-
-This runs on port 3001 with `greet` and `echo` tools using inline handlers.
-
-### Full Example (Multiple Handler Types)
+### Simple Server
 
 ```bash
-npx tsx mcp/configurableServer.ts mcp/config.json
+npx simply-mcp run examples/simple-server.ts
 ```
 
-This runs on port 3001 with:
-- File-based handlers (`greet`, `calculate`)
-- HTTP proxy handler (`fetch-joke`)
-- Inline handler (`echo`)
-- Security features (API keys, rate limiting)
+Basic MCP server demonstrating tools, prompts, and resources.
 
-### Simple Server (No Config File)
+### Advanced Server
 
 ```bash
-npx tsx mcp/simpleStreamableHttp.ts
+npx simply-mcp run examples/advanced-server.ts
 ```
 
-This runs a hardcoded server on port 3000 - great for understanding the core SDK.
+More complex examples with:
+- Complex Zod validation schemas
+- Error handling patterns
+- Async operations
+- Multiple return types
+
+### Class-Based Server
+
+```bash
+npx simply-mcp run examples/class-basic.ts
+```
+
+Demonstrates the decorator API with zero configuration.
 
 ---
 
@@ -550,14 +556,11 @@ pwd  # Should show: /path/to/cv-gen
 ### Testing with Claude CLI (Easiest!) 🌟
 
 ```bash
-# Add your server to Claude CLI (using new simplified commands)
-claude mcp add my-server "simplymcp run mcp/examples/simple-server.ts"
+# Add your server to Claude CLI
+claude mcp add my-server "simply-mcp run examples/simple-server.ts"
 
 # Or with watch mode for development
-claude mcp add my-server-dev "simplymcp run mcp/examples/simple-server.ts --watch"
-
-# Or with old commands (still supported)
-claude mcp add my-server "npx tsx mcp/examples/simple-server.ts"
+claude mcp add my-server-dev "simply-mcp run examples/simple-server.ts --watch"
 
 # Test interactively
 claude
@@ -571,7 +574,7 @@ echo "Calculate 123 multiplied by 456" | claude --print --dangerously-skip-permi
 echo "What tools are available?" | claude --print \
   --strict-mcp-config \
   --dangerously-skip-permissions \
-  --mcp-config '{"mcpServers":{"test":{"command":"simplymcp","args":["run","mcp/examples/simple-server.ts"]}}}'
+  --mcp-config '{"mcpServers":{"test":{"command":"simply-mcp","args":["run","examples/simple-server.ts"]}}}'
 
 # List configured servers
 claude mcp list
@@ -580,42 +583,39 @@ claude mcp list
 claude mcp remove my-server
 ```
 
-### Development Workflow with Motorcycle Features
+### Development Workflow with Advanced Features
 
 ```bash
 # Watch mode - auto-restart on changes
-simplymcp run server.ts --watch
+npx simply-mcp run server.ts --watch
 
 # Debug mode - attach debugger
-simplymcp run server.ts --inspect
+npx simply-mcp run server.ts --inspect
 
 # Dry-run - validate before running
-simplymcp run server.ts --dry-run
+npx simply-mcp run server.ts --dry-run
 
 # Multiple servers
-simplymcp run api.ts auth.ts data.ts --http --port 3000
+npx simply-mcp run api.ts auth.ts data.ts --http --port 3000
 
 # List running servers
-simplymcp list --verbose
+npx simply-mcp list --verbose
 
 # Stop all servers
-simplymcp stop all
+npx simply-mcp stop all
 ```
 
 ### Common Commands
 
 ```bash
-# Start server with custom config
-npx tsx mcp/configurableServer.ts path/to/config.json
-
-# Start simple example server
-npx tsx mcp/simpleStreamableHttp.ts
+# Run any example server
+npx simply-mcp run examples/simple-server.ts
 
 # Test with MCP Inspector (visual interface)
-npx @modelcontextprotocol/inspector npx tsx mcp/examples/simple-server.ts
+npx @modelcontextprotocol/inspector npx simply-mcp run examples/simple-server.ts
 
 # Run automated test suite
-bash mcp/tests/run-all-tests.sh
+npm test
 
 # Initialize session (manual HTTP testing)
 curl -X POST http://localhost:3000/mcp \
@@ -672,23 +672,23 @@ curl -X POST http://localhost:3000/mcp \
 
 ---
 
-## Next: Explore Motorcycle Features
+## Next: Explore Advanced Features
 
 **Watch Mode:**
 ```bash
-simplymcp run server.ts --watch
+npx simply-mcp run server.ts --watch
 ```
 Auto-restart when files change. Perfect for rapid development!
 
 **Debug Mode:**
 ```bash
-simplymcp run server.ts --inspect
+npx simply-mcp run server.ts --inspect
 ```
 Debug with Chrome DevTools or VS Code. See [DEBUGGING.md](DEBUGGING.md).
 
 **Multi-Server:**
 ```bash
-simplymcp run s1.ts s2.ts s3.ts --http --port 3000
+npx simply-mcp run s1.ts s2.ts s3.ts --http --port 3000
 ```
 Run multiple servers on different ports. See [MULTI_SERVER_QUICKSTART.md](../MULTI_SERVER_QUICKSTART.md).
 
@@ -703,7 +703,7 @@ export default {
 };
 ```
 
-Then run: `simplymcp run api`
+Then run: `npx simply-mcp run api`
 
 ---
 

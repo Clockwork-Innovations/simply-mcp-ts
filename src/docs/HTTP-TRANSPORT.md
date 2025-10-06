@@ -36,11 +36,11 @@ console.log('Server running on http://localhost:3000');
 
 ```bash
 # Auto-detect and run with HTTP (recommended)
-simplymcp run my-server.ts --http --port 3000
+npx simply-mcp run my-server.ts --http --port 3000
 
-# Or explicit commands
-simplymcp-class my-server.ts --http --port 3000
-simplymcp-func my-server.ts --http --port 3000
+# Or explicit commands (advanced)
+npx simplymcp-class my-server.ts --http --port 3000
+npx simplymcp-func my-server.ts --http --port 3000
 ```
 
 ---
