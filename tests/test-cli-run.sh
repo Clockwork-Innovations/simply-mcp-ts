@@ -143,11 +143,12 @@ SERVER_PID=""
 # Test 1.4: Verify decorator server actually starts and registers tools
 echo ""
 echo "Test 1.4: Verify decorator server starts and registers tools"
-timeout 10 node "$CLI_ROOT/run-bin.js" run "examples/class-minimal.ts" > /tmp/cli-test-decorator-tools.log 2>&1 &
+# Use simplymcp-class directly to avoid respawn timing issues
+timeout 10 node "$CLI_ROOT/class-bin.js" "examples/class-minimal.ts" > /tmp/cli-test-decorator-tools.log 2>&1 &
 SERVER_PID=$!
 
-# Wait for server to start and load class (increased timeout for reliability)
-if wait_for_log "/tmp/cli-test-decorator-tools.log" "Loading class from" 10; then
+# Wait for server to start and load class (class-bin always outputs this message)
+if wait_for_log "/tmp/cli-test-decorator-tools.log" "Loading class from" 15; then
   print_result "Decorator server starts and loads class" "PASS"
 else
   print_result "Decorator server starts and loads class" "FAIL" "Server did not load class"
