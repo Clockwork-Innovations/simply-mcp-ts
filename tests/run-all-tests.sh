@@ -79,7 +79,7 @@ echo "Timestamp: $TIMESTAMP"
 echo ""
 
 # Run all test suites
-run_suite "v2.4.5 Bug Fixes" "bash tests/test-bug-fixes.sh"
+run_suite "v2.4.5 Bug Fixes" "tests/test-bug-fixes.sh"
 sleep 2  # Allow server cleanup
 run_suite "Stdio Transport" "tests/test-stdio.sh"
 sleep 2  # Allow server cleanup
