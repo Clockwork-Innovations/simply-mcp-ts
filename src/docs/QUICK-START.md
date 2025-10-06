@@ -59,7 +59,7 @@ Create a new file `my-first-server.ts`:
 import { MCPServer, tool } from 'simply-mcp/decorators';
 
 @MCPServer()  // Zero config - uses smart defaults!
-class Calculator {
+export default class Calculator {
   /**
    * Add two numbers together
    * @param a - First number
@@ -80,6 +80,8 @@ class Calculator {
   }
 }
 ```
+
+> **Important:** The class must be exported (using `export default` or named export). Non-exported classes are never evaluated by JavaScript's module system, so decorators won't run.
 
 **That's it!** No `package.json` required, no `tsconfig.json` required, no configuration files needed at all.
 
@@ -114,7 +116,7 @@ You can override defaults:
     logging: true
   }
 })
-class Calculator {
+export default class Calculator {
   // ... your tools
 }
 ```

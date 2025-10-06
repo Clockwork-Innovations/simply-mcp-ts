@@ -136,7 +136,27 @@ Example:
       Object.values(module).find((exp: any) => typeof exp === 'function' && exp.prototype);
 
     if (!ServerClass) {
-      console.error('Error: No class found in module');
+      // Check if there's a decorated class that wasn't exported
+      const { readFile } = await import('node:fs/promises');
+      const source = await readFile(absolutePath, 'utf-8');
+      const hasDecoratedClass = /@MCPServer(\s*\(\s*\))?/.test(source) && /class\s+\w+/.test(source);
+
+      if (hasDecoratedClass) {
+        console.error('Error: Found @MCPServer decorated class but it is not exported');
+        console.error('');
+        console.error('Fix: Add "export default" to your class:');
+        console.error('');
+        console.error('  @MCPServer()');
+        console.error('  export default class MyServer {');
+        console.error('    // ...');
+        console.error('  }');
+        console.error('');
+        console.error('Why? Classes must be exported for the module system to make them available.');
+      } else {
+        console.error('Error: No class found in module');
+        console.error('');
+        console.error('Make sure your file exports a class decorated with @MCPServer()');
+      }
       process.exit(1);
     }
 

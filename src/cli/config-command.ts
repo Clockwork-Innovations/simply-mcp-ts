@@ -216,12 +216,13 @@ export default defineConfig({
 
   // Named server configurations
   servers: {
-    'my-server': {
-      entry: './src/my-server.ts',
-      transport: 'http',
-      port: 3000,
-      watch: true,
-    },
+    // Example server configuration (uncomment and modify):
+    // 'my-server': {
+    //   entry: './src/my-server.ts',
+    //   transport: 'http',
+    //   port: 3000,
+    //   watch: true,
+    // },
   },
 
   // Global defaults for all servers
@@ -238,12 +239,13 @@ export default defineConfig({
 
   // Named server configurations
   servers: {
-    'my-server': {
-      entry: './src/my-server.js',
-      transport: 'http',
-      port: 3000,
-      watch: true,
-    },
+    // Example server configuration (uncomment and modify):
+    // 'my-server': {
+    //   entry: './src/my-server.js',
+    //   transport: 'http',
+    //   port: 3000,
+    //   watch: true,
+    // },
   },
 
   // Global defaults for all servers
@@ -254,16 +256,10 @@ export default defineConfig({
 };
 `;
     } else {
+      // JSON doesn't support comments, so we provide a minimal valid config
       content = JSON.stringify(
         {
-          servers: {
-            'my-server': {
-              entry: './src/my-server.js',
-              transport: 'http',
-              port: 3000,
-              watch: true,
-            },
-          },
+          servers: {},
           defaults: {
             transport: 'stdio',
             verbose: false,

@@ -157,26 +157,29 @@ npx tsx mcp/configurableServer.ts mcp/config.json
 
 **Solution:**
 ```bash
-# 1. Verify file exists
-ls -la mcp/config.json
+# 1. Generate a valid config file (v2.4.7+)
+simplymcp config init
+# This now creates a config that passes validation immediately
 
-# 2. Check file path in command
-echo "Current directory: $(pwd)"
-echo "Config path: mcp/config.json"
+# 2. Verify file exists
+ls -la simplymcp.config.ts
 
-# 3. Use absolute path
+# 3. Validate the config
+simplymcp config validate
+
+# 4. Use absolute path if needed
 npx tsx mcp/configurableServer.ts $(pwd)/mcp/config.json
-
-# 4. Or create missing config from template
-cp mcp/config-test.json mcp/config.json
 ```
 
 **Prevention:**
+- Use `simplymcp config init` to generate valid configs (v2.4.7+)
 - Always use absolute paths in production
 - Add config file validation to CI/CD
 - Keep template configs in version control
 
 **Related:** [README.md - Configuration](../README.md#configuration)
+
+**Note:** Prior to v2.4.7, `config init` generated placeholder values that failed validation. This is now fixed.
 
 ---
 
@@ -227,7 +230,7 @@ npm install tsx --save-dev
 # Good: import { Server } from './types.js'
 
 # 2. Use simply-mcp run (recommended - handles everything automatically)
-npx simply-mcp run server.ts
+npx simplymcp run server.ts
 
 # 3. For programmatic servers, tsx handles TypeScript execution
 npx tsx server.ts
@@ -237,10 +240,46 @@ npx tsx server.ts
 
 **Prevention:**
 - Always use `.js` extensions in TypeScript imports
-- Use `simply-mcp run` for decorator/class-based servers
+- Use `simplymcp run` for decorator/class-based servers
 - SimpleMCP handles all TypeScript transpilation automatically
 
 **Related:** [ARCHITECTURE.md - Module System](../ARCHITECTURE.md)
+
+---
+
+### Server Discovery (New in v2.4.7)
+
+**Problem:** Running `simplymcp run` without arguments just shows usage information.
+
+**Solution (v2.4.7+):**
+```bash
+# Without arguments, SimpleMCP now helps you discover servers
+
+# With config file:
+$ simplymcp run
+Available servers in simplymcp.config.ts:
+  - weather-server (./servers/weather.ts)
+  - database-server (./servers/database.ts)
+
+Run a server: simplymcp run <server-name>
+
+# Without config file:
+$ simplymcp run
+No config file found. Scanning for potential MCP servers...
+
+Found potential servers:
+  - weather-server.ts (@MCPServer decorator)
+  - database-server.ts (defineMCP function)
+
+Run a server: simplymcp run <file>
+Quick start: simplymcp config init
+```
+
+**Prevention:**
+- Use `simplymcp run` without arguments to discover available servers
+- Leverage auto-discovery in multi-server projects
+
+**Related:** [QUICK-START.md - Server Discovery](./QUICK-START.md)
 
 ---
 
@@ -317,6 +356,44 @@ pm2 start mcp/configurableServer.ts --interpreter tsx -- mcp/config.json
 - Use connection pooling for external services
 
 **Related:** [DEPLOYMENT.md - Health Checks](../DEPLOYMENT.md#health-checks)
+
+---
+
+## Bundling Issues
+
+### Top-Level Await Not Supported (Fixed in v2.4.7)
+
+**Problem:** Bundle fails with "Top-level await is currently not supported with the 'cjs' output format"
+
+**Cause:** Prior to v2.4.7, the default bundle format was `single-file` (CommonJS), which doesn't support top-level await that's commonly used in modern MCP servers.
+
+**Solution (v2.4.7+):**
+```bash
+# Now works by default - ESM is the new default format
+simplymcp bundle server.ts
+
+# Previously required explicit ESM flag:
+# simplymcp bundle server.ts -f esm
+```
+
+**If you need CommonJS:**
+```bash
+# Explicitly use single-file format
+simplymcp bundle server.ts -f single-file
+
+# Make sure your code doesn't use top-level await
+# Wrap in an async function instead:
+(async () => {
+  await server.start();
+})();
+```
+
+**Prevention:**
+- Use default ESM format for modern code (v2.4.7+)
+- Only use `single-file` format if you specifically need CommonJS compatibility
+- Avoid top-level await in CommonJS bundles
+
+**Related:** [Bundling Guide - Bundle Formats](./features/bundling.md#bundle-formats)
 
 ---
 
@@ -689,6 +766,52 @@ jq '.tools[] | select(.handler.type == "file" and .handler.path == "./mcp/handle
 - Keep handler templates for reference
 
 **Related:** [HANDLER-GUIDE.md - File Handlers](../HANDLER-GUIDE.md#file-handlers)
+
+---
+
+### Decorator Not Exported Error (Improved in v2.4.7)
+
+**Problem:** "No class found in module" or "class is not exported" error when using `@MCPServer` decorator.
+
+**Cause:** Class decorated with `@MCPServer` is missing the `export default` keywords.
+
+**Solution (v2.4.7+):**
+```typescript
+// Error detection now works with both decorator syntaxes:
+
+// With parentheses
+@MCPServer()
+export default class MyServer {  // Must export!
+  // ...
+}
+
+// Without parentheses (also supported in v2.4.7+)
+@MCPServer
+export default class MyServer {  // Must export!
+  // ...
+}
+```
+
+**Error Message (v2.4.7+):**
+```
+Error: Found @MCPServer decorated class but it is not exported
+
+Fix: Add "export default" to your class:
+
+  @MCPServer
+  export default class MyServer {
+    // ...
+  }
+```
+
+**Prevention:**
+- Always use `export default` with `@MCPServer` decorated classes
+- Both `@MCPServer` and `@MCPServer()` syntaxes are supported (v2.4.7+)
+- Use `--verbose` flag to see helpful detection messages
+
+**Related:** [DECORATOR-API.md - Core Decorators](../../docs/development/DECORATOR-API.md)
+
+**Note:** Prior to v2.4.7, only `@MCPServer()` with parentheses was detected in error messages. This is now fixed to support both syntaxes.
 
 ---
 
@@ -1868,7 +1991,16 @@ jq '.tools[] | select(.name == "calculate") | .inputSchema' mcp/config-test.json
 ### Enable Verbose Logging
 
 ```bash
-# Development mode with debug logs
+# Use --verbose flag for consistent output (v2.4.7+)
+simplymcp run server.ts --verbose
+
+# Output is now consistent across all API styles:
+# [RunCommand] Detected API style: decorator
+# [RunCommand] Loading class from: /path/to/server.ts
+# [RunCommand] Transport: stdio
+# [RunCommand] Starting server...
+
+# Development mode with debug logs (programmatic servers)
 NODE_ENV=development LOG_LEVEL=debug npx tsx mcp/configurableServer.ts mcp/config.json
 
 # Log to file
@@ -1877,6 +2009,8 @@ npx tsx mcp/configurableServer.ts mcp/config.json 2>&1 | tee server.log
 # Watch logs in real-time
 tail -f server.log | grep -i error
 ```
+
+**Note:** In v2.4.7, verbose output was standardized across all three API styles (decorator, functional, programmatic) for consistent debugging experience.
 
 ### Trace Handler Execution
 

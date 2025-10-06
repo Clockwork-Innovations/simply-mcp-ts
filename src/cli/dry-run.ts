@@ -169,7 +169,19 @@ async function dryRunDecorator(filePath: string, useHttp: boolean, port: number)
       Object.values(module).find((exp: any) => typeof exp === 'function' && exp.prototype);
 
     if (!ServerClass) {
-      errors.push('No class found in module');
+      // Check if there's a decorated class that wasn't exported
+      const { readFile } = await import('node:fs/promises');
+      const source = await readFile(absolutePath, 'utf-8');
+      const hasDecoratedClass = /@MCPServer(\s*\(\s*\))?/.test(source) && /class\s+\w+/.test(source);
+
+      if (hasDecoratedClass) {
+        errors.push('Found @MCPServer decorated class but it is not exported');
+        errors.push('Fix: Add "export default" before your class declaration');
+        errors.push('Why? Classes must be exported for the module system to make them available');
+      } else {
+        errors.push('No class found in module');
+        errors.push('Make sure your file exports a class decorated with @MCPServer()');
+      }
       return {
         success: false,
         detectedStyle: 'decorator',

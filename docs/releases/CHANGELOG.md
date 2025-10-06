@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.7] - 2025-10-06 - UX Improvements & Bug Fixes
+
+This patch release addresses five major user experience issues identified through comprehensive TDD testing. Each fix improves the developer experience by addressing common pain points encountered when working with SimpleMCP.
+
+For detailed information, see the [full release notes](./RELEASE_NOTES_v2.4.7.md).
+
+### Fixed
+
+#### Bug Fixes
+- **Config init validation** - Generated configs now pass validation immediately after initialization
+  - Example file references are commented out instead of active
+  - Users can run `config validate` successfully without creating placeholder files first
+  - Reduces friction in the getting-started experience
+
+- **Bundle format defaults** - Changed default bundle format from `single-file` (CJS) to `esm`
+  - Top-level await now works with default options
+  - Users no longer need to explicitly specify `-f esm` flag
+  - Aligns with modern JavaScript/TypeScript best practices (ESM is standard in Node.js 18+)
+  - **Migration Note**: If you need CommonJS format, use the `-f single-file` flag explicitly
+
+- **Decorator detection** - Error detection now works for both `@MCPServer()` and `@MCPServer` syntax
+  - Updated regex pattern in 4 locations: class-bin.ts, dry-run.ts, run.ts (2 places)
+  - Pattern now: `/@MCPServer(\s*\(\s*\))?/` (optional parentheses)
+  - Consistent helpful error messages regardless of decorator syntax preference
+  - Better guidance when classes aren't exported
+
+### Added
+
+#### Enhancements
+- **Server discovery** - Running `simplymcp run` without arguments now provides helpful guidance
+  - With config: Lists available servers from `simplymcp.config.ts` and suggests how to run them
+  - Without config: Scans current directory for potential MCP server files (detecting `@MCPServer` or `defineMCP` patterns)
+  - Easier server discovery in multi-server projects
+  - Helpful guidance for newcomers exploring a codebase
+
+- **Verbose mode consistency** - Standardized verbose output format across all three API styles
+  - Decorator adapter (class-based)
+  - Functional adapter (config-based)
+  - Programmatic adapter (direct server)
+  - Predictable debugging experience with `--verbose` flag
+  - Consistent log format simplifies log parsing and troubleshooting
+
+### Test Coverage
+
+Added 5 new test suites providing regression protection for UX improvements:
+- `tests/test-config-init.sh` - Config initialization validation
+- `tests/test-bundle-format.sh` - Bundle format defaults
+- `tests/test-decorator-detection.sh` - Decorator regex matching (5/5 tests)
+- `tests/test-server-discovery.sh` - Server discovery scenarios
+- `tests/test-verbose-consistency.sh` - Verbose mode consistency
+
+All tests follow TDD (Test-Driven Development) with Red-Green-Refactor cycle for quality assurance.
+
+### Backwards Compatibility
+- ✅ Fully backwards compatible
+- ✅ No breaking changes
+- ✅ All improvements are automatic
+- ⚠️ Optional: If using `-f esm` workaround for bundles, you can now omit this flag
+
 ## [2.4.0] - 2025-10-04 - HTTP Transport Modes: Stateful & Stateless
 
 The v2.4.0 release adds support for both stateful and stateless HTTP transport modes, giving developers the flexibility to choose the right architecture for their deployment environment.
@@ -407,7 +466,8 @@ We use [Semantic Versioning](https://semver.org/):
 
 ---
 
-[Unreleased]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.4.7...HEAD
+[2.4.7]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.4.6...v2.4.7
 [2.4.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/clockwork-innovations/simply-mcp-ts/compare/v2.1.0...v2.2.0

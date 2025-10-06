@@ -52,6 +52,8 @@ Use bundling when you want to:
 
 ## Quick Start
 
+> **New in v2.4.7**: The default bundle format is now **ESM** instead of `single-file` (CommonJS). This means bundling now works out-of-the-box with modern MCP servers that use top-level `await`. If you need CommonJS, explicitly use `--format single-file`.
+
 ### Simplest Example (1 command)
 
 ```bash
@@ -65,7 +67,7 @@ SimplyMCP Bundler
 
 Entry:    /path/to/server.ts
 Output:   /path/to/dist/bundle.js
-Format:   single-file
+Format:   esm
 Minify:   Yes
 Platform: node
 Target:   node20
@@ -122,9 +124,38 @@ SimplyMCP bundling follows a multi-stage pipeline:
 
 SimplyMCP supports 5 output formats:
 
-#### 1. Single-File (Default)
+#### 1. ESM Format (Default - New in v2.4.7)
 
-Everything bundled into one JavaScript file:
+Modern ECMAScript modules with top-level await support:
+
+```bash
+simplemcp bundle server.ts
+# OR explicitly: simplemcp bundle server.ts --format esm
+```
+
+**Characteristics:**
+- ES module format
+- Import/export syntax
+- **Supports top-level await** (the most common use case)
+- Tree-shaking benefits
+- Modern Node.js (18+) required
+
+**Use cases:**
+- Modern MCP servers using `await server.start()`
+- Node.js 18+ environments
+- Importing from other modules
+- Maximum tree-shaking
+
+**Output:**
+```
+dist/bundle.js  (ESM format)
+```
+
+**Note**: Prior to v2.4.7, the default was `single-file` (CommonJS), which didn't support top-level await. If you need CommonJS, use `--format single-file` explicitly.
+
+#### 2. Single-File Format
+
+Everything bundled into one CommonJS file:
 
 ```bash
 simplemcp bundle server.ts --format single-file
@@ -132,21 +163,22 @@ simplemcp bundle server.ts --format single-file
 
 **Characteristics:**
 - All code and dependencies in one `.js` file
+- CommonJS format (no top-level await)
 - Minified and tree-shaken by default
 - Native modules marked as external
 - Smallest footprint (500KB - 2MB typical)
 
 **Use cases:**
-- Serverless functions (Lambda, Vercel, Cloudflare)
-- Simple deployments
-- Minimal footprint requirements
+- Legacy Node.js compatibility
+- Environments requiring CommonJS
+- When top-level await is not needed
 
 **Output:**
 ```
 dist/bundle.js  (847 KB)
 ```
 
-#### 2. Standalone Distribution
+#### 3. Standalone Distribution
 
 Complete directory with bundle + metadata:
 
@@ -175,26 +207,7 @@ dist/
 └── NATIVE_MODULES.md  # Native deps (if any)
 ```
 
-#### 3. ESM Format
-
-Modern ECMAScript modules:
-
-```bash
-simplemcp bundle server.ts --format esm
-```
-
-**Characteristics:**
-- ES module format
-- Import/export syntax
-- Tree-shaking benefits
-- Modern Node.js (18+) required
-
-**Use cases:**
-- Modern Node.js environments
-- Importing from other modules
-- Maximum tree-shaking
-
-#### 5. CJS Format
+#### 4. CJS Format
 
 Traditional CommonJS modules:
 
@@ -385,16 +398,16 @@ simplemcp bundle server.ts -o build/bundle.js
 
 #### `-f, --format <format>`
 
-Output format: `single-file` | `standalone` | `esm` | `cjs`
+Output format: `esm` | `single-file` | `standalone` | `cjs`
 
 ```bash
-simplemcp bundle server.ts --format single-file
+simplemcp bundle server.ts --format esm          # Default (v2.4.7+)
+simplemcp bundle server.ts --format single-file  # CommonJS
 simplemcp bundle server.ts --format standalone
-simplemcp bundle server.ts --format esm
 simplemcp bundle server.ts -f cjs
 ```
 
-**Default:** `single-file`
+**Default:** `esm` (changed in v2.4.7 to support top-level await)
 
 #### `-m, --minify`
 

@@ -375,6 +375,14 @@ See [ARCHITECTURE.md - Extension Points](./architecture/TECHNICAL.md#extension-p
 | Examples | 15+ files | N/A | 60 min |
 | **Total** | **36+** | **~195** | **~11 hours** |
 
+**New in v2.4.7 (UX Improvements):**
+- Improved bundling documentation with new ESM default format
+- Enhanced troubleshooting guide with v2.4.7 improvements
+- Updated config initialization documentation
+- Server discovery feature documented
+- Verbose mode standardization notes
+- Decorator detection improvements documented
+
 **New in v2.3.0 (Motorcycle Phase):**
 - FEATURES.md - Comprehensive feature matrix
 - DEBUGGING.md - Debug guide

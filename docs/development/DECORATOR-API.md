@@ -44,6 +44,8 @@ npx tsx mcp/class-adapter.ts my-server.ts --http --port 3000
 
 That's it! Your server is running with 2 tools automatically registered.
 
+> **Important:** Classes must be exported (using `export default` or named export). Non-exported classes are never evaluated by JavaScript's module system, so decorators won't run.
+
 ## Core Decorators
 
 ### `@MCPServer(config?)`

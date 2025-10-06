@@ -41,7 +41,7 @@ export interface BundleOptions {
 
   /**
    * Output format
-   * @default 'single-file'
+   * @default 'esm'
    */
   format?: BundleFormat;
 

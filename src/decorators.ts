@@ -28,6 +28,11 @@ const TOOLS_KEY = Symbol.for('mcp:tools');
 const PROMPTS_KEY = Symbol.for('mcp:prompts');
 const RESOURCES_KEY = Symbol.for('mcp:resources');
 const SERVER_CONFIG_KEY = Symbol.for('mcp:config');
+const SERVER_REGISTRY_KEY = Symbol.for('mcp:server-registry');
+
+// Note: We explored using a global registry to avoid requiring exports, but hit a fundamental limitation:
+// Non-exported classes are never evaluated by the JavaScript engine (tree-shaking), so decorators never run.
+// Therefore, exports ARE required for the decorator pattern to work. The UX improvement is better error messages.
 
 /**
  * Server configuration for @MCPServer decorator

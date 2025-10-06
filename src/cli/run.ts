@@ -4,8 +4,8 @@
  */
 
 import 'reflect-metadata';
-import { readFile } from 'node:fs/promises';
-import { resolve, dirname } from 'node:path';
+import { readFile, readdir } from 'node:fs/promises';
+import { resolve, dirname, extname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import type { CommandModule } from 'yargs';
@@ -15,7 +15,9 @@ import {
   mergeServerConfig,
   getConfigFilePath,
   resolveServerConfig,
+  listServers,
   type RunConfig,
+  type CLIConfig,
 } from './cli-config-loader.js';
 
 /**
@@ -68,7 +70,7 @@ export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
 
     // Check for decorator API (highest priority)
     // Look for @MCPServer decorator
-    if (/@MCPServer\s*\(/.test(content)) {
+    if (/@MCPServer(\s*\()?/.test(content)) {
       return 'decorator';
     }
 
@@ -95,7 +97,8 @@ export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
 async function runFunctionalAdapter(
   filePath: string,
   useHttp: boolean,
-  port: number
+  port: number,
+  verbose: boolean = false
 ): Promise<void> {
   const { SimplyMCP } = await import('../SimplyMCP.js');
   const { schemaToZod } = await import('../schema-builder.js');
@@ -116,7 +119,6 @@ async function runFunctionalAdapter(
     process.exit(1);
   }
 
-  console.error('[RunCommand] Loading config from:', filePath);
   console.error(`[RunCommand] Creating server: ${config.name} v${config.version}`);
 
   // Create server
@@ -170,7 +172,7 @@ async function runFunctionalAdapter(
   }
 
   displayServerInfo(server);
-  await startServer(server, { useHttp, port });
+  await startServer(server, { useHttp, port, verbose });
 }
 
 /**
@@ -179,7 +181,8 @@ async function runFunctionalAdapter(
 async function runDecoratorAdapter(
   filePath: string,
   useHttp: boolean,
-  port: number
+  port: number,
+  verbose: boolean = false
 ): Promise<void> {
   // Import decorator adapter dependencies
   const { default: reflectMetadata } = await import('reflect-metadata');
@@ -216,7 +219,29 @@ async function runDecoratorAdapter(
     Object.values(module).find((exp: any) => typeof exp === 'function' && exp.prototype);
 
   if (!ServerClass) {
-    console.error('Error: No class found in module');
+    // Check if there's a decorated class that wasn't exported
+    const source = await readFile(absolutePath, 'utf-8');
+    const hasDecoratedClass = /@MCPServer(\s*\(\s*\))?/.test(source) && /class\s+\w+/.test(source);
+
+    if (hasDecoratedClass) {
+      console.error('Error: Found @MCPServer decorated class but it is not exported');
+      console.error('');
+      console.error('The class must be exported for the JavaScript module system to load it.');
+      console.error('');
+      console.error('Fix: Add "export default" to your class:');
+      console.error('');
+      console.error('  @MCPServer()');
+      console.error('  export default class MyServer {');
+      console.error('    // ...');
+      console.error('  }');
+      console.error('');
+      console.error('Why? Non-exported classes are never evaluated by the JS engine,');
+      console.error('so decorators never run. This is a JavaScript limitation, not a SimplyMCP one.');
+    } else {
+      console.error('Error: No class found in module');
+      console.error('');
+      console.error('Make sure your file exports a class decorated with @MCPServer()');
+    }
     process.exit(1);
   }
 
@@ -226,7 +251,6 @@ async function runDecoratorAdapter(
     process.exit(1);
   }
 
-  console.error('[RunCommand] Loading class from:', filePath);
   console.error(`[RunCommand] Creating server: ${config.name} v${config.version}`);
 
   // Parse the source file to extract types
@@ -380,7 +404,7 @@ async function runDecoratorAdapter(
   }
 
   displayServerInfo(server);
-  await startServer(server, { useHttp, port });
+  await startServer(server, { useHttp, port, verbose });
 }
 
 /**
@@ -389,9 +413,9 @@ async function runDecoratorAdapter(
 async function runProgrammaticAdapter(
   filePath: string,
   _useHttp: boolean,
-  _port: number
+  _port: number,
+  verbose: boolean = false
 ): Promise<void> {
-  console.error('[RunCommand] Running programmatic server from:', filePath);
   console.error(
     '[RunCommand] Note: Programmatic servers manage their own transport configuration'
   );
@@ -405,6 +429,142 @@ async function runProgrammaticAdapter(
   } catch (error) {
     console.error('[RunCommand] Failed to run server:', error);
     process.exit(2);
+  }
+}
+
+/**
+ * Scan current directory for potential MCP server files
+ * Looks for .ts and .js files containing @MCPServer or defineMCP patterns
+ */
+async function discoverServers(cwd: string = process.cwd()): Promise<string[]> {
+  try {
+    const files = await readdir(cwd);
+    const potentialServers: string[] = [];
+
+    for (const file of files) {
+      const ext = extname(file);
+      if (ext !== '.ts' && ext !== '.js') {
+        continue;
+      }
+
+      try {
+        const filePath = resolve(cwd, file);
+        const content = await readFile(filePath, 'utf-8');
+
+        // Check for MCP server patterns
+        if (/@MCPServer(\s*\()?/.test(content) || /defineMCP\s*\(/.test(content)) {
+          potentialServers.push(file);
+        }
+      } catch {
+        // Skip files we can't read
+        continue;
+      }
+    }
+
+    return potentialServers;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Parse config file content as text to extract server names and entries
+ * This is a fallback when the config file can't be imported
+ */
+async function parseConfigAsText(configPath: string): Promise<{ servers: Record<string, { entry: string }> } | null> {
+  try {
+    const content = await readFile(configPath, 'utf-8');
+    const servers: Record<string, { entry: string }> = {};
+
+    // Try to extract server definitions using regex
+    // Match patterns like: 'server-name': { entry: './path/to/file.ts', ... }
+    const serverPattern = /['"]([^'"]+)['"]\s*:\s*\{[^}]*entry\s*:\s*['"]([^'"]+)['"]/g;
+    let match;
+
+    while ((match = serverPattern.exec(content)) !== null) {
+      const [, serverName, entryPath] = match;
+      servers[serverName] = { entry: entryPath };
+    }
+
+    if (Object.keys(servers).length > 0) {
+      return { servers };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Display server discovery help when no files are provided
+ */
+async function showServerDiscovery(config: CLIConfig | null, configFilePath: string | null): Promise<void> {
+  // Try to get server info from config or parse as text
+  let serversToShow: Array<{ name: string; entry: string }> = [];
+
+  if (config && config.servers && Object.keys(config.servers).length > 0) {
+    serversToShow = listServers(config);
+  } else if (configFilePath) {
+    // Try parsing as text as a fallback
+    const parsedConfig = await parseConfigAsText(configFilePath);
+    if (parsedConfig && parsedConfig.servers) {
+      serversToShow = Object.entries(parsedConfig.servers).map(([name, cfg]) => ({
+        name,
+        entry: cfg.entry,
+        config: cfg as any,
+      }));
+    }
+  }
+
+  if (serversToShow.length > 0) {
+    // Scenario A: Config file exists with servers
+    console.error('');
+    console.error('Available servers in config:');
+    console.error('');
+
+    for (const server of serversToShow) {
+      console.error(`  ${server.name}`);
+      console.error(`    Entry: ${server.entry}`);
+      console.error('');
+    }
+
+    console.error('Run a specific server with:');
+    console.error(`  simplymcp run <server-name>`);
+    console.error('');
+    console.error('Example:');
+    console.error(`  simplymcp run ${serversToShow[0].name}`);
+    console.error('');
+  } else {
+    // Scenario B: No config file or no servers in config
+    const potentialServers = await discoverServers();
+
+    if (potentialServers.length > 0) {
+      console.error('');
+      console.error('Found potential MCP server files in current directory:');
+      console.error('');
+      for (const file of potentialServers) {
+        console.error(`  ${file}`);
+      }
+      console.error('');
+      console.error('Run a server with:');
+      console.error(`  simplymcp run <file>`);
+      console.error('');
+      console.error('Example:');
+      console.error(`  simplymcp run ${potentialServers[0]}`);
+      console.error('');
+    } else {
+      console.error('');
+      console.error('No MCP servers found in current directory.');
+      console.error('');
+      console.error('Quick start:');
+      console.error('  1. Create a server file (e.g., my-server.ts)');
+      console.error('  2. Use @MCPServer decorator or defineMCP function');
+      console.error('  3. Run with: simplymcp run my-server.ts');
+      console.error('');
+      console.error('See documentation: https://github.com/QuantGeekDev/simple-mcp');
+      console.error('');
+    }
   }
 }
 
@@ -510,14 +670,14 @@ async function spawnWithInspector(
  * Yargs command definition for the run command
  */
 export const runCommand: CommandModule = {
-  command: 'run <file..>',
+  command: 'run [file..]',
   describe: 'Auto-detect and run MCP server(s)',
   builder: (yargs) => {
     return yargs
       .positional('file', {
         describe: 'Path to the server file(s)',
         type: 'string',
-        demandOption: true,
+        demandOption: false,
       })
       .option('config', {
         describe: 'Path to config file (auto-detected if not specified)',
@@ -579,8 +739,27 @@ export const runCommand: CommandModule = {
       });
   },
   handler: async (argv: any) => {
-    const files = Array.isArray(argv.file) ? argv.file : [argv.file];
+    const files = argv.file ? (Array.isArray(argv.file) ? argv.file : [argv.file]) : [];
     const configPath = argv.config as string | undefined;
+
+    // If no files provided, show server discovery help
+    if (files.length === 0) {
+      let config: CLIConfig | null = null;
+      let configFilePath: string | null = null;
+
+      try {
+        configFilePath = await getConfigFilePath(configPath);
+        if (configFilePath) {
+          config = await loadCLIConfig(configPath);
+        }
+      } catch (error) {
+        // Config loading failed, but we might still have the config file path
+        // We'll try to parse it as text in showServerDiscovery
+      }
+
+      await showServerDiscovery(config, configFilePath);
+      process.exit(1);
+    }
 
     // Check if we need TypeScript support and tsx is not already loaded
     const needsTypeScript = files.some((f: string) => f.endsWith('.ts'));
@@ -607,7 +786,7 @@ export const runCommand: CommandModule = {
       if (argv['watch-interval']) scriptArgs.push('--watch-interval', String(argv['watch-interval']));
 
       const child = spawn('node', [...nodeArgs, ...scriptArgs], {
-        stdio: 'inherit',
+        stdio: [0, 1, 2],  // Use raw file descriptors for proper redirection
         env: process.env,
       });
 
@@ -740,6 +919,26 @@ export const runCommand: CommandModule = {
         if (forceStyle) {
           console.error(`[RunCommand] Style was forced via --style flag`);
         }
+        // Output loading message early so it appears even if respawn happens
+        const absolutePath = resolve(process.cwd(), filePath);
+        switch (style) {
+          case 'decorator':
+            console.error('[Adapter] Loading class from:', filePath);
+            break;
+          case 'functional':
+            console.error('[Adapter] Loading config from:', filePath);
+            break;
+          case 'programmatic':
+            console.error('[Adapter] Loading server from:', filePath);
+            break;
+        }
+        // Also output transport info early
+        // Note: For programmatic adapters, the server file manages its own transport,
+        // but we still report what was requested via CLI flags
+        console.error(`[Adapter] Transport: ${useHttp ? 'HTTP' : 'STDIO'}`);
+        if (useHttp) {
+          console.error(`[Adapter] Port: ${port}`);
+        }
       }
 
       // If watch mode is enabled, start watch mode manager
@@ -775,13 +974,13 @@ export const runCommand: CommandModule = {
       // Run appropriate adapter
       switch (style) {
         case 'decorator':
-          await runDecoratorAdapter(filePath, useHttp, port);
+          await runDecoratorAdapter(filePath, useHttp, port, verbose);
           break;
         case 'functional':
-          await runFunctionalAdapter(filePath, useHttp, port);
+          await runFunctionalAdapter(filePath, useHttp, port, verbose);
           break;
         case 'programmatic':
-          await runProgrammaticAdapter(filePath, useHttp, port);
+          await runProgrammaticAdapter(filePath, useHttp, port, verbose);
           break;
       }
     } catch (error) {

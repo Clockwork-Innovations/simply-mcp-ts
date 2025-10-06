@@ -50,7 +50,7 @@ npm install simply-mcp
 import { MCPServer, tool } from 'simply-mcp/decorators';
 
 @MCPServer()
-class Calculator {
+export default class Calculator {
   /**
    * Add two numbers
    * @param a - First number
@@ -72,6 +72,8 @@ class Calculator {
   }
 }
 ```
+
+> **Important:** The class must be exported (using `export default` or named export). Non-exported classes are never evaluated by JavaScript's module system, so decorators won't run.
 
 **Run it:**
 
