@@ -30,7 +30,26 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Determine npm dist-tag
+        id: dist-tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Check if version contains pre-release identifiers
+          if [[ "$VERSION" =~ (alpha|beta|rc|next|canary) ]]; then
+            # Extract the pre-release tag (e.g., "beta" from "2.5.0-beta.1")
+            TAG=$(echo "$VERSION" | sed -E 's/.*-(alpha|beta|rc|next|canary).*/\1/')
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "Publishing pre-release version $VERSION with tag: $TAG"
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "Publishing stable version $VERSION with tag: latest"
+          fi
+
       - name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        run: |
+          echo "Publishing simply-mcp@${{ steps.dist-tag.outputs.version }} with tag @${{ steps.dist-tag.outputs.tag }}"
+          npm publish --tag ${{ steps.dist-tag.outputs.tag }} --provenance --access public
