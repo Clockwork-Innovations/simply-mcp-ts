@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp",
-  "version": "2.4.7",
+  "version": "2.5.0-beta.1",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",
@@ -30,9 +30,15 @@
     "simplymcp": "./dist/src/cli/index.js",
     "SimplyMCP": "./dist/src/cli/index.js",
     "simplyMCP": "./dist/src/cli/index.js",
+    "simply-mcp-run": "./dist/src/cli/run-bin.js",
     "simplymcp-run": "./dist/src/cli/run-bin.js",
+    "simply-mcp-class": "./dist/src/cli/class-bin.js",
     "simplymcp-class": "./dist/src/cli/class-bin.js",
+    "simply-mcp-func": "./dist/src/cli/func-bin.js",
     "simplymcp-func": "./dist/src/cli/func-bin.js",
+    "simply-mcp-interface": "./dist/src/cli/interface-bin.js",
+    "simplymcp-interface": "./dist/src/cli/interface-bin.js",
+    "simply-mcp-bundle": "./dist/src/cli/bundle-bin.js",
     "simplymcp-bundle": "./dist/src/cli/bundle-bin.js"
   },
   "files": [

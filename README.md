@@ -16,10 +16,10 @@
   - **Stateless**: Perfect for serverless/Lambda deployments
 - 🔄 SSE (Server-Sent Events)
 
-🎨 **Decorator API**
-- `@tool` - Define MCP tools with automatic schema generation
-- `@prompt` - Create prompt templates
-- `@resource` - Expose resources with dynamic content
+🎨 **Multiple API Styles**
+- **Interface API** - Pure TypeScript interfaces (cleanest, zero boilerplate)
+- **Decorator API** - Class-based with `@tool`, `@prompt`, `@resource` decorators
+- **Functional API** - Programmatic server building with full control
 
 ⚡ **Developer Experience**
 - Type-safe with full TypeScript support
@@ -43,11 +43,42 @@ npm install simply-mcp
 
 ### Create Your First Server
 
-**That's it - just one file, zero configuration!**
+Simply MCP supports three API styles. Choose the one that fits your preferences:
+
+#### Option 1: Interface API (Cleanest)
+
+Pure TypeScript interfaces with zero boilerplate:
 
 ```typescript
 // server.ts
-import { MCPServer, tool } from 'simply-mcp/decorators';
+import type { ITool, IServer } from 'simply-mcp';
+
+interface AddTool extends ITool {
+  name: 'add';
+  description: 'Add two numbers';
+  params: { a: number; b: number };
+  result: { sum: number };
+}
+
+interface Calculator extends IServer {
+  name: 'calculator';
+  version: '1.0.0';
+}
+
+export default class CalculatorService implements Calculator {
+  add: AddTool = async (params) => ({
+    sum: params.a + params.b
+  });
+}
+```
+
+#### Option 2: Decorator API (Class-Based)
+
+Use decorators for auto-registration:
+
+```typescript
+// server.ts
+import { MCPServer, tool } from 'simply-mcp';
 
 @MCPServer()
 export default class Calculator {
@@ -60,69 +91,55 @@ export default class Calculator {
   async add(a: number, b: number) {
     return { result: a + b };
   }
-
-  /**
-   * Multiply two numbers
-   * @param a - First number
-   * @param b - Second number
-   */
-  @tool()
-  async multiply(a: number, b: number) {
-    return { result: a * b };
-  }
 }
 ```
 
+> **Note:** As of v2.5.0, all exports are available from the main `'simply-mcp'` package. The old pattern `import { MCPServer } from 'simply-mcp/decorators'` still works but is deprecated.
+
 > **Important:** The class must be exported (using `export default` or named export). Non-exported classes are never evaluated by JavaScript's module system, so decorators won't run.
 
-**Run it:**
+#### Option 3: Functional API (Programmatic)
+
+Programmatic control with explicit registration:
+
+```typescript
+// server.ts
+import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
+
+const server = new SimplyMCP({
+  name: 'calculator',
+  version: '1.0.0'
+});
+
+server.addTool({
+  name: 'add',
+  description: 'Add two numbers',
+  parameters: z.object({
+    a: z.number(),
+    b: z.number()
+  }),
+  execute: async ({ a, b }) => ({
+    content: [{ type: 'text', text: `Sum: ${a + b}` }]
+  })
+});
+
+await server.start();
+```
+
+**Run any style with the same command:**
 
 ```bash
 npx simply-mcp run server.ts
 ```
 
-**That's all you need!** No `package.json`, no `tsconfig.json`, no configuration files.
+**That's all you need!** No `package.json`, no `tsconfig.json`, no configuration files. The CLI auto-detects your API style.
 
 **Smart Defaults:**
 - `name`: Auto-generated from class name (Calculator -> calculator)
 - `version`: Auto-detected from package.json or defaults to '1.0.0'
 - `transport`: stdio (override with `--http` flag)
 - `capabilities`: Automatically configured based on your tools
-
-### Programmatic API (Alternative)
-
-You can also use the programmatic API:
-
-```typescript
-import { SimplyMCP } from 'simply-mcp';
-import { z } from 'zod';
-
-const server = new SimplyMCP({
-  name: 'my-server',
-  version: '1.0.0'
-});
-
-// Add a tool
-server.addTool({
-  name: 'greet',
-  description: 'Greet a user',
-  parameters: z.object({
-    name: z.string().describe('User name')
-  }),
-  execute: async ({ name }) => ({
-    content: [{ type: 'text', text: `Hello, ${name}!` }]
-  })
-});
-
-// Start stdio server (default transport)
-await server.start();
-```
-
-**Run it:**
-
-```bash
-npx simply-mcp run server.ts
-```
 
 **Same command works for all API styles!**
 
@@ -247,11 +264,137 @@ You do NOT need to set `"type": "module"` in your `package.json`. SimpleMCP hand
 
 **For type checking:** Optionally create `tsconfig.json` for IDE support.
 
+## Interface API Deep Dive
+
+The Interface API is the cleanest way to define MCP servers using pure TypeScript interfaces. Here's what makes it special:
+
+### Why Use Interface API?
+
+**Zero Boilerplate:**
+- No manual schema definitions
+- No decorator setup
+- Just TypeScript types!
+
+**Full Type Safety:**
+- Compile-time type checking
+- Complete IntelliSense support
+- Auto-generated Zod schemas from TypeScript types
+
+**Clean Code:**
+- Pure interface definitions
+- No runtime overhead
+- Easy to read and maintain
+
+### Complete Example
+
+```typescript
+import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';
+
+// Define a tool
+interface GetWeatherTool extends ITool {
+  name: 'get_weather';
+  description: 'Get current weather for a location';
+  params: {
+    location: string;
+    units?: 'celsius' | 'fahrenheit';
+  };
+  result: {
+    temperature: number;
+    conditions: string;
+  };
+}
+
+// Define a static prompt (no implementation needed!)
+interface WeatherPrompt extends IPrompt {
+  name: 'weather_report';
+  description: 'Generate weather report';
+  args: { location: string; style?: 'casual' | 'formal' };
+  template: `Generate a {style} weather report for {location}.`;
+}
+
+// Define a static resource (no implementation needed!)
+interface ConfigResource extends IResource {
+  uri: 'config://server';
+  name: 'Server Configuration';
+  mimeType: 'application/json';
+  data: {
+    version: '1.0.0';
+    features: ['weather', 'forecasts'];
+  };
+}
+
+// Define server metadata
+interface WeatherServer extends IServer {
+  name: 'weather-service';
+  version: '1.0.0';
+  description: 'Weather information service';
+}
+
+// Implement the server
+export default class WeatherService implements WeatherServer {
+  // Tool implementation - full IntelliSense on params!
+  getWeather: GetWeatherTool = async (params) => {
+    const temp = 72;
+    return {
+      temperature: params.units === 'fahrenheit' ? temp : (temp - 32) * 5/9,
+      conditions: 'Sunny'
+    };
+  };
+
+  // Static prompt - no implementation needed!
+  // Static resource - no implementation needed!
+}
+```
+
+### Key Features
+
+**Tools:**
+- Define with `ITool` interface
+- TypeScript types auto-convert to Zod schemas
+- Full IntelliSense on parameters and return types
+
+**Prompts:**
+- **Static**: Define template with `{variable}` syntax
+- **Dynamic**: Set `dynamic: true` and implement as method
+
+**Resources:**
+- **Static**: Define literal data directly in interface
+- **Dynamic**: Implement as method using URI as property name
+
+**Automatic Detection:**
+- Framework automatically detects static vs dynamic
+- No manual configuration needed
+
+### Run It
+
+```bash
+# Auto-detection (recommended)
+npx simply-mcp run weather-service.ts
+
+# Explicit interface command
+npx simplymcp-interface weather-service.ts
+
+# With HTTP transport
+npx simply-mcp run weather-service.ts --http --port 3000
+```
+
+### Learn More
+
+See the [Interface API Guide](./docs/guides/INTERFACE_API_GUIDE.md) for complete documentation including:
+- TypeScript to Zod schema conversion
+- JSDoc validation tags
+- Template interpolation
+- Dynamic prompts and resources
+- CLI reference
+- Best practices
+
 ## Documentation
 
 ### Core Guides
 - [Quick Start](./src/docs/QUICK-START.md) - Get started in 5 minutes
+- [Interface API Guide](./docs/guides/INTERFACE_API_GUIDE.md) - Complete Interface API documentation
 - [Decorator API](./docs/development/DECORATOR-API.md) - Using decorators
+- [Import Style Guide](./docs/development/IMPORT_STYLE_GUIDE.md) - Import patterns and best practices
 - [HTTP Transport](./src/docs/HTTP-TRANSPORT.md) - HTTP server setup
 - [Handler Development](./src/docs/guides/HANDLER-DEVELOPMENT.md) - Creating handlers
 

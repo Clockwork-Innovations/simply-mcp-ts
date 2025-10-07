@@ -477,6 +477,118 @@ async function dryRunFunctional(filePath: string, useHttp: boolean, port: number
 }
 
 /**
+ * Perform dry-run for interface API style
+ */
+async function dryRunInterface(filePath: string, useHttp: boolean, port: number): Promise<DryRunResult> {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const tools: Array<{ name: string; description?: string }> = [];
+  const prompts: Array<{ name: string; description?: string }> = [];
+  const resources: Array<{ name: string; description?: string }> = [];
+
+  let serverConfig = {
+    name: '',
+    version: '',
+    port: undefined as number | undefined,
+  };
+
+  try {
+    // Import the interface adapter
+    const { dirname } = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const distPath = resolve(__dirname, '..');
+
+    const { loadInterfaceServer } = await import(
+      pathToFileURL(resolve(distPath, 'api/interface/adapter.js')).href
+    );
+
+    // Load the interface server
+    const absolutePath = resolve(process.cwd(), filePath);
+    const server = await loadInterfaceServer({
+      filePath: absolutePath,
+      verbose: false,
+    });
+
+    // Extract server info
+    const info = server.getInfo();
+    const stats = server.getStats();
+
+    serverConfig = {
+      name: info.name || '',
+      version: info.version || '',
+      port: undefined,
+    };
+
+    // Validate server config
+    validateServerConfig(serverConfig.name, serverConfig.version, errors, warnings);
+
+    // Note: We can't easily extract individual tool/prompt/resource details
+    // from the interface server without more introspection APIs
+    // For now, just report counts
+    for (let i = 0; i < stats.tools; i++) {
+      tools.push({
+        name: `tool-${i + 1}`,
+        description: undefined,
+      });
+    }
+
+    for (let i = 0; i < stats.prompts; i++) {
+      prompts.push({
+        name: `prompt-${i + 1}`,
+        description: undefined,
+      });
+    }
+
+    for (let i = 0; i < stats.resources; i++) {
+      resources.push({
+        name: `resource-${i + 1}`,
+        description: undefined,
+      });
+    }
+
+    // Add info message about limited introspection
+    if (stats.tools > 0 || stats.prompts > 0 || stats.resources > 0) {
+      warnings.push('Tool/prompt/resource details not available in dry-run for interface servers');
+      warnings.push('Run without --dry-run to see full server capabilities');
+    }
+
+    // Validate port if HTTP is used
+    if (useHttp) {
+      validatePort(port, errors);
+    }
+
+    return {
+      success: errors.length === 0,
+      detectedStyle: 'interface',
+      serverConfig,
+      tools,
+      prompts,
+      resources,
+      transport: useHttp ? 'http' : 'stdio',
+      portConfig: port,
+      warnings,
+      errors,
+    };
+  } catch (error) {
+    errors.push(`Failed to load interface server: ${error instanceof Error ? error.message : String(error)}`);
+    return {
+      success: false,
+      detectedStyle: 'interface',
+      serverConfig,
+      tools,
+      prompts,
+      resources,
+      transport: useHttp ? 'http' : 'stdio',
+      portConfig: port,
+      warnings,
+      errors,
+    };
+  }
+}
+
+/**
  * Perform dry-run for programmatic API style
  */
 async function dryRunProgrammatic(filePath: string, useHttp: boolean, port: number): Promise<DryRunResult> {
@@ -607,6 +719,9 @@ export async function runDryRun(
 
   // Perform dry-run based on API style
   switch (style) {
+    case 'interface':
+      result = await dryRunInterface(filePath, useHttp, port);
+      break;
     case 'decorator':
       result = await dryRunDecorator(filePath, useHttp, port);
       break;

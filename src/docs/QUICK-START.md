@@ -56,7 +56,8 @@ This installs:
 Create a new file `my-first-server.ts`:
 
 ```typescript
-import { MCPServer, tool } from 'simply-mcp/decorators';
+// Unified import pattern (v2.5.0+) - all decorators from one package
+import { MCPServer, tool } from 'simply-mcp';
 
 @MCPServer()  // Zero config - uses smart defaults!
 export default class Calculator {

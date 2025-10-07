@@ -276,7 +276,8 @@ simplymcp run my-server.ts --watch --watch-poll --watch-interval 500
 
 ```typescript
 // my-server.ts
-import { MCPServer } from 'simply-mcp/decorators';
+// Unified import pattern (v2.5.0+)
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer({ name: 'my-server', version: '1.0.0' })
 export default class MyServer {

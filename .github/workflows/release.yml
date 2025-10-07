@@ -4,23 +4,101 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version bump type'
+        description: 'Version bump type or specific version'
         required: true
         type: choice
         options:
           - patch
           - minor
           - major
+          - beta
+          - promote-beta
+      specific_version:
+        description: 'Specific version (optional, overrides version type)'
+        required: false
+        type: string
+      skip_validation:
+        description: 'Skip pre-release validation (not recommended)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
+  pre-release-validation:
+    name: Pre-Release Validation
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skip_validation != 'true' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run package validation
+        run: bash scripts/validate-package.sh
+
+      - name: Determine version for validation
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.specific_version }}" ]; then
+            VERSION="${{ github.event.inputs.specific_version }}"
+          else
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            VERSION="$CURRENT_VERSION"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Testing with version: $VERSION"
+
+      - name: Run pre-release tests
+        run: bash scripts/pre-release-test.sh ${{ steps.version.outputs.version }}
+
+      - name: Run integration tests
+        run: bash scripts/integration-test.sh
+
+      - name: Create validation artifact
+        run: |
+          echo "# Pre-Release Validation Report" > validation.md
+          echo "" >> validation.md
+          echo "**Version Type**: ${{ github.event.inputs.version }}" >> validation.md
+          echo "**Test Version**: ${{ steps.version.outputs.version }}" >> validation.md
+          echo "**Status**: ✅ All validations passed" >> validation.md
+          echo "**Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> validation.md
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation.md
+          retention-days: 30
+
   release:
+    name: Release and Publish
+    needs: [pre-release-validation]
+    if: ${{ always() && (needs.pre-release-validation.result == 'success' || github.event.inputs.skip_validation == 'true') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -46,9 +124,63 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Determine version strategy
+        id: version-strategy
+        run: |
+          VERSION_TYPE="${{ github.event.inputs.version }}"
+          SPECIFIC_VERSION="${{ github.event.inputs.specific_version }}"
+
+          echo "Version type: $VERSION_TYPE"
+          echo "Specific version: $SPECIFIC_VERSION"
+
+          # Determine release type and npm tag
+          if [ "$VERSION_TYPE" == "promote-beta" ]; then
+            # Promoting beta to stable - remove pre-release tag
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            if [[ ! "$CURRENT_VERSION" =~ -beta ]]; then
+              echo "❌ Cannot promote-beta: current version ($CURRENT_VERSION) is not a beta"
+              exit 1
+            fi
+            # Remove -beta.X suffix
+            NEW_VERSION=$(echo "$CURRENT_VERSION" | sed 's/-beta\.[0-9]*$//')
+            echo "is_beta=false" >> $GITHUB_OUTPUT
+            echo "npm_tag=latest" >> $GITHUB_OUTPUT
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "is_promotion=true" >> $GITHUB_OUTPUT
+          elif [ "$VERSION_TYPE" == "beta" ]; then
+            # Create beta version
+            if [ -n "$SPECIFIC_VERSION" ]; then
+              NEW_VERSION="$SPECIFIC_VERSION"
+            else
+              # Auto-increment: 2.4.7 -> 2.5.0-beta.1
+              CURRENT_VERSION=$(node -p "require('./package.json').version")
+              BASE_VERSION=$(npm version minor --no-git-tag-version)
+              NEW_VERSION="${BASE_VERSION}-beta.1"
+              npm version $CURRENT_VERSION --no-git-tag-version > /dev/null 2>&1 # Reset
+            fi
+            echo "is_beta=true" >> $GITHUB_OUTPUT
+            echo "npm_tag=beta" >> $GITHUB_OUTPUT
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "is_promotion=false" >> $GITHUB_OUTPUT
+          else
+            # Standard release (patch/minor/major)
+            if [ -n "$SPECIFIC_VERSION" ]; then
+              NEW_VERSION="$SPECIFIC_VERSION"
+            else
+              NEW_VERSION=$(npm version $VERSION_TYPE --no-git-tag-version)
+            fi
+            echo "is_beta=false" >> $GITHUB_OUTPUT
+            echo "npm_tag=latest" >> $GITHUB_OUTPUT
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "is_promotion=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Final version: $NEW_VERSION"
+          echo "NPM tag: $([ "${{ github.event.inputs.version }}" == "beta" ] && echo "beta" || echo "latest")"
+
       - name: Bump version
         run: |
-          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          npm version ${{ steps.version-strategy.outputs.new_version }} --no-git-tag-version
           echo "NEW_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
           git add package.json package-lock.json
           git commit -m "chore(release): v$(node -p "require('./package.json').version")"
@@ -58,15 +190,148 @@ jobs:
         run: |
           git push origin main --follow-tags
 
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          VERSION="v${{ env.NEW_VERSION }}"
+
+          # Create release notes
+          cat > release-notes.md << 'EOF'
+          ## What's Changed
+
+          EOF
+
+          # Add auto-generated notes
+          gh release create "$VERSION" --generate-notes --notes-file release-notes.md --draft > /dev/null 2>&1 || true
+          NOTES=$(gh release view "$VERSION" --json body -q .body 2>/dev/null || echo "")
+
+          # Delete draft
+          gh release delete "$VERSION" --yes 2>/dev/null || true
+
+          if [ -z "$NOTES" ]; then
+            NOTES="Release $VERSION"
+          fi
+
+          # Add beta warning if beta release
+          if [ "${{ steps.version-strategy.outputs.is_beta }}" == "true" ]; then
+            cat > release-notes.md << EOF
+          ## ⚠️ Pre-Release Version (Beta)
+
+          This is a beta release for testing purposes. Install with:
+
+          \`\`\`bash
+          npm install simply-mcp@beta
+          # or specific version
+          npm install simply-mcp@${{ env.NEW_VERSION }}
+          \`\`\`
+
+          Please report any issues you encounter!
+
+          ---
+
+          $NOTES
+          EOF
+          else
+            echo "$NOTES" > release-notes.md
+          fi
+
+          # Add installation instructions
+          cat >> release-notes.md << 'EOF'
+
+          ## Installation
+
+          ```bash
+          npm install simply-mcp@latest
+          ```
+
+          ---
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/commits/v${{ env.NEW_VERSION }}
+          EOF
+
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release-notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          RELEASE_FLAGS=""
+
+          if [ "${{ steps.version-strategy.outputs.is_beta }}" == "true" ]; then
+            RELEASE_FLAGS="--prerelease"
+          fi
+
           gh release create "v${{ env.NEW_VERSION }}" \
             --title "v${{ env.NEW_VERSION }}" \
-            --generate-notes
+            --notes "${{ steps.release-notes.outputs.notes }}" \
+            $RELEASE_FLAGS
 
       - name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        run: |
+          NPM_TAG="${{ steps.version-strategy.outputs.npm_tag }}"
+
+          echo "Publishing v${{ env.NEW_VERSION }} with tag: $NPM_TAG"
+
+          npm publish --tag $NPM_TAG --provenance --access public
+
+          echo "✅ Published: simply-mcp@${{ env.NEW_VERSION }} (tag: $NPM_TAG)"
+
+      - name: Post-release summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: v${{ env.NEW_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Type**: ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**NPM Tag**: ${{ steps.version-strategy.outputs.npm_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Beta**: ${{ steps.version-strategy.outputs.is_beta }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.version-strategy.outputs.is_beta }}" == "true" ]; then
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "npm install simply-mcp@beta" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "npm install simply-mcp@latest" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Links" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ env.NEW_VERSION }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [npm Package](https://www.npmjs.com/package/simply-mcp/v/${{ env.NEW_VERSION }})" >> $GITHUB_STEP_SUMMARY
+
+  rollback-info:
+    name: Rollback Information
+    needs: [release]
+    if: failure()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Provide rollback instructions
+        run: |
+          echo "## ❌ Release Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release process encountered an error." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Rollback Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Check if version was published to npm" >> $GITHUB_STEP_SUMMARY
+          echo "2. If published within 72h: \`npm unpublish simply-mcp@VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. If git tag was pushed: \`git push origin :refs/tags/vVERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "4. Revert commit: \`git revert HEAD\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Manual Cleanup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Delete GitHub release (if created)" >> $GITHUB_STEP_SUMMARY
+          echo "- Check npm for published package" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify git tags on remote" >> $GITHUB_STEP_SUMMARY

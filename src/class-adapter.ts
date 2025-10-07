@@ -102,7 +102,23 @@ Example:
 export async function loadClass(classFile: string): Promise<any> {
   const absolutePath = resolve(process.cwd(), classFile);
   const fileUrl = pathToFileURL(absolutePath).href;
-  const module = await import(fileUrl);
+
+  let module;
+  try {
+    module = await import(fileUrl);
+  } catch (error: any) {
+    throw new Error(
+      `Failed to load file: ${classFile}\n\n` +
+      `Error: ${error.message}\n\n` +
+      `Troubleshooting:\n` +
+      `  1. Check the file path is correct\n` +
+      `  2. Ensure the file has no syntax errors\n` +
+      `  3. Verify all imports are valid and installed\n` +
+      `  4. Try running: npx tsx ${classFile}\n\n` +
+      `File path (resolved): ${absolutePath}\n\n` +
+      `See: https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/IMPORT_STYLE_GUIDE.md`
+    );
+  }
 
   // Get the default export or first exported class
   const ServerClass = module.default || Object.values(module).find(
@@ -110,7 +126,20 @@ export async function loadClass(classFile: string): Promise<any> {
   );
 
   if (!ServerClass) {
-    throw new Error('No class found in module');
+    throw new Error(
+      `No MCP server class found in: ${classFile}\n\n` +
+      `Expected:\n` +
+      `  - A class decorated with @MCPServer\n` +
+      `  - Exported as default: export default class MyServer { }\n` +
+      `  - Or as named export: export class MyServer { }\n\n` +
+      `Example:\n` +
+      `  import { MCPServer } from 'simply-mcp';\n\n` +
+      `  @MCPServer()\n` +
+      `  export default class MyServer {\n` +
+      `    // Your tools here\n` +
+      `  }\n\n` +
+      `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts#decorator-api`
+    );
   }
 
   return ServerClass;
@@ -179,7 +208,29 @@ export function createServerFromClass(ServerClass: any, sourceFilePath: string):
   const config = getServerConfig(ServerClass);
 
   if (!config) {
-    throw new Error('Class must be decorated with @MCPServer');
+    const className = ServerClass.name || 'UnnamedClass';
+    throw new Error(
+      `Class '${className}' must be decorated with @MCPServer\n\n` +
+      `What went wrong:\n` +
+      `  The class was found but is missing the @MCPServer decorator.\n\n` +
+      `Expected:\n` +
+      `  @MCPServer()\n` +
+      `  class ${className} { ... }\n\n` +
+      `To fix:\n` +
+      `  1. Import MCPServer: import { MCPServer } from 'simply-mcp';\n` +
+      `  2. Add decorator: @MCPServer() above your class\n` +
+      `  3. Configure server: @MCPServer({ name: 'my-server', version: '1.0.0' })\n\n` +
+      `Example:\n` +
+      `  import { MCPServer, tool } from 'simply-mcp';\n\n` +
+      `  @MCPServer({ name: 'my-server', version: '1.0.0' })\n` +
+      `  export default class ${className} {\n` +
+      `    @tool()\n` +
+      `    greet(name: string) {\n` +
+      `      return \`Hello, \${name}!\`;\n` +
+      `    }\n` +
+      `  }\n\n` +
+      `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts#decorator-api`
+    );
   }
 
   // Parse the source file to extract types

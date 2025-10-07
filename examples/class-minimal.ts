@@ -26,6 +26,7 @@
  *   simplymcp-class mcp/examples/class-minimal.ts
  */
 
+// Unified import pattern (v2.5.0+) - everything from one package
 import { MCPServer } from 'simply-mcp';
 
 /**

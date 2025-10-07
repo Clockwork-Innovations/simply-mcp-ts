@@ -4,6 +4,14 @@
  */
 
 import type { SimplyMCP } from '../SimplyMCP.js';
+import type { BuildMCPServer } from '../api/programmatic/BuildMCPServer.js';
+import type { InterfaceServer } from '../api/interface/InterfaceServer.js';
+
+/**
+ * Union type for all MCP server implementations
+ * Supports legacy SimplyMCP, BuildMCPServer, and InterfaceServer (used by interface API)
+ */
+type SimplyMCPInstance = SimplyMCP | BuildMCPServer | InterfaceServer;
 
 /**
  * Adapter options parsed from command line arguments
@@ -77,7 +85,7 @@ export function parseCommonArgs(argv: string[]): AdapterOptions & { file?: strin
  * Start an MCP server with the specified options
  * Handles transport selection (stdio vs HTTP), signal handlers, and error handling
  *
- * @param server SimplyMCP instance to start
+ * @param server SimplyMCP or BuildMCPServer instance to start
  * @param options Start options including transport type and port
  * @returns Promise that resolves when server is started
  *
@@ -88,7 +96,7 @@ export function parseCommonArgs(argv: string[]): AdapterOptions & { file?: strin
  * ```
  */
 export async function startServer(
-  server: SimplyMCP,
+  server: SimplyMCPInstance,
   options: StartOptions
 ): Promise<void> {
   const useHttp = options.http ?? options.useHttp ?? false;
@@ -143,7 +151,7 @@ export async function startServer(
  * Display server information to stderr
  * Shows server name, version, transport info, and available resources count
  *
- * @param server SimplyMCP instance
+ * @param server SimplyMCP or BuildMCPServer instance
  * @param options Display options (optional)
  *
  * @example
@@ -153,7 +161,7 @@ export async function startServer(
  * ```
  */
 export function displayServerInfo(
-  server: SimplyMCP,
+  server: SimplyMCPInstance,
   options?: DisplayOptions
 ): void {
   const info = server.getInfo();

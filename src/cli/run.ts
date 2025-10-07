@@ -23,7 +23,7 @@ import {
 /**
  * API style types
  */
-export type APIStyle = 'decorator' | 'functional' | 'programmatic';
+export type APIStyle = 'interface' | 'decorator' | 'functional' | 'programmatic';
 
 /**
  * Dynamically load TypeScript file
@@ -68,7 +68,13 @@ export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
   try {
     const content = await readFile(filePath, 'utf-8');
 
-    // Check for decorator API (highest priority)
+    // Check for interface API (highest priority)
+    // Look for ITool, IPrompt, IResource, or IServer interface extensions
+    if (/extends\s+(ITool|IPrompt|IResource|IServer)/.test(content)) {
+      return 'interface';
+    }
+
+    // Check for decorator API (high priority)
     // Look for @MCPServer decorator
     if (/@MCPServer(\s*\()?/.test(content)) {
       return 'decorator';
@@ -408,6 +414,43 @@ async function runDecoratorAdapter(
 }
 
 /**
+ * Run a server file with the interface API adapter
+ */
+async function runInterfaceAdapter(
+  filePath: string,
+  useHttp: boolean,
+  port: number,
+  verbose: boolean = false
+): Promise<void> {
+  // Import interface adapter
+  const { loadInterfaceServer } = await import('../api/interface/index.js');
+  const { startServer, displayServerInfo } = await import('./adapter-utils.js');
+
+  // Load the interface server
+  const absolutePath = resolve(process.cwd(), filePath);
+
+  if (verbose) {
+    console.error(`[RunCommand] Loading interface server from: ${filePath}`);
+  }
+
+  try {
+    const server = await loadInterfaceServer({
+      filePath: absolutePath,
+      verbose: verbose || false,
+    });
+
+    displayServerInfo(server);
+    await startServer(server, { useHttp, port, verbose });
+  } catch (error) {
+    console.error('[RunCommand] Failed to run interface server:', error);
+    if (error instanceof Error && error.stack && verbose) {
+      console.error('[RunCommand] Stack:', error.stack);
+    }
+    process.exit(2);
+  }
+}
+
+/**
  * Run a server file with the programmatic API (direct execution)
  */
 async function runProgrammaticAdapter(
@@ -434,7 +477,7 @@ async function runProgrammaticAdapter(
 
 /**
  * Scan current directory for potential MCP server files
- * Looks for .ts and .js files containing @MCPServer or defineMCP patterns
+ * Looks for .ts and .js files containing interface, @MCPServer, or defineMCP patterns
  */
 async function discoverServers(cwd: string = process.cwd()): Promise<string[]> {
   try {
@@ -452,7 +495,11 @@ async function discoverServers(cwd: string = process.cwd()): Promise<string[]> {
         const content = await readFile(filePath, 'utf-8');
 
         // Check for MCP server patterns
-        if (/@MCPServer(\s*\()?/.test(content) || /defineMCP\s*\(/.test(content)) {
+        if (
+          /extends\s+(ITool|IPrompt|IResource|IServer)/.test(content) ||
+          /@MCPServer(\s*\()?/.test(content) ||
+          /defineMCP\s*\(/.test(content)
+        ) {
           potentialServers.push(file);
         }
       } catch {
@@ -693,7 +740,7 @@ export const runCommand: CommandModule = {
       })
       .option('style', {
         describe: 'Force specific API style',
-        choices: ['decorator', 'functional', 'programmatic'] as const,
+        choices: ['interface', 'decorator', 'functional', 'programmatic'] as const,
         type: 'string',
       })
       .option('verbose', {
@@ -922,6 +969,9 @@ export const runCommand: CommandModule = {
         // Output loading message early so it appears even if respawn happens
         const absolutePath = resolve(process.cwd(), filePath);
         switch (style) {
+          case 'interface':
+            console.error('[Adapter] Loading interface server from:', filePath);
+            break;
           case 'decorator':
             console.error('[Adapter] Loading class from:', filePath);
             break;
@@ -973,6 +1023,9 @@ export const runCommand: CommandModule = {
 
       // Run appropriate adapter
       switch (style) {
+        case 'interface':
+          await runInterfaceAdapter(filePath, useHttp, port, verbose);
+          break;
         case 'decorator':
           await runDecoratorAdapter(filePath, useHttp, port, verbose);
           break;

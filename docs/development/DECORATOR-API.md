@@ -9,7 +9,8 @@ The decorator-based API provides the cleanest and most intuitive way to create M
 ### Minimal Example (Zero Config!)
 
 ```typescript
-import { MCPServer } from 'simply-mcp/decorators';
+// Unified import pattern (v2.5.0+) - all decorators from one package
+import { MCPServer } from 'simply-mcp';
 
 // Zero config - uses smart defaults!
 @MCPServer()
@@ -356,7 +357,8 @@ The old flat structure still works but is deprecated:
 ### Example 1: Minimal Server (Zero Config)
 
 ```typescript
-import { MCPServer } from 'simply-mcp/decorators';
+// Unified import pattern (v2.5.0+)
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer()  // All defaults!
 export default class Calculator {
@@ -673,7 +675,8 @@ await server.start({ transport: 'http', port: 3000 });
 
 **Decorator API:**
 ```typescript
-import { MCPServer } from 'simply-mcp/decorators';
+// Unified import pattern (v2.5.0+)
+import { MCPServer } from 'simply-mcp';
 
 @MCPServer()  // Zero config!
 export default class Calculator {

@@ -21,6 +21,7 @@
  *   simplymcp-class mcp/examples/class-advanced.ts --http --port 3400
  */
 
+// Unified import pattern (v2.5.0+) - all decorators from one package
 import { MCPServer, tool } from 'simply-mcp';
 
 /**

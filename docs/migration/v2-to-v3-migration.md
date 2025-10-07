@@ -1,32 +1,267 @@
-# Migration Guide: v2 to v3 API
+# Migration Guide: v2.x to v3.0.0
+
+**Last Updated:** 2025-10-06
+**Current Version:** v2.5.0
+**Target Version:** v3.0.0 (TBD - at least 3-6 months after v2.5.0)
 
 ## Overview
 
-Simply MCP v3 introduces a **decorator-first API** with smart defaults and consolidated configuration. The new API dramatically reduces boilerplate while maintaining **100% backwards compatibility** with v2.
+This guide helps you migrate from SimpleMCP v2.x to the upcoming v3.0.0 release. Version 3.0.0 will include breaking changes focused on improving long-term developer experience while removing deprecated patterns.
 
-### What Changed
+**Important:** We recommend a two-phase migration approach:
+1. **Phase 1:** Upgrade to v2.5.0 and adopt new patterns (backward compatible)
+2. **Phase 2:** Upgrade to v3.0.0 when released (breaking changes)
 
-| Feature | v2 (Old) | v3 (New) |
-|---------|----------|----------|
-| **Server Name** | Required in `@MCPServer({ name })` | Optional - auto-generated from class name |
-| **Version** | Required in `@MCPServer({ version })` | Optional - auto-detected from package.json |
-| **HTTP Config** | Port in two places (decorator + start) | Consolidated in `transport` object |
-| **Configuration** | Scattered across decorator and start() | Grouped in logical sections |
-| **Minimal Setup** | ~3 required config fields | **Zero config required** |
+This phased approach minimizes risk and allows you to test changes incrementally.
 
-### Key Benefits
+## Timeline & Deprecation Schedule
 
-- **Less Boilerplate**: No more repeating `name`, `version`, and port configuration
-- **Clearer Intent**: Configuration grouped by purpose (transport, capabilities)
-- **Smart Defaults**: Auto-naming and auto-versioning reduce manual work
-- **Type Safety**: Better TypeScript support with grouped configuration
-- **Zero Config**: `@MCPServer()` with no parameters is now valid
+| Version | Status | Release Date | Changes |
+|---------|--------|--------------|---------|
+| **v2.4.7** | Released | 2025-10-06 | UX improvements, TDD testing |
+| **v2.5.0** | Current | TBD | Unified imports available, deprecations added |
+| **v2.x** | Supported | Ongoing | Bug fixes and security updates |
+| **v3.0.0-beta** | Planned | TBD | Beta testing with breaking changes |
+| **v3.0.0** | Planned | TBD (3-6 months) | Breaking changes, deprecations removed |
+| **v4.0.0** | Future | TBD | Subpath imports fully removed |
+
+**Support Schedule:**
+- v2.x will receive security updates for 6 months after v3.0.0 release
+- v2.x will receive bug fixes for 3 months after v3.0.0 release
+- Plenty of time to migrate at your own pace
+
+---
+
+## What's Changing in v3.0.0
+
+### Major Changes Summary
+
+| Feature | v2.x (Current) | v2.5.0 (Transitional) | v3.0.0 (Breaking) |
+|---------|----------------|------------------------|-------------------|
+| **Imports** | Subpath imports required | Both styles work | Unified only |
+| **Decorator Params** | String only | String only (validated) | String + Object |
+| **Class Name** | `SimplyMCP` | `SimplyMCP` (working) | Renamed or deprecated |
+| **Server Name** | Required in decorator | Can be omitted | Optional with auto-generation |
+| **Version** | Required in decorator | Can be omitted | Optional with auto-detection |
+| **Node.js** | 18+ | 18+ | 20+ required |
+
+---
+
+## Phase 1: Migrate to v2.5.0 (Backward Compatible)
+
+### Why Migrate to v2.5.0 First?
+
+Version 2.5.0 introduces all the new patterns that will be required in v3.0.0, but maintains full backward compatibility. This allows you to:
+- Test the new patterns without breaking your code
+- Migrate incrementally at your own pace
+- Get familiar with the new API before v3.0.0
+- Receive deprecation warnings in your IDE
+- Identify potential issues early
+
+### Step 1.1: Update to v2.5.0
+
+```bash
+npm install simply-mcp@2.5.0
+```
+
+### Step 1.2: Update Import Statements
+
+**Current (v2.4.x and earlier):**
+```typescript
+import { SimplyMCP, defineMCP } from 'simply-mcp';
+import { MCPServer, tool, prompt, resource } from 'simply-mcp/decorators';
+import type { CLIConfig } from 'simply-mcp/config';
+```
+
+**New (v2.5.0+):**
+```typescript
+// Everything from one import
+import {
+  MCPServer,
+  tool,
+  prompt,
+  resource,
+  SimplyMCP,
+  defineMCP,
+  type CLIConfig,
+  defineConfig
+} from 'simply-mcp';
+```
+
+**How to Update:**
+
+1. Find all subpath imports:
+```bash
+grep -r "from 'simply-mcp/decorators'" src/
+grep -r "from 'simply-mcp/config'" src/
+```
+
+2. Use find/replace in your editor:
+   - Find: `from 'simply-mcp/decorators'`
+   - Replace: `from 'simply-mcp'`
+
+   - Find: `from 'simply-mcp/config'`
+   - Replace: `from 'simply-mcp'`
+
+3. Verify the changes:
+```bash
+npm run build
+npm test
+```
+
+### Step 1.3: Test Your Application
+
+**Validation:**
+```bash
+# Verify all examples work
+npx simplymcp run server.ts --dry-run
+
+# Check for any runtime issues
+npm test
+```
+
+### Step 1.4: Review Deprecation Warnings
+
+Your IDE will now show deprecation warnings for subpath imports. These are informational only - your code still works!
+
+**Example IDE Warning:**
+```
+'simply-mcp/decorators' is deprecated.
+Import from 'simply-mcp' instead.
+See deprecation notice for migration instructions.
+```
+
+### Phase 1 Benefits
+
+After migrating to v2.5.0:
+- ✅ Better IDE autocomplete and type hints
+- ✅ Simpler, more intuitive imports
+- ✅ Aligned with modern framework conventions
+- ✅ Ready for v3.0.0 when it arrives
+- ✅ Still fully backward compatible
+
+**Result:** Your code is now using v3.0.0-ready patterns while remaining 100% compatible with v2.x!
+
+---
+
+## Phase 2: Prepare for v3.0.0 (Breaking Changes)
+
+### Breaking Changes in v3.0.0
+
+Version 3.0.0 will remove deprecated patterns and introduce new features. Here's what will break:
+
+#### 1. Subpath Imports Removed (BREAKING)
+
+**Status:** Deprecated in v2.5.0, removed in v3.0.0
+
+**What breaks:**
+```typescript
+// v2.x - Works but deprecated
+import { tool } from 'simply-mcp/decorators';
+import { defineConfig } from 'simply-mcp/config';
+
+// v3.0.0 - ERROR: Module not found
+import { tool } from 'simply-mcp/decorators'; // ❌ Error!
+```
+
+**How to fix:**
+```typescript
+// v3.0.0 - Required
+import { tool, defineConfig } from 'simply-mcp';
+```
+
+**Migration:** If you migrated to v2.5.0 and updated your imports, you're already ready for v3.0.0!
+
+#### 2. Decorator Object Syntax Support (NEW FEATURE)
+
+**Status:** Not supported in v2.x, will be added in v3.0.0
+
+**v2.x (Current):**
+```typescript
+// Only string parameters work
+@tool('Add two numbers')
+add(a: number, b: number) {
+  return a + b;
+}
+
+// This throws an error in v2.x
+@tool({ description: 'Add numbers' }) // ❌ TypeError in v2.x
+```
+
+**v3.0.0 (New):**
+```typescript
+// Both string and object syntax will work
+@tool('Add two numbers')
+add(a: number, b: number) {
+  return a + b;
+}
+
+// Object syntax will be supported
+@tool({
+  description: 'Add two numbers',
+  timeout: 5000,
+  retries: 3
+})
+add(a: number, b: number) {
+  return a + b;
+}
+```
+
+**Migration:** No action needed - your existing string syntax will continue to work in v3.0.0.
+
+#### 3. SimplyMCP Class Rename (PROPOSED)
+
+**Status:** PROPOSED - Not yet confirmed for v3.0.0
+
+The main programmatic API class may be renamed for clarity:
+
+**v2.x:**
+```typescript
+import { SimplyMCP } from 'simply-mcp';
+const server = new SimplyMCP({ name: 'my-server' });
+```
+
+**v3.0.0 (Proposed Options):**
+
+**Option A: Rename to MCPServer**
+```typescript
+import { MCPServer } from 'simply-mcp';
+const server = new MCPServer({ name: 'my-server' });
+```
+
+**Option B: Factory function**
+```typescript
+import { createMCPServer } from 'simply-mcp';
+const server = createMCPServer({ name: 'my-server' });
+```
+
+**Migration:** We will provide automated migration tooling when this is finalized. Likely a deprecation period with `SimplyMCP` alias for backward compatibility.
+
+#### 4. Node.js 20+ Required (PROPOSED)
+
+**Status:** PROPOSED
+
+v3.0.0 may require Node.js 20 or higher to take advantage of newer JavaScript features.
+
+**Current:** Node.js 18+
+**Proposed:** Node.js 20+
+
+**Migration:** Upgrade your Node.js version before upgrading to v3.0.0.
+
+---
 
 ## Breaking Changes
 
-**None!** The v3 API is **100% backwards compatible** with v2.
+### What Will NOT Break in v3.0.0
 
-All existing v2 code continues to work exactly as before. This migration guide describes **recommended best practices** for new code and how to modernize existing servers.
+The following will continue to work without changes:
+
+✅ **Decorator syntax** - `@MCPServer()`, `@tool()`, `@prompt()`, `@resource()`
+✅ **String decorator parameters** - `@tool('description')`
+✅ **Programmatic API** - Core functionality remains the same
+✅ **Configuration API** - `defineMCP()` pattern
+✅ **All existing examples** - Will be updated but old patterns documented
+✅ **TypeScript types** - Compatible upgrades only
 
 ## Recommended Changes
 
@@ -664,28 +899,329 @@ const config: ServerConfig = {
 })
 ```
 
+## Automated Migration Tool
+
+We plan to provide an automated migration tool for v3.0.0 to make upgrades as smooth as possible:
+
+```bash
+# Coming with v3.0.0
+npx simply-mcp migrate v2-to-v3
+```
+
+**What the tool will do:**
+- Scan your codebase for deprecated patterns
+- Automatically update import statements
+- Rename classes if needed (with confirmation)
+- Update decorator usage
+- Generate a detailed migration report
+- Create backup of original files
+- Provide rollback option
+
+**Status:** Tool will be released with v3.0.0 beta.
+
+---
+
+## Common Migration Patterns
+
+### Pattern 1: Simple Decorator Server
+
+**v2.4.x:**
+```typescript
+import { MCPServer, tool } from 'simply-mcp/decorators';
+
+@MCPServer({ name: 'calculator', version: '1.0.0' })
+export default class Calculator {
+  @tool('Add two numbers')
+  add(a: number, b: number) {
+    return a + b;
+  }
+}
+```
+
+**v2.5.0 (Recommended):**
+```typescript
+import { MCPServer, tool } from 'simply-mcp';
+
+@MCPServer({ name: 'calculator', version: '1.0.0' })
+export default class Calculator {
+  @tool('Add two numbers')
+  add(a: number, b: number) {
+    return a + b;
+  }
+}
+```
+
+**Changes:** Only the import statement changed
+
+---
+
+### Pattern 2: Programmatic API
+
+**v2.4.x and v2.5.0 (No changes needed):**
+```typescript
+import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
+
+const server = new SimplyMCP({
+  name: 'my-server',
+  version: '1.0.0'
+});
+
+server.addTool({
+  name: 'greet',
+  description: 'Greet a user',
+  parameters: z.object({ name: z.string() }),
+  execute: async (args) => `Hello, ${args.name}!`
+});
+```
+
+**v3.0.0 (If class renamed):**
+```typescript
+import { MCPServer } from 'simply-mcp';
+// OR: import { createMCPServer } from 'simply-mcp';
+import { z } from 'zod';
+
+const server = new MCPServer({
+  name: 'my-server',
+  version: '1.0.0'
+});
+// Rest unchanged
+```
+
+---
+
+### Pattern 3: Configuration with Types
+
+**v2.4.x:**
+```typescript
+import type { CLIConfig } from 'simply-mcp/config';
+import { defineConfig } from 'simply-mcp/config';
+
+export default defineConfig({
+  defaultServer: 'main',
+  servers: {
+    main: {
+      entry: './server.ts',
+      transport: 'http',
+      port: 3000
+    }
+  }
+});
+```
+
+**v2.5.0+:**
+```typescript
+import { defineConfig, type CLIConfig } from 'simply-mcp';
+
+export default defineConfig({
+  defaultServer: 'main',
+  servers: {
+    main: {
+      entry: './server.ts',
+      transport: 'http',
+      port: 3000
+    }
+  }
+});
+```
+
+**Changes:** Single import line instead of two
+
+---
+
+## Troubleshooting Migration Issues
+
+### Issue: Import errors after updating
+
+**Symptom:**
+```
+Module '"simply-mcp"' has no exported member 'tool'
+```
+
+**Solutions:**
+1. Ensure you're on v2.5.0 or later: `npm list simply-mcp`
+2. Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+3. Check your package.json has correct version: `"simply-mcp": "^2.5.0"`
+4. Rebuild the project: `npm run build`
+
+### Issue: TypeScript errors with unified imports
+
+**Symptom:**
+```
+Cannot find module 'simply-mcp' or its corresponding type declarations
+```
+
+**Solutions:**
+1. Update TypeScript to latest: `npm install -D typescript@latest`
+2. Check tsconfig.json has correct module resolution:
+   ```json
+   {
+     "compilerOptions": {
+       "moduleResolution": "node16"
+     }
+   }
+   ```
+3. Clear TypeScript cache: `rm -rf dist && npx tsc --build --clean`
+
+### Issue: Decorator errors after migration
+
+**Symptom:**
+```
+TypeError: @tool decorator expects a string description, got object
+```
+
+**Solution:** You're using object syntax which isn't supported yet in v2.x:
+
+**Wrong (v2.x):**
+```typescript
+@tool({ description: 'Add numbers' })
+```
+
+**Correct (v2.x):**
+```typescript
+@tool('Add numbers')
+```
+
+**Or wait for v3.0.0** which will support both syntaxes.
+
+### Issue: IDE still showing deprecation warnings
+
+**Symptom:** Even after updating imports, IDE shows deprecation warnings
+
+**Solutions:**
+1. Restart your IDE/editor
+2. Clear editor cache (VSCode: Cmd+Shift+P → "Clear Editor History")
+3. Ensure all imports are updated (check all files, not just recent changes)
+4. Check if any dependencies are using old imports
+
+---
+
+## Migration Checklist
+
+### Phase 1: v2.5.0 Migration
+
+- [ ] Backup your project (`git commit` or create a branch)
+- [ ] Update to v2.5.0: `npm install simply-mcp@2.5.0`
+- [ ] Find all subpath imports: `grep -r "from 'simply-mcp/" src/`
+- [ ] Replace decorator imports: `'simply-mcp/decorators'` → `'simply-mcp'`
+- [ ] Replace config imports: `'simply-mcp/config'` → `'simply-mcp'`
+- [ ] Build project: `npm run build`
+- [ ] Run tests: `npm test`
+- [ ] Test server startup: `npx simplymcp run server.ts --dry-run`
+- [ ] Review IDE deprecation warnings
+- [ ] Update internal documentation
+- [ ] Commit changes: `git commit -m "Migrate to v2.5.0 unified imports"`
+
+### Phase 2: v3.0.0 Preparation (When Available)
+
+- [ ] Review v3.0.0 changelog
+- [ ] Test with v3.0.0-beta (when available)
+- [ ] Run automated migration tool: `npx simply-mcp migrate v2-to-v3`
+- [ ] Review and test all changes
+- [ ] Update to v3.0.0: `npm install simply-mcp@3.0.0`
+- [ ] Address any breaking changes
+- [ ] Run full test suite
+- [ ] Test in staging environment
+- [ ] Deploy to production
+
+---
+
+## Getting Help
+
+**Before Migrating:**
+- Read this migration guide thoroughly
+- Review the [v2.5.0 Release Notes](../releases/RELEASE_NOTES_v2.5.0.md)
+- Check the [Quick Migration Cheatsheet](./QUICK_MIGRATION.md)
+- Browse [examples](../../examples/) for updated patterns
+
+**During Migration:**
+- Use `--dry-run` flag to validate changes
+- Test incrementally (file by file or feature by feature)
+- Keep old code in git history for reference
+- Run tests after each change
+
+**After Migration:**
+- Monitor for runtime issues
+- Review IDE warnings
+- Update documentation
+- Share feedback with the community
+
+**Support Channels:**
+- [GitHub Issues](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues) - Report bugs or migration problems
+- [GitHub Discussions](https://github.com/Clockwork-Innovations/simply-mcp-ts/discussions) - Ask questions or share experiences
+- [Release Notes](../releases/) - Detailed information about each version
+- [Examples](../../examples/) - Working code samples
+
+---
+
+## Feedback on v3.0.0 Plans
+
+We want your input on the v3.0.0 breaking changes! Share your thoughts on:
+
+**Questions for the community:**
+1. Should we rename `SimplyMCP` class? If so, to what?
+2. What other improvements would you like to see in v3.0.0?
+3. Is the migration timeline reasonable (3-6 months)?
+4. Would you use the automated migration tool?
+5. Are there any features we should keep from v2.x?
+
+**How to provide feedback:**
+- Open a [GitHub Discussion](https://github.com/Clockwork-Innovations/simply-mcp-ts/discussions)
+- Comment on the v3.0.0 planning issue (link TBD)
+- Join our community chat (link TBD)
+- Email the maintainers (link TBD)
+
+Your feedback will directly influence v3.0.0 design decisions!
+
+---
+
 ## Additional Resources
 
-- **[Quick Start Guide](../src/docs/QUICK-START.md)** - Get started with Simply MCP
+- **[Quick Migration Cheatsheet](./QUICK_MIGRATION.md)** - One-page quick reference
+- **[v2.5.0 Release Notes](../releases/RELEASE_NOTES_v2.5.0.md)** - Detailed v2.5.0 changes
+- **[Import Style Guide](../development/IMPORT_STYLE_GUIDE.md)** - Import pattern best practices
+- **[Quick Start Guide](../../src/docs/QUICK-START.md)** - Get started with Simply MCP
 - **[Decorator API Documentation](../development/DECORATOR-API.md)** - Complete decorator API reference
-- **[HTTP Transport Guide](../src/docs/HTTP-TRANSPORT.md)** - HTTP transport modes and configuration
 - **[Examples](../../examples/)** - See complete working examples
 - **[Changelog](../releases/CHANGELOG.md)** - Full list of changes
 
 ## Summary
 
-The v3 API brings smart defaults and consolidated configuration to Simply MCP's decorator-based servers. Key takeaways:
+Migrating from v2.x to v3.0.0 is a two-phase process designed to minimize risk:
 
-1. **100% Backwards Compatible** - All v2 code continues to work
-2. **Zero Config Possible** - `@MCPServer()` with no parameters is valid
-3. **Smart Defaults** - Auto-naming and auto-versioning reduce boilerplate
-4. **Consolidated Config** - Transport and capabilities grouped logically
-5. **Migration Optional** - Update at your own pace
+**Phase 1: v2.5.0 (Backward Compatible)**
+- ✅ Update imports to unified pattern
+- ✅ Test thoroughly with existing functionality
+- ✅ Get familiar with new patterns
+- ✅ Receive deprecation warnings
+- ✅ Zero breaking changes
 
-Start new projects with v3 style, migrate existing projects gradually, and enjoy cleaner, more maintainable MCP servers!
+**Phase 2: v3.0.0 (Breaking Changes)**
+- ✅ Remove subpath imports (already done if you completed Phase 1)
+- ✅ Support for decorator object syntax (new feature)
+- ✅ Possible class renaming (automated migration provided)
+- ✅ Node.js 20+ requirement
+- ✅ Cleaner, more modern API
+
+**Key Takeaways:**
+1. **Migrate to v2.5.0 first** - Safe, backward compatible, prepares you for v3.0.0
+2. **Test incrementally** - Use `--dry-run` and comprehensive testing
+3. **Automated tooling** - Migration tools will be provided for v3.0.0
+4. **Plenty of time** - At least 3-6 months between v2.5.0 and v3.0.0
+5. **Community support** - Help available through multiple channels
+
+Start your migration today by updating to v2.5.0 and enjoy the improved developer experience!
 
 ---
 
 **Questions or Issues?**
 - [GitHub Issues](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues)
-- [Discussions](https://github.com/Clockwork-Innovations/simply-mcp-ts/discussions)
+- [GitHub Discussions](https://github.com/Clockwork-Innovations/simply-mcp-ts/discussions)
+- [Quick Migration Cheatsheet](./QUICK_MIGRATION.md)
+- [v2.5.0 Release Notes](../releases/RELEASE_NOTES_v2.5.0.md)
+
+---
+
+**Document Status:** Updated for v2.5.0
+**Last Updated:** 2025-10-06
+**Maintained By:** SimpleMCP Core Team

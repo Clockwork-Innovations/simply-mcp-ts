@@ -2,12 +2,16 @@
  * SimplyMCP - A simplified single-file MCP server framework
  * Inspired by FastMCP but built on the existing MCP infrastructure
  *
- * Usage:
+ * @deprecated Use `BuildMCPServer` instead (renamed in v2.5.0+)
+ * This class will be removed in v3.0.0.
+ *
+ * @example
  * ```typescript
- * import { SimplyMCP } from './SimplyMCP';
+ * // NEW: Use BuildMCPServer (recommended)
+ * import { BuildMCPServer } from 'simply-mcp';
  * import { z } from 'zod';
  *
- * const server = new SimplyMCP({
+ * const server = new BuildMCPServer({
  *   name: 'my-server',
  *   version: '1.0.0'
  * });
@@ -24,6 +28,13 @@
  * });
  *
  * await server.start();
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // OLD: SimplyMCP (deprecated, still works)
+ * import { SimplyMCP } from 'simply-mcp';
+ * const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
  * ```
  */
 
@@ -237,11 +248,38 @@ export class SimplyMCP {
    */
   addTool<T = any>(definition: ToolDefinition<T>): this {
     if (this.isRunning) {
-      throw new Error('Cannot add tools after server has started');
+      throw new Error(
+        `Cannot add tools after server has started\n\n` +
+        `What went wrong:\n` +
+        `  The server is already running and cannot accept new tools.\n\n` +
+        `To fix:\n` +
+        `  1. Add all tools before calling server.start()\n` +
+        `  2. Or stop the server, add tools, then restart\n\n` +
+        `Example:\n` +
+        `  // Correct order:\n` +
+        `  server.addTool({ ... });\n` +
+        `  await server.start();\n\n` +
+        `  // Incorrect order:\n` +
+        `  await server.start();\n` +
+        `  server.addTool({ ... }); // ERROR!`
+      );
     }
 
     if (this.tools.has(definition.name)) {
-      throw new Error(`Tool '${definition.name}' is already registered`);
+      throw new Error(
+        `Tool '${definition.name}' is already registered\n\n` +
+        `What went wrong:\n` +
+        `  You attempted to register a tool with a name that's already in use.\n\n` +
+        `To fix:\n` +
+        `  1. Choose a different name for the new tool\n` +
+        `  2. Remove the duplicate registration\n` +
+        `  3. Use namespacing if needed: 'category-tool-name'\n\n` +
+        `Example:\n` +
+        `  // Instead of multiple 'search' tools:\n` +
+        `  server.addTool({ name: 'search-users', ... });\n` +
+        `  server.addTool({ name: 'search-products', ... });\n\n` +
+        `Tip: Tool names should be unique and descriptive.`
+      );
     }
 
     // Convert Zod schema to JSON Schema using zod-to-json-schema
@@ -265,11 +303,34 @@ export class SimplyMCP {
    */
   addPrompt(definition: PromptDefinition): this {
     if (this.isRunning) {
-      throw new Error('Cannot add prompts after server has started');
+      throw new Error(
+        `Cannot add prompts after server has started\n\n` +
+        `What went wrong:\n` +
+        `  The server is already running and cannot accept new prompts.\n\n` +
+        `To fix:\n` +
+        `  1. Add all prompts before calling server.start()\n` +
+        `  2. Or stop the server, add prompts, then restart\n\n` +
+        `Example:\n` +
+        `  // Correct order:\n` +
+        `  server.addPrompt({ ... });\n` +
+        `  await server.start();\n\n` +
+        `  // Incorrect order:\n` +
+        `  await server.start();\n` +
+        `  server.addPrompt({ ... }); // ERROR!`
+      );
     }
 
     if (this.prompts.has(definition.name)) {
-      throw new Error(`Prompt '${definition.name}' is already registered`);
+      throw new Error(
+        `Prompt '${definition.name}' is already registered\n\n` +
+        `What went wrong:\n` +
+        `  You attempted to register a prompt with a name that's already in use.\n\n` +
+        `To fix:\n` +
+        `  1. Choose a different name for the new prompt\n` +
+        `  2. Remove the duplicate registration\n` +
+        `  3. Merge similar prompts if appropriate\n\n` +
+        `Tip: Prompt names should be unique and descriptive.`
+      );
     }
 
     this.prompts.set(definition.name, definition);
@@ -283,11 +344,34 @@ export class SimplyMCP {
    */
   addResource(definition: ResourceDefinition): this {
     if (this.isRunning) {
-      throw new Error('Cannot add resources after server has started');
+      throw new Error(
+        `Cannot add resources after server has started\n\n` +
+        `What went wrong:\n` +
+        `  The server is already running and cannot accept new resources.\n\n` +
+        `To fix:\n` +
+        `  1. Add all resources before calling server.start()\n` +
+        `  2. Or stop the server, add resources, then restart\n\n` +
+        `Example:\n` +
+        `  // Correct order:\n` +
+        `  server.addResource({ ... });\n` +
+        `  await server.start();\n\n` +
+        `  // Incorrect order:\n` +
+        `  await server.start();\n` +
+        `  server.addResource({ ... }); // ERROR!`
+      );
     }
 
     if (this.resources.has(definition.uri)) {
-      throw new Error(`Resource with URI '${definition.uri}' is already registered`);
+      throw new Error(
+        `Resource with URI '${definition.uri}' is already registered\n\n` +
+        `What went wrong:\n` +
+        `  You attempted to register a resource with a URI that's already in use.\n\n` +
+        `To fix:\n` +
+        `  1. Choose a different URI for the new resource\n` +
+        `  2. Remove the duplicate registration\n` +
+        `  3. Update the existing resource if needed\n\n` +
+        `Tip: Resource URIs should be unique within the server.`
+      );
     }
 
     this.resources.set(definition.uri, definition);
@@ -300,7 +384,18 @@ export class SimplyMCP {
    */
   async start(options: StartOptions = {}): Promise<void> {
     if (this.isRunning) {
-      throw new Error('Server is already running');
+      throw new Error(
+        `Server is already running\n\n` +
+        `What went wrong:\n` +
+        `  You attempted to start a server that's already started.\n\n` +
+        `To fix:\n` +
+        `  1. Check if server is running before calling start()\n` +
+        `  2. Call server.stop() first if you need to restart\n\n` +
+        `Example:\n` +
+        `  if (!server.getInfo().isRunning) {\n` +
+        `    await server.start();\n` +
+        `  }`
+      );
     }
 
     // Merge start options with constructor options (start options take precedence)
@@ -405,7 +500,18 @@ export class SimplyMCP {
       const tool = this.tools.get(toolName);
 
       if (!tool) {
-        throw new Error(`Unknown tool: ${toolName}`);
+        const availableTools = Array.from(this.tools.keys()).join(', ') || 'none';
+        throw new Error(
+          `Unknown tool: ${toolName}\n\n` +
+          `What went wrong:\n` +
+          `  The requested tool '${toolName}' is not registered with this server.\n\n` +
+          `Available tools: ${availableTools}\n\n` +
+          `To fix:\n` +
+          `  1. Check the tool name for typos\n` +
+          `  2. Ensure the tool is registered before calling it\n` +
+          `  3. Verify the tool was properly added with server.addTool()\n\n` +
+          `Tip: Tool names are case-sensitive and should match exactly.`
+        );
       }
 
       const args = request.params.arguments || {};
@@ -532,7 +638,18 @@ export class SimplyMCP {
       const prompt = this.prompts.get(promptName);
 
       if (!prompt) {
-        throw new Error(`Unknown prompt: ${promptName}`);
+        const availablePrompts = Array.from(this.prompts.keys()).join(', ') || 'none';
+        throw new Error(
+          `Unknown prompt: ${promptName}\n\n` +
+          `What went wrong:\n` +
+          `  The requested prompt '${promptName}' is not registered with this server.\n\n` +
+          `Available prompts: ${availablePrompts}\n\n` +
+          `To fix:\n` +
+          `  1. Check the prompt name for typos\n` +
+          `  2. Ensure the prompt is registered before using it\n` +
+          `  3. Verify the prompt was properly added with server.addPrompt()\n\n` +
+          `Tip: Prompt names are case-sensitive and should match exactly.`
+        );
       }
 
       // Render template with variables
@@ -581,7 +698,18 @@ export class SimplyMCP {
       const resource = this.resources.get(resourceUri);
 
       if (!resource) {
-        throw new Error(`Unknown resource: ${resourceUri}`);
+        const availableResources = Array.from(this.resources.keys()).join(', ') || 'none';
+        throw new Error(
+          `Unknown resource: ${resourceUri}\n\n` +
+          `What went wrong:\n` +
+          `  The requested resource '${resourceUri}' is not registered with this server.\n\n` +
+          `Available resources: ${availableResources}\n\n` +
+          `To fix:\n` +
+          `  1. Check the resource URI for typos\n` +
+          `  2. Ensure the resource is registered before accessing it\n` +
+          `  3. Verify the resource was properly added with server.addResource()\n\n` +
+          `Tip: Resource URIs are case-sensitive and should match exactly.`
+        );
       }
 
       // Handle binary content (Buffer or Uint8Array)
@@ -620,7 +748,15 @@ export class SimplyMCP {
    */
   private async startStdio(): Promise<void> {
     if (!this.server) {
-      throw new Error('Server not initialized');
+      throw new Error(
+        `Server not initialized\n\n` +
+        `What went wrong:\n` +
+        `  Internal error: Server instance was not created properly.\n\n` +
+        `This is likely a bug. Please report it with:\n` +
+        `  - Your server configuration\n` +
+        `  - Steps to reproduce\n\n` +
+        `GitHub: https://github.com/Clockwork-Innovations/simply-mcp-ts/issues`
+      );
     }
 
     console.error(
@@ -647,7 +783,15 @@ export class SimplyMCP {
    */
   private async startHttp(port: number, stateful?: boolean): Promise<void> {
     if (!this.server) {
-      throw new Error('Server not initialized');
+      throw new Error(
+        `Server not initialized\n\n` +
+        `What went wrong:\n` +
+        `  Internal error: Server instance was not created properly.\n\n` +
+        `This is likely a bug. Please report it with:\n` +
+        `  - Your server configuration\n` +
+        `  - Steps to reproduce\n\n` +
+        `GitHub: https://github.com/Clockwork-Innovations/simply-mcp-ts/issues`
+      );
     }
 
     // Default to stateful mode (true) for backwards compatibility
@@ -1286,7 +1430,15 @@ export class SimplyMCP {
     options?: SamplingOptions
   ): Promise<any> {
     if (!this.server) {
-      throw new Error('Server not initialized');
+      throw new Error(
+        `Server not initialized\n\n` +
+        `What went wrong:\n` +
+        `  Internal error: Server instance was not created properly.\n\n` +
+        `This is likely a bug. Please report it with:\n` +
+        `  - Your server configuration\n` +
+        `  - Steps to reproduce\n\n` +
+        `GitHub: https://github.com/Clockwork-Innovations/simply-mcp-ts/issues`
+      );
     }
 
     // Send sampling request to client using the MCP protocol
@@ -1308,7 +1460,15 @@ export class SimplyMCP {
     // Note: The SDK's Server class should handle this request through the client
     // For now, we'll throw an error indicating this needs client support
     throw new Error(
-      'Sampling requires client-side implementation. The client must support the sampling/createMessage request.'
+      `LLM sampling not yet supported\n\n` +
+      `What went wrong:\n` +
+      `  The sampling capability requires client-side implementation that is not yet available.\n\n` +
+      `Status:\n` +
+      `  - Server-side API: Ready (context.sample() in tools)\n` +
+      `  - Client support: Pending MCP SDK update\n\n` +
+      `The MCP client must support the 'sampling/createMessage' request.\n` +
+      `This feature will be available in a future update.\n\n` +
+      `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts#sampling`
     );
   }
 
@@ -1377,7 +1537,17 @@ export class SimplyMCP {
     const resource = this.resources.get(uri);
 
     if (!resource) {
-      throw new Error(`Resource not found: ${uri}`);
+      const availableResources = Array.from(this.resources.keys()).join(', ') || 'none';
+      throw new Error(
+        `Resource not found: ${uri}\n\n` +
+        `What went wrong:\n` +
+        `  A tool attempted to read a resource that doesn't exist.\n\n` +
+        `Available resources: ${availableResources}\n\n` +
+        `To fix:\n` +
+        `  1. Check the resource URI is correct\n` +
+        `  2. Ensure the resource is registered with server.addResource()\n` +
+        `  3. Verify the URI matches exactly (case-sensitive)`
+      );
     }
 
     return {

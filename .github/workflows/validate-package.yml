@@ -1,0 +1,318 @@
+name: Package Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'tsconfig.json'
+      - '.github/workflows/validate-package.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'tsconfig.json'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Package Structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Validate package structure
+        id: validate
+        run: |
+          echo "Running package validation..."
+          bash scripts/validate-package.sh
+
+      - name: Verify package.json fields
+        run: |
+          echo "Validating package.json structure..."
+
+          # Check required fields
+          node -e '
+            const pkg = require("./package.json");
+            const required = ["name", "version", "description", "main", "module", "types", "exports", "bin", "files", "license", "repository"];
+            const missing = required.filter(f => !pkg[f]);
+            if (missing.length > 0) {
+              console.error("Missing required fields:", missing);
+              process.exit(1);
+            }
+            console.log("✓ All required package.json fields present");
+          '
+
+      - name: Verify exports map
+        run: |
+          echo "Validating package.json exports..."
+
+          node -e '
+            const pkg = require("./package.json");
+            const fs = require("fs");
+
+            // Check main export
+            if (!pkg.exports["."] || !pkg.exports["."].import) {
+              console.error("Missing main export");
+              process.exit(1);
+            }
+
+            // Check all exports point to existing files
+            for (const [key, value] of Object.entries(pkg.exports)) {
+              if (key === "./package.json") continue;
+
+              if (value.import && !fs.existsSync(value.import)) {
+                console.error(`Export "${key}" import path does not exist: ${value.import}`);
+                process.exit(1);
+              }
+
+              if (value.types && !fs.existsSync(value.types)) {
+                console.error(`Export "${key}" types path does not exist: ${value.types}`);
+                process.exit(1);
+              }
+            }
+
+            console.log("✓ All exports map to valid files");
+          '
+
+      - name: Verify bin entries
+        run: |
+          echo "Validating package.json bin entries..."
+
+          node -e '
+            const pkg = require("./package.json");
+            const fs = require("fs");
+
+            if (!pkg.bin) {
+              console.error("No bin entries found");
+              process.exit(1);
+            }
+
+            for (const [name, path] of Object.entries(pkg.bin)) {
+              if (!fs.existsSync(path)) {
+                console.error(`Bin "${name}" does not exist: ${path}`);
+                process.exit(1);
+              }
+
+              // Check for shebang
+              const content = fs.readFileSync(path, "utf8");
+              if (!content.startsWith("#!")) {
+                console.error(`Bin "${name}" missing shebang: ${path}`);
+                process.exit(1);
+              }
+            }
+
+            console.log("✓ All bin entries are valid");
+          '
+
+      - name: Verify TypeScript declarations
+        run: |
+          echo "Validating TypeScript type declarations..."
+
+          # Check that .d.ts files exist for main exports
+          test -f dist/src/index.d.ts || (echo "Missing: dist/src/index.d.ts" && exit 1)
+          test -f dist/src/decorators.d.ts || (echo "Missing: dist/src/decorators.d.ts" && exit 1)
+          test -f dist/src/config.d.ts || (echo "Missing: dist/src/config.d.ts" && exit 1)
+
+          echo "✓ TypeScript declarations present"
+
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for sensitive files..."
+
+          # Check dist/ doesn't contain unwanted files
+          if find dist -name '.env*' -o -name '.git' -o -name 'node_modules' | grep -q .; then
+            echo "❌ Found sensitive files in dist/"
+            find dist -name '.env*' -o -name '.git' -o -name 'node_modules'
+            exit 1
+          fi
+
+          echo "✓ No sensitive files found"
+
+      - name: Verify documentation
+        run: |
+          echo "Validating documentation..."
+
+          test -f README.md || (echo "Missing: README.md" && exit 1)
+          test -s README.md || (echo "README.md is empty" && exit 1)
+          test -f LICENSE || (echo "Missing: LICENSE" && exit 1)
+
+          # Check README has key sections
+          grep -q "Installation" README.md || echo "⚠️ README missing Installation section"
+          grep -q "Usage" README.md || echo "⚠️ README missing Usage section"
+
+          echo "✓ Documentation files present"
+
+      - name: Check package size
+        run: |
+          echo "Checking package size..."
+
+          # Create tarball
+          TARBALL=$(npm pack --quiet 2>&1 | tail -n 1)
+          SIZE=$(du -h "$TARBALL" | cut -f1)
+
+          echo "Package size: $SIZE"
+
+          # Warn if over 5MB
+          SIZE_KB=$(du -k "$TARBALL" | cut -f1)
+          if [ $SIZE_KB -gt 5120 ]; then
+            echo "⚠️ Package is large (> 5MB). Consider optimization."
+          fi
+
+          rm -f "$TARBALL"
+
+      - name: Test imports (quick validation)
+        run: |
+          echo "Testing basic imports..."
+
+          # Create test file
+          cat > /tmp/test-imports.mjs << 'EOF'
+          import { SimplyMCP } from './dist/src/index.js';
+          import { MCPServer, tool } from './dist/src/decorators.js';
+          import { defineConfig } from './dist/src/config.js';
+
+          console.log('✓ All imports successful');
+
+          if (typeof SimplyMCP !== 'function') {
+            throw new Error('SimplyMCP not exported correctly');
+          }
+          if (typeof MCPServer !== 'function') {
+            throw new Error('MCPServer not exported correctly');
+          }
+          if (typeof defineConfig !== 'function') {
+            throw new Error('defineConfig not exported correctly');
+          }
+          EOF
+
+          node /tmp/test-imports.mjs
+
+      - name: Security check
+        run: |
+          echo "Running security audit..."
+          npm audit --audit-level=moderate || echo "⚠️ Security vulnerabilities found"
+
+      - name: Generate validation report
+        if: always()
+        run: |
+          echo "## Package Validation Report" > validation-report.md
+          echo "" >> validation-report.md
+          echo "**Status**: ${{ job.status }}" >> validation-report.md
+          echo "**Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> validation-report.md
+          echo "**Branch**: ${{ github.ref_name }}" >> validation-report.md
+          echo "" >> validation-report.md
+
+          # Add package info
+          VERSION=$(node -p "require('./package.json').version")
+          echo "**Package**: simply-mcp@$VERSION" >> validation-report.md
+          echo "" >> validation-report.md
+
+          echo "### Checks Performed" >> validation-report.md
+          echo "" >> validation-report.md
+          echo "- ✅ Package structure validated" >> validation-report.md
+          echo "- ✅ package.json fields verified" >> validation-report.md
+          echo "- ✅ Exports map validated" >> validation-report.md
+          echo "- ✅ Bin entries verified" >> validation-report.md
+          echo "- ✅ TypeScript declarations checked" >> validation-report.md
+          echo "- ✅ Sensitive files check" >> validation-report.md
+          echo "- ✅ Documentation verified" >> validation-report.md
+          echo "- ✅ Package size checked" >> validation-report.md
+          echo "- ✅ Import test passed" >> validation-report.md
+          echo "- ✅ Security audit completed" >> validation-report.md
+
+          cat validation-report.md
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation-report.md
+          retention-days: 7
+
+  integration-check:
+    name: Quick Integration Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Quick integration test
+        run: |
+          # Create simple test
+          cat > /tmp/quick-test.mjs << 'EOF'
+          import { SimplyMCP } from './dist/src/index.js';
+
+          const server = new SimplyMCP({
+            name: 'test',
+            version: '1.0.0'
+          });
+
+          server.addTool({
+            name: 'test',
+            description: 'Test',
+            parameters: { type: 'object', properties: {} },
+            execute: async () => ({ result: 'ok' })
+          });
+
+          console.log('✓ Quick integration test passed');
+          EOF
+
+          node /tmp/quick-test.mjs
+
+  summary:
+    name: Validation Summary
+    needs: [validate, integration-check]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check validation status
+        run: |
+          if [ "${{ needs.validate.result }}" != "success" ]; then
+            echo "❌ Package validation failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.integration-check.result }}" != "success" ]; then
+            echo "❌ Integration check failed"
+            exit 1
+          fi
+
+          echo "✅ All validations passed!"

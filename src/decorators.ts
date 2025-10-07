@@ -1,6 +1,19 @@
 /**
  * Decorator-based MCP Server Framework
  *
+ * @deprecated Importing from 'simply-mcp/decorators' is deprecated as of v2.5.0.
+ * Import from 'simply-mcp' instead:
+ *
+ * ```typescript
+ * // New (v2.5.0+)
+ * import { MCPServer, tool, prompt, resource } from 'simply-mcp';
+ *
+ * // Old (still works but deprecated)
+ * import { MCPServer, tool, prompt, resource } from 'simply-mcp/decorators';
+ * ```
+ *
+ * The subpath import will be removed in v4.0.0.
+ *
  * Inspired by Python's FastMCP decorator pattern.
  * Define MCP servers using TypeScript classes with decorators.
  *
@@ -36,6 +49,16 @@ const SERVER_REGISTRY_KEY = Symbol.for('mcp:server-registry');
 
 /**
  * Server configuration for @MCPServer decorator
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { type ServerConfig } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { type ServerConfig } from 'simply-mcp/decorators';
  */
 export interface ServerConfig {
   name?: string;           // Defaults to kebab-case class name
@@ -58,6 +81,16 @@ export interface ServerConfig {
 
 /**
  * JSDoc comment information
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { type JSDocInfo } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { type JSDocInfo } from 'simply-mcp/decorators';
  */
 export interface JSDocInfo {
   description: string;
@@ -69,6 +102,16 @@ export interface JSDocInfo {
 
 /**
  * Tool metadata
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { type ToolMetadata } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { type ToolMetadata } from 'simply-mcp/decorators';
  */
 export interface ToolMetadata {
   methodName: string;
@@ -79,6 +122,16 @@ export interface ToolMetadata {
 
 /**
  * Prompt metadata
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { type PromptMetadata } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { type PromptMetadata } from 'simply-mcp/decorators';
  */
 export interface PromptMetadata {
   methodName: string;
@@ -88,6 +141,16 @@ export interface PromptMetadata {
 
 /**
  * Resource metadata
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { type ResourceMetadata } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { type ResourceMetadata } from 'simply-mcp/decorators';
  */
 export interface ResourceMetadata {
   methodName: string;
@@ -149,6 +212,16 @@ function getPackageVersion(): string {
  * - version: from package.json or '1.0.0'
  * - All other config optional
  *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { MCPServer } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { MCPServer } from 'simply-mcp/decorators';
+ *
  * @example
  * // Minimal - uses all defaults
  * @MCPServer()
@@ -189,8 +262,57 @@ export function MCPServer(config: ServerConfig = {}) {
 /**
  * @tool decorator
  * Marks a method as an MCP tool
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { tool } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { tool } from 'simply-mcp/decorators';
+ *
+ * @param description - Optional description for the tool.
+ *                      If omitted, uses JSDoc comment or method name.
+ *
+ * @example
+ * ```typescript
+ * // With description
+ * @tool('Greet a user by name')
+ * greet(name: string) {
+ *   return `Hello, ${name}!`;
+ * }
+ *
+ * // Without description (uses JSDoc or method name)
+ * /**
+ *  * Calculate the sum of two numbers
+ *  *\/
+ * @tool()
+ * add(a: number, b: number) {
+ *   return a + b;
+ * }
+ * ```
+ *
+ * @note Currently only string parameters are supported.
+ *       Object syntax `@tool({ description: '...' })` will be added in v3.0.0.
+ *       Passing an object will throw a helpful TypeError.
  */
 export function tool(description?: string) {
+  // Runtime validation - ensure parameter is string or undefined
+  if (description !== undefined && typeof description !== 'string') {
+    throw new TypeError(
+      `@tool decorator expects a string description, got ${typeof description}.\n\n` +
+      `Correct usage:\n` +
+      `  @tool('Description here')     // With description\n` +
+      `  @tool()                       // Uses JSDoc or method name\n\n` +
+      `Invalid usage:\n` +
+      `  @tool({ description: '...' }) // Object syntax not yet supported\n\n` +
+      `Note: Object syntax will be added in v3.0.0.\n` +
+      `For now, use a string description or JSDoc comments.`
+    );
+  }
+
   return function (
     target: any,
     propertyKeyOrContext: string | any,
@@ -247,8 +369,57 @@ export function tool(description?: string) {
 /**
  * @prompt decorator
  * Marks a method as an MCP prompt generator
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { prompt } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { prompt } from 'simply-mcp/decorators';
+ *
+ * @param description - Optional description for the prompt.
+ *                      If omitted, uses JSDoc comment or method name.
+ *
+ * @example
+ * ```typescript
+ * // With description
+ * @prompt('Generate code review comments')
+ * codeReview(language: string, code: string) {
+ *   return {
+ *     messages: [{
+ *       role: 'user',
+ *       content: { type: 'text', text: `Review this ${language} code...` }
+ *     }]
+ *   };
+ * }
+ *
+ * // Without description (uses JSDoc or method name)
+ * @prompt()
+ * helpPrompt() {
+ *   return { messages: [{ role: 'user', content: { type: 'text', text: 'Help' } }] };
+ * }
+ * ```
+ *
+ * @note Currently only string parameters are supported.
+ *       Object syntax will be added in v3.0.0.
  */
 export function prompt(description?: string) {
+  // Runtime validation - ensure parameter is string or undefined
+  if (description !== undefined && typeof description !== 'string') {
+    throw new TypeError(
+      `@prompt decorator expects a string description, got ${typeof description}.\n\n` +
+      `Correct usage:\n` +
+      `  @prompt('Description here')     // With description\n` +
+      `  @prompt()                       // Uses JSDoc or method name\n\n` +
+      `Invalid usage:\n` +
+      `  @prompt({ description: '...' }) // Object syntax not yet supported\n\n` +
+      `Note: Object syntax will be added in v3.0.0.`
+    );
+  }
+
   return function (
     target: any,
     propertyKeyOrContext: string | any,
@@ -301,8 +472,53 @@ export function prompt(description?: string) {
 /**
  * @resource decorator
  * Marks a method as an MCP resource provider
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { resource } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { resource } from 'simply-mcp/decorators';
+ *
+ * @param uri - Resource URI (e.g., 'file://config', 'doc://readme')
+ * @param options - Resource options
+ * @param options.name - Display name (defaults to method name)
+ * @param options.mimeType - MIME type (defaults to 'text/plain')
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * @resource('config://server')
+ * serverConfig() {
+ *   return { contents: [{ uri: 'config://server', mimeType: 'application/json', text: '{}' }] };
+ * }
+ *
+ * // With options
+ * @resource('doc://readme', { name: 'README', mimeType: 'text/markdown' })
+ * readme() {
+ *   return { contents: [{ uri: 'doc://readme', mimeType: 'text/markdown', text: '# README' }] };
+ * }
+ * ```
+ *
+ * @note The @resource decorator has a different signature than @tool and @prompt.
+ *       It requires a URI as the first parameter and accepts an options object as the second parameter.
  */
 export function resource(uri: string, options: { name?: string; mimeType?: string } = {}) {
+  // Runtime validation - ensure uri is a string
+  if (typeof uri !== 'string') {
+    throw new TypeError(
+      `@resource decorator expects a string URI as the first parameter, got ${typeof uri}.\n\n` +
+      `Correct usage:\n` +
+      `  @resource('config://server')                    // Basic usage\n` +
+      `  @resource('file://data', { mimeType: 'json' })  // With options\n\n` +
+      `Invalid usage:\n` +
+      `  @resource({ uri: '...' })  // Missing required URI parameter`
+    );
+  }
+
   return function (
     target: any,
     propertyKeyOrContext: string | any,
@@ -357,6 +573,16 @@ export function resource(uri: string, options: { name?: string; mimeType?: strin
 /**
  * Extract JSDoc information from function source code
  * Parses JSDoc comments to extract description, param tags, returns, examples, and throws tags
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { extractJSDoc } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { extractJSDoc } from 'simply-mcp/decorators';
  */
 export function extractJSDoc(fn: Function): JSDocInfo | undefined {
   if (!fn) return undefined;  // Defensive check for undefined functions
@@ -433,6 +659,16 @@ function extractDocstring(fn: Function): string | undefined {
 
 /**
  * Get server configuration from decorated class
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { getServerConfig } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { getServerConfig } from 'simply-mcp/decorators';
  */
 export function getServerConfig(target: any): ServerConfig | undefined {
   return Reflect.getMetadata(SERVER_CONFIG_KEY, target);
@@ -440,6 +676,16 @@ export function getServerConfig(target: any): ServerConfig | undefined {
 
 /**
  * Get tools from decorated class
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { getTools } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { getTools } from 'simply-mcp/decorators';
  */
 export function getTools(target: any): ToolMetadata[] {
   return Reflect.getMetadata(TOOLS_KEY, target) || [];
@@ -447,6 +693,16 @@ export function getTools(target: any): ToolMetadata[] {
 
 /**
  * Get prompts from decorated class
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { getPrompts } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { getPrompts } from 'simply-mcp/decorators';
  */
 export function getPrompts(target: any): PromptMetadata[] {
   return Reflect.getMetadata(PROMPTS_KEY, target) || [];
@@ -454,6 +710,16 @@ export function getPrompts(target: any): PromptMetadata[] {
 
 /**
  * Get resources from decorated class
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { getResources } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { getResources } from 'simply-mcp/decorators';
  */
 export function getResources(target: any): ResourceMetadata[] {
   return Reflect.getMetadata(RESOURCES_KEY, target) || [];
@@ -462,6 +728,16 @@ export function getResources(target: any): ResourceMetadata[] {
 /**
  * Convert TypeScript parameter to Zod schema with JSDoc descriptions
  * Now supports optional parameters, defaults, and better type inference
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { inferZodSchema } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { inferZodSchema } from 'simply-mcp/decorators';
  *
  * @param paramTypes - Runtime parameter types from reflect-metadata
  * @param methodName - Name of the method (for debugging)
@@ -529,6 +805,16 @@ export function inferZodSchema(
 
 /**
  * Parameter information including optionality and default values
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { type ParameterInfo } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { type ParameterInfo } from 'simply-mcp/decorators';
  */
 export interface ParameterInfo {
   name: string;
@@ -541,6 +827,16 @@ export interface ParameterInfo {
 /**
  * Extract parameter information from function signature
  * Detects optional parameters (with ?) and default values
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { getParameterInfo } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { getParameterInfo } from 'simply-mcp/decorators';
  */
 export function getParameterInfo(fn: Function): ParameterInfo[] {
   const fnString = fn.toString();
@@ -602,6 +898,16 @@ export function getParameterInfo(fn: Function): ParameterInfo[] {
 
 /**
  * Extract parameter names from function (legacy support)
+ *
+ * @deprecated Import from 'simply-mcp' instead of 'simply-mcp/decorators' (v2.5.0+)
+ * This subpath will be removed in v4.0.0.
+ *
+ * @example
+ * // New way (v2.5.0+)
+ * import { getParameterNames } from 'simply-mcp';
+ *
+ * // Old way (deprecated)
+ * import { getParameterNames } from 'simply-mcp/decorators';
  */
 export function getParameterNames(fn: Function): string[] {
   return getParameterInfo(fn).map(p => p.name);

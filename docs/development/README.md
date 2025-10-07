@@ -16,6 +16,13 @@ This directory contains a comprehensive Model Context Protocol (MCP) framework w
 - **[LLM Integration](../reference/LLM-INTEGRATION.md)** - LLM-friendly error messages
 - **[Troubleshooting](../TROUBLESHOOTING.md)** - Common issues and solutions
 
+## CI/CD & Release Documentation
+
+- **[CI/CD Checklist](CICD_CHECKLIST.md)** - Comprehensive release checklist for all phases
+- **[Pre-Release Plan](PRE_RELEASE_PLAN.md)** - Detailed pre-release plan with workflows and decision trees
+- **[CI/CD Implementation Summary](CICD_IMPLEMENTATION_SUMMARY.md)** - Complete implementation overview
+- **[Beta Release Guide](BETA_RELEASE_GUIDE.md)** - Guide to beta releases and testing
+
 ## Core Files
 
 ### Decorator API (Class-Based) 🌟 **NEW & RECOMMENDED**

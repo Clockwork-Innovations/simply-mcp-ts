@@ -1,0 +1,276 @@
+name: Pre-Release Validation & Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Pre-release version (e.g., 2.5.0-beta.1, 2.5.0-alpha.1)'
+        required: true
+        type: string
+      publish:
+        description: 'Publish to npm after validation'
+        required: true
+        type: boolean
+        default: false
+      tag:
+        description: 'npm dist-tag for publishing'
+        required: true
+        type: choice
+        options:
+          - beta
+          - alpha
+          - next
+        default: beta
+
+jobs:
+  validate:
+    name: Pre-Release Validation
+    runs-on: ubuntu-latest
+
+    outputs:
+      tarball-name: ${{ steps.pack.outputs.tarball }}
+      validation-passed: ${{ steps.summary.outputs.passed }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Run package validation
+        id: validate-package
+        run: |
+          echo "Running package validation..."
+          bash scripts/validate-package.sh
+
+      - name: Run pre-release tests
+        id: pre-release-test
+        run: |
+          echo "Running pre-release validation for v${{ github.event.inputs.version }}..."
+          bash scripts/pre-release-test.sh ${{ github.event.inputs.version }}
+
+      - name: Run integration tests
+        id: integration-test
+        run: |
+          echo "Running integration tests..."
+          bash scripts/integration-test.sh
+
+      - name: Create tarball
+        id: pack
+        run: |
+          TARBALL=$(npm pack 2>&1 | tail -n 1)
+          echo "tarball=$TARBALL" >> $GITHUB_OUTPUT
+          echo "Created tarball: $TARBALL"
+          ls -lh "$TARBALL"
+
+      - name: Test tarball installation
+        run: |
+          # Create temporary test directory
+          TEST_DIR=$(mktemp -d)
+          cd "$TEST_DIR"
+
+          # Initialize test project
+          npm init -y > /dev/null 2>&1
+
+          # Install from tarball
+          npm install "$GITHUB_WORKSPACE/${{ steps.pack.outputs.tarball }}" --silent
+
+          # Verify installation
+          test -d node_modules/simply-mcp || exit 1
+          test -f node_modules/simply-mcp/package.json || exit 1
+
+          # Test imports
+          npm install --save-dev tsx --silent
+          echo "import { SimplyMCP } from 'simply-mcp'; console.log('Import works');" > test.ts
+          npx tsx test.ts
+
+          echo "Tarball installation test passed"
+
+      - name: Validate TypeScript types
+        run: |
+          echo "Validating TypeScript type declarations..."
+          npx tsc --noEmit
+
+      - name: Check documentation links
+        run: |
+          echo "Checking documentation..."
+          test -f README.md || exit 1
+          test -s README.md || exit 1
+          test -f LICENSE || exit 1
+
+      - name: Security audit
+        run: |
+          echo "Running security audit..."
+          npm audit --audit-level=high || true
+
+      - name: Generate validation summary
+        id: summary
+        run: |
+          echo "passed=true" >> $GITHUB_OUTPUT
+          echo "## Pre-Release Validation Summary" > validation-summary.md
+          echo "" >> validation-summary.md
+          echo "**Version**: ${{ github.event.inputs.version }}" >> validation-summary.md
+          echo "**Tag**: ${{ github.event.inputs.tag }}" >> validation-summary.md
+          echo "**Publish**: ${{ github.event.inputs.publish }}" >> validation-summary.md
+          echo "" >> validation-summary.md
+          echo "### Validation Results" >> validation-summary.md
+          echo "" >> validation-summary.md
+          echo "- ✅ Build successful" >> validation-summary.md
+          echo "- ✅ Tests passed" >> validation-summary.md
+          echo "- ✅ Package validation passed" >> validation-summary.md
+          echo "- ✅ Pre-release tests passed" >> validation-summary.md
+          echo "- ✅ Integration tests passed" >> validation-summary.md
+          echo "- ✅ Tarball installation verified" >> validation-summary.md
+          echo "- ✅ TypeScript types validated" >> validation-summary.md
+          echo "- ✅ Documentation checked" >> validation-summary.md
+          echo "" >> validation-summary.md
+          echo "### Package Information" >> validation-summary.md
+          echo "" >> validation-summary.md
+          echo "**Tarball**: ${{ steps.pack.outputs.tarball }}" >> validation-summary.md
+          echo "**Size**: $(du -h ${{ steps.pack.outputs.tarball }} | cut -f1)" >> validation-summary.md
+          echo "" >> validation-summary.md
+          echo "---" >> validation-summary.md
+          echo "" >> validation-summary.md
+          echo "All pre-release validations passed successfully! ✨" >> validation-summary.md
+
+          cat validation-summary.md
+
+      - name: Upload validation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre-release-validation-${{ github.event.inputs.version }}
+          path: |
+            validation-summary.md
+            ${{ steps.pack.outputs.tarball }}
+          retention-days: 30
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-tarball
+          path: ${{ steps.pack.outputs.tarball }}
+          retention-days: 7
+
+  publish-beta:
+    name: Publish to npm
+    needs: validate
+    if: github.event.inputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Update version to pre-release
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          git add package.json package-lock.json
+          git commit -m "chore(release): v${{ github.event.inputs.version }}"
+          git tag "v${{ github.event.inputs.version }}"
+
+      - name: Push changes (pre-release branch)
+        run: |
+          # Create or update pre-release branch
+          BRANCH_NAME="pre-release/${{ github.event.inputs.version }}"
+          git checkout -b "$BRANCH_NAME" || git checkout "$BRANCH_NAME"
+          git push origin "$BRANCH_NAME" --follow-tags --force
+
+      - name: Download tarball artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: package-tarball
+
+      - name: Publish to npm with tag
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "Publishing v${{ github.event.inputs.version }} with tag @${{ github.event.inputs.tag }}"
+          npm publish --tag ${{ github.event.inputs.tag }} --provenance --access public
+          echo "✅ Published: simply-mcp@${{ github.event.inputs.version }} (tag: ${{ github.event.inputs.tag }})"
+
+      - name: Create GitHub pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Download validation summary
+          if [ -f validation-summary.md ]; then
+            NOTES=$(cat validation-summary.md)
+          else
+            NOTES="Pre-release validation passed. See workflow artifacts for details."
+          fi
+
+          gh release create "v${{ github.event.inputs.version }}" \
+            --title "v${{ github.event.inputs.version }} (${{ github.event.inputs.tag }})" \
+            --notes "$NOTES" \
+            --prerelease \
+            --target "pre-release/${{ github.event.inputs.version }}"
+
+      - name: Post success comment
+        run: |
+          echo "🎉 Pre-release published successfully!"
+          echo ""
+          echo "Version: v${{ github.event.inputs.version }}"
+          echo "Tag: ${{ github.event.inputs.tag }}"
+          echo ""
+          echo "Install with:"
+          echo "  npm install simply-mcp@${{ github.event.inputs.tag }}"
+          echo ""
+          echo "Or specific version:"
+          echo "  npm install simply-mcp@${{ github.event.inputs.version }}"
+
+  notify-failure:
+    name: Notify on Failure
+    needs: [validate, publish-beta]
+    if: failure()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Post failure notification
+        run: |
+          echo "❌ Pre-release workflow failed!"
+          echo ""
+          echo "Version: ${{ github.event.inputs.version }}"
+          echo "Tag: ${{ github.event.inputs.tag }}"
+          echo "Publish: ${{ github.event.inputs.publish }}"
+          echo ""
+          echo "Check the workflow logs for details."
+          exit 1

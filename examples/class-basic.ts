@@ -23,6 +23,7 @@
  *   simplymcp-class mcp/examples/class-basic.ts
  */
 
+// Unified import pattern (v2.5.0+) - all decorators from one package
 import { MCPServer, tool, prompt, resource } from 'simply-mcp';
 
 /**
