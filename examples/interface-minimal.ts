@@ -27,7 +27,7 @@
  *   See docs/guides/INTERFACE_API_GUIDE.md for complete documentation
  */
 
-import type { ITool, IServer } from '../src/api/interface/types.js';
+import type { ITool, IServer } from 'simply-mcp';
 
 /**
  * Greeting tool - demonstrates basic parameter and result types

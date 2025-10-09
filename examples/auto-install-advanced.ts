@@ -19,8 +19,7 @@
 // chalk@^5.3.0
 // ///
 
-import { SimplyMCP } from 'simply-mcp';
-import { InstallProgressEvent } from '../src/core/installation-types.js';
+import { SimplyMCP, type InstallProgressEvent } from 'simply-mcp';
 import { z } from 'zod';
 
 async function main() {

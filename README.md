@@ -20,6 +20,7 @@
 - **Interface API** - Pure TypeScript interfaces (cleanest, zero boilerplate)
 - **Decorator API** - Class-based with `@tool`, `@prompt`, `@resource` decorators
 - **Functional API** - Programmatic server building with full control
+- **MCP Builder API** - Build MCP tools using MCP itself with AI-powered validation
 
 ⚡ **Developer Experience**
 - Type-safe with full TypeScript support
@@ -126,6 +127,34 @@ server.addTool({
 
 await server.start();
 ```
+
+#### Option 4: MCP Builder API (AI-Powered)
+
+Use MCP itself to build MCP tools with AI-powered validation:
+
+```typescript
+// mcp-dev.ts
+import {
+  defineMCPBuilder,
+  ValidationToolsPreset,
+  WorkflowPromptsPreset
+} from 'simply-mcp';
+
+export default defineMCPBuilder({
+  name: 'mcp-dev',
+  version: '1.0.0',
+  toolPresets: [ValidationToolsPreset],
+  promptPresets: [WorkflowPromptsPreset]
+});
+```
+
+This creates an MCP server that helps you build other MCP servers! It provides:
+- **Design tools** - Interactive tool design assistance
+- **AI validation** - Sampling-based validation using your LLM
+- **Workflow guidance** - Best practices from Anthropic
+- **Schema generation** - Automatic Zod schema creation
+
+See [MCP Builder API Guide](#mcp-builder-api-ai-powered-tool-development) for details.
 
 **Run any style with the same command:**
 
@@ -387,6 +416,221 @@ See the [Interface API Guide](./docs/guides/INTERFACE_API_GUIDE.md) for complete
 - Dynamic prompts and resources
 - CLI reference
 - Best practices
+
+## MCP Builder API: AI-Powered Tool Development
+
+The MCP Builder API is a unique approach: **use MCP itself to build MCP tools**. It provides an MCP server that helps you design, validate, and implement high-quality MCP tools following Anthropic's best practices.
+
+### Why MCP Builder?
+
+**Intelligent Validation:**
+- Uses **MCP sampling** to leverage your LLM for expert feedback
+- Validates against Anthropic's tool-building principles
+- Provides actionable, specific suggestions
+
+**Guided Workflow:**
+- Interactive design assistance
+- Automatic Zod schema generation
+- Built-in best practices prompts
+- Step-by-step workflow guidance
+
+**Quality Assurance:**
+- AI-powered design review (scoring 0-100)
+- Schema completeness validation
+- Test coverage analysis
+- Iterative refinement until quality scores >= 80
+
+### Architecture: Layered Development
+
+The MCP Builder follows a layered architecture:
+
+**Layer 1 (Foundation):**
+- `design_tool` - Interactive tool conceptualization
+- `create_zod_schema` - Generate Zod schemas from type definitions
+- `validate_schema` - Basic schema validation
+
+**Layer 2 (Feature - Sampling):**
+- `analyze_tool_design` - AI reviews your design against Anthropic principles
+- `validate_schema_quality` - AI validates Zod schemas for completeness
+- `review_test_coverage` - AI evaluates test scenario coverage
+- Workflow guidance prompts with best practices
+
+### How It Works: MCP Sampling
+
+Traditional validation uses hard-coded rules. MCP Builder uses **sampling** - the server requests your LLM to perform analysis:
+
+```
+┌──────────┐  1. Call tool       ┌────────────┐
+│   You    │ ──────────────────> │ MCP Server │
+│  (LLM)   │                     │  (Builder) │
+└──────────┘                     └────────────┘
+     ↑                                 │
+     │                                 │ 2. Request sampling
+     │ 4. Return analysis              │
+     │                                 ↓
+     │                           ┌──────────┐
+     └─────────────────────────  │   Your   │
+       3. AI analyzes            │   LLM    │
+                                 └──────────┘
+```
+
+### Quick Start
+
+**1. Create an MCP Builder server:**
+
+```typescript
+import {
+  defineMCPBuilder,
+  DesignToolsPreset,
+  ValidationToolsPreset,
+  WorkflowPromptsPreset
+} from 'simply-mcp';
+
+export default defineMCPBuilder({
+  name: 'mcp-dev-complete',
+  version: '1.0.0',
+  toolPresets: [
+    DesignToolsPreset,         // Layer 1: Design tools
+    ValidationToolsPreset       // Layer 2: AI validation
+  ],
+  promptPresets: [
+    WorkflowPromptsPreset      // Layer 2: Guidance
+  ]
+});
+```
+
+**2. Run it:**
+
+```bash
+npx simply-mcp run mcp-dev.ts
+```
+
+**3. Connect from Claude Code CLI and ask:**
+
+```
+"Help me create a weather tool"
+```
+
+The MCP Builder will:
+1. Guide you through design (`design_tool`)
+2. Generate Zod schemas (`create_zod_schema`)
+3. Validate with basic checks (`validate_schema`)
+4. Request AI analysis via sampling (`analyze_tool_design`)
+5. Provide expert feedback: score, issues, improvements
+6. Help you iterate until quality score >= 80
+
+### Available Tools
+
+**Design Tools (Layer 1):**
+- `design_tool` - Interactive tool design with structured output
+- `create_zod_schema` - Generate Zod code from type definitions
+- `validate_schema` - Basic validation checks
+
+**Validation Tools (Layer 2 - Sampling):**
+- `analyze_tool_design` - AI reviews against Anthropic principles
+  - Checks: Strategic selection, naming, parameter design, descriptions
+  - Returns: Score (0-100), issues, improvements, readiness
+- `validate_schema_quality` - AI validates Zod schemas
+  - Checks: Field descriptions, validation rules, type safety, strictness
+  - Returns: Score, missing elements, violations, suggestions
+- `review_test_coverage` - AI evaluates test scenarios
+  - Checks: Happy paths, edge cases, error conditions
+  - Returns: Coverage score, gaps, suggested additional tests
+
+### Available Prompts
+
+- `mcp_builder_workflow` - Complete workflow explanation (2540 chars)
+- `anthropic_best_practices` - Strategic selection, implementation, efficiency
+- `how_to_use_sampling_tools` - Understanding sampling capability
+- `zod_schema_patterns` - Common Zod patterns and best practices
+
+### Example Workflow
+
+```bash
+# 1. Start MCP Builder server
+npx simply-mcp run mcp-dev.ts
+
+# 2. In Claude Code CLI, ask:
+"Help me create a weather tool"
+
+# 3. Claude calls design_tool:
+{
+  "purpose": "Get weather for a city",
+  "expected_inputs": "city name, temperature units",
+  "expected_outputs": "temperature, conditions"
+}
+
+# 4. Claude calls analyze_tool_design (with sampling):
+# Your LLM analyzes the design and returns:
+{
+  "score": 85,
+  "issues": [],
+  "improvements": [
+    "Consider adding country parameter for disambiguation",
+    "Add humidity and wind speed to outputs"
+  ],
+  "ready": true
+}
+
+# 5. Claude refines based on feedback
+# 6. Claude generates final implementation
+```
+
+### Builder Pattern API
+
+For advanced usage, use the builder pattern:
+
+```typescript
+import { createMCPBuilder } from 'simply-mcp';
+
+export default createMCPBuilder({
+  name: 'mcp-dev-custom',
+  version: '1.0.0'
+})
+  .useToolPreset(DesignToolsPreset)
+  .useToolPreset(ValidationToolsPreset)
+  .usePromptPreset(WorkflowPromptsPreset)
+  .addTool({
+    name: 'custom_validator',
+    description: 'My custom validation tool',
+    parameters: z.object({ code: z.string() }),
+    execute: async (args) => 'Custom validation result'
+  })
+  .withPort(3000)
+  .build();
+```
+
+### Anthropic Principles Built-In
+
+The validation tools check against Anthropic's research on building tools for AI agents:
+
+1. **Strategic Selection** - Is this tool necessary?
+2. **Clear Naming** - Use snake_case, descriptive names
+3. **Thoughtful Implementation** - Clear descriptions, proper types
+4. **Token Efficiency** - Focused scope, relevant information
+5. **Flexible Formats** - Support multiple output formats
+
+### Testing
+
+See the complete test suite:
+
+```bash
+npx tsx test-mcp-builder.ts
+```
+
+Tests verify:
+- ✅ Tool registration (6 tools)
+- ✅ Prompt registration (4 prompts)
+- ✅ Design tools functionality
+- ✅ Validation tools (basic + sampling)
+- ✅ Complete workflow simulation
+- ✅ Error handling
+
+### Learn More
+
+- [MCP Builder Complete Guide](./MCP_BUILDER_LAYER2_COMPLETE.md) - Full documentation
+- [Example Server](./examples/mcp-builder-layer2.ts) - Comprehensive example
+- [Test Suite](./test-mcp-builder.ts) - Test coverage demonstration
 
 ## Documentation
 

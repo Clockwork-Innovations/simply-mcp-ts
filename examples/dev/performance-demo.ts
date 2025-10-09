@@ -1,14 +1,19 @@
 /**
  * Performance Optimization Demo
- * Demonstrates the CLI performance cache and metrics
+ *
+ * ⚠️ INTERNAL/DEVELOPMENT EXAMPLE
+ * This example uses internal CLI APIs not exported from the main package.
+ * It must be run from the repository, not from an installed package.
+ *
+ * Demonstrates the CLI performance cache and metrics for debugging and optimization.
  */
 
-import { detectAPIStyleCached, getPerformanceMetrics, getCacheStats, clearDetectionCache } from '../src/cli/performance-cache.js';
+import { detectAPIStyleCached, getPerformanceMetrics, getCacheStats, clearDetectionCache } from '../../src/cli/performance-cache.js';
 
 async function demo() {
   console.log('=== CLI Performance Cache Demo ===\n');
 
-  const testFile = 'mcp/examples/simple-server.ts';
+  const testFile = 'examples/simple-server.ts';
 
   // Clear cache to start fresh
   clearDetectionCache();

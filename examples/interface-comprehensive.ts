@@ -28,7 +28,7 @@
  *     await s.start();"
  */
 
-import type { ITool, IPrompt, IResource, IServer } from '../src/api/interface/types.js';
+import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';
 
 // ============================================================================
 // TOOL INTERFACES - All tools require implementation (always dynamic)

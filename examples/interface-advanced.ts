@@ -32,7 +32,7 @@
  *   See docs/guides/INTERFACE_API_GUIDE.md for complete documentation
  */
 
-import type { ITool, IPrompt, IResource, IServer } from '../src/api/interface/types.js';
+import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';
 
 // ============================================================================
 // TOOL INTERFACES

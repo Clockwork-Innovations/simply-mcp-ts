@@ -23,7 +23,7 @@ import {
 /**
  * API style types
  */
-export type APIStyle = 'interface' | 'decorator' | 'functional' | 'programmatic';
+export type APIStyle = 'interface' | 'decorator' | 'functional' | 'programmatic' | 'mcp-builder';
 
 /**
  * Dynamically load TypeScript file
@@ -78,6 +78,12 @@ export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
     // Look for @MCPServer decorator
     if (/@MCPServer(\s*\()?/.test(content)) {
       return 'decorator';
+    }
+
+    // Check for MCP Builder API (high priority)
+    // Look for defineMCPBuilder or createMCPBuilder
+    if (/(defineMCPBuilder|createMCPBuilder|MCPBuilderConfig|ToolPreset)/.test(content)) {
+      return 'mcp-builder';
     }
 
     // Check for functional API (medium priority)
@@ -476,6 +482,40 @@ async function runProgrammaticAdapter(
 }
 
 /**
+ * Run a server file with the MCP Builder API adapter
+ */
+async function runMCPBuilderAdapter(
+  filePath: string,
+  useHttp: boolean,
+  port: number,
+  verbose: boolean = false
+): Promise<void> {
+  // Import MCP Builder adapter
+  const { loadMCPBuilderServer } = await import('../api/mcp/adapter.js');
+  const { startServer, displayServerInfo } = await import('./adapter-utils.js');
+
+  // Load the MCP Builder server
+  const absolutePath = resolve(process.cwd(), filePath);
+
+  if (verbose) {
+    console.error(`[RunCommand] Loading MCP Builder server from: ${filePath}`);
+  }
+
+  try {
+    const server = await loadMCPBuilderServer(absolutePath);
+
+    displayServerInfo(server);
+    await startServer(server, { useHttp, port, verbose });
+  } catch (error) {
+    console.error('[RunCommand] Failed to run MCP Builder server:', error);
+    if (error instanceof Error && error.stack && verbose) {
+      console.error('[RunCommand] Stack:', error.stack);
+    }
+    process.exit(2);
+  }
+}
+
+/**
  * Scan current directory for potential MCP server files
  * Looks for .ts and .js files containing interface, @MCPServer, or defineMCP patterns
  */
@@ -740,7 +780,7 @@ export const runCommand: CommandModule = {
       })
       .option('style', {
         describe: 'Force specific API style',
-        choices: ['interface', 'decorator', 'functional', 'programmatic'] as const,
+        choices: ['interface', 'decorator', 'functional', 'programmatic', 'mcp-builder'] as const,
         type: 'string',
       })
       .option('verbose', {
@@ -978,6 +1018,9 @@ export const runCommand: CommandModule = {
           case 'functional':
             console.error('[Adapter] Loading config from:', filePath);
             break;
+          case 'mcp-builder':
+            console.error('[Adapter] Loading MCP Builder config from:', filePath);
+            break;
           case 'programmatic':
             console.error('[Adapter] Loading server from:', filePath);
             break;
@@ -1031,6 +1074,9 @@ export const runCommand: CommandModule = {
           break;
         case 'functional':
           await runFunctionalAdapter(filePath, useHttp, port, verbose);
+          break;
+        case 'mcp-builder':
+          await runMCPBuilderAdapter(filePath, useHttp, port, verbose);
           break;
         case 'programmatic':
           await runProgrammaticAdapter(filePath, useHttp, port, verbose);

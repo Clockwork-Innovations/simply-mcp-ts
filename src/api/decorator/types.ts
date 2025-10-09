@@ -89,59 +89,8 @@ export interface ServerConfig {
   };
 }
 
-/**
- * JSDoc comment information
- *
- * Parsed JSDoc metadata extracted from function comments.
- * Used for generating rich documentation and parameter descriptions.
- *
- * @example
- * ```typescript
- * import { extractJSDoc } from 'simply-mcp';
- *
- * /**
- *  * Calculate the sum of two numbers
- *  * @param a First number
- *  * @param b Second number
- *  * @returns The sum of a and b
- *  * @example
- *  * add(2, 3) // returns 5
- *  *\/
- * function add(a: number, b: number): number {
- *   return a + b;
- * }
- *
- * const jsdoc = extractJSDoc(add);
- * console.log(jsdoc.description); // "Calculate the sum of two numbers"
- * console.log(jsdoc.params.get('a')); // "First number"
- * ```
- */
-export interface JSDocInfo {
-  /**
-   * Main description text
-   */
-  description: string;
-
-  /**
-   * Parameter descriptions mapped by parameter name
-   */
-  params: Map<string, string>;
-
-  /**
-   * Return value description
-   */
-  returns?: string;
-
-  /**
-   * Usage examples
-   */
-  examples?: string[];
-
-  /**
-   * Exception/error descriptions
-   */
-  throws?: string[];
-}
+import type { JSDocInfo } from '../../decorators.js';
+export type { JSDocInfo };
 
 /**
  * Tool metadata

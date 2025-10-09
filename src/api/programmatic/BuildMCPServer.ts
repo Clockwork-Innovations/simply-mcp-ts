@@ -1371,35 +1371,33 @@ export class BuildMCPServer {
       );
     }
 
-    // Send sampling request to client using the MCP protocol
-    const request = {
-      method: 'sampling/createMessage',
-      params: {
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
+    try {
+      // Send sampling request to client using the MCP protocol
+      // Use the server's createMessage() method to request LLM sampling from the client
+      const result: CreateMessageResult = await this.server.createMessage({
+        messages: messages as any, // Cast needed - SamplingMessage format matches CreateMessageRequest
         maxTokens: options?.maxTokens,
         temperature: options?.temperature,
         topP: options?.topP,
         stopSequences: options?.stopSequences,
         metadata: options?.metadata,
-      },
-    };
+      });
 
-    // Note: The SDK's Server class should handle this request through the client
-    // For now, we'll throw an error indicating this needs client support
-    throw new Error(
-      `LLM sampling not yet supported\n\n` +
-      `What went wrong:\n` +
-      `  The sampling capability requires client-side implementation that is not yet available.\n\n` +
-      `Status:\n` +
-      `  - Server-side API: Ready (context.sample() in tools)\n` +
-      `  - Client support: Pending MCP SDK update\n\n` +
-      `The MCP client must support the 'sampling/createMessage' request.\n` +
-      `This feature will be available in a future update.\n\n` +
-      `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts#sampling`
-    );
+      return result;
+    } catch (error) {
+      // Handle errors gracefully
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Sampling request failed\n\n` +
+        `What went wrong:\n` +
+        `  ${errorMessage}\n\n` +
+        `Possible causes:\n` +
+        `  - Client does not support sampling capability\n` +
+        `  - Connection issue with the client\n` +
+        `  - LLM service unavailable\n\n` +
+        `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts#sampling`
+      );
+    }
   }
 
   /**
