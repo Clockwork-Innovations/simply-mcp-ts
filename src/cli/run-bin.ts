@@ -6,7 +6,12 @@
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { createRequire } from 'module';
 import { runCommand } from './run.js';
+
+// Get package version from package.json
+const require = createRequire(import.meta.url);
+const packageJson = require('../../../package.json');
 
 // Execute the run command directly
 yargs(hideBin(process.argv))
@@ -14,7 +19,7 @@ yargs(hideBin(process.argv))
   .command(runCommand)
   .help('h')
   .alias('h', 'help')
-  .version()
+  .version(packageJson.version)
   .alias('v', 'version')
   .demandCommand(1)
   .strict()

@@ -6,7 +6,12 @@
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { createRequire } from 'module';
 import { bundleCommand } from './bundle.js';
+
+// Get package version from package.json
+const require = createRequire(import.meta.url);
+const packageJson = require('../../../package.json');
 
 // Extract the handler and builder from bundleCommand
 const { builder, handler } = bundleCommand;
@@ -23,7 +28,7 @@ yargs(hideBin(process.argv))
   })
   .help('h')
   .alias('h', 'help')
-  .version()
+  .version(packageJson.version)
   .alias('v', 'version')
   .strict()
   .parse();
