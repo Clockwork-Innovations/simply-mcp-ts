@@ -31,9 +31,14 @@ validate() {
   local check_command="$2"
   local check_type="${3:-ERROR}" # ERROR or WARNING
 
+  echo "DEBUG: Inside validate function for: $check_name"
+  echo "DEBUG: Command: $check_command"
+
   ((TOTAL_CHECKS++))
+  echo "DEBUG: TOTAL_CHECKS incremented to $TOTAL_CHECKS"
 
   if eval "$check_command" > /dev/null 2>&1; then
+    echo "DEBUG: Command succeeded"
     echo -e "${GREEN}✓${NC} $check_name"
     CHECK_RESULTS+=("PASS")
     CHECK_NAMES+=("$check_name")
@@ -69,7 +74,9 @@ echo ""
 # Check 1: Build Directory
 echo -e "${BOLD}Checking Build Directory...${NC}"
 
+echo "DEBUG: About to call validate for dist/"
 validate "dist/ directory exists" "test -d dist"
+echo "DEBUG: validate call completed"
 validate "dist/src/ directory exists" "test -d dist/src"
 validate "dist/src/cli/ directory exists" "test -d dist/src/cli"
 validate "dist/src/core/ directory exists" "test -d dist/src/core"
