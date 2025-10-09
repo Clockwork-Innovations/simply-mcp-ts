@@ -5,7 +5,7 @@
  * Extracts metadata and type information for schema generation.
  */
 
-import ts from 'typescript';
+import * as ts from 'typescript';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 

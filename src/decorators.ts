@@ -317,7 +317,7 @@ export function tool(description?: string) {
     target: any,
     propertyKeyOrContext: string | any,
     descriptor?: PropertyDescriptor
-  ) {
+  ): any {
     // Handle both legacy and stage-3 decorator formats
     const isStage3 = typeof propertyKeyOrContext === 'object' && propertyKeyOrContext !== null && 'kind' in propertyKeyOrContext;
 
@@ -424,7 +424,7 @@ export function prompt(description?: string) {
     target: any,
     propertyKeyOrContext: string | any,
     descriptor?: PropertyDescriptor
-  ) {
+  ): any {
     // Handle both legacy and stage-3 decorator formats
     const isStage3 = typeof propertyKeyOrContext === 'object' && propertyKeyOrContext !== null && 'kind' in propertyKeyOrContext;
 
@@ -523,7 +523,7 @@ export function resource(uri: string, options: { name?: string; mimeType?: strin
     target: any,
     propertyKeyOrContext: string | any,
     descriptor?: PropertyDescriptor
-  ) {
+  ): any {
     // Handle both legacy and stage-3 decorator formats
     const isStage3 = typeof propertyKeyOrContext === 'object' && propertyKeyOrContext !== null && 'kind' in propertyKeyOrContext;
 

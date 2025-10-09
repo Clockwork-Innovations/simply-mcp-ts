@@ -5,7 +5,7 @@
  * Supports JSDoc validation tags (@min, @max, @minLength, @maxLength, @pattern, @format, etc.)
  */
 
-import ts from 'typescript';
+import * as ts from 'typescript';
 import { z, ZodTypeAny } from 'zod';
 
 /**
