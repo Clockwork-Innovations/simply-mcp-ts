@@ -34,7 +34,7 @@ run_test() {
   local test_name="$1"
   local test_command="$2"
 
-  ((TOTAL_TESTS++))
+  ((TOTAL_TESTS++)) || true
   echo ""
   echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo -e "${BOLD}Test $TOTAL_TESTS: $test_name${NC}"
@@ -44,13 +44,13 @@ run_test() {
     echo -e "${GREEN}✓ PASS${NC}: $test_name"
     TEST_RESULTS+=("PASS")
     TEST_NAMES+=("$test_name")
-    ((PASSED_TESTS++))
+    ((PASSED_TESTS++)) || true
     return 0
   else
     echo -e "${RED}✗ FAIL${NC}: $test_name"
     TEST_RESULTS+=("FAIL")
     TEST_NAMES+=("$test_name")
-    ((FAILED_TESTS++))
+    ((FAILED_TESTS++)) || true
     return 1
   fi
 }
@@ -365,13 +365,13 @@ EOF
 
 if npx simplymcp-class test-error-decorator.ts --dry-run 2>&1 | grep -q "@MCPServer"; then
   echo -e "${GREEN}✓ PASS${NC}: Error messages are helpful"
-  ((PASSED_TESTS++))
-  ((TOTAL_TESTS++))
+  ((PASSED_TESTS++)) || true
+  ((TOTAL_TESTS++)) || true
   TEST_RESULTS+=("PASS")
   TEST_NAMES+=("Error messages are helpful")
 else
   echo -e "${YELLOW}⚠ SKIP${NC}: Error message test (non-critical)"
-  ((TOTAL_TESTS++))
+  ((TOTAL_TESTS++)) || true
 fi
 
 # Final Report

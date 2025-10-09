@@ -32,7 +32,7 @@ run_scenario() {
   local scenario_name="$1"
   local scenario_func="$2"
 
-  ((TOTAL_TESTS++))
+  ((TOTAL_TESTS++)) || true
   echo ""
   echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo -e "${BOLD}Scenario $TOTAL_TESTS: $scenario_name${NC}"
@@ -42,13 +42,13 @@ run_scenario() {
     echo -e "${GREEN}✓ PASS${NC}: $scenario_name"
     TEST_RESULTS+=("PASS")
     TEST_NAMES+=("$scenario_name")
-    ((PASSED_TESTS++))
+    ((PASSED_TESTS++)) || true
     return 0
   else
     echo -e "${RED}✗ FAIL${NC}: $scenario_name"
     TEST_RESULTS+=("FAIL")
     TEST_NAMES+=("$scenario_name")
-    ((FAILED_TESTS++))
+    ((FAILED_TESTS++)) || true
     return 1
   fi
 }
