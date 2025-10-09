@@ -220,6 +220,7 @@ run_test "Decorator API (class-based)" "npx tsx test-decorator.ts"
 # Test 4.2: Functional API
 cat > test-functional.ts << 'EOF'
 import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
 
 const server = new SimplyMCP({
   name: 'test-functional',
@@ -230,14 +231,10 @@ const server = new SimplyMCP({
 server.addTool({
   name: 'multiply',
   description: 'Multiply two numbers',
-  parameters: {
-    type: 'object',
-    properties: {
-      a: { type: 'number' },
-      b: { type: 'number' }
-    },
-    required: ['a', 'b']
-  },
+  parameters: z.object({
+    a: z.number(),
+    b: z.number()
+  }),
   execute: async ({ a, b }) => ({ result: a * b })
 });
 
