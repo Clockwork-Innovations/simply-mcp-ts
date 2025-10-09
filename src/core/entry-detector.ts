@@ -149,6 +149,11 @@ export async function validateSimplyMCPEntry(filePath: string): Promise<void> {
   }
 
   // Check if file instantiates SimplyMCP (or variants)
+  // This includes:
+  // 1. Direct instantiation: new SimplyMCP(...)
+  // 2. Factory methods: SimplyMCP.fromFile(...)
+  // 3. Decorator pattern: @MCPServer decorator with export default
+  // 4. Named exports containing MCP classes
   const hasInstantiation =
     /new\s+SimplyMCP\s*\(/.test(content) ||
     /new\s+SimpleMCP\s*\(/.test(content) ||
@@ -157,12 +162,14 @@ export async function validateSimplyMCPEntry(filePath: string): Promise<void> {
     /SimpleMCP\.fromFile\s*\(/.test(content) ||
     /MCPServer\.fromFile\s*\(/.test(content) ||
     /export\s+default.*(?:Simply|Simple)?MCP/.test(content) ||
-    /export\s*\{.*(?:Simply|Simple)?MCP.*\}/.test(content);
+    /export\s*\{.*(?:Simply|Simple)?MCP.*\}/.test(content) ||
+    // Support decorator pattern: @MCPServer decorator with export default
+    (/@MCPServer/.test(content) && /export\s+default/.test(content));
 
   if (!hasInstantiation) {
     throw new Error(
       `Entry point does not appear to create a SimplyMCP instance: ${filePath}\n` +
-      'Expected: new SimpleMCP(...) or SimpleMCP.fromFile(...)'
+      'Expected: new SimplyMCP(...), SimplyMCP.fromFile(...), or @MCPServer decorator with export default'
     );
   }
 }
