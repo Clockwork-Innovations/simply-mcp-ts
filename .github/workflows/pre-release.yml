@@ -49,8 +49,20 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Debug - Check dist directory
+        run: |
+          echo "Checking if dist/ exists after build..."
+          ls -la dist/ || echo "dist/ does not exist!"
+          pwd
+
       - name: Run test suite
         run: npm test
+
+      - name: Debug - Check dist before validation
+        run: |
+          echo "Checking if dist/ exists before validation..."
+          ls -la dist/ || echo "dist/ does not exist!"
+          test -d dist && echo "✓ dist/ exists" || echo "✗ dist/ missing"
 
       - name: Run package validation
         id: validate-package
