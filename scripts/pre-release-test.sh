@@ -235,7 +235,9 @@ server.addTool({
     a: z.number(),
     b: z.number()
   }),
-  execute: async ({ a, b }) => ({ result: a * b })
+  execute: async ({ a, b }) => ({
+    content: [{ type: 'text', text: `Result: ${a * b}` }]
+  })
 });
 
 console.log('✓ Functional server created successfully');
