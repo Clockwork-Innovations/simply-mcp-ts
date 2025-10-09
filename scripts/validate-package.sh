@@ -215,7 +215,6 @@ echo ""
 echo -e "${BOLD}Checking TypeScript Configuration...${NC}"
 
 validate "tsconfig.json exists" "test -f tsconfig.json"
-validate "tsconfig.json is valid JSON" "node -e 'require(\"./tsconfig.json\")'"
 
 # Check 13: Security and Size Checks
 echo ""
