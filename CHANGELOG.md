@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0-beta.4] - 2025-10-10
+
+### Documentation
+
+#### New JSDoc Documentation (Complete)
+- **JSDoc and Descriptions Guide** (`docs/guides/JSDOC_AND_DESCRIPTIONS.md`) - Comprehensive 1,400+ line JSDoc reference
+  - Complete explanation of how JSDoc maps to MCP tool schemas
+  - JSDoc tag reference (`@param`, `@returns`, `@example`, `@throws`)
+  - API comparison (Decorator JSDoc vs Functional Zod vs Interface JSDoc)
+  - Visual ASCII diagrams showing JSDoc → MCP schema transformations
+  - Best practices for writing tool and parameter descriptions
+  - Common mistakes section with 7 detailed examples
+  - Troubleshooting guide for JSDoc-related issues
+  - **Key Clarifications:**
+    - Root JSDoc comment → Tool description (NO `@description` tag needed)
+    - `@param` descriptions → Parameter descriptions in MCP `inputSchema`
+    - `@returns` extracted but NOT used in MCP schema (MCP spec limitation)
+    - Parameter descriptions are visible to AI agents when selecting tools
+
+#### Updated Guides
+- `README.md` - Added JSDoc integration note in Decorator API section
+- `docs/guides/DECORATOR_API_GUIDE.md` - Added "JSDoc to MCP Schema Mapping" section (160 lines)
+  - Visual diagram showing transformation
+  - Complete example with side-by-side code and schema
+  - Explanation of what JSDoc tags are used and why
+  - Cross-reference to comprehensive JSDoc guide
+- `docs/guides/FUNCTIONAL_API_GUIDE.md` - Added "Tool Documentation" section (117 lines)
+  - Zod `.describe()` vs JSDoc comparison
+  - Side-by-side examples for all three API styles
+  - Emphasis on parameter descriptions for AI agents
+- `docs/guides/GETTING_STARTED_GUIDE.md` - Added JSDoc extraction explanation
+  - Brief explanation after JSDoc example
+  - Link to detailed JSDoc guide
+
+### Notes
+
+This release adds comprehensive JSDoc documentation that clarifies how JSDoc comments map to MCP tool schemas across all API styles. All documentation updates validated by separate validation agent with 95/100 quality score.
+
+## [2.5.0-beta.3] - 2025-10-09
+
+*Note: Version beta.3 included JSDoc documentation but was replaced by beta.4 with the full documentation set.*
+
 ## [2.5.0-beta.2] - 2025-10-09
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp",
-  "version": "2.5.0-beta.1",
+  "version": "2.5.0-beta.4",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",
@@ -60,6 +60,9 @@
     "dev:http": "npx tsx examples/simple-server.ts --http --port 3000",
     "dev:class": "npx tsx src/class-adapter.ts examples/class-minimal.ts",
     "test": "bash tests/run-all-tests.sh",
+    "test:unit": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest",
+    "test:unit:watch": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest --watch",
+    "test:unit:coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest --coverage",
     "test:stdio": "bash tests/test-stdio.sh",
     "test:http": "bash tests/test-stateful-http.sh",
     "release:patch": "bash scripts/release.sh patch",
@@ -118,8 +121,12 @@
     "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24",
     "@types/yargs": "^17.0.33",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2"
   }
 }
