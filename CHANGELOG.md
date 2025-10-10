@@ -71,9 +71,139 @@ This beta completes the MCP Builder validation with definitive end-to-end testin
 
 **Proven Workflow**: AI creates tools → AI uses tools → Complete circle validated ✅
 
-## [2.5.0-beta.1] - 2025-10-06
+## [2.5.0-beta.3] - 2025-10-09
 
 ### New Features
+
+#### Class Wrapper Wizard - Transform Existing Classes into MCP Servers
+
+A standalone interactive MCP server that automatically transforms existing TypeScript classes into MCP servers by adding decorators.
+
+**Command:**
+```bash
+npx simply-mcp create
+```
+
+**Features:**
+- **Interactive Workflow**: 6-step wizard guides AI through the transformation
+  1. `start_wizard` - Initialize session
+  2. `load_file` - Load and analyze TypeScript class
+  3. `confirm_server_metadata` - Set name, version, description
+  4. `add_tool_decorator` - Mark methods to expose as tools (repeatable)
+  5. `preview_annotations` - Preview decorated code
+  6. `finish_and_write` - Generate `{YourClass}.mcp.ts`
+
+- **100% Code Preservation**: Only adds decorators, never modifies implementation
+- **Type Inference**: Automatically extracts parameter types from TypeScript source
+- **LLM-as-Processor Pattern**: Wizard provides instructions, connected LLM does processing
+- **Session Management**: Works in both STDIO (single-user) and HTTP (multi-user) modes
+- **Original File Safe**: Always generates `{original}.mcp.ts`, never overwrites
+
+**Example:**
+```bash
+# Start wizard
+npx simply-mcp create
+
+# Connect from Claude Code CLI
+claude --mcp-config '{"mcpServers":{"wizard":{"command":"npx","args":["simply-mcp","create"]}}}'
+
+# Say: "Transform my WeatherService class into an MCP server"
+```
+
+**Implementation:**
+- Location: `src/api/mcp/class-wrapper/`
+- Components:
+  - `state.ts` - Session state management (159 lines)
+  - `file-parser.ts` - TypeScript class analysis (221 lines)
+  - `decorator-injector.ts` - Code transformation (253 lines)
+  - `validators.ts` - Input validation (79 lines)
+  - `tools.ts` - 6 interactive wizard tools (971 lines)
+- CLI Integration: `src/cli/create.ts` (89 lines)
+- Test Coverage: 80 tests, 100% pass rate, 85.96% coverage
+
+**Documentation:**
+- `CLASS_WRAPPER_ARCHITECTURE.md` - Complete design specification
+- `CLASS_WRAPPER_IMPLEMENTATION_NOTES.md` - Implementation decisions
+- `FUNCTIONAL_VALIDATION_REPORT.md` - End-to-end test results
+- `CLASS_WRAPPER_WIZARD_COMPLETE.md` - Production readiness summary
+
+**Exports:**
+```typescript
+import { ClassWrapperWizard } from 'simply-mcp';
+```
+
+### Bug Fixes
+
+#### Test Infrastructure: HTTP Transport Test Suite Timeout Protection
+Fixed indefinite hang in HTTP transport test suite Scenario #10 (Concurrent Requests):
+- **Root Cause**: curl commands lacked timeout flags, waiting indefinitely for responses
+- **Impact**: Prevented execution of scenarios 10-21 (12 scenarios blocked)
+- **Fix**: Added `--max-time 10` flag to all curl commands in vulnerable scenarios
+- Modified scenarios: #4, #9, #10, #11, #19, #21 (7 curl commands fixed)
+- No code changes required - test infrastructure fix only
+- Test suite now completes reliably in < 5 minutes with full timeout protection
+- See `HTTP_TEST_TIMEOUT_FIX_SUMMARY.md` for complete technical details
+
+#### Critical: Watch Mode Shutdown Logging Race Condition
+Fixed race condition where "Shutdown complete" message was sometimes missing from watch mode logs:
+- **Root Cause**: `process.exit(0)` terminated before stderr buffer was flushed to disk
+- **Fix 1**: Replaced `console.error()` with `process.stderr.write()` + callback to guarantee message completion
+- **Fix 2**: Updated signal handlers to properly await async `shutdown()` function with error handling
+- Ensures shutdown message is always written before process termination
+- Adds robust error handling for shutdown failures
+- See `WATCH_MODE_SHUTDOWN_FIX_SUMMARY.md` for complete technical details
+
+#### Critical: HTTP Session Validation
+Fixed two critical HTTP session validation bugs in stateful mode:
+- **Missing Session ID Validation**: Non-initialize requests without session ID now properly rejected with 401 Unauthorized
+- **Session Termination Timing**: Sessions are now deleted immediately on DELETE to prevent reuse
+- Fixes Test #4 (Request Without Session) and Test #6 (Session Termination) in HTTP transport tests
+- See `HTTP_SESSION_FIX_SUMMARY.md` for complete technical details
+
+#### Critical: Bundle Command Default Format
+Fixed critical bug where bundle command defaulted to broken 'esm' format instead of working 'single-file' format:
+- Changed default from `'esm'` to `'single-file'` in bundle command options
+- Fixes 5 out of 6 failing smoke tests
+- Users no longer need to specify `--format single-file` explicitly
+- Bundles now have shebang, executable permissions, and work by default
+- 100% backward compatible - explicit `--format esm` still available
+- See `BUNDLE_DEFAULT_FORMAT_FIX.md` for complete details
+
+### New Features
+
+#### NPX-Executable Bundle Enhancements
+
+**Single-File Format** now creates truly portable, npx-executable MCP servers with zero runtime dependencies:
+- Bundles all npm dependencies inline (only Node.js builtins remain external)
+- Automatically adds `#!/usr/bin/env node` shebang
+- Sets executable permissions (755) automatically
+- No manual `npm install` required - ready to run with `npx` or direct execution
+- Smart native module detection excludes build tools (esbuild, tsx, typescript, vite, swc)
+
+**Standalone Format** enhanced for npx compatibility:
+- Generates package.json with `bin` field for npx execution
+- Adds shebang and executable permissions to server.js
+- Pre-installs native module dependencies (better-sqlite3, sharp, canvas)
+- Removes duplicate bundle.js file automatically
+- Creates complete, ready-to-publish npm packages
+
+**Usage:**
+```bash
+# Create npx-executable single file
+npx simply-mcp bundle server.ts --format single-file
+
+# Run it directly
+./dist/server.js
+
+# Or with npx
+npx ./dist/server.js
+
+# Create standalone npx-ready folder
+npx simply-mcp bundle server.ts --format standalone
+
+# Run as package
+cd dist/server-standalone && npx server
+```
 
 #### Interface API - TypeScript-Native Server Definitions
 
@@ -293,9 +423,49 @@ npx simply-mcp run server.ts --style interface
 npx simply-mcp run server.ts --style decorator
 ```
 
+### Bug Fixes
+
+#### Critical: Bundle CLI Package Path Resolution
+Fixed incorrect package.json path in `bundle-bin.ts` that caused "Cannot find module" errors when simply-mcp was installed from npm or tarball:
+- Changed from `../../package.json` to `../../../package.json`
+- Affects `--version` flag in bundle command
+- Critical for users installing from npm registry
+
+#### Standalone Bundle Module Format
+Fixed "require is not defined" error in standalone bundles:
+- Removed `"type": "module"` from generated package.json
+- Ensures CommonJS bundles work correctly
+- Prevents runtime errors when using standalone format
+
+#### Duplicate Shebang Prevention
+Fixed issue where shebangs could be duplicated in single-file bundles:
+- Post-build shebang processing checks for existing shebangs
+- Ensures exactly one shebang per bundle
+- Prevents execution issues with multiple shebangs
+
+#### Dependency Resolver False Positives
+Fixed build tools being incorrectly flagged as native modules:
+- Excludes esbuild, tsx, typescript, vite, swc from native module detection
+- Allows single-file bundles for servers using these tools as dev dependencies
+- Only flags true runtime native modules (sqlite, sharp, canvas)
+
 ### Documentation
 
 #### New Guides
+- **JSDoc and Descriptions Guide** (`docs/guides/JSDOC_AND_DESCRIPTIONS.md`) - Comprehensive 1,400+ line JSDoc reference
+  - Complete explanation of how JSDoc maps to MCP tool schemas
+  - JSDoc tag reference (`@param`, `@returns`, `@example`, `@throws`)
+  - API comparison (Decorator JSDoc vs Functional Zod vs Interface JSDoc)
+  - Visual ASCII diagrams showing JSDoc → MCP schema transformations
+  - Best practices for writing tool and parameter descriptions
+  - Common mistakes section with 7 detailed examples
+  - Troubleshooting guide for JSDoc-related issues
+  - **Key Clarifications:**
+    - Root JSDoc comment → Tool description (NO `@description` tag needed)
+    - `@param` descriptions → Parameter descriptions in MCP `inputSchema`
+    - `@returns` extracted but NOT used in MCP schema (MCP spec limitation)
+    - Parameter descriptions are visible to AI agents when selecting tools
+
 - **Interface API Guide** (`docs/guides/INTERFACE_API_GUIDE.md`) - Complete 1,100+ line guide
   - Introduction and benefits
   - Quick start and complete examples
@@ -322,7 +492,19 @@ npx simply-mcp run server.ts --style decorator
   - Upgrade checklist
 
 #### Updated Documentation
-- `README.md` - Added Interface API section, updated import patterns
+- `README.md` - Added Interface API section, updated import patterns, added JSDoc integration note
+- `docs/guides/DECORATOR_API_GUIDE.md` - Added "JSDoc to MCP Schema Mapping" section (160 lines)
+  - Visual diagram showing transformation
+  - Complete example with side-by-side code and schema
+  - Explanation of what JSDoc tags are used and why
+  - Cross-reference to comprehensive JSDoc guide
+- `docs/guides/FUNCTIONAL_API_GUIDE.md` - Added "Tool Documentation" section (117 lines)
+  - Zod `.describe()` vs JSDoc comparison
+  - Side-by-side examples for all three API styles
+  - Emphasis on parameter descriptions for AI agents
+- `docs/guides/GETTING_STARTED_GUIDE.md` - Added JSDoc extraction explanation
+  - Brief explanation after JSDoc example
+  - Link to detailed JSDoc guide
 - `docs/development/DECORATOR-API.md` - Updated with new import patterns
 - `docs/guides/WATCH_MODE_GUIDE.md` - Updated examples
 - All example files enhanced with clarifying comments
@@ -404,7 +586,7 @@ import { MCPServer, CLIConfig } from 'simply-mcp';
 
 1. **Update package version:**
    ```bash
-   npm install simply-mcp@2.5.0-beta.1
+   npm install simply-mcp@2.5.0-beta.3
    ```
 
 2. **Optional: Update imports** (old pattern still works):

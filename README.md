@@ -95,6 +95,8 @@ export default class Calculator {
 }
 ```
 
+> **JSDoc Integration:** JSDoc comments are automatically extracted and become tool and parameter descriptions visible to AI agents. See [Decorator API Guide](./docs/guides/DECORATOR_API_GUIDE.md) for details.
+
 > **Note:** As of v2.5.0, all exports are available from the main `'simply-mcp'` package. The old pattern `import { MCPServer } from 'simply-mcp/decorators'` still works but is deprecated.
 
 > **Important:** The class must be exported (using `export default` or named export). Non-exported classes are never evaluated by JavaScript's module system, so decorators won't run.
@@ -105,10 +107,10 @@ Programmatic control with explicit registration:
 
 ```typescript
 // server.ts
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'calculator',
   version: '1.0.0'
 });
@@ -163,6 +165,36 @@ npx simply-mcp run server.ts
 ```
 
 **That's all you need!** No `package.json`, no `tsconfig.json`, no configuration files. The CLI auto-detects your API style.
+
+### Which API Should I Use?
+
+Choose the API style that matches your preferences:
+
+```
+┌─────────────────────────────────────────┐
+│ Do you want zero boilerplate?          │
+│ (Just TypeScript types)                 │
+└────────┬───────────────┬────────────────┘
+         │ YES           │ NO
+         ▼               ▼
+    Interface API        │
+                         │
+        ┌────────────────▼─────────────────┐
+        │ Do you prefer decorators?        │
+        │ (@tool, @prompt syntax)          │
+        └────────┬───────────────┬──────────┘
+                 │ YES           │ NO
+                 ▼               ▼
+            Decorator API    Functional API
+```
+
+**Quick Decision Guide:**
+
+| Choose... | If you want... |
+|-----------|----------------|
+| **Interface API** | Zero boilerplate, pure TypeScript types, full IntelliSense |
+| **Decorator API** | Class-based organization, JSDoc-driven, auto-registration |
+| **Functional API** | Maximum control, runtime flexibility, programmatic configuration |
 
 **Smart Defaults:**
 - `name`: Auto-generated from class name (Calculator -> calculator)
@@ -228,6 +260,102 @@ npx simplymcp-func server.ts
 ```
 
 **Note:** We recommend using `simply-mcp run` for all use cases as it auto-detects the API style and provides more features.
+
+### Transform Existing Classes into MCP Servers
+
+Have an existing TypeScript class? Transform it into an MCP server automatically with the **Class Wrapper Wizard**:
+
+```bash
+npx simply-mcp create
+```
+
+This launches an interactive wizard that:
+1. 🔍 Analyzes your existing TypeScript class
+2. 🎨 Adds `@MCPServer` and `@tool` decorators
+3. 💾 Generates `{YourClass}.mcp.ts` (preserves original file)
+4. ✨ Maintains 100% of your implementation code
+
+#### Example Workflow
+
+**1. Start the wizard:**
+```bash
+npx simply-mcp create
+```
+
+**2. Connect from Claude Code CLI:**
+```bash
+claude --mcp-config '{"mcpServers":{"wizard":{"command":"npx","args":["simply-mcp","create"]}}}'
+```
+
+**3. Say:** "Transform my WeatherService class into an MCP server"
+
+The wizard guides Claude to:
+- Ask for the file path (`./WeatherService.ts`)
+- Extract class structure and methods
+- Suggest server metadata (name, version)
+- Mark which methods should be exposed as tools
+- Preview the decorated code
+- Generate `WeatherService.mcp.ts`
+
+#### Before (Original Class)
+
+```typescript
+// WeatherService.ts
+export class WeatherService {
+  async getCurrentWeather(location: string, units: string) {
+    return { temperature: 72, conditions: 'Sunny' };
+  }
+
+  async getForecast(location: string, days: number) {
+    return { forecast: [...] };
+  }
+}
+```
+
+#### After (Generated MCP Server)
+
+```typescript
+// WeatherService.mcp.ts
+import { MCPServer, tool } from 'simply-mcp';
+
+@MCPServer({
+  name: 'weather-service',
+  version: '1.0.0',
+  description: 'Weather information service'
+})
+export class WeatherService {
+  @tool('Get current weather for a location')
+  async getCurrentWeather(location: string, units: string) {
+    return { temperature: 72, conditions: 'Sunny' };
+  }
+
+  @tool('Get weather forecast for multiple days')
+  async getForecast(location: string, days: number) {
+    return { forecast: [...] };
+  }
+}
+```
+
+**Run your new MCP server:**
+```bash
+npx simply-mcp run WeatherService.mcp.ts
+```
+
+#### Key Features
+
+- **100% Code Preservation**: Only decorators are added, never modifies implementation
+- **Type Inference**: Automatically extracts parameter types from TypeScript
+- **Interactive Guidance**: Wizard provides step-by-step instructions to Claude
+- **Original File Safe**: Always generates `{original}.mcp.ts`, never overwrites
+- **Zero Configuration**: No setup required, works out of the box
+
+#### HTTP Mode
+
+Run the wizard as an HTTP server for web-based workflows:
+
+```bash
+npx simply-mcp create --http --port 3000
+```
 
 ## TypeScript Configuration (Optional)
 
@@ -686,11 +814,11 @@ simply-mcp/
 ### Configuration-Based Server
 
 ```typescript
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import config from './config.json';
 
 (async () => {
-  const server = new SimplyMCP(config);
+  const server = new BuildMCPServer(config);
   await server.start();
 })().catch(console.error);
 ```
@@ -698,7 +826,7 @@ import config from './config.json';
 ### HTTP Server with Sessions
 
 ```typescript
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'api-server',
   version: '1.0.0',
   transport: {
@@ -720,7 +848,7 @@ await server.start();
 ### Stateless HTTP for Serverless
 
 ```typescript
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'lambda-server',
   version: '1.0.0',
   transport: {
