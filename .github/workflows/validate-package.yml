@@ -184,8 +184,8 @@ jobs:
         run: |
           echo "Testing basic imports..."
 
-          # Create test file
-          cat > /tmp/test-imports.mjs << 'EOF'
+          # Create test file in project directory
+          cat > test-imports.mjs << 'EOF'
           import { SimplyMCP } from './dist/src/index.js';
           import { MCPServer, tool } from './dist/src/decorators.js';
           import { defineConfig } from './dist/src/config.js';
@@ -203,7 +203,8 @@ jobs:
           }
           EOF
 
-          node /tmp/test-imports.mjs
+          node test-imports.mjs
+          rm test-imports.mjs
 
       - name: Security check
         run: |
@@ -275,9 +276,11 @@ jobs:
 
       - name: Quick integration test
         run: |
-          # Create simple test
-          cat > /tmp/quick-test.mjs << 'EOF'
+          # Create simple test in project directory
+          npm install --save zod --silent
+          cat > quick-test.mjs << 'EOF'
           import { SimplyMCP } from './dist/src/index.js';
+          import { z } from 'zod';
 
           const server = new SimplyMCP({
             name: 'test',
@@ -287,14 +290,15 @@ jobs:
           server.addTool({
             name: 'test',
             description: 'Test',
-            parameters: { type: 'object', properties: {} },
+            parameters: z.object({}),
             execute: async () => ({ result: 'ok' })
           });
 
           console.log('✓ Quick integration test passed');
           EOF
 
-          node /tmp/quick-test.mjs
+          node quick-test.mjs
+          rm quick-test.mjs
 
   summary:
     name: Validation Summary

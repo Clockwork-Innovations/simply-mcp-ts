@@ -124,18 +124,19 @@ EOF
   npx simplymcp-class decorator-server.ts --dry-run > /dev/null 2>&1
 
   echo "  → Testing functional server"
+  npm install --save zod --silent
   cat > functional-server.ts << 'EOF'
 import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
 
 const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
 server.addTool({
   name: 'multiply',
   description: 'Multiply two numbers',
-  parameters: {
-    type: 'object',
-    properties: { a: { type: 'number' }, b: { type: 'number' } },
-    required: ['a', 'b']
-  },
+  parameters: z.object({
+    a: z.number(),
+    b: z.number()
+  }),
   execute: async ({ a, b }) => ({ result: a * b })
 });
 console.log('✓ Functional server works');
@@ -239,8 +240,10 @@ EOF
   npx simplymcp-class decorator-style.ts --dry-run > /dev/null 2>&1
 
   echo "  → Testing Programmatic API"
+  npm install --save zod --silent
   cat > programmatic-style.ts << 'EOF'
 import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
 
 const server = new SimplyMCP({
   name: 'programmatic-test',
@@ -250,7 +253,7 @@ const server = new SimplyMCP({
 server.addTool({
   name: 'test',
   description: 'Test tool',
-  parameters: { type: 'object', properties: {} },
+  parameters: z.object({}),
   execute: async () => ({ result: 'programmatic works' })
 });
 
@@ -277,6 +280,7 @@ EOF
   echo "  → Testing Functional API with config"
   cat > functional-style.ts << 'EOF'
 import { SimplyMCP, defineConfig } from 'simply-mcp';
+import { z } from 'zod';
 
 const config = defineConfig({
   name: 'functional-test',
@@ -289,11 +293,9 @@ const server = new SimplyMCP(config);
 server.addTool({
   name: 'calculate',
   description: 'Calculate something',
-  parameters: {
-    type: 'object',
-    properties: { value: { type: 'number' } },
-    required: ['value']
-  },
+  parameters: z.object({
+    value: z.number()
+  }),
   execute: async ({ value }) => ({ result: value * 2 })
 });
 
@@ -441,8 +443,10 @@ EOF
   npx simplymcp-class stdio-server.ts --dry-run > /dev/null 2>&1
 
   echo "  → Testing HTTP transport flag"
+  npm install --save zod --silent
   cat > http-server.ts << 'EOF'
 import { SimplyMCP } from 'simply-mcp';
+import { z } from 'zod';
 
 const server = new SimplyMCP({
   name: 'http-test',
@@ -452,7 +456,7 @@ const server = new SimplyMCP({
 server.addTool({
   name: 'test',
   description: 'Test',
-  parameters: { type: 'object', properties: {} },
+  parameters: z.object({}),
   execute: async () => ({ result: 'http works' })
 });
 
