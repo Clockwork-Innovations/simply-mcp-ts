@@ -186,14 +186,14 @@ jobs:
 
           # Create test file in project directory
           cat > test-imports.mjs << 'EOF'
-          import { SimplyMCP } from './dist/src/index.js';
+          import { BuildMCPServer } from './dist/src/index.js';
           import { MCPServer, tool } from './dist/src/decorators.js';
           import { defineConfig } from './dist/src/config.js';
 
           console.log('✓ All imports successful');
 
-          if (typeof SimplyMCP !== 'function') {
-            throw new Error('SimplyMCP not exported correctly');
+          if (typeof BuildMCPServer !== 'function') {
+            throw new Error('BuildMCPServer not exported correctly');
           }
           if (typeof MCPServer !== 'function') {
             throw new Error('MCPServer not exported correctly');
@@ -279,10 +279,10 @@ jobs:
           # Create simple test in project directory
           npm install --save zod --silent
           cat > quick-test.mjs << 'EOF'
-          import { SimplyMCP } from './dist/src/index.js';
+          import { BuildMCPServer } from './dist/src/index.js';
           import { z } from 'zod';
 
-          const server = new SimplyMCP({
+          const server = new BuildMCPServer({
             name: 'test',
             version: '1.0.0'
           });

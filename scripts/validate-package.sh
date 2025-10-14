@@ -106,8 +106,7 @@ validate "Bundle binary has shebang" "head -n 1 dist/src/cli/bundle-bin.js | gre
 echo ""
 echo -e "${BOLD}Checking Core Files...${NC}"
 
-validate "SimplyMCP core exists" "test -f dist/src/SimplyMCP.js"
-validate "Class adapter exists" "test -f dist/src/class-adapter.js"
+validate "BuildMCPServer exists" "test -f dist/src/api/programmatic/BuildMCPServer.js"
 validate "Core error messages exist" "test -f dist/src/core/error-messages.js" "WARNING"
 validate "Core types exist" "test -f dist/src/core/types.d.ts" "WARNING"
 
@@ -137,13 +136,9 @@ echo -e "${BOLD}Checking Exports Map...${NC}"
 
 # Validate exports point to existing files
 validate "Main export points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.exports[\".\"].import)) process.exit(1)'"
-validate "Decorators export points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.exports[\"./decorators\"].import)) process.exit(1)'"
-validate "Config export points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.exports[\"./config\"].import)) process.exit(1)'"
 
 # Check type declarations in exports
 validate "Main export has types" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.exports[\".\"].types)) process.exit(1)'"
-validate "Decorators export has types" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.exports[\"./decorators\"].types)) process.exit(1)'"
-validate "Config export has types" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.exports[\"./config\"].types)) process.exit(1)'"
 
 # Check 7: Bin Entries Validation
 echo ""
@@ -239,12 +234,12 @@ validate "No source .ts files in dist/" "! find dist -name '*.ts' ! -name '*.d.t
 validate "Type declarations (.d.ts) present" "find dist -name '*.d.ts' -type f | grep -q ."
 validate "JavaScript files (.js) present" "find dist -name '*.js' -type f | grep -q ."
 
-# Check 15: Critical Decorators
+# Check 15: Critical Exports
 echo ""
 echo -e "${BOLD}Checking Critical Exports...${NC}"
 
 validate "Decorators module exports correctly" "node -e 'const d=require(\"./dist/src/decorators.js\"); if(!d.tool||!d.prompt||!d.resource||!d.MCPServer) process.exit(1)'"
-validate "Main module exports SimplyMCP" "node -e 'const m=require(\"./dist/src/index.js\"); if(!m.SimplyMCP) process.exit(1)'"
+validate "Main module exports BuildMCPServer" "node -e 'const m=require(\"./dist/src/index.js\"); if(!m.BuildMCPServer) process.exit(1)'"
 validate "Config module exports defineConfig" "node -e 'const c=require(\"./dist/src/config.js\"); if(!c.defineConfig) process.exit(1)'"
 
 # Summary Report
