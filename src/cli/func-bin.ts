@@ -5,7 +5,7 @@
  */
 
 import { resolve } from 'node:path';
-import { SimplyMCP } from '../SimplyMCP.js';
+import { BuildMCPServer } from '../api/programmatic/BuildMCPServer.js';
 import type { SingleFileMCPConfig } from '../single-file-types.js';
 import { schemaToZod } from '../schema-builder.js';
 import { parseCommonArgs, startServer, displayServerInfo } from './adapter-utils.js';
@@ -80,11 +80,11 @@ async function loadConfig(configPath: string): Promise<SingleFileMCPConfig> {
 }
 
 /**
- * Create SimplyMCP server from config
+ * Create BuildMCPServer server from config
  */
-function createServerFromConfig(config: SingleFileMCPConfig): SimplyMCP {
-  // Create SimplyMCP instance
-  const server = new SimplyMCP({
+function createServerFromConfig(config: SingleFileMCPConfig): BuildMCPServer {
+  // Create BuildMCPServer instance
+  const server = new BuildMCPServer({
     name: config.name,
     version: config.version,
     basePath: config.basePath,

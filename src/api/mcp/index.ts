@@ -110,3 +110,14 @@ export {
 // - AnalyzeToolsPreset
 // - WorkflowPromptsPreset
 // - KnowledgeResourcesPreset
+
+// ============================================================================
+// Wizard Servers
+// ============================================================================
+export {
+  WizardServer,
+} from './wizard-server.js';
+
+export {
+  ClassWrapperWizard,
+} from './class-wrapper-wizard.js';

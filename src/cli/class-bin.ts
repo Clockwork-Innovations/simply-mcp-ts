@@ -108,7 +108,7 @@ Example:
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const distPath = resolve(__dirname, '..');
 
-  const { SimplyMCP } = await import(pathToFileURL(resolve(distPath, 'SimplyMCP.js')).href);
+  const { BuildMCPServer } = await import(pathToFileURL(resolve(distPath, 'api/programmatic/BuildMCPServer.js')).href);
   const {
     getServerConfig,
     getTools,
@@ -171,7 +171,7 @@ Example:
     // Parse the source file to extract types
     const parsedClass = parseTypeScriptFileWithCache(classFile);
 
-    const server = new SimplyMCP({
+    const server = new BuildMCPServer({
       name: config.name!,
       version: config.version!,
       port: config.port,

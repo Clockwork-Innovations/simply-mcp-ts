@@ -493,65 +493,80 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
   };
 
   try {
-    // Import the interface adapter
+    // Import the interface parser and adapter
     const { dirname } = await import('node:path');
     const { fileURLToPath } = await import('node:url');
 
     const __dirname = dirname(fileURLToPath(import.meta.url));
     const distPath = resolve(__dirname, '..');
 
-    const { loadInterfaceServer } = await import(
-      pathToFileURL(resolve(distPath, 'api/interface/adapter.js')).href
+    const { parseInterfaceFile } = await import(
+      pathToFileURL(resolve(distPath, 'api/interface/parser.js')).href
     );
 
-    // Load the interface server
+    // Parse the interface file directly to get metadata
     const absolutePath = resolve(process.cwd(), filePath);
-    const server = await loadInterfaceServer({
-      filePath: absolutePath,
-      verbose: false,
-    });
+    const parsed = parseInterfaceFile(absolutePath);
 
-    // Extract server info
-    const info = server.getInfo();
-    const stats = server.getStats();
-
-    serverConfig = {
-      name: info.name || '',
-      version: info.version || '',
-      port: undefined,
-    };
+    // Extract server config
+    if (parsed.server) {
+      serverConfig = {
+        name: parsed.server.name || '',
+        version: parsed.server.version || '',
+        port: undefined,
+      };
+    }
 
     // Validate server config
     validateServerConfig(serverConfig.name, serverConfig.version, errors, warnings);
 
-    // Note: We can't easily extract individual tool/prompt/resource details
-    // from the interface server without more introspection APIs
-    // For now, just report counts
-    for (let i = 0; i < stats.tools; i++) {
+    // Extract tool metadata with actual names and descriptions
+    for (const tool of parsed.tools) {
       tools.push({
-        name: `tool-${i + 1}`,
-        description: undefined,
+        name: tool.name,
+        description: tool.description || undefined,
       });
+
+      // Warn if tool has no description
+      if (!tool.description) {
+        warnings.push(`Tool '${tool.name}' has no description. Add a description field to improve documentation.`);
+      }
     }
 
-    for (let i = 0; i < stats.prompts; i++) {
+    // Extract prompt metadata with actual names and descriptions
+    for (const prompt of parsed.prompts) {
       prompts.push({
-        name: `prompt-${i + 1}`,
-        description: undefined,
+        name: prompt.name,
+        description: prompt.description || undefined,
       });
+
+      // Warn if prompt has no description
+      if (!prompt.description) {
+        warnings.push(`Prompt '${prompt.name}' has no description. Add a description field to improve documentation.`);
+      }
+
+      // Note dynamic prompts require implementation
+      if (prompt.dynamic && !prompt.template) {
+        warnings.push(`Prompt '${prompt.name}' is dynamic and requires implementation as method '${prompt.methodName}'`);
+      }
     }
 
-    for (let i = 0; i < stats.resources; i++) {
+    // Extract resource metadata with actual URIs and descriptions
+    for (const resource of parsed.resources) {
       resources.push({
-        name: `resource-${i + 1}`,
-        description: undefined,
+        name: resource.uri,
+        description: resource.description || resource.name || undefined,
       });
-    }
 
-    // Add info message about limited introspection
-    if (stats.tools > 0 || stats.prompts > 0 || stats.resources > 0) {
-      warnings.push('Tool/prompt/resource details not available in dry-run for interface servers');
-      warnings.push('Run without --dry-run to see full server capabilities');
+      // Warn if resource has no description
+      if (!resource.description) {
+        warnings.push(`Resource '${resource.uri}' has no description. Add a description field to improve documentation.`);
+      }
+
+      // Note dynamic resources require implementation
+      if (resource.dynamic) {
+        warnings.push(`Resource '${resource.uri}' is dynamic and requires implementation as property '${resource.methodName}'`);
+      }
     }
 
     // Validate port if HTTP is used

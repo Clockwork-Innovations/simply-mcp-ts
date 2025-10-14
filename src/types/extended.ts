@@ -5,9 +5,6 @@
  * Provides additional constraints and validation rules beyond the core types.
  *
  * @module types/extended
- *
- * @deprecated These types were previously exported from 'src/types-extended.ts'.
- * Import from 'simply-mcp' or 'simply-mcp/types' instead.
  */
 
 import { SecurityConfig } from '../security/types.js';

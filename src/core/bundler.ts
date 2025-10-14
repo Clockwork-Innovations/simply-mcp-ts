@@ -4,7 +4,7 @@
  */
 
 import * as esbuild from 'esbuild';
-import { stat, readFile } from 'fs/promises';
+import { stat, readFile, chmod, writeFile } from 'fs/promises';
 import { BundleOptions, BundleResult, BundleError, BundleMetadata } from './bundle-types.js';
 import { detectEntryPoint } from './entry-detector.js';
 import { resolveDependencies, getBuiltinModules } from './dependency-resolver.js';
@@ -107,6 +107,11 @@ export async function bundle(options: BundleOptions): Promise<BundleResult> {
     }
 
     const result = await esbuild.build(esbuildConfig);
+
+    // Post-process single-file bundles: add shebang and make executable
+    if (options.format === 'single-file') {
+      await addShebangAndMakeExecutable(options.output);
+    }
 
     // 6. Handle source maps (Feature 4.2)
     if (options.sourcemap && result.metafile) {
@@ -236,11 +241,39 @@ function buildEsbuildConfig(
   deps: any
 ): esbuild.BuildOptions {
   const format = options.format || 'single-file';
-  const external = [
-    ...getBuiltinModules(), // Always external
-    ...deps.nativeModules,  // Native modules must be external
-    ...(options.external || []),
-  ];
+
+  // Handle external dependencies based on format
+  let external: string[];
+  let banner: { js: string } | undefined;
+
+  if (format === 'single-file') {
+    // For single-file format: fail if native modules detected
+    if (deps.nativeModules && deps.nativeModules.length > 0) {
+      throw new Error(
+        `Cannot create single-file bundle: native modules detected (${deps.nativeModules.join(', ')}). ` +
+        `Native modules cannot be bundled into a single file. ` +
+        `Please use 'standalone' format instead, which supports native modules.`
+      );
+    }
+
+    // Only externalize Node.js builtins (bundle all npm dependencies)
+    external = [
+      ...getBuiltinModules(),
+      ...(options.external || []),
+    ];
+
+    // Don't add shebang via banner - we'll add it post-build to avoid duplication
+    banner = options.banner ? { js: options.banner } : undefined;
+  } else {
+    // For other formats: externalize builtins, native modules, and user-specified
+    external = [
+      ...getBuiltinModules(), // Always external
+      ...deps.nativeModules,  // Native modules must be external
+      ...(options.external || []),
+    ];
+
+    banner = options.banner ? { js: options.banner } : undefined;
+  }
 
   // For standalone format, if output is a directory, write to bundle.js inside it
   // This ensures esbuild has a valid file path
@@ -264,7 +297,7 @@ function buildEsbuildConfig(
     logLevel: 'warning',
     mainFields: ['module', 'main'],
     conditions: ['node', 'import', 'require'],
-    banner: options.banner ? { js: options.banner } : undefined,
+    banner: banner,
     footer: options.footer ? { js: options.footer } : undefined,
   };
 }
@@ -415,4 +448,22 @@ function formatSize(bytes: number): string {
  */
 export async function stopWatch(context: esbuild.BuildContext): Promise<void> {
   await context.dispose();
+}
+
+/**
+ * Add shebang to file and make it executable
+ * This is done post-build to avoid duplication issues with esbuild's banner
+ */
+async function addShebangAndMakeExecutable(filePath: string): Promise<void> {
+  // Read current content
+  const content = await readFile(filePath, 'utf-8');
+
+  // Only add shebang if it doesn't already exist
+  if (!content.startsWith('#!')) {
+    const withShebang = '#!/usr/bin/env node\n' + content;
+    await writeFile(filePath, withShebang);
+  }
+
+  // Make executable
+  await chmod(filePath, 0o755);
 }

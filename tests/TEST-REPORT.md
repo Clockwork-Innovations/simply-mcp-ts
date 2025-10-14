@@ -1,27 +1,26 @@
 # MCP Framework - Transport Test Report
 
-**Generated:** 2025-10-06 17:53:54
+**Generated:** 2025-10-13 15:28:42
 **Duration:** 102s
 
 ## Summary
 
-- **Total Test Suites:** 8
-- **Passed:** 8
-- **Failed:** 0
-- **Success Rate:** 100%
+- **Total Test Suites:** 7
+- **Passed:** 4
+- **Failed:** 3
+- **Success Rate:** 57%
 
 ## Test Results
 
 | Transport Type | Status | Duration |
 |----------------|--------|----------|
-| v2.4.5 Bug Fixes | ✅ PASS | 16s |
-| Stdio Transport | ✅ PASS | 2s |
-| Decorator API | ✅ PASS | 4s |
+| v2.4.5 Bug Fixes | ✅ PASS | 17s |
+| Stdio Transport | ✅ PASS | 1s |
+| Decorator API | ❌ FAIL | 2s |
 | Stateless HTTP Transport | ✅ PASS | 8s |
-| Stateful HTTP Transport | ✅ PASS | 7s |
-| HTTP Modes (Stateful/Stateless) | ✅ PASS | 5s |
-| SSE Transport (Legacy) | ✅ PASS | 13s |
-| CLI Commands | ✅ PASS | 33s |
+| Stateful HTTP Transport | ✅ PASS | 6s |
+| HTTP Modes (Stateful/Stateless) | ❌ FAIL | 17s |
+| CLI Commands | ❌ FAIL | 39s |
 
 ## Test Categories
 
@@ -49,13 +48,7 @@
 - **Session:** Tracked via Mcp-Session-Id header
 - **Tests:** Session creation, reuse, isolation, termination, SSE streaming
 
-### 5. SSE Transport (Legacy)
-- **Type:** Server-Sent Events
-- **Use Case:** Legacy systems, streaming updates
-- **Session:** Tracked via query parameters
-- **Tests:** Connection establishment, message sending, session validation
-
-### 6. CLI Commands
+### 5. CLI Commands
 - **Type:** Simplified CLI interface
 - **Use Case:** Running MCP servers with auto-detection
 - **Session:** N/A (adapter selection)
@@ -63,7 +56,7 @@
 
 ## Notes
 
-All test suites passed successfully!
+Some test suites failed. Please review the test output above.
 
 ---
 

@@ -937,17 +937,43 @@ export class BuildMCPServer {
       });
     }
 
-    // Start HTTP server
-    this.httpServer = app.listen(port, () => {
-      console.log(
-        `[BuildMCPServer] Server '${this.options.name}' v${this.options.version} listening on port ${port}`
-      );
-      console.log(
-        `[BuildMCPServer] HTTP Mode: ${isStateful ? 'STATEFUL' : 'STATELESS'}`
-      );
-      console.log(
-        `[BuildMCPServer] Registered: ${this.tools.size} tools, ${this.prompts.size} prompts, ${this.resources.size} resources`
-      );
+    // Start HTTP server with proper error handling
+    await new Promise<void>((resolve, reject) => {
+      const server = app.listen(port);
+
+      // Handle port conflict and other server errors BEFORE success callback
+      server.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EADDRINUSE') {
+          reject(new Error(
+            `Port ${port} is already in use\n\n` +
+            `What went wrong:\n` +
+            `  Another process is already listening on port ${port}.\n\n` +
+            `To fix:\n` +
+            `  1. Stop the process using port ${port}\n` +
+            `  2. Choose a different port with --port flag\n` +
+            `  3. Find the process using: lsof -i :${port} (macOS/Linux) or netstat -ano | findstr :${port} (Windows)\n\n` +
+            `Example:\n` +
+            `  simply-mcp run server.ts --http --port ${port + 1}`
+          ));
+        } else {
+          reject(error);
+        }
+      });
+
+      server.on('listening', () => {
+        console.log(
+          `[BuildMCPServer] Server '${this.options.name}' v${this.options.version} listening on port ${port}`
+        );
+        console.log(
+          `[BuildMCPServer] HTTP Mode: ${isStateful ? 'STATEFUL' : 'STATELESS'}`
+        );
+        console.log(
+          `[BuildMCPServer] Registered: ${this.tools.size} tools, ${this.prompts.size} prompts, ${this.resources.size} resources`
+        );
+        resolve();
+      });
+
+      this.httpServer = server;
     });
 
     // Handle graceful shutdown

@@ -19,13 +19,13 @@
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
 /**
  * Create the SimplyMCP server
  */
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'inline-deps-demo',
   version: '1.0.0',
   capabilities: {

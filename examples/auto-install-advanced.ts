@@ -19,7 +19,7 @@
 // chalk@^5.3.0
 // ///
 
-import { SimplyMCP, type InstallProgressEvent } from 'simply-mcp';
+import { BuildMCPServer, type InstallProgressEvent } from 'simply-mcp';
 import { z } from 'zod';
 
 async function main() {
@@ -35,7 +35,7 @@ async function main() {
   };
 
   // Load server with custom auto-install options
-  const server = await SimplyMCP.fromFile(__filename, {
+  const server = await BuildMCPServer.fromFile(__filename, {
     name: 'advanced-auto-install',
     version: '1.0.0',
     autoInstall: {

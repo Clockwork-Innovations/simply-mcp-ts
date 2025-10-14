@@ -650,10 +650,10 @@ export default class MyServer {
 
 **Functional API:**
 ```typescript
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'calculator',
   version: '1.0.0'
 });

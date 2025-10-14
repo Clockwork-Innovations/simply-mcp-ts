@@ -107,24 +107,9 @@ if (!SimplyMCP || !MCPServer || !tool || !defineConfig) {
 EOF
 
 if npx tsx test-imports.ts > /dev/null 2>&1; then
-  success "New imports work"
+  success "Unified imports work"
 else
-  error "New imports failed"
-fi
-
-# Test backward compatibility
-cat > test-old-imports.ts << 'EOF'
-import { tool } from 'simply-mcp/decorators';
-import { defineConfig } from 'simply-mcp/config';
-if (!tool || !defineConfig) {
-  throw new Error('Old import failed');
-}
-EOF
-
-if npx tsx test-old-imports.ts > /dev/null 2>&1; then
-  success "Old imports work (backward compatible)"
-else
-  error "Old imports failed"
+  error "Unified imports failed"
 fi
 
 # Step 6: Test decorator example

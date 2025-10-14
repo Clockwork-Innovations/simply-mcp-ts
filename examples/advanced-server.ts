@@ -13,12 +13,12 @@
  *   node mcp/examples/advanced-server.ts
  */
 
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'advanced-example-server',
   version: '1.0.0',
 });

@@ -990,15 +990,16 @@ npm list simply-mcp
 npm install simply-mcp
 ```
 
-**Problem:** `Module not found: 'simply-mcp/decorators'`
+**Problem:** `Module not found: 'simply-mcp/decorators'` or `'simply-mcp/config'`
 
-**Solution:** Update imports (v2.5.0+)
+**Solution:** Subpath exports are no longer supported in v3. Update imports:
 ```typescript
-// ❌ Old (deprecated)
+// ❌ Old (removed in v3)
 import { MCPServer } from 'simply-mcp/decorators';
+import { defineConfig } from 'simply-mcp/config';
 
-// ✅ New (recommended)
-import { MCPServer } from 'simply-mcp';
+// ✅ New (required in v3)
+import { MCPServer, defineConfig } from 'simply-mcp';
 ```
 
 ### Server Won't Start

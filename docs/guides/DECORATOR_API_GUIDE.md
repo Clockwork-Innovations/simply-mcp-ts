@@ -1718,19 +1718,17 @@ If you're using the old decorator API, here's how to migrate to v2.5.0+:
 
 #### Change 1: Unified Imports
 
-**Old:**
+**Old (v2.x - no longer supported in v3):**
 ```typescript
 import { MCPServer } from 'simply-mcp/decorators';
 import { tool } from 'simply-mcp/decorators';
 ```
 
-**New:**
+**New (v3.0.0 - required):**
 ```typescript
 // All decorators from one package
 import { MCPServer, tool, prompt, resource } from 'simply-mcp';
 ```
-
-**Note:** The old import pattern still works but is deprecated.
 
 #### Change 2: Transport Configuration
 
@@ -1796,10 +1794,10 @@ Migrating from functional API to decorators:
 
 **Functional API:**
 ```typescript
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'calculator',
   version: '1.0.0'
 });

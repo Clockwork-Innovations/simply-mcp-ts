@@ -80,11 +80,11 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Create stateful mode server using cat with EOF to avoid variable expansion issues
 cat > "$PROJECT_ROOT/tests/.test-http-mode-stateful.ts" <<'EOFSTATEFUL'
-import { SimplyMCP } from '../dist/src/SimplyMCP.js';
+import { BuildMCPServer } from '../dist/src/api/programmatic/BuildMCPServer.js';
 import { z } from 'zod';
 
 async function main() {
-  const server = new SimplyMCP({
+  const server = new BuildMCPServer({
     name: 'stateful-test-server',
     version: '1.0.0',
   });
@@ -124,11 +124,11 @@ EOFSTATEFUL
 
 # Create stateless mode server
 cat > "$PROJECT_ROOT/tests/.test-http-mode-stateless.ts" <<'EOFSTATELESS'
-import { SimplyMCP } from '../dist/src/SimplyMCP.js';
+import { BuildMCPServer } from '../dist/src/api/programmatic/BuildMCPServer.js';
 import { z } from 'zod';
 
 async function main() {
-  const server = new SimplyMCP({
+  const server = new BuildMCPServer({
     name: 'stateless-test-server',
     version: '1.0.0',
   });

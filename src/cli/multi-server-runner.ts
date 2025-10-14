@@ -50,6 +50,7 @@ export interface ServerRunOptions {
   filePath: string;
   port?: number;
   useHttp: boolean;
+  useHttpStateless?: boolean;
   verbose: boolean;
   style?: string;
   color?: string;
@@ -74,6 +75,7 @@ export interface RunningServer {
 export interface MultiServerOptions {
   files: string[];
   useHttp: boolean;
+  useHttpStateless?: boolean;
   startPort?: number;
   verbose: boolean;
   forceStyle?: string;
@@ -92,7 +94,7 @@ function prefixMessage(serverName: string, port: number | undefined, message: st
  * Start a single server as a child process
  */
 async function startServerProcess(options: ServerRunOptions): Promise<RunningServer> {
-  const { filePath, port, useHttp, verbose, style, color, groupId } = options;
+  const { filePath, port, useHttp, useHttpStateless, verbose, style, color, groupId } = options;
 
   // Validate file exists
   const absolutePath = resolve(process.cwd(), filePath);
@@ -106,7 +108,9 @@ async function startServerProcess(options: ServerRunOptions): Promise<RunningSer
   // Build command arguments
   const args = [filePath];
 
-  if (useHttp) {
+  if (useHttpStateless) {
+    args.push('--http-stateless');
+  } else if (useHttp) {
     args.push('--http');
   }
 
@@ -243,7 +247,7 @@ async function startServerProcess(options: ServerRunOptions): Promise<RunningSer
  * Run multiple servers simultaneously
  */
 export async function runMultipleServers(options: MultiServerOptions): Promise<void> {
-  const { files, useHttp, startPort = 3000, verbose, forceStyle } = options;
+  const { files, useHttp, useHttpStateless, startPort = 3000, verbose, forceStyle } = options;
 
   // Validate that we have files to run
   if (files.length === 0) {
@@ -299,6 +303,7 @@ export async function runMultipleServers(options: MultiServerOptions): Promise<v
       filePath: file,
       port,
       useHttp,
+      useHttpStateless,
       verbose,
       style,
       color,

@@ -1,0 +1,971 @@
+/**
+ * Class Wrapper Wizard Tools
+ *
+ * Implements all 6 interactive wizard tools for transforming
+ * TypeScript classes into MCP servers.
+ */
+
+import { z } from 'zod';
+import { writeFileSync } from 'fs';
+import { basename, dirname, join } from 'path';
+import type { MCPBuilderTool } from '../types.js';
+import { ClassWrapperStateManager } from './state.js';
+import { parseClassForWizard, generateSuggestedMetadata } from './file-parser.js';
+import { injectDecorators, generatePreview } from './decorator-injector.js';
+import { validateServerName, validateVersion, validateMethodDescription } from './validators.js';
+
+// Global state manager
+const stateManager = new ClassWrapperStateManager();
+
+/**
+ * Tool 1: start_wizard
+ *
+ * Initialize the wizard session
+ */
+export const startWizardTool: MCPBuilderTool = {
+  name: 'start_wizard',
+  description: 'Start the MCP Class Wrapper Wizard to transform a TypeScript class into an MCP server',
+  category: 'design',
+  parameters: z.object({}),
+  execute: async (args, context) => {
+    // Get session ID from context (undefined for STDIO)
+    const sessionId = context?.sessionId;
+
+    // Create new wizard state
+    const state = stateManager.createState(sessionId);
+
+    return JSON.stringify({
+      success: true,
+      message: `Welcome to the MCP Class Wrapper Wizard!
+
+I'll help you transform an existing TypeScript class into an MCP server
+by adding decorators. Your original file will be preserved - I'll create
+a new file named {YourClass}.mcp.ts with the decorated version.
+
+**How it works:**
+1. Provide a path to your TypeScript class file
+2. I'll analyze the class and suggest server metadata
+3. You choose which methods to expose as MCP tools
+4. I'll generate the decorated version
+
+**Next Step:**
+Provide the path to your TypeScript class file.
+
+Example: ./src/WeatherService.ts`,
+
+      data: {
+        wizard_started: true,
+        session_id: sessionId,
+        current_step: 'init',
+        timestamp: state.createdAt,
+      },
+
+      next_action: 'Call load_file with the file path',
+
+      example: {
+        file_path: './src/MyClass.ts',
+      },
+    }, null, 2);
+  },
+};
+
+/**
+ * Tool 2: load_file
+ *
+ * Load and analyze a TypeScript class file
+ */
+export const loadFileTool: MCPBuilderTool = {
+  name: 'load_file',
+  description: 'Load and analyze a TypeScript class file to prepare for decoration',
+  category: 'design',
+  parameters: z.object({
+    file_path: z.string().describe('Path to TypeScript file containing a class (relative or absolute)'),
+  }),
+  execute: async (args, context) => {
+    const sessionId = context?.sessionId;
+    const state = stateManager.getState(sessionId);
+
+    if (!state) {
+      return JSON.stringify({
+        success: false,
+        error: 'Wizard not started. Call start_wizard first.',
+        next_action: 'Call start_wizard',
+        example: {},
+      }, null, 2);
+    }
+
+    try {
+      // Parse the file
+      const parsedClass = await parseClassForWizard(args.file_path);
+
+      // Generate suggested metadata
+      const suggestedMetadata = generateSuggestedMetadata(parsedClass.className);
+
+      // Update state
+      state.currentStep = 'file_loaded';
+      state.filePath = parsedClass.filePath;
+      state.parsedClass = parsedClass;
+      state.suggestedMetadata = suggestedMetadata;
+      stateManager.updateState(state, sessionId);
+
+      // Format method list
+      const methodsList = parsedClass.methods
+        .map((m, i) => {
+          const params = m.parameters
+            .map(p => {
+              let paramStr = `${p.name}${p.optional ? '?' : ''}: ${p.type}`;
+              if (p.hasDefault && p.defaultValue !== undefined) {
+                paramStr += ` = ${JSON.stringify(p.defaultValue)}`;
+              }
+              return paramStr;
+            })
+            .join(', ');
+
+          const description = m.jsdoc?.description ? `\n   - ${m.jsdoc.description}` : '';
+          return `${i + 1}. ${m.name}(${params})${description}`;
+        })
+        .join('\n\n');
+
+      return JSON.stringify({
+        success: true,
+
+        file_info: {
+          path: args.file_path,
+          absolute_path: parsedClass.filePath,
+          class_name: parsedClass.className,
+          is_exported: parsedClass.isExported,
+          methods: parsedClass.methods.map(m => ({
+            name: m.name,
+            parameters: m.parameters.map(p => ({
+              name: p.name,
+              type: p.type,
+              optional: p.optional,
+              has_default: p.hasDefault,
+              default_value: p.defaultValue,
+            })),
+            return_type: m.returnType,
+            jsdoc: m.jsdoc ? {
+              description: m.jsdoc.description,
+              params: m.jsdoc.params ? Object.fromEntries(m.jsdoc.params) : undefined,
+            } : undefined,
+          })),
+          has_existing_decorators: parsedClass.hasExistingDecorators,
+        },
+
+        suggested_metadata: suggestedMetadata,
+
+        message: `✅ File analyzed successfully!
+
+**Class Found:** ${parsedClass.className}
+**File:** ${args.file_path}
+**Exported:** ${parsedClass.isExported ? 'Yes' : 'No'}
+**Methods Detected:** ${parsedClass.methods.length} public method${parsedClass.methods.length !== 1 ? 's' : ''}
+
+**Detected Methods:**
+${methodsList}
+
+**Suggested Server Metadata:**
+- Name: ${suggestedMetadata.name}
+- Version: ${suggestedMetadata.version}
+- Description: ${suggestedMetadata.description}
+
+You can use these suggestions or provide your own metadata.
+
+**Next Step:**
+Review the suggested metadata and call confirm_server_metadata.`,
+
+        next_action: 'Call confirm_server_metadata with metadata (use suggestions or provide custom)',
+
+        example: {
+          name: suggestedMetadata.name,
+          version: suggestedMetadata.version,
+          description: suggestedMetadata.description,
+        },
+      }, null, 2);
+    } catch (error: any) {
+      // Handle specific error cases
+      if (error.message.includes('not found')) {
+        return JSON.stringify({
+          success: false,
+          error: `File not found: ${args.file_path}
+
+The file path you provided does not exist.
+
+**Troubleshooting:**
+- Check the file path for typos
+- Ensure the file exists in the specified location
+- Use relative paths from current directory: ./src/file.ts
+- Or use absolute paths: /full/path/to/file.ts
+
+Try again with the correct path.`,
+          next_action: 'Call load_file again with correct file path',
+          example: {
+            file_path: './src/MyClass.ts',
+          },
+        }, null, 2);
+      }
+
+      if (error.message.includes('Not a TypeScript file')) {
+        return JSON.stringify({
+          success: false,
+          error: `Invalid file type: ${args.file_path}
+
+The MCP Class Wrapper Wizard only works with TypeScript files (.ts).
+
+**Why TypeScript?**
+- Decorators require TypeScript syntax
+- Type information is needed for automatic inference
+- The wizard generates TypeScript code with decorators
+
+**To fix:**
+1. Provide a .ts file path
+2. If you have a .js file, rename or convert it to TypeScript
+
+Try again with a .ts file.`,
+          next_action: 'Call load_file with a .ts file',
+          example: {
+            file_path: './src/MyClass.ts',
+          },
+        }, null, 2);
+      }
+
+      if (error.message.includes('No exported class') || error.message.includes('No public methods')) {
+        return JSON.stringify({
+          success: false,
+          error: `No exported class found in: ${args.file_path}
+
+The file was parsed successfully, but no exported class with public methods was detected.
+
+**What the wizard needs:**
+- An exported TypeScript class
+- Public methods to expose as tools
+
+**Example of valid class:**
+\`\`\`typescript
+export class MyService {
+  greet(name: string): string {
+    return \`Hello, \${name}!\`;
+  }
+}
+\`\`\`
+
+Or with default export:
+\`\`\`typescript
+export default class MyService {
+  // methods here
+}
+\`\`\`
+
+**To fix:**
+1. Ensure your file contains a class
+2. Ensure the class is exported
+3. Ensure the class has public methods
+4. Provide a different file path
+
+Try again with a file containing an exported class.`,
+          next_action: 'Call load_file with a file containing an exported class',
+          example: {
+            file_path: './src/MyClass.ts',
+          },
+        }, null, 2);
+      }
+
+      // Generic parse error
+      return JSON.stringify({
+        success: false,
+        error: `Failed to parse file: ${args.file_path}
+
+${error.message}
+
+The file has syntax errors or could not be parsed.
+
+**To fix:**
+1. Open the file and check for syntax errors
+2. Run: npx tsc --noEmit ${args.file_path}
+3. Fix any errors reported by TypeScript
+4. Try loading the file again
+
+Make sure the file is valid TypeScript before proceeding.`,
+        next_action: 'Fix syntax errors and call load_file again',
+        example: {
+          file_path: './src/MyClass.ts',
+        },
+      }, null, 2);
+    }
+  },
+};
+
+/**
+ * Tool 3: confirm_server_metadata
+ *
+ * Validate and store server metadata
+ */
+export const confirmMetadataTool: MCPBuilderTool = {
+  name: 'confirm_server_metadata',
+  description: 'Confirm the server metadata (name, version, description) for the @MCPServer decorator',
+  category: 'design',
+  parameters: z.object({
+    name: z.string().describe('Server name in kebab-case (e.g., "weather-service")'),
+    version: z.string().describe('Semver version (e.g., "1.0.0")'),
+    description: z.string().optional().describe('Optional server description'),
+  }),
+  execute: async (args, context) => {
+    const sessionId = context?.sessionId;
+    const state = stateManager.getState(sessionId);
+
+    if (!state) {
+      return JSON.stringify({
+        success: false,
+        error: 'Wizard not started. Call start_wizard first.',
+        next_action: 'Call start_wizard',
+        example: {},
+      }, null, 2);
+    }
+
+    if (!state.parsedClass) {
+      return JSON.stringify({
+        success: false,
+        error: `No file has been loaded yet.
+
+You must load and analyze a TypeScript file before confirming metadata.
+
+**Expected flow:**
+1. Call start_wizard
+2. Call load_file (← you are here - this step is missing)
+3. Call confirm_server_metadata
+4. Call add_tool_decorator (repeat as needed)
+5. Call preview_annotations
+6. Call finish_and_write`,
+        next_action: 'Call load_file with the file path to analyze',
+        example: {
+          file_path: './src/MyClass.ts',
+        },
+      }, null, 2);
+    }
+
+    // Validate name
+    const nameValidation = validateServerName(args.name);
+    if (!nameValidation.valid) {
+      return JSON.stringify({
+        success: false,
+        error: `Invalid server name: "${args.name}"
+
+Server name must be in kebab-case format.
+
+**Rules:**
+- Lowercase letters only
+- Numbers allowed
+- Hyphens to separate words
+- Cannot start or end with hyphen
+
+**Valid examples:**
+- weather-service
+- my-server
+- api-v2
+
+**Invalid examples:**
+- Weather_Service (underscores not allowed)
+- weatherService (camelCase not allowed)
+- weather.service (dots not allowed)
+
+Try again with a kebab-case name.`,
+        next_action: 'Call confirm_server_metadata with corrected name',
+        example: {
+          name: 'weather-service',
+          version: '1.0.0',
+        },
+      }, null, 2);
+    }
+
+    // Validate version
+    const versionValidation = validateVersion(args.version);
+    if (!versionValidation.valid) {
+      return JSON.stringify({
+        success: false,
+        error: `Invalid version: "${args.version}"
+
+Version must follow semver format: MAJOR.MINOR.PATCH
+
+**Valid examples:**
+- 1.0.0
+- 2.3.4
+- 0.1.0
+
+**Invalid examples:**
+- 1.0 (missing patch version)
+- v1.0.0 (no 'v' prefix)
+- 1.0.0-beta (pre-release tags not supported yet)
+
+Try again with a valid semver version.`,
+        next_action: 'Call confirm_server_metadata with corrected version',
+        example: {
+          name: args.name,
+          version: '1.0.0',
+        },
+      }, null, 2);
+    }
+
+    // Update state
+    state.currentStep = 'metadata_confirmed';
+    state.confirmedMetadata = {
+      name: args.name,
+      version: args.version,
+      description: args.description,
+    };
+    stateManager.updateState(state, sessionId);
+
+    // Format methods list
+    const methodsList = state.parsedClass.methods
+      .map((m, i) => {
+        const params = m.parameters
+          .map(p => {
+            let paramStr = `${p.name}${p.optional ? '?' : ''}: ${p.type}`;
+            if (p.hasDefault && p.defaultValue !== undefined) {
+              paramStr += ` = ${JSON.stringify(p.defaultValue)}`;
+            }
+            return paramStr;
+          })
+          .join(', ');
+
+        const description = m.jsdoc?.description || 'No description available';
+        return `${i + 1}. **${m.name}** (${params})
+   - Suggested description: "${description}"`;
+      })
+      .join('\n\n');
+
+    return JSON.stringify({
+      success: true,
+
+      metadata: state.confirmedMetadata,
+
+      message: `✅ Server metadata confirmed!
+
+**Server Configuration:**
+- Name: ${args.name}
+- Version: ${args.version}
+${args.description ? `- Description: ${args.description}` : ''}
+
+This will generate the @MCPServer decorator:
+\`\`\`typescript
+@MCPServer({
+  name: '${args.name}',
+  version: '${args.version}'${args.description ? `,\n  description: '${args.description}'` : ''}
+})
+\`\`\`
+
+**Next Step: Add Tool Decorators**
+
+Your class has ${state.parsedClass.methods.length} public method${state.parsedClass.methods.length !== 1 ? 's' : ''}. Select which methods to expose as MCP tools:
+
+**Available Methods:**
+${methodsList}
+
+**How to proceed:**
+- Call add_tool_decorator for each method you want to expose
+- You can expose all methods or just some
+- Methods without decorators won't be accessible via MCP
+
+**Example:** Expose the first method
+\`\`\`json
+{
+  "method_name": "${state.parsedClass.methods[0].name}",
+  "description": "${state.parsedClass.methods[0].jsdoc?.description || 'Description of what this method does'}"
+}
+\`\`\``,
+
+      methods_available: state.parsedClass.methods.map(m => ({
+        name: m.name,
+        parameters: m.parameters
+          .map(p => `${p.name}${p.optional ? '?' : ''}: ${p.type}${p.hasDefault ? ` = ${JSON.stringify(p.defaultValue)}` : ''}`)
+          .join(', '),
+        suggested_description: m.jsdoc?.description || `${m.name} method`,
+      })),
+
+      next_action: 'Call add_tool_decorator for each method to expose as a tool',
+
+      example: {
+        method_name: state.parsedClass.methods[0].name,
+        description: state.parsedClass.methods[0].jsdoc?.description || `${state.parsedClass.methods[0].name} method`,
+      },
+    }, null, 2);
+  },
+};
+
+/**
+ * Tool 4: add_tool_decorator (REPEATABLE)
+ *
+ * Mark a method to receive @tool decorator
+ */
+export const addToolDecoratorTool: MCPBuilderTool = {
+  name: 'add_tool_decorator',
+  description: 'Add a @tool decorator to a specific method (can be called multiple times for different methods)',
+  category: 'design',
+  parameters: z.object({
+    method_name: z.string().describe('Name of the method in the class (camelCase)'),
+    description: z.string().min(10).describe('Clear description of what the tool does (min 10 characters)'),
+  }),
+  execute: async (args, context) => {
+    const sessionId = context?.sessionId;
+    const state = stateManager.getState(sessionId);
+
+    if (!state) {
+      return JSON.stringify({
+        success: false,
+        error: 'Wizard not started. Call start_wizard first.',
+        next_action: 'Call start_wizard',
+        example: {},
+      }, null, 2);
+    }
+
+    if (!state.confirmedMetadata) {
+      return JSON.stringify({
+        success: false,
+        error: `Server metadata not confirmed yet.
+
+You must confirm server metadata before adding tool decorators.
+
+**Expected flow:**
+1. start_wizard
+2. load_file
+3. confirm_server_metadata (← you are here - this step is missing)
+4. add_tool_decorator (repeat as needed)
+5. preview_annotations
+6. finish_and_write`,
+        next_action: 'Call confirm_server_metadata with server metadata',
+        example: {
+          name: 'my-server',
+          version: '1.0.0',
+          description: 'My MCP server',
+        },
+      }, null, 2);
+    }
+
+    // Validate method exists
+    const method = state.parsedClass!.methods.find(m => m.name === args.method_name);
+    if (!method) {
+      return JSON.stringify({
+        success: false,
+        error: `Method not found: '${args.method_name}'
+
+The method '${args.method_name}' does not exist in the class.
+
+**Available methods in ${state.parsedClass!.className}:**
+${state.parsedClass!.methods.map(m => `- ${m.name}`).join('\n')}
+
+**Troubleshooting:**
+- Check spelling (method names are case-sensitive)
+- Ensure you're using the exact method name from the class
+- Method must be public (not private or starting with _)
+
+Try again with a valid method name.`,
+        available_methods: state.parsedClass!.methods.map(m => m.name),
+        next_action: 'Call add_tool_decorator with correct method name',
+        example: {
+          method_name: state.parsedClass!.methods[0].name,
+          description: 'Description of what this method does',
+        },
+      }, null, 2);
+    }
+
+    // Check if already decorated
+    if (state.toolDecorators.has(args.method_name)) {
+      const existingDescription = state.toolDecorators.get(args.method_name);
+      const remainingMethods = state.parsedClass!.methods.filter(
+        m => !state.toolDecorators.has(m.name)
+      );
+
+      return JSON.stringify({
+        success: false,
+        error: `Method '${args.method_name}' already has a decorator.
+
+You've already added a @tool decorator to this method:
+- Method: ${args.method_name}
+- Description: "${existingDescription}"
+
+**To fix:**
+- Skip this method and decorate a different one
+- Or call preview_annotations to see the current state
+- Or call finish_and_write if you're done
+
+${remainingMethods.length > 0 ? `**Available undecorated methods:**\n${remainingMethods.map(m => `- ${m.name}`).join('\n')}` : '**All methods are decorated.**'}`,
+        already_decorated: {
+          method: args.method_name,
+          description: existingDescription,
+        },
+        remaining_methods: remainingMethods.map(m => m.name),
+        next_action: 'Decorate a different method or preview/finish',
+        example: remainingMethods.length > 0 ? {
+          method_name: remainingMethods[0].name,
+          description: remainingMethods[0].jsdoc?.description || 'Description',
+        } : undefined,
+      }, null, 2);
+    }
+
+    // Validate description
+    const descValidation = validateMethodDescription(args.description);
+    if (!descValidation.valid) {
+      return JSON.stringify({
+        success: false,
+        error: descValidation.error!,
+        next_action: 'Call add_tool_decorator with a longer description',
+        example: {
+          method_name: args.method_name,
+          description: method.jsdoc?.description || 'Clear description of what this method does',
+        },
+      }, null, 2);
+    }
+
+    // Add decorator
+    state.currentStep = 'decorating';
+    state.toolDecorators.set(args.method_name, args.description);
+    stateManager.updateState(state, sessionId);
+
+    const decoratedCount = state.toolDecorators.size;
+    const totalCount = state.parsedClass!.methods.length;
+    const remainingMethods = state.parsedClass!.methods.filter(
+      m => !state.toolDecorators.has(m.name)
+    );
+
+    return JSON.stringify({
+      success: true,
+
+      method: args.method_name,
+      description: args.description,
+
+      decorator_preview: `@tool('${args.description}')
+${method.name}(${method.parameters.map(p => `${p.name}${p.optional ? '?' : ''}: ${p.type}`).join(', ')}): ${method.returnType} {
+  // Original implementation preserved
+}`,
+
+      message: `✅ @tool decorator will be added to '${args.method_name}'
+
+**Decorator:**
+@tool('${args.description}')
+
+**Method signature:**
+${method.name}(${method.parameters.map(p => `${p.name}${p.optional ? '?' : ''}: ${p.type}`).join(', ')}): ${method.returnType}
+
+**Progress:**
+- Decorated methods: ${decoratedCount}
+- Total methods: ${totalCount}
+${remainingMethods.length > 0 ? `- Remaining: ${remainingMethods.map(m => m.name).join(', ')}` : '- All methods decorated!'}
+
+**What's next?**
+
+${remainingMethods.length > 0 ? `**Option 1:** Add decorator to another method
+- Call add_tool_decorator for '${remainingMethods[0].name}'
+
+**Option 2:** Preview the annotated file
+- Call preview_annotations to see the complete result
+
+**Option 3:** Skip remaining methods and finish
+- Methods without decorators won't be exposed as tools
+- Call preview_annotations or finish_and_write` : `**All methods are now decorated!**
+
+Call preview_annotations to see the final result, or call finish_and_write to save the file.`}`,
+
+      decorated_methods: Array.from(state.toolDecorators.entries()).map(([name, desc]) => ({
+        name,
+        description: desc,
+      })),
+
+      remaining_methods: remainingMethods.map(m => ({
+        name: m.name,
+        parameters: m.parameters
+          .map(p => `${p.name}${p.optional ? '?' : ''}: ${p.type}`)
+          .join(', '),
+        suggested_description: m.jsdoc?.description || `${m.name} method`,
+      })),
+
+      next_action: remainingMethods.length > 0
+        ? 'Add more decorators, preview, or finish'
+        : 'Preview or finish',
+
+      examples: remainingMethods.length > 0 ? {
+        add_another: {
+          method_name: remainingMethods[0].name,
+          description: remainingMethods[0].jsdoc?.description || `${remainingMethods[0].name} method`,
+        },
+        preview: 'Call preview_annotations()',
+        finish: 'Call finish_and_write()',
+      } : {
+        preview: 'Call preview_annotations()',
+        finish: 'Call finish_and_write()',
+      },
+    }, null, 2);
+  },
+};
+
+/**
+ * Tool 5: preview_annotations
+ *
+ * Show preview of annotated file
+ */
+export const previewTool: MCPBuilderTool = {
+  name: 'preview_annotations',
+  description: 'Preview the annotated file with decorators before writing to disk',
+  category: 'design',
+  parameters: z.object({}),
+  execute: async (args, context) => {
+    const sessionId = context?.sessionId;
+    const state = stateManager.getState(sessionId);
+
+    if (!state) {
+      return JSON.stringify({
+        success: false,
+        error: 'Wizard not started. Call start_wizard first.',
+        next_action: 'Call start_wizard',
+        example: {},
+      }, null, 2);
+    }
+
+    if (state.toolDecorators.size === 0) {
+      return JSON.stringify({
+        success: false,
+        error: `No tool decorators have been added yet.
+
+You must add at least one @tool decorator before previewing.
+
+**Expected flow:**
+1. start_wizard
+2. load_file
+3. confirm_server_metadata
+4. add_tool_decorator (← you are here - add at least one)
+5. preview_annotations
+6. finish_and_write
+
+Call add_tool_decorator to mark methods as tools.`,
+        next_action: 'Call add_tool_decorator to add at least one decorator',
+        example: state.parsedClass ? {
+          method_name: state.parsedClass.methods[0].name,
+          description: state.parsedClass.methods[0].jsdoc?.description || 'Description',
+        } : undefined,
+      }, null, 2);
+    }
+
+    try {
+      // Generate preview
+      const preview = generatePreview({
+        originalCode: state.parsedClass!.fileContent,
+        className: state.parsedClass!.className,
+        serverMetadata: state.confirmedMetadata!,
+        toolDecorators: state.toolDecorators,
+      });
+
+      // Determine output path
+      const inputPath = state.filePath!;
+      const dir = dirname(inputPath);
+      const base = basename(inputPath, '.ts');
+      const outputPath = join(dir, `${base}.mcp.ts`);
+
+      const decoratedMethods = state.parsedClass!.methods.filter(m =>
+        state.toolDecorators.has(m.name)
+      );
+
+      const undecoratedMethods = state.parsedClass!.methods.filter(m =>
+        !state.toolDecorators.has(m.name)
+      );
+
+      return JSON.stringify({
+        success: true,
+
+        preview: preview.preview,
+
+        changes_summary: preview.changesSummary,
+
+        files: {
+          input: inputPath,
+          output: outputPath,
+        },
+
+        decorated_methods: decoratedMethods.map(m => ({
+          name: m.name,
+          description: state.toolDecorators.get(m.name)!,
+          will_be_exposed: true,
+        })),
+
+        undecorated_methods: undecoratedMethods.map(m => ({
+          name: m.name,
+          will_be_exposed: false,
+          note: 'No @tool decorator - remains private to the class',
+        })),
+
+        message: `✅ Preview of annotated file
+
+**Changes Summary:**
+- ✅ Added ${preview.changesSummary.importsAdded} import statement${preview.changesSummary.importsAdded !== 1 ? 's' : ''}
+- ✅ Added @MCPServer decorator to class
+- ✅ Added @tool decorator to ${decoratedMethods.length} method${decoratedMethods.length !== 1 ? 's' : ''}
+- ✅ ${preview.changesSummary.implementationChanges} implementation changes (100% preserved)
+
+**Files:**
+- Original: ${inputPath} (untouched)
+- Output: ${outputPath} (will be created)
+
+**Decorated Methods (will be exposed as MCP tools):**
+${decoratedMethods.map(m => `- ${m.name}: "${state.toolDecorators.get(m.name)}"`).join('\n')}
+
+${undecoratedMethods.length > 0 ? `**Undecorated Methods (will NOT be exposed):**
+${undecoratedMethods.map(m => `- ${m.name}`).join('\n')}` : ''}
+
+**Next Steps:**
+1. Review the preview above
+2. If satisfied, call finish_and_write to save the file
+3. Or call add_tool_decorator to expose more methods`,
+
+        next_action: 'Call finish_and_write to save the file, or add_tool_decorator to expose more methods',
+
+        examples: {
+          finish: 'Call finish_and_write()',
+          custom_path: 'Call finish_and_write({ output_path: "./custom/path.ts" })',
+        },
+      }, null, 2);
+    } catch (error: any) {
+      return JSON.stringify({
+        success: false,
+        error: `Failed to generate preview: ${error.message}`,
+        next_action: 'Check your configuration and try again',
+      }, null, 2);
+    }
+  },
+};
+
+/**
+ * Tool 6: finish_and_write
+ *
+ * Write the annotated file to disk
+ */
+export const finishTool: MCPBuilderTool = {
+  name: 'finish_and_write',
+  description: 'Write the annotated file with decorators to disk as {YourClass}.mcp.ts',
+  category: 'generate',
+  parameters: z.object({
+    output_path: z.string().optional().describe('Optional custom output path (defaults to {original}.mcp.ts)'),
+  }),
+  execute: async (args, context) => {
+    const sessionId = context?.sessionId;
+    const state = stateManager.getState(sessionId);
+
+    if (!state) {
+      return JSON.stringify({
+        success: false,
+        error: 'Wizard not started. Call start_wizard first.',
+        next_action: 'Call start_wizard',
+        example: {},
+      }, null, 2);
+    }
+
+    if (state.toolDecorators.size === 0) {
+      return JSON.stringify({
+        success: false,
+        error: `No tool decorators have been added yet.
+
+You must add at least one @tool decorator before finishing.
+
+Call add_tool_decorator to mark methods as tools, then call finish_and_write.`,
+        next_action: 'Call add_tool_decorator to add at least one decorator',
+        example: state.parsedClass ? {
+          method_name: state.parsedClass.methods[0].name,
+          description: state.parsedClass.methods[0].jsdoc?.description || 'Description',
+        } : undefined,
+      }, null, 2);
+    }
+
+    try {
+      // Generate annotated code
+      const result = injectDecorators({
+        originalCode: state.parsedClass!.fileContent,
+        className: state.parsedClass!.className,
+        serverMetadata: state.confirmedMetadata!,
+        toolDecorators: state.toolDecorators,
+      });
+
+      // Determine output path
+      let outputPath: string;
+      if (args.output_path) {
+        outputPath = args.output_path;
+      } else {
+        const inputPath = state.filePath!;
+        const dir = dirname(inputPath);
+        const base = basename(inputPath, '.ts');
+        outputPath = join(dir, `${base}.mcp.ts`);
+      }
+
+      // Write file
+      writeFileSync(outputPath, result.code, 'utf-8');
+
+      // Update state
+      state.currentStep = 'complete';
+      stateManager.updateState(state, sessionId);
+
+      return JSON.stringify({
+        success: true,
+
+        message: `✅ MCP server file created successfully!
+
+**Files:**
+- Original: ${state.filePath} (preserved - unchanged)
+- MCP Server: ${outputPath} (created)
+
+**Summary:**
+- Added ${result.decoratorsAdded} decorator${result.decoratorsAdded !== 1 ? 's' : ''}
+- Exposed ${state.toolDecorators.size} method${state.toolDecorators.size !== 1 ? 's' : ''} as MCP tools
+- 100% implementation preserved
+
+**Next Steps:**
+
+1. **Run the MCP server:**
+   \`\`\`bash
+   npx simply-mcp run ${outputPath}
+   \`\`\`
+
+2. **Test with a client:**
+   Connect your MCP client to the server
+
+3. **Bundle for distribution:**
+   \`\`\`bash
+   npx simply-mcp bundle ${outputPath}
+   \`\`\`
+
+Your MCP server is ready to use!`,
+
+        files: {
+          original: state.filePath,
+          output: outputPath,
+        },
+
+        statistics: {
+          decorators_added: result.decoratorsAdded,
+          methods_exposed: state.toolDecorators.size,
+          total_methods: state.parsedClass!.methods.length,
+          lines_added: result.linesAdded,
+          preservation_rate: '100%',
+        },
+
+        next_steps: [
+          `Run: npx simply-mcp run ${outputPath}`,
+          'Test the server with an MCP client',
+          `Bundle: npx simply-mcp bundle ${outputPath}`,
+        ],
+      }, null, 2);
+    } catch (error: any) {
+      return JSON.stringify({
+        success: false,
+        error: `Failed to write file: ${error.message}`,
+        next_action: 'Check file permissions and try again',
+      }, null, 2);
+    }
+  },
+};
+
+/**
+ * Export all class wrapper tools
+ */
+export const classWrapperTools: MCPBuilderTool[] = [
+  startWizardTool,
+  loadFileTool,
+  confirmMetadataTool,
+  addToolDecoratorTool,
+  previewTool,
+  finishTool,
+];

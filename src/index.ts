@@ -37,7 +37,7 @@
  * });
  * ```
  *
- * @example Programmatic API
+ * @example Programmatic API (BuildMCPServer)
  * ```typescript
  * import { BuildMCPServer } from 'simply-mcp';
  * import { z } from 'zod';
@@ -87,29 +87,9 @@
  */
 
 // ============================================================================
-// Main SimplyMCP Class (Programmatic API - Legacy)
+// Programmatic API
 // ============================================================================
-/**
- * @deprecated Use `BuildMCPServer` instead (renamed in v2.5.0+)
- * This export will be removed in v3.0.0.
- *
- * @example
- * ```typescript
- * // NEW: Use BuildMCPServer
- * import { BuildMCPServer } from 'simply-mcp';
- * const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });
- *
- * // OLD: SimplyMCP (deprecated)
- * import { SimplyMCP } from 'simply-mcp';
- * const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
- * ```
- */
-export { SimplyMCP } from './SimplyMCP.js';
-
-// ============================================================================
-// BuildMCPServer Class (Programmatic API - New)
-// ============================================================================
-// New programmatic API with improved naming
+// BuildMCPServer - Programmatic API for building MCP servers
 export { BuildMCPServer } from './api/programmatic/BuildMCPServer.js';
 export type { BuildMCPServerOptions } from './api/programmatic/types.js';
 
@@ -245,6 +225,15 @@ export {
   WorkflowPromptsPreset,                 // Layer 2: Workflow guidance
 } from './api/mcp/presets/index.js';
 
+// Wizard Servers
+export {
+  WizardServer,                         // Foundation: Interactive wizard for building MCP servers
+} from './api/mcp/wizard-server.js';
+
+export {
+  ClassWrapperWizard,                   // Foundation: Interactive wizard for wrapping TypeScript classes
+} from './api/mcp/class-wrapper-wizard.js';
+
 // Types
 export type {
   MCPBuilderConfig,
@@ -259,18 +248,15 @@ export type {
 // ============================================================================
 
 // Export MCP definition types (BUG-002 FIX)
-/**
- * @deprecated These types are exported from the legacy SimplyMCP class.
- * Use BuildMCPServer types instead (v2.5.0+).
- * These exports will be removed in v3.0.0.
- */
 export type {
   ToolDefinition,
   PromptDefinition,
   ResourceDefinition,
-  SimplyMCPOptions,
   ExecuteFunction,
-} from './SimplyMCP.js';
+} from './api/programmatic/types.js';
+
+// Alias for backward compatibility
+export type { BuildMCPServerOptions as SimplyMCPOptions } from './api/programmatic/types.js';
 
 // Export handler types
 export type {
@@ -313,9 +299,9 @@ export {
  *
  * @example
  * ```typescript
- * import { SimplyMCP, InstallProgressEvent } from 'simply-mcp';
+ * import { BuildMCPServer, InstallProgressEvent } from 'simply-mcp';
  *
- * const server = await SimplyMCP.fromFile('server.ts', {
+ * const server = await BuildMCPServer.fromFile('server.ts', {
  *   autoInstall: {
  *     onProgress: (event: InstallProgressEvent) => {
  *       console.log(event.message);

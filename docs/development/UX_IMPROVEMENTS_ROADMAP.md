@@ -18,7 +18,7 @@ The import structure is fragmented and not ergonomic:
 
 ```typescript
 // Current (v2.4.7) - Multiple import paths required
-import { SimplyMCP, defineMCP, MCPBuilder } from 'simply-mcp';
+import { BuildMCPServer, defineMCP, MCPBuilder } from 'simply-mcp';
 import { MCPServer, tool, prompt, resource } from 'simply-mcp/decorators';
 import type { CLIConfig } from 'simply-mcp/config';
 ```
@@ -65,67 +65,23 @@ import { tool, prompt, resource } from 'simply-mcp/decorators'; // Still availab
 
 ## 2. Class Naming Issues
 
-### Current Problem
+### ✅ Resolved in v3.0.0
 
-The class name `SimplyMCP` is not semantically clear:
+The programmatic API now uses `BuildMCPServer` for clarity and better developer experience.
 
+**Current (v3.0.0+):**
 ```typescript
-const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
+const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });
 ```
 
-**Issues:**
-- "SimplyMCP" describes the framework, not what the class does
-- Not intuitive - what does `new SimplyMCP()` create?
-- Other frameworks use clearer names: `new Server()`, `new Application()`, `new Client()`
-- The decorator version uses `@MCPServer` which IS clear
+**Benefits:**
+- Clear, self-documenting naming
+- "BuildMCPServer" clearly communicates its purpose
+- More professional API naming
+- Better developer experience for new users
 
-### Proposed Solutions
-
-**Option A: Rename to `MCPServer`**
-```typescript
-import { MCPServer } from 'simply-mcp';
-
-const server = new MCPServer({
-  name: 'my-server',
-  version: '1.0.0'
-});
-```
-
-**Problem:** Conflicts with the `@MCPServer` decorator name
-
-**Option B: Rename to `Server`**
-```typescript
-import { Server } from 'simply-mcp';
-
-const server = new Server({
-  name: 'my-server',
-  version: '1.0.0'
-});
-```
-
-**Problem:** Too generic, might conflict with Node's http.Server
-
-**Option C: Rename to `MCPServerBuilder` or `createMCPServer`** (Recommended)
-```typescript
-import { MCPServerBuilder } from 'simply-mcp';
-
-const server = new MCPServerBuilder({
-  name: 'my-server',
-  version: '1.0.0'
-});
-
-// OR functional approach:
-import { createMCPServer } from 'simply-mcp';
-
-const server = createMCPServer({
-  name: 'my-server',
-  version: '1.0.0'
-});
-```
-
-**Priority:** MEDIUM
-**Breaking Change:** Yes (v3.0.0)
-**Effort:** Medium (rename class, update docs, add deprecation)
+**Resolution:**
+This issue has been resolved in v3.0.0 with the adoption of `BuildMCPServer` as the standard programmatic API.
 
 ---
 
@@ -136,10 +92,9 @@ const server = createMCPServer({
 **Problem:** Documentation shows different import patterns across files
 
 Examples found:
-- `import { SimplyMCP }` (README.md)
-- `import { MCPServer, tool } from 'simply-mcp/decorators'` (README.md)
-- `import { MCPServer, tool } from 'simply-mcp'` (RELEASE_NOTES_v1.1.0.md)
-- Old imports from `@clockwork-innovations/simply-mcp` still present
+- `import { MCPServer, tool } from 'simply-mcp/decorators'` (old subpath imports)
+- `import { MCPServer, tool } from 'simply-mcp'` (unified imports)
+- Various inconsistencies across documentation files
 
 **Solution:**
 - Audit ALL documentation files
@@ -293,7 +248,7 @@ Update all documentation to use consistent terminology.
 // Expected one of:
 //   - A class decorated with @MCPServer
 //   - A configuration object from defineMCP()
-//   - A SimplyMCP instance
+//   - A BuildMCPServer instance
 //
 // See: https://docs.simply-mcp.dev/config
 ```
@@ -442,7 +397,7 @@ Based on testing, these examples would be valuable:
 **Goal:** Implement breaking changes for long-term ergonomics
 
 1. ✅ Implement unified import structure (remove need for subpaths)
-2. ✅ Rename `SimplyMCP` class to more semantic name
+2. ✅ Adopt `BuildMCPServer` as standard programmatic API
 3. ✅ Standardize API terminology across docs
 4. ✅ Fix bundling issues or mark as experimental
 5. ✅ Complete documentation overhaul
@@ -490,10 +445,8 @@ For v3.0.0 breaking changes:
 
 1. **Deprecation warnings in v2.5.0**
    ```typescript
-   // v2.5.0: Warn but still work
-   import { SimplyMCP } from 'simply-mcp';
-   // → Warning: 'SimplyMCP' is deprecated. Use 'createMCPServer' instead.
-   //   Will be removed in v3.0.0
+   // v2.5.0: Warnings guided users to updated patterns
+   // v3.0.0: Clean API with BuildMCPServer as standard
    ```
 
 2. **Codemod tool**
@@ -510,10 +463,10 @@ For v3.0.0 breaking changes:
 
 ## Questions for Discussion
 
-1. Should we keep backward compatibility helpers in v3.0.0?
-2. What's the best name for the main server class?
+1. ✅ Keep backward compatibility helpers in v3.0.0? **YES** - Type aliases preserved
+2. ✅ Best name for main server class? **BuildMCPServer** - Adopted in v3.0.0
 3. Should we consolidate CLI commands or keep them separate?
-4. How aggressive should we be with breaking changes?
+4. ✅ How aggressive with breaking changes? **Measured** - Clear migration path provided
 5. Should bundling be marked experimental until fully stable?
 
 ---

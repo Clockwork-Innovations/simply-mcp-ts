@@ -151,52 +151,83 @@ EOF
 }
 
 # ============================================================================
-# SCENARIO 2: Upgrade from v2.4.7 Workflow
+# SCENARIO 2: API Feature Completeness Test
 # ============================================================================
-scenario_upgrade() {
-  local test_dir="$TEST_BASE_DIR/upgrade"
+scenario_api_features() {
+  local test_dir="$TEST_BASE_DIR/api-features"
   mkdir -p "$test_dir"
   cd "$test_dir"
 
-  echo "  → Setting up project with old simply-mcp version"
+  echo "  → Setting up test project"
   npm init -y > /dev/null 2>&1
-
-  # Install previous version from npm (if available)
-  echo "  → Installing simply-mcp@2.4.7 (from npm)"
-  npm install simply-mcp@2.4.7 --silent 2>/dev/null || {
-    echo "  ⚠ Could not install v2.4.7 from npm, using tarball only"
-    npm install "$ORIGINAL_DIR/$TARBALL" --silent
-  }
+  npm install "$ORIGINAL_DIR/$TARBALL" --silent
 
   echo "  → Installing dev dependencies"
   npm install --save-dev tsx typescript --silent
+  npm install --save zod --silent
 
-  echo "  → Creating server with old import pattern"
-  cat > old-style-server.ts << 'EOF'
-import { tool, prompt } from 'simply-mcp/decorators';
-import { defineConfig } from 'simply-mcp/config';
+  echo "  → Testing all decorator features"
+  cat > test-decorators.ts << 'EOF'
+import { MCPServer, tool, prompt, resource } from 'simply-mcp';
+
+@MCPServer({ name: 'feature-test', version: '1.0.0' })
+class FeatureServer {
+  @tool('Calculate sum')
+  async add(a: number, b: number): Promise<number> {
+    return a + b;
+  }
+
+  @prompt('Generate greeting')
+  async greet(name: string): Promise<any> {
+    return { messages: [{ role: 'user', content: { type: 'text', text: `Hello ${name}` } }] };
+  }
+
+  @resource('test://data')
+  async getData(): Promise<string> {
+    return 'Test data';
+  }
+}
+export default FeatureServer;
+console.log('✓ All decorator features work');
+EOF
+  npx tsx test-decorators.ts
+
+  echo "  → Testing programmatic API features"
+  cat > test-programmatic.ts << 'EOF'
+import { SimplyMCP, defineConfig } from 'simply-mcp';
+import { z } from 'zod';
 
 const config = defineConfig({
-  name: 'old-style',
+  name: 'programmatic-test',
   version: '1.0.0'
 });
 
-console.log('✓ Old import pattern still works after upgrade');
+const server = new SimplyMCP(config);
+
+server.addTool({
+  name: 'calculate',
+  description: 'Calculate value',
+  parameters: z.object({ value: z.number() }),
+  execute: async ({ value }) => ({ result: value * 2 })
+});
+
+server.addPrompt({
+  name: 'test-prompt',
+  description: 'Test prompt',
+  execute: async () => ({ messages: [{ role: 'user', content: { type: 'text', text: 'test' } }] })
+});
+
+server.addResource({
+  name: 'test-resource',
+  uri: 'test://resource',
+  description: 'Test resource',
+  mimeType: 'text/plain',
+  execute: async () => ({ contents: [{ uri: 'test://resource', mimeType: 'text/plain', text: 'data' }] })
+});
+
+console.log('✓ All programmatic API features work');
 EOF
-
-  # Upgrade to new version
-  echo "  → Upgrading to new version"
-  npm install "$ORIGINAL_DIR/$TARBALL" --silent
-
-  echo "  → Verifying old imports still work"
-  npx tsx old-style-server.ts
-
-  echo "  → Testing new import pattern now available"
-  cat > new-style-server.ts << 'EOF'
-import { tool, prompt, defineConfig } from 'simply-mcp';
-console.log('✓ New import pattern works after upgrade');
-EOF
-  npx tsx new-style-server.ts
+  npx tsx test-programmatic.ts
 
   return 0
 }
@@ -307,66 +338,7 @@ EOF
 }
 
 # ============================================================================
-# SCENARIO 4: Both Import Patterns (Old & New)
-# ============================================================================
-scenario_import_patterns() {
-  local test_dir="$TEST_BASE_DIR/import-patterns"
-  mkdir -p "$test_dir"
-  cd "$test_dir"
-
-  echo "  → Setting up test project"
-  npm init -y > /dev/null 2>&1
-  npm install "$ORIGINAL_DIR/$TARBALL" --silent
-  npm install --save-dev tsx typescript --silent
-
-  echo "  → Testing old subpath imports"
-  cat > test-old-imports.ts << 'EOF'
-import { MCPServer, tool, prompt, resource } from 'simply-mcp/decorators';
-import { defineConfig, type CLIConfig } from 'simply-mcp/config';
-
-if (typeof tool !== 'function') throw new Error('tool import failed');
-if (typeof defineConfig !== 'function') throw new Error('defineConfig import failed');
-
-console.log('✓ Old subpath imports work');
-EOF
-  npx tsx test-old-imports.ts
-
-  echo "  → Testing new unified imports"
-  cat > test-new-imports.ts << 'EOF'
-import {
-  MCPServer,
-  tool,
-  prompt,
-  resource,
-  SimplyMCP,
-  defineConfig,
-  type CLIConfig
-} from 'simply-mcp';
-
-if (typeof tool !== 'function') throw new Error('tool import failed');
-if (typeof SimplyMCP !== 'function') throw new Error('SimplyMCP import failed');
-if (typeof defineConfig !== 'function') throw new Error('defineConfig import failed');
-
-console.log('✓ New unified imports work');
-EOF
-  npx tsx test-new-imports.ts
-
-  echo "  → Testing mixed imports (old + new)"
-  cat > test-mixed-imports.ts << 'EOF'
-import { SimplyMCP } from 'simply-mcp';
-import { tool } from 'simply-mcp/decorators';
-import { defineConfig } from 'simply-mcp/config';
-
-if (typeof tool !== 'function') throw new Error('Mixed imports failed');
-console.log('✓ Mixed import patterns work');
-EOF
-  npx tsx test-mixed-imports.ts
-
-  return 0
-}
-
-# ============================================================================
-# SCENARIO 5: CLI Commands (run, bundle, list, config)
+# SCENARIO 4: CLI Commands (run, bundle, list, config)
 # ============================================================================
 scenario_cli_commands() {
   local test_dir="$TEST_BASE_DIR/cli-commands"
@@ -415,7 +387,7 @@ EOF
 }
 
 # ============================================================================
-# SCENARIO 6: Both Transports (stdio, HTTP)
+# SCENARIO 5: Both Transports (stdio, HTTP)
 # ============================================================================
 scenario_transports() {
   local test_dir="$TEST_BASE_DIR/transports"
@@ -471,7 +443,7 @@ EOF
 }
 
 # ============================================================================
-# SCENARIO 7: Error Message Validation
+# SCENARIO 6: Error Message Validation
 # ============================================================================
 scenario_error_messages() {
   local test_dir="$TEST_BASE_DIR/errors"
@@ -528,7 +500,7 @@ EOF
 }
 
 # ============================================================================
-# SCENARIO 8: Examples Run Successfully
+# SCENARIO 7: Examples Run Successfully
 # ============================================================================
 scenario_examples() {
   local test_dir="$TEST_BASE_DIR/examples"
@@ -567,7 +539,7 @@ scenario_examples() {
 }
 
 # ============================================================================
-# SCENARIO 9: TypeScript Types Validation
+# SCENARIO 8: TypeScript Types Validation
 # ============================================================================
 scenario_typescript_types() {
   local test_dir="$TEST_BASE_DIR/types"
@@ -639,9 +611,8 @@ echo -e "${BOLD}Running Integration Test Scenarios${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 
 run_scenario "Fresh Installation Workflow" scenario_fresh_install
-run_scenario "Upgrade from v2.4.7 Workflow" scenario_upgrade
+run_scenario "API Feature Completeness Test" scenario_api_features
 run_scenario "All Three API Styles" scenario_all_api_styles
-run_scenario "Both Import Patterns (Old & New)" scenario_import_patterns
 run_scenario "CLI Commands (run, bundle, etc.)" scenario_cli_commands
 run_scenario "Both Transports (stdio, HTTP)" scenario_transports
 run_scenario "Error Message Validation" scenario_error_messages

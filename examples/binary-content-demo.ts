@@ -21,13 +21,13 @@
  *   npx tsx mcp/examples/binary-content-demo.ts --http --port 3000
  */
 
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 import { readFile, writeFile } from 'fs/promises';
 import { resolve } from 'path';
 
 // Create a SimplyMCP server
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'binary-content-demo',
   version: '1.0.0',
   port: 3000,

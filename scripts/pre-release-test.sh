@@ -129,13 +129,11 @@ echo -e "${BLUE}═════════════════════�
 echo -e "${BOLD}Phase 3: Import Pattern Tests${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 
-# Test 3.1: Old import pattern (backward compatibility)
-cat > test-old-imports.ts << 'EOF'
-import { tool, prompt, resource } from 'simply-mcp/decorators';
-import { defineConfig } from 'simply-mcp/config';
+# Test 3.1: Unified import pattern
+cat > test-imports.ts << 'EOF'
+import { tool, prompt, resource, defineConfig, MCPServer } from 'simply-mcp';
 
-console.log('✓ Old decorator imports work');
-console.log('✓ Old config imports work');
+console.log('✓ Unified imports work');
 
 if (typeof tool !== 'function') {
   throw new Error('tool decorator not imported correctly');
@@ -143,30 +141,14 @@ if (typeof tool !== 'function') {
 if (typeof defineConfig !== 'function') {
   throw new Error('defineConfig not imported correctly');
 }
-EOF
-
-run_test "Old import pattern (decorators)" "npx tsx test-old-imports.ts"
-
-# Test 3.2: New unified import pattern
-cat > test-new-imports.ts << 'EOF'
-import { tool, prompt, resource, defineConfig, MCPServer } from 'simply-mcp';
-
-console.log('✓ New unified imports work');
-
-if (typeof tool !== 'function') {
-  throw new Error('tool decorator not imported correctly from main export');
-}
-if (typeof defineConfig !== 'function') {
-  throw new Error('defineConfig not imported correctly from main export');
-}
 if (typeof MCPServer !== 'function') {
-  throw new Error('MCPServer decorator not imported correctly from main export');
+  throw new Error('MCPServer decorator not imported correctly');
 }
 EOF
 
-run_test "New unified import pattern" "npx tsx test-new-imports.ts"
+run_test "Unified import pattern" "npx tsx test-imports.ts"
 
-# Test 3.3: Programmatic API imports
+# Test 3.2: Programmatic API imports
 cat > test-programmatic-imports.ts << 'EOF'
 import { SimplyMCP } from 'simply-mcp';
 
@@ -318,7 +300,7 @@ run_test "TypeScript: Check decorator types" "npx tsc --noEmit test-decorator.ts
 
 run_test "TypeScript: Check functional types" "npx tsc --noEmit test-functional.ts"
 
-run_test "TypeScript: Check import types" "npx tsc --noEmit test-new-imports.ts"
+run_test "TypeScript: Check import types" "npx tsc --noEmit test-imports.ts"
 
 # Phase 7: Package Content Validation
 echo ""

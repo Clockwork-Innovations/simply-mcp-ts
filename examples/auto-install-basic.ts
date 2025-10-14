@@ -14,14 +14,14 @@
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
 async function main() {
   console.log('[Example] Loading server with auto-install...');
 
   // Load server from file with auto-install enabled
-  const server = await SimplyMCP.fromFile(__filename, {
+  const server = await BuildMCPServer.fromFile(__filename, {
     name: 'auto-install-demo',
     version: '1.0.0',
     autoInstall: true, // Enable automatic dependency installation

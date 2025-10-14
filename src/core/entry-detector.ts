@@ -158,6 +158,7 @@ export async function validateSimplyMCPEntry(filePath: string): Promise<void> {
     /new\s+SimplyMCP\s*\(/.test(content) ||
     /new\s+SimpleMCP\s*\(/.test(content) ||
     /new\s+MCPServer\s*\(/.test(content) ||
+    /new\s+BuildMCPServer\s*\(/.test(content) ||
     /SimplyMCP\.fromFile\s*\(/.test(content) ||
     /SimpleMCP\.fromFile\s*\(/.test(content) ||
     /MCPServer\.fromFile\s*\(/.test(content) ||

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "mcp-builder": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tsx",
+        "/mnt/Shared/cs-projects/simple-mcp/examples/mcp-builder-foundation.ts"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

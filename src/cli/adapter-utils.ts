@@ -3,15 +3,14 @@
  * Common functionality used across different adapter implementations
  */
 
-import type { SimplyMCP } from '../SimplyMCP.js';
 import type { BuildMCPServer } from '../api/programmatic/BuildMCPServer.js';
 import type { InterfaceServer } from '../api/interface/InterfaceServer.js';
 
 /**
  * Union type for all MCP server implementations
- * Supports legacy SimplyMCP, BuildMCPServer, and InterfaceServer (used by interface API)
+ * Supports BuildMCPServer and InterfaceServer (used by interface API)
  */
-type SimplyMCPInstance = SimplyMCP | BuildMCPServer | InterfaceServer;
+type SimplyMCPInstance = BuildMCPServer | InterfaceServer;
 
 /**
  * Adapter options parsed from command line arguments
@@ -20,6 +19,7 @@ export interface AdapterOptions {
   http?: boolean;
   port?: number;
   verbose?: boolean;
+  stateful?: boolean;
 }
 
 /**
@@ -85,13 +85,13 @@ export function parseCommonArgs(argv: string[]): AdapterOptions & { file?: strin
  * Start an MCP server with the specified options
  * Handles transport selection (stdio vs HTTP), signal handlers, and error handling
  *
- * @param server SimplyMCP or BuildMCPServer instance to start
+ * @param server BuildMCPServer or InterfaceServer instance to start
  * @param options Start options including transport type and port
  * @returns Promise that resolves when server is started
  *
  * @example
  * ```typescript
- * const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
+ * const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });
  * await startServer(server, { http: true, port: 3000 });
  * ```
  */
@@ -101,6 +101,7 @@ export async function startServer(
 ): Promise<void> {
   const useHttp = options.http ?? options.useHttp ?? false;
   const port = options.port ?? 3000;
+  const stateful = options.stateful ?? true;
 
   // Set up signal handlers for graceful shutdown
   const handleShutdown = async (signal: string) => {
@@ -118,14 +119,18 @@ export async function startServer(
     await server.start({
       transport: useHttp ? 'http' : 'stdio',
       port: useHttp ? port : undefined,
+      stateful: stateful,
     });
 
     // Display startup message
     if (useHttp) {
+      const mode = stateful ? 'STATEFUL' : 'STATELESS';
       console.error(`[Adapter] Server running on http://localhost:${port}`);
+      console.error(`[Adapter] HTTP Mode: ${mode}`);
       if (options.verbose) {
         console.error('[Adapter] Transport: HTTP');
         console.error(`[Adapter] Port: ${port}`);
+        console.error(`[Adapter] Stateful: ${stateful}`);
       }
     } else {
       console.error('[Adapter] Server running on stdio');
@@ -151,12 +156,12 @@ export async function startServer(
  * Display server information to stderr
  * Shows server name, version, transport info, and available resources count
  *
- * @param server SimplyMCP or BuildMCPServer instance
+ * @param server BuildMCPServer or InterfaceServer instance
  * @param options Display options (optional)
  *
  * @example
  * ```typescript
- * const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
+ * const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });
  * displayServerInfo(server, { transport: 'http', port: 3000, verbose: true });
  * ```
  */

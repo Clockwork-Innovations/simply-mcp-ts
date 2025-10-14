@@ -14,7 +14,6 @@
 - 🌐 HTTP with dual modes:
   - **Stateful**: Session-based with SSE streaming (default)
   - **Stateless**: Perfect for serverless/Lambda deployments
-- 🔄 SSE (Server-Sent Events)
 
 🎨 **Multiple API Styles**
 - **Interface API** - Pure TypeScript interfaces (cleanest, zero boilerplate)
@@ -97,7 +96,6 @@ export default class Calculator {
 
 > **JSDoc Integration:** JSDoc comments are automatically extracted and become tool and parameter descriptions visible to AI agents. See [Decorator API Guide](./docs/guides/DECORATOR_API_GUIDE.md) for details.
 
-> **Note:** As of v2.5.0, all exports are available from the main `'simply-mcp'` package. The old pattern `import { MCPServer } from 'simply-mcp/decorators'` still works but is deprecated.
 
 > **Important:** The class must be exported (using `export default` or named export). Non-exported classes are never evaluated by JavaScript's module system, so decorators won't run.
 
@@ -756,9 +754,8 @@ Tests verify:
 
 ### Learn More
 
-- [MCP Builder Complete Guide](./MCP_BUILDER_LAYER2_COMPLETE.md) - Full documentation
-- [Example Server](./examples/mcp-builder-layer2.ts) - Comprehensive example
-- [Test Suite](./test-mcp-builder.ts) - Test coverage demonstration
+- [MCP Builder Guide](./docs/guides/MCP_BUILDER_GUIDE.md) - Complete guide
+- [Example Servers](./examples/) - Working examples
 
 ## Documentation
 
@@ -786,10 +783,14 @@ Tests verify:
 ```
 simply-mcp/
 ├── src/
-│   ├── SimplyMCP.ts          # Core server implementation
+│   ├── api/
+│   │   ├── programmatic/      # BuildMCPServer (core API)
+│   │   ├── mcp/               # MCP Builder & Class Wrapper
+│   │   ├── interface/         # Interface API
+│   │   └── functional/        # Functional API
 │   ├── decorators.ts          # Decorator API
 │   ├── cli/                   # CLI tools
-│   ├── core/                  # Core utilities
+│   ├── core/                  # Core utilities (bundler, etc.)
 │   ├── handlers/              # Handler resolvers
 │   ├── servers/               # Transport implementations
 │   ├── security/              # Security features
@@ -801,13 +802,13 @@ simply-mcp/
 
 ## Transport Comparison
 
-| Feature | Stdio | HTTP Stateful | HTTP Stateless | SSE |
-|---------|-------|---------------|----------------|-----|
-| Session | Per-process | Header-based | None | Query-based |
-| Use Case | CLI tools | Web apps, workflows | Serverless, APIs | Streaming (legacy) |
-| Streaming | No | Yes (SSE) | No | Yes |
-| State | In-process | Across requests | None | Across requests |
-| Complexity | Low | Medium | Low | Medium |
+| Feature | Stdio | HTTP Stateful | HTTP Stateless |
+|---------|-------|---------------|----------------|
+| Session | Per-process | Header-based | None |
+| Use Case | CLI tools | Web apps, workflows | Serverless, APIs |
+| Streaming | No | Yes (SSE) | No |
+| State | In-process | Across requests | None |
+| Complexity | Low | Medium | Low |
 
 ## Examples
 
@@ -947,7 +948,7 @@ MIT © [Nicholas Marinkovich, MD](https://cwinnov.com)
 - [NPM Package](https://www.npmjs.com/package/simply-mcp)
 - [GitHub Repository](https://github.com/Clockwork-Innovations/simply-mcp-ts)
 - [Issue Tracker](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues)
-- [Changelog](./docs/releases/CHANGELOG.md)
+- [Changelog](./CHANGELOG.md)
 
 ## Support
 

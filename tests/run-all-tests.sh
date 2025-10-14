@@ -91,8 +91,6 @@ run_suite "Stateful HTTP Transport" "tests/test-stateful-http.sh"
 sleep 2  # Allow server cleanup
 run_suite "HTTP Modes (Stateful/Stateless)" "tests/test-http-modes.sh"
 sleep 2  # Allow server cleanup
-run_suite "SSE Transport (Legacy)" "tests/test-sse.sh"
-sleep 2  # Allow server cleanup
 run_suite "CLI Commands" "tests/test-cli-run.sh"
 
 END_TIME=$(date +%s)
@@ -118,7 +116,7 @@ echo "-------------------------------------------"
 printf "% -30s | %s\n" "Test Suite" "Result"
 echo "-------------------------------------------"
 
-for suite in "v2.4.5 Bug Fixes" "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "SSE Transport (Legacy)" "CLI Commands"; do
+for suite in "v2.4.5 Bug Fixes" "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "CLI Commands"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -165,7 +163,7 @@ cat > "$REPORT_FILE" << EOF
 |----------------|--------|----------|
 EOF
 
-for suite in "v2.4.5 Bug Fixes" "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "SSE Transport (Legacy)" "CLI Commands"; do
+for suite in "v2.4.5 Bug Fixes" "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "CLI Commands"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -204,13 +202,7 @@ cat >> "$REPORT_FILE" << EOF
 - **Session:** Tracked via Mcp-Session-Id header
 - **Tests:** Session creation, reuse, isolation, termination, SSE streaming
 
-### 5. SSE Transport (Legacy)
-- **Type:** Server-Sent Events
-- **Use Case:** Legacy systems, streaming updates
-- **Session:** Tracked via query parameters
-- **Tests:** Connection establishment, message sending, session validation
-
-### 6. CLI Commands
+### 5. CLI Commands
 - **Type:** Simplified CLI interface
 - **Use Case:** Running MCP servers with auto-detection
 - **Session:** N/A (adapter selection)

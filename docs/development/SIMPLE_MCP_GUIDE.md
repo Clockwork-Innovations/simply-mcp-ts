@@ -9,7 +9,7 @@
 SimplyMCP is already part of this repository. Just import it:
 
 ```typescript
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 ```
 
@@ -19,11 +19,11 @@ import { z } from 'zod';
 
 ```typescript
 #!/usr/bin/env node
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
 // Create server
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'my-awesome-server',
   version: '1.0.0',
 });
@@ -333,12 +333,12 @@ SimplyMCP supports declaring npm dependencies directly in your server file using
 // date-fns@^2.30.0
 // ///
 
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import axios from 'axios';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'weather-server',
   version: '1.0.0',
 });
@@ -390,7 +390,7 @@ if (deps) {
 #### Loading from File
 
 ```typescript
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 
 // Load server and automatically parse inline dependencies
 const server = await SimplyMCP.fromFile('./my-server.ts', {
@@ -442,7 +442,7 @@ Inline dependencies work alongside package.json:
 
 ```typescript
 // Generate package.json from inline dependencies
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 
 const deps = server.getDependencies();
 const pkg = generatePackageJson(deps.map, {
@@ -481,7 +481,7 @@ SimplyMCP can automatically install missing dependencies declared in your inline
 // zod@^3.22.0
 // ///
 
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
 // Load server with auto-install enabled
@@ -904,10 +904,10 @@ node configurableServer.ts config.json
 
 **server.ts:**
 ```typescript
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimplyMCP({ name: 'my-server', version: '1.0.0' });
+const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });
 
 server.addTool({
   name: 'greet',

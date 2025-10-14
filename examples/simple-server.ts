@@ -13,11 +13,11 @@
  *   node mcp/examples/simple-server.ts --http --port 3000
  */
 
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
 // Create a new SimplyMCP server with optional enhanced capabilities
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'simple-example-server',
   version: '1.0.0',
   port: 3000, // Default port for HTTP transport

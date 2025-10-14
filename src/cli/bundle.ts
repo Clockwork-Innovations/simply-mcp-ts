@@ -56,7 +56,7 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
         alias: 'f',
         describe: 'Output format',
         choices: ['single-file', 'standalone', 'esm', 'cjs'] as const,
-        default: 'esm' as const,
+        default: 'single-file' as const,
       })
       .option('minify', {
         alias: 'm',

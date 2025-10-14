@@ -16,7 +16,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { loadInterfaceServer } from '../../src/api/interface/index.js';
-import { SimplyMCP } from '../../src/SimplyMCP.js';
+import { BuildMCPServer } from '../../src/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -24,7 +24,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Interface API - Foundation Layer', () => {
-  let minimalServer: SimplyMCP;
+  let minimalServer: BuildMCPServer;
 
   beforeAll(async () => {
     const examplePath = path.resolve(__dirname, '../../examples/interface-minimal.ts');
@@ -139,7 +139,7 @@ describe('Interface API - Foundation Layer', () => {
 });
 
 describe('Interface API - Feature Layer', () => {
-  let advancedServer: SimplyMCP;
+  let advancedServer: BuildMCPServer;
 
   beforeAll(async () => {
     const examplePath = path.resolve(__dirname, '../../examples/interface-advanced.ts');

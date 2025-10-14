@@ -4,9 +4,51 @@
  */
 
 import { spawn, type ChildProcess } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readdirSync } from 'node:fs';
 import type { APIStyle } from './run.js';
+
+/**
+ * Find TypeScript files in a directory
+ * @param dir Directory to search
+ * @param recursive Whether to search subdirectories
+ * @returns Array of absolute paths to .ts files
+ */
+function findTypeScriptFiles(dir: string, recursive: boolean): string[] {
+  const results: string[] = [];
+
+  try {
+    // Get all entries in directory
+    const entries = readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+
+      // Skip node_modules, dist, build, hidden dirs
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === 'dist' ||
+            entry.name === 'build' || entry.name.startsWith('.')) {
+          continue;
+        }
+        if (recursive) {
+          results.push(...findTypeScriptFiles(fullPath, true));
+        }
+      } else if (entry.isFile()) {
+        // Include .ts files, exclude .test.ts and .spec.ts
+        if (entry.name.endsWith('.ts') &&
+            !entry.name.endsWith('.test.ts') &&
+            !entry.name.endsWith('.spec.ts')) {
+          results.push(fullPath);
+        }
+      }
+    }
+  } catch (error) {
+    // Directory might not exist or be readable - silently skip
+  }
+
+  return results;
+}
 
 /**
  * Options for watch mode
@@ -15,6 +57,7 @@ export interface WatchModeOptions {
   file: string;
   style: APIStyle;
   http: boolean;
+  httpStateless?: boolean;
   port: number;
   poll: boolean;
   interval: number;
@@ -52,7 +95,7 @@ function startServerProcess(options: WatchModeOptions, state: WatchState): void 
     return;
   }
 
-  const { file, style, http, port, verbose } = options;
+  const { file, style, http, httpStateless, port, verbose } = options;
   const absolutePath = resolve(process.cwd(), file);
 
   // Get the path to the CLI
@@ -61,7 +104,10 @@ function startServerProcess(options: WatchModeOptions, state: WatchState): void 
 
   // Build command arguments
   const args = ['run', absolutePath, '--style', style];
-  if (http) {
+  if (httpStateless) {
+    args.push('--http-stateless');
+    args.push('--port', port.toString());
+  } else if (http) {
     args.push('--http');
     args.push('--port', port.toString());
   }
@@ -224,12 +270,19 @@ export async function startWatchMode(options: WatchModeOptions): Promise<void> {
   startServerProcess(options, state);
 
   // Watch the file and its directory
-  // Also watch for TypeScript files in the same directory for dependency changes
+  // Explicitly enumerate TypeScript files to ensure chokidar detects changes
   const fileDir = dirname(absolutePath);
+
+  // Find all TypeScript files in same directory and subdirectories
+  const sameDirFiles = findTypeScriptFiles(fileDir, false);  // Same directory
+  const subDirFiles = findTypeScriptFiles(fileDir, true);    // Subdirectories
+
+  // Combine all paths and remove duplicates
+  const allTsFiles = [...new Set([absolutePath, ...sameDirFiles, ...subDirFiles])];
+
   const watchPaths = [
-    absolutePath,
-    `${fileDir}/**/*.ts`,  // Watch all TS files in same directory
-    `${fileDir}/package.json`,  // Watch package.json for dependency changes
+    ...allTsFiles,                    // All discovered TypeScript files
+    `${fileDir}/package.json`,        // Package.json for dependency changes
   ];
 
   const watchOptions: any = {
@@ -297,6 +350,7 @@ export async function startWatchMode(options: WatchModeOptions): Promise<void> {
 
   // Handle graceful shutdown
   const shutdown = async (signal: string) => {
+    // Log shutdown initiation
     console.error(`\n[Watch] [${timestamp()}] Received ${signal}, shutting down...`);
 
     // Close the watcher
@@ -307,12 +361,32 @@ export async function startWatchMode(options: WatchModeOptions): Promise<void> {
     // Stop the child process
     await stopServerProcess(state, verbose);
 
-    console.error(`[Watch] [${timestamp()}] Shutdown complete`);
+    // Ensure "Shutdown complete" message is written before exit
+    // Using write() with callback guarantees completion
+    await new Promise<void>((resolve) => {
+      const message = `[Watch] [${timestamp()}] Shutdown complete\n`;
+      process.stderr.write(message, () => {
+        resolve();
+      });
+    });
+
     process.exit(0);
   };
 
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  // Properly handle async shutdown in signal handlers
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT').catch((err) => {
+      console.error('[Watch] Error during shutdown:', err);
+      process.exit(1);
+    });
+  });
+
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM').catch((err) => {
+      console.error('[Watch] Error during shutdown:', err);
+      process.exit(1);
+    });
+  });
 
   // Keep the process alive
   return new Promise(() => {

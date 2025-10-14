@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "video-editor": {
+      "command": "node",
+      "args": [
+        "/mnt/Shared/cs-projects/simple-mcp/dist/src/cli/run.js",
+        "/mnt/Shared/cs-projects/simple-mcp/examples/video-editor-mcp/video-editor-server.ts"
+      ],
+      "env": {}
+    }
+  }
+}

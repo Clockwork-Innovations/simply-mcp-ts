@@ -62,7 +62,7 @@ npm install /mnt/Shared/cs-projects/simply-mcp
 
 # Create test file
 cat > test.js << 'EOF'
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 console.log('SimplyMCP imported successfully!');
 EOF
 
@@ -315,10 +315,10 @@ EOF
 
 # Test Programmatic API
 cat > test-programmatic.ts << 'EOF'
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
+const server = new BuildMCPServer({ name: 'test', version: '1.0.0' });
 server.addTool({
   name: 'echo',
   description: 'Echo input',

@@ -12,11 +12,11 @@
  *   node mcp/examples/phase1-features.ts
  */
 
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
 // Create a new SimplyMCP server with enhanced capabilities
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'phase1-features-server',
   version: '1.0.0',
   capabilities: {

@@ -76,8 +76,36 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     description: parseResult.server?.description,
   });
 
-  // Step 5: Register tools
-  for (const tool of parseResult.tools) {
+  // Step 5: Register tools (with hybrid approach)
+  let toolsToRegister = parseResult.tools;
+
+  // Fallback: If no tools found via static analysis, try runtime inspection
+  if (toolsToRegister.length === 0 && serverInstance.tools && Array.isArray(serverInstance.tools)) {
+    if (verbose) {
+      console.log('[Interface Adapter] No tools found via static analysis, using runtime tool instances');
+    }
+
+    // Extract tool information from runtime instances
+    toolsToRegister = serverInstance.tools.map((toolInstance: any) => ({
+      name: toolInstance.name,
+      methodName: toolInstance.name, // Use tool name as method name for execute()
+      description: toolInstance.description || `Tool: ${toolInstance.name}`,
+      paramsType: 'any', // Runtime tools don't have TypeScript type info
+      paramsNode: undefined, // No AST node available
+      interfaceName: 'ITool', // Generic interface name
+      isRuntimeTool: true, // Flag to indicate this came from runtime
+      runtimeInstance: toolInstance, // Keep reference to actual instance
+    }));
+
+    if (verbose) {
+      console.log(`[Interface Adapter] Found ${toolsToRegister.length} runtime tool(s): ${toolsToRegister.map(t => t.name).join(', ')}`);
+    }
+  } else if (verbose && toolsToRegister.length > 0) {
+    console.log(`[Interface Adapter] Using ${toolsToRegister.length} statically analyzed tool(s)`);
+  }
+
+  // Register all tools (static or runtime)
+  for (const tool of toolsToRegister) {
     await registerTool(buildServer, serverInstance, tool, filePath, verbose);
   }
 
@@ -107,12 +135,45 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
 async function registerTool(
   server: BuildMCPServer,
   serverInstance: any,
-  tool: ParsedTool,
+  tool: ParsedTool | any, // Allow runtime tool objects
   filePath: string,
   verbose?: boolean
 ): Promise<void> {
   const { name, methodName, description, paramsNode } = tool;
 
+  // Handle runtime tools (from serverInstance.tools array)
+  if (tool.isRuntimeTool && tool.runtimeInstance) {
+    if (verbose) {
+      console.log(`[Interface Adapter] Registering runtime tool: ${name}`);
+    }
+
+    const runtimeTool = tool.runtimeInstance;
+
+    // Check if runtime tool has execute method
+    if (typeof runtimeTool.execute !== 'function') {
+      throw new Error(
+        `Runtime tool "${name}" must have an execute() method`
+      );
+    }
+
+    // For runtime tools, use a permissive schema since we don't have TypeScript type info
+    const schema = z.object({}).passthrough(); // Accept any properties
+
+    // Register the tool using the runtime instance's execute method
+    server.addTool({
+      name,
+      description: description || `Tool: ${name}`,
+      parameters: schema,
+      execute: async (args) => {
+        // Call execute on the runtime tool instance
+        return await runtimeTool.execute.call(runtimeTool, args);
+      },
+    });
+
+    return;
+  }
+
+  // Handle statically analyzed tools (original behavior)
   // Check if method exists on server instance
   const method = serverInstance[methodName];
 
@@ -130,7 +191,7 @@ async function registerTool(
   }
 
   if (verbose) {
-    console.log(`[Interface Adapter] Registering tool: ${name} -> ${methodName}()`);
+    console.log(`[Interface Adapter] Registering static tool: ${name} -> ${methodName}()`);
   }
 
   // Generate Zod schema from TypeScript type

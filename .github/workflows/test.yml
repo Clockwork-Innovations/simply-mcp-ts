@@ -1,0 +1,358 @@
+name: Comprehensive Test Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # Job 1: Unit Tests & Build Verification
+  unit-tests:
+    name: Unit Tests & Build (Node ${{ matrix.node-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node-version: ['20.x', '22.x', 'latest']
+        include:
+          # Also test on macOS and Windows with Node 20 only (for broader coverage)
+          - os: macos-latest
+            node-version: '20.x'
+          - os: windows-latest
+            node-version: '20.x'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run unit tests
+        run: npm run test:unit
+        continue-on-error: ${{ matrix.os == 'windows-latest' }}
+        env:
+          CI: true
+
+      - name: Check TypeScript types
+        run: npx tsc --noEmit
+
+      - name: Upload build artifacts
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.x'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build
+          path: dist/
+          retention-days: 1
+
+  # Job 2: Shell-based Integration Tests (Linux only)
+  integration-shell:
+    name: Integration Tests - Shell Scripts (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20.x', '22.x']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq lsof curl
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Create tarball for integration tests
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          npm pack
+          mv simply-mcp-$VERSION.tgz simply-mcp-test.tgz
+          echo "Created tarball: simply-mcp-test.tgz"
+          ls -lh simply-mcp-test.tgz
+
+      - name: Update test scripts to use test tarball
+        run: |
+          # Update tarball paths in test scripts to point to our test tarball
+          find tests/integration -name "*.sh" -type f -exec sed -i 's|simply-mcp-2\.5\.0-beta\.[0-9]*\.tgz|simply-mcp-test.tgz|g' {} +
+          find tests/integration -name "*.sh" -type f -exec sed -i 's|/mnt/Shared/cs-projects/simple-mcp/simply-mcp-test.tgz|'"$PWD/simply-mcp-test.tgz"'|g' {} +
+
+      - name: Run watch mode tests
+        id: watch-tests
+        run: bash tests/integration/test-watch-mode.sh
+        continue-on-error: true
+        timeout-minutes: 15
+
+      - name: Run HTTP transport tests
+        id: http-tests
+        run: bash tests/integration/test-http-transport.sh
+        continue-on-error: true
+        timeout-minutes: 15
+
+      - name: Run bundle smoke tests
+        id: bundle-tests
+        run: bash tests/integration/test-bundle-smoke.sh
+        continue-on-error: true
+        timeout-minutes: 15
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-shell-logs-node-${{ matrix.node-version }}
+          path: |
+            /tmp/watch-mode-tests-*/logs/
+            /tmp/http-transport-test-*/
+            /tmp/bundle-smoke-test-*/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Check test results
+        if: always()
+        run: |
+          echo "Test Results Summary:"
+          echo "  Watch Mode: ${{ steps.watch-tests.outcome }}"
+          echo "  HTTP Transport: ${{ steps.http-tests.outcome }}"
+          echo "  Bundle Smoke: ${{ steps.bundle-tests.outcome }}"
+
+          # Fail if any critical tests failed
+          if [ "${{ steps.watch-tests.outcome }}" = "failure" ] || \
+             [ "${{ steps.http-tests.outcome }}" = "failure" ] || \
+             [ "${{ steps.bundle-tests.outcome }}" = "failure" ]; then
+            echo "One or more integration tests failed"
+            exit 1
+          fi
+
+  # Job 3: TypeScript Runtime Tests
+  integration-typescript:
+    name: Integration Tests - TypeScript (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20.x', '22.x']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run MCP Builder integration tests
+        id: mcp-builder
+        run: npx tsx test-mcp-builder-integration.ts
+        continue-on-error: true
+        timeout-minutes: 10
+
+      - name: Run Interface API runtime tests
+        id: interface-api
+        run: npx tsx test-interface-runtime.ts
+        continue-on-error: true
+        timeout-minutes: 5
+
+      - name: Run Functional API runtime tests
+        id: functional-api
+        run: npx tsx test-functional-api-runtime.ts
+        continue-on-error: true
+        timeout-minutes: 5
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-typescript-results-node-${{ matrix.node-version }}
+          path: |
+            *-test-results.json
+            *-test-report.md
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Check test results
+        if: always()
+        run: |
+          echo "TypeScript Test Results:"
+          echo "  MCP Builder: ${{ steps.mcp-builder.outcome }}"
+          echo "  Interface API: ${{ steps.interface-api.outcome }}"
+          echo "  Functional API: ${{ steps.functional-api.outcome }}"
+
+          # Fail if critical tests failed (allow some flexibility)
+          if [ "${{ steps.mcp-builder.outcome }}" = "failure" ]; then
+            echo "MCP Builder tests failed"
+            exit 1
+          fi
+
+  # Job 4: Test Summary & Status
+  test-summary:
+    name: Test Summary
+    needs: [unit-tests, integration-shell, integration-typescript]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-artifacts
+        continue-on-error: true
+
+      - name: Generate summary report
+        run: |
+          echo "# Test Suite Summary" > summary.md
+          echo "" >> summary.md
+          echo "**Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> summary.md
+          echo "**Branch**: ${{ github.ref_name }}" >> summary.md
+          echo "**Commit**: ${{ github.sha }}" >> summary.md
+          echo "" >> summary.md
+          echo "## Job Status" >> summary.md
+          echo "" >> summary.md
+          echo "| Job | Status |" >> summary.md
+          echo "|-----|--------|" >> summary.md
+          echo "| Unit Tests & Build | ${{ needs.unit-tests.result }} |" >> summary.md
+          echo "| Integration Tests (Shell) | ${{ needs.integration-shell.result }} |" >> summary.md
+          echo "| Integration Tests (TypeScript) | ${{ needs.integration-typescript.result }} |" >> summary.md
+          echo "" >> summary.md
+
+          # List artifacts
+          if [ -d "test-artifacts" ]; then
+            echo "## Test Artifacts" >> summary.md
+            echo "" >> summary.md
+            find test-artifacts -type f -name "*.md" -o -name "*.json" | sort >> summary.md
+          fi
+
+          cat summary.md
+
+      - name: Upload summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-summary
+          path: summary.md
+          retention-days: 30
+
+      - name: Check overall status
+        run: |
+          echo "Overall Test Status:"
+          echo "  Unit Tests: ${{ needs.unit-tests.result }}"
+          echo "  Integration (Shell): ${{ needs.integration-shell.result }}"
+          echo "  Integration (TS): ${{ needs.integration-typescript.result }}"
+
+          # Fail if critical jobs failed
+          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+            echo "❌ Unit tests failed - CRITICAL"
+            exit 1
+          fi
+
+          if [ "${{ needs.integration-shell.result }}" != "success" ]; then
+            echo "❌ Shell integration tests failed - CRITICAL"
+            exit 1
+          fi
+
+          # TypeScript integration tests are important but not blocking
+          if [ "${{ needs.integration-typescript.result }}" != "success" ]; then
+            echo "⚠️  TypeScript integration tests failed - WARNING"
+            # Don't exit, just warn
+          fi
+
+          echo "✅ Critical tests passed!"
+
+  # Job 6: Package Validation (runs in parallel with tests)
+  package-validation:
+    name: Package Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run package validation script
+        run: bash scripts/validate-package.sh
+        if: hashFiles('scripts/validate-package.sh') != ''
+
+      - name: Validate package.json structure
+        run: |
+          node -e '
+            const pkg = require("./package.json");
+            const required = ["name", "version", "description", "main", "module", "types", "exports", "bin", "files", "license", "repository"];
+            const missing = required.filter(f => !pkg[f]);
+            if (missing.length > 0) {
+              console.error("Missing required fields:", missing);
+              process.exit(1);
+            }
+            console.log("✓ Package structure valid");
+          '
+
+      - name: Test basic imports
+        run: |
+          cat > test-imports.mjs << 'EOF'
+          import { SimplyMCP } from './dist/src/index.js';
+          import { MCPServer, tool } from './dist/src/decorators.js';
+          import { defineConfig } from './dist/src/config.js';
+
+          if (typeof SimplyMCP !== 'function') throw new Error('SimplyMCP not exported');
+          if (typeof MCPServer !== 'function') throw new Error('MCPServer not exported');
+          if (typeof defineConfig !== 'function') throw new Error('defineConfig not exported');
+
+          console.log('✓ All imports successful');
+          EOF
+
+          node test-imports.mjs
+          rm test-imports.mjs
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true

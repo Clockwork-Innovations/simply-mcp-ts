@@ -4,52 +4,52 @@
 
 ---
 
-## v2.4.7 → v2.5.0 (Backward Compatible)
+## v2.x → v3.0.0 (Breaking Changes)
 
 ### What Changed
-- ✅ Unified imports available (subpaths still work)
+- ✅ Unified imports now required
 - ✅ Better error messages
 - ✅ Decorator parameter validation
-- ⚠️ Subpath imports deprecated (removal in v4.0.0)
+- ❌ Subpath imports removed (breaking change)
 
 ### Action Required
-**NONE** - Everything still works!
-
-**Recommended:** Update imports for better DX
+**YES** - Update all imports to use the main package entry point
 
 ---
 
 ## Quick Update Steps
 
-### 1. Install v2.5.0
+### 1. Install v3.0.0
 ```bash
-npm install simply-mcp@2.5.0
+npm install simply-mcp@3.0.0
 ```
 
-### 2. Update Imports (Recommended)
+### 2. Update Imports (Required)
 
-**Before (v2.4.x):**
+**Before (v2.x - no longer supported):**
 ```typescript
 import { MCPServer, tool, prompt, resource } from 'simply-mcp/decorators';
 import { defineConfig, type CLIConfig } from 'simply-mcp/config';
 ```
 
-**After (v2.5.0):**
+**After (v3.0.0 - required):**
 ```typescript
 import { MCPServer, tool, prompt, resource, defineConfig, type CLIConfig } from 'simply-mcp';
 ```
 
-### 3. Find & Replace
+### 3. Find & Replace (Critical)
 
-**Using grep:**
+**Using grep to find old imports:**
 ```bash
 grep -r "from 'simply-mcp/decorators'" src/
 grep -r "from 'simply-mcp/config'" src/
 ```
 
-**Find/Replace in editor:**
+**Find/Replace in editor (required):**
 - Find: `from 'simply-mcp/decorators'` → Replace: `from 'simply-mcp'`
 - Find: `from 'simply-mcp/config'` → Replace: `from 'simply-mcp'`
+
+**Note:** These old import patterns will cause errors in v3.0.0. All imports must come from the main package.
 
 ### 4. Verify
 ```bash
@@ -80,11 +80,11 @@ export default class MyServer {
 ### Pattern 2: Programmatic API
 
 ```typescript
-// v2.5.0+ (No changes needed)
-import { SimplyMCP } from 'simply-mcp';
+// v3.0.0+
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimplyMCP({ name: 'my-server' });
+const server = new BuildMCPServer({ name: 'my-server' });
 server.addTool({
   name: 'greet',
   description: 'Greet user',
@@ -114,13 +114,13 @@ export default defineConfig({
 ### Pattern 4: Mixed Imports
 
 ```typescript
-// v2.5.0+ (Everything from one place)
+// v3.0.0+ (Everything from one place)
 import {
   MCPServer,
   tool,
   prompt,
   resource,
-  SimplyMCP,
+  BuildMCPServer,
   defineMCP,
   defineConfig,
   type CLIConfig,
@@ -171,23 +171,24 @@ add(a: number, b: number) { return a + b; }
 
 ---
 
-## v2.x → v3.0.0 (Breaking Changes - Future)
+## Subpath Imports Removed (Breaking Change in v3.0.0)
 
-### What Will Break
+### What Breaks
 
-#### Subpath Imports (Removed in v3.0.0)
+#### Subpath Imports No Longer Supported
 
-**Breaks:**
+**Breaks (causes import errors):**
 ```typescript
 import { tool } from 'simply-mcp/decorators'; // ❌ Error in v3.0.0
+import { defineConfig } from 'simply-mcp/config'; // ❌ Error in v3.0.0
 ```
 
-**Fix:**
+**Fix (required):**
 ```typescript
-import { tool } from 'simply-mcp'; // ✅ Works in v3.0.0
+import { tool, defineConfig } from 'simply-mcp'; // ✅ Required in v3.0.0
 ```
 
-**If you migrate to v2.5.0 now, you're already ready for v3.0.0!**
+**Migration Impact:** All code using old subpath imports must be updated before upgrading to v3.0.0.
 
 ---
 
@@ -235,11 +236,12 @@ TypeError: @tool decorator expects a string description, got object
 @tool({ description: 'Description' }) // ❌ Not until v3.0.0
 ```
 
-### IDE deprecation warnings
+### Module not found errors
 ```
-'simply-mcp/decorators' is deprecated
+Cannot find module 'simply-mcp/decorators'
+Cannot find module 'simply-mcp/config'
 ```
-**Fix:** Update imports to `'simply-mcp'` and restart IDE
+**Fix:** These subpath exports are removed in v3. Update all imports to `'simply-mcp'` and restart IDE
 
 ---
 
@@ -248,35 +250,29 @@ TypeError: @tool decorator expects a string description, got object
 | Version | Date | Status | Breaking Changes |
 |---------|------|--------|------------------|
 | v2.4.7 | 2025-10-06 | Released | None |
-| **v2.5.0** | **TBD** | **Current** | **None** |
-| v2.x | Ongoing | Supported | None |
-| v3.0.0-beta | TBD | Planned | Yes (beta testing) |
-| v3.0.0 | TBD (3-6 months) | Planned | Yes (see below) |
-| v4.0.0 | TBD | Future | Yes (removes subpaths) |
+| v2.5.0 | 2025-10-10 | Released | None |
+| v2.x | Ongoing | Maintenance | None |
+| **v3.0.0** | **2025-10-13** | **Current** | **Yes (see below)** |
 
-### v3.0.0 Breaking Changes (Planned)
-1. ❌ Subpath imports removed
-2. ✅ Object decorator syntax supported
-3. ⚠️ Possible class rename (`SimplyMCP` → `MCPServer`)
-4. ⚠️ Node.js 20+ required
+### v3.0.0 Breaking Changes
+1. ❌ Subpath imports removed (`simply-mcp/decorators` and `simply-mcp/config` no longer work)
+2. ❌ SSE transport removed (use HTTP stateful mode)
+3. ❌ Legacy adapter files removed
 
 ---
 
 ## Migration Checklist
 
-### v2.5.0 Migration (Do This Now)
-- [ ] Update to v2.5.0: `npm install simply-mcp@2.5.0`
-- [ ] Find old imports: `grep -r "from 'simply-mcp/" src/`
-- [ ] Replace with unified imports
+### v3.0.0 Migration (Required)
+- [ ] Backup your project (`git commit` or create a branch)
+- [ ] Update to v3.0.0: `npm install simply-mcp@3.0.0`
+- [ ] Find all old imports: `grep -r "from 'simply-mcp/" src/`
+- [ ] Replace decorator imports: `'simply-mcp/decorators'` → `'simply-mcp'`
+- [ ] Replace config imports: `'simply-mcp/config'` → `'simply-mcp'`
 - [ ] Build: `npm run build`
 - [ ] Test: `npm test`
 - [ ] Verify: `npx simplymcp run server.ts --dry-run`
-
-### v3.0.0 Preparation (When Available)
-- [ ] Already done if you migrated to v2.5.0!
-- [ ] Test with v3.0.0-beta
-- [ ] Run migration tool: `npx simply-mcp migrate v2-to-v3`
-- [ ] Update to v3.0.0
+- [ ] Update documentation
 
 ---
 
@@ -284,8 +280,8 @@ TypeError: @tool decorator expects a string description, got object
 
 ### Package Management
 ```bash
-# Update to v2.5.0
-npm install simply-mcp@2.5.0
+# Update to v3.0.0
+npm install simply-mcp@3.0.0
 
 # Check installed version
 npm list simply-mcp
@@ -374,11 +370,11 @@ npx simplymcp config list
 
 ### Import Patterns
 
-| What | v2.4.x (Old) | v2.5.0+ (New) |
-|------|--------------|---------------|
-| **Decorators** | `'simply-mcp/decorators'` | `'simply-mcp'` |
-| **Config** | `'simply-mcp/config'` | `'simply-mcp'` |
-| **Main** | `'simply-mcp'` | `'simply-mcp'` |
+| What | v2.x (Old - Removed) | v3.0.0 (Current - Required) |
+|------|---------------------|----------------------------|
+| **Decorators** | `'simply-mcp/decorators'` ❌ | `'simply-mcp'` ✅ |
+| **Config** | `'simply-mcp/config'` ❌ | `'simply-mcp'` ✅ |
+| **Main** | `'simply-mcp'` ✅ | `'simply-mcp'` ✅ |
 
 ### Decorator Syntax
 
@@ -390,12 +386,11 @@ npx simplymcp config list
 
 ### Migration Status
 
-| Task | v2.5.0 | v3.0.0 |
-|------|--------|--------|
-| **Update imports** | ✅ Recommended | ✅ Required |
+| Task | v2.x | v3.0.0 |
+|------|------|--------|
+| **Update imports** | ⚠️ Optional | ✅ Required |
 | **String decorators** | ✅ Works | ✅ Works |
-| **Object decorators** | ❌ Error | ✅ Works |
-| **Subpath imports** | ⚠️ Deprecated | ❌ Removed |
+| **Subpath imports** | ✅ Works | ❌ Removed |
 
 ---
 

@@ -5,11 +5,24 @@
  * switching between stateful (session-based) and stateless (per-request) modes.
  */
 
-import { SimplyMCP, StartOptions } from '../src/SimplyMCP.js';
+import { BuildMCPServer } from '../src/index.js';
+import type { BuildMCPServerOptions } from '../src/index.js';
 import { z } from 'zod';
 
+// Define StartOptions interface for tests
+interface StartOptions {
+  transport: 'stdio' | 'http';
+  port?: number;
+  stateful?: boolean;
+  http?: {
+    mode?: 'stateful' | 'stateless';
+    enableJsonResponse?: boolean;
+    dnsRebindingProtection?: boolean;
+  };
+}
+
 describe('HTTP Transport Mode Tests', () => {
-  let server: SimplyMCP;
+  let server: BuildMCPServer;
 
   afterEach(async () => {
     if (server) {
@@ -20,7 +33,7 @@ describe('HTTP Transport Mode Tests', () => {
   describe('Mode Validation', () => {
     test('should accept stateful: true', () => {
       expect(() => {
-        server = new SimplyMCP({
+        server = new BuildMCPServer({
           name: 'test-server',
           version: '1.0.0',
         });
@@ -37,7 +50,7 @@ describe('HTTP Transport Mode Tests', () => {
 
     test('should accept stateful: false (stateless mode)', () => {
       expect(() => {
-        server = new SimplyMCP({
+        server = new BuildMCPServer({
           name: 'test-server',
           version: '1.0.0',
         });

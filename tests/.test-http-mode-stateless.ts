@@ -1,8 +1,8 @@
-import { SimplyMCP } from '../dist/src/SimplyMCP.js';
+import { BuildMCPServer } from '../dist/src/api/programmatic/BuildMCPServer.js';
 import { z } from 'zod';
 
 async function main() {
-  const server = new SimplyMCP({
+  const server = new BuildMCPServer({
     name: 'stateless-test-server',
     version: '1.0.0',
   });

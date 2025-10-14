@@ -14,6 +14,9 @@ import { ResolvedDependencies } from './bundle-types.js';
 /**
  * Known native modules that cannot be bundled
  * These must be marked as external
+ *
+ * NOTE: Build-time tools (esbuild, tsx, typescript) are excluded because they're
+ * only used during bundling, not at runtime in the bundled output.
  */
 const KNOWN_NATIVE_MODULES = [
   'fsevents',
@@ -24,11 +27,8 @@ const KNOWN_NATIVE_MODULES = [
   '@node-rs/bcrypt',
   '@node-rs/xxhash',
   'sharp',
-  'esbuild',
-  'vite',
-  'swc',
-  'node-gyp',
-  'node-pre-gyp',
+  // Build tools excluded - not runtime deps:
+  // 'esbuild', 'vite', 'swc', 'node-gyp', 'node-pre-gyp'
   'bufferutil',
   'utf-8-validate',
   'cpu-features',
@@ -132,6 +132,23 @@ export async function resolveDependencies(options: {
 }
 
 /**
+ * List of build-time tools that should NOT be treated as runtime dependencies
+ * These are filtered out from native module detection
+ */
+const BUILD_TIME_TOOLS = [
+  'esbuild',
+  'vite',
+  'swc',
+  'node-gyp',
+  'node-pre-gyp',
+  'typescript',
+  'tsx',
+  'ts-node',
+  '@swc/core',
+  '@swc/cli',
+];
+
+/**
  * Detect native modules from dependency list
  *
  * @param dependencies - List of dependency names
@@ -139,6 +156,11 @@ export async function resolveDependencies(options: {
  */
 export function detectNativeModules(dependencies: string[]): string[] {
   return dependencies.filter(dep => {
+    // Exclude build-time tools - they're not runtime dependencies
+    if (BUILD_TIME_TOOLS.includes(dep)) {
+      return false;
+    }
+
     // Check known native modules
     if (KNOWN_NATIVE_MODULES.includes(dep)) {
       return true;

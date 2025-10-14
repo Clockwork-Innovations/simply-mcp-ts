@@ -5,9 +5,6 @@
  * Provides TypeScript-like schema definitions for parameter validation.
  *
  * @module types/schema
- *
- * @deprecated These types were previously exported from 'src/schema-builder.ts'.
- * Import from 'simply-mcp' or 'simply-mcp/types' instead.
  */
 
 /**

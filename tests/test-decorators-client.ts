@@ -41,10 +41,10 @@ async function runTests() {
   console.log('=========================================');
   console.log('');
 
-  // Create client transport pointing to our test decorator class
+  // Create client transport pointing to our test decorator class using the CLI
   const transport = new StdioClientTransport({
     command: 'npx',
-    args: ['tsx', 'src/class-adapter.ts', 'tests/fixtures/test-decorator-class.ts'],
+    args: ['tsx', 'src/cli/class-bin.ts', 'tests/fixtures/test-decorator-class.ts'],
   });
 
   const client = new Client(

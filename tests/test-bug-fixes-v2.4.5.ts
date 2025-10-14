@@ -3,7 +3,7 @@
  * Tests all fixes applied in version 2.4.5
  */
 
-import { SimplyMCP } from '../dist/src/SimplyMCP.js';
+import { BuildMCPServer } from '../dist/src/index.js';
 import { z } from 'zod';
 import axios from 'axios';
 
@@ -58,8 +58,8 @@ async function runTests() {
     return true;
   })();
 
-  await test('Can import SimplyMCPOptions type', () => {
-    type SO = import('../dist/src/index.js').SimplyMCPOptions;
+  await test('Can import BuildMCPServerOptions type', () => {
+    type SO = import('../dist/src/index.js').BuildMCPServerOptions;
     return true;
   })();
 
@@ -71,18 +71,18 @@ async function runTests() {
   // BUG-004: Name/Version Getters
   console.log('\n🏷️  BUG-004: Server Property Getters\n');
 
-  await test('SimplyMCP.name getter exists and works', () => {
-    const server = new SimplyMCP({ name: 'test-name', version: '1.0.0' });
+  await test('BuildMCPServer.name getter exists and works', () => {
+    const server = new BuildMCPServer({ name: 'test-name', version: '1.0.0' });
     return server.name === 'test-name';
   })();
 
-  await test('SimplyMCP.version getter exists and works', () => {
-    const server = new SimplyMCP({ name: 'test', version: '2.3.4' });
+  await test('BuildMCPServer.version getter exists and works', () => {
+    const server = new BuildMCPServer({ name: 'test', version: '2.3.4' });
     return server.version === '2.3.4';
   })();
 
-  await test('SimplyMCP.description getter exists and works', () => {
-    const server = new SimplyMCP({
+  await test('BuildMCPServer.description getter exists and works', () => {
+    const server = new BuildMCPServer({
       name: 'test',
       version: '1.0.0',
       description: 'Test description',
@@ -90,8 +90,8 @@ async function runTests() {
     return server.description === 'Test description';
   })();
 
-  await test('SimplyMCP.description returns undefined when not set', () => {
-    const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
+  await test('BuildMCPServer.description returns undefined when not set', () => {
+    const server = new BuildMCPServer({ name: 'test', version: '1.0.0' });
     return server.description === undefined;
   })();
 
@@ -99,7 +99,7 @@ async function runTests() {
   console.log('\n🏥 BUG-006: Health Check Endpoints\n');
 
   await test('HTTP server has /health endpoint', async () => {
-    const server = new SimplyMCP({
+    const server = new BuildMCPServer({
       name: 'health-test',
       version: '1.0.0',
       description: 'Health test server',
@@ -137,7 +137,7 @@ async function runTests() {
   })();
 
   await test('HTTP server has / root endpoint', async () => {
-    const server = new SimplyMCP({
+    const server = new BuildMCPServer({
       name: 'root-test',
       version: '1.0.0',
     });
@@ -170,7 +170,7 @@ async function runTests() {
   })();
 
   await test('/health shows correct resource counts', async () => {
-    const server = new SimplyMCP({
+    const server = new BuildMCPServer({
       name: 'count-test',
       version: '1.0.0',
     });
@@ -208,7 +208,7 @@ async function runTests() {
   console.log('\n🌐 HTTP Transport (SSE) - MCP Spec Compliance\n');
 
   await test('Stateful HTTP works with correct SSE headers', async () => {
-    const server = new SimplyMCP({
+    const server = new BuildMCPServer({
       name: 'sse-stateful',
       version: '1.0.0',
     });
@@ -256,7 +256,7 @@ async function runTests() {
   })();
 
   await test('Stateless HTTP works with correct SSE headers', async () => {
-    const server = new SimplyMCP({
+    const server = new BuildMCPServer({
       name: 'sse-stateless',
       version: '1.0.0',
     });
@@ -300,7 +300,7 @@ async function runTests() {
   })();
 
   await test('HTTP returns 406 without SSE header (correct per spec)', async () => {
-    const server = new SimplyMCP({
+    const server = new BuildMCPServer({
       name: 'no-sse',
       version: '1.0.0',
     });
@@ -348,7 +348,7 @@ async function runTests() {
   console.log('\n🔄 Streaming HTTP - Endpoint Structure\n');
 
   await test('Stateful mode supports POST on /mcp', async () => {
-    const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
+    const server = new BuildMCPServer({ name: 'test', version: '1.0.0' });
     server.addTool({
       name: 'test',
       description: 'Test',
@@ -389,7 +389,7 @@ async function runTests() {
   })();
 
   await test('Stateless mode POST returns SSE directly', async () => {
-    const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
+    const server = new BuildMCPServer({ name: 'test', version: '1.0.0' });
     server.addTool({
       name: 'test',
       description: 'Test',

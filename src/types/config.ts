@@ -5,9 +5,6 @@
  * These types define the structure of simplymcp.config.ts files.
  *
  * @module types/config
- *
- * @deprecated These types were previously exported from 'src/cli/cli-config-loader.ts'.
- * Import from 'simply-mcp' or 'simply-mcp/types' instead.
  */
 
 /**

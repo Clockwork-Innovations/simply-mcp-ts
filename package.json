@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp",
-  "version": "2.5.0-beta.4",
+  "version": "3.0.0",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",
@@ -12,16 +12,6 @@
       "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js",
       "default": "./dist/src/index.js"
-    },
-    "./decorators": {
-      "types": "./dist/src/decorators.d.ts",
-      "import": "./dist/src/decorators.js",
-      "default": "./dist/src/decorators.js"
-    },
-    "./config": {
-      "types": "./dist/src/config.d.ts",
-      "import": "./dist/src/config.js",
-      "default": "./dist/src/config.js"
     },
     "./package.json": "./package.json"
   },
@@ -65,6 +55,14 @@
     "test:unit:coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest --coverage",
     "test:stdio": "bash tests/test-stdio.sh",
     "test:http": "bash tests/test-stateful-http.sh",
+    "test:integration:watch": "bash tests/integration/test-watch-mode.sh",
+    "test:integration:http": "bash tests/integration/test-http-transport.sh",
+    "test:integration:bundle": "bash tests/integration/test-bundle-smoke.sh",
+    "test:integration:mcp-builder": "npx tsx test-mcp-builder-integration.ts",
+    "test:integration:interface": "npx tsx test-interface-runtime.ts",
+    "test:integration:functional": "npx tsx test-functional-api-runtime.ts",
+    "test:integration:all": "npm run test:integration:watch && npm run test:integration:http && npm run test:integration:bundle",
+    "test:ci": "npm run test:unit && npm run test:integration:all",
     "release:patch": "bash scripts/release.sh patch",
     "release:minor": "bash scripts/release.sh minor",
     "release:major": "bash scripts/release.sh major"

@@ -60,9 +60,3 @@ export {
   MCPBuilder,
   Schema,
 } from './builders.js';
-
-// Adapter utilities
-export {
-  loadConfig,
-  createServerFromConfig,
-} from './adapter.js';

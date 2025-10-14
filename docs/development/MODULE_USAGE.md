@@ -84,10 +84,10 @@ export default defineMCP({
 ### Programmatic API
 
 ```typescript
-import { SimplyMCP } from 'simply-mcp';
+import { BuildMCPServer } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'my-server',
   version: '1.0.0'
 });
@@ -141,7 +141,7 @@ const myTool: SingleFileTool = {
 ## Available Exports
 
 ### Main Classes
-- `SimplyMCP` - Main programmatic API class
+- `BuildMCPServer` - Main programmatic API class
 - `MCPBuilder` - Builder pattern for creating configurations
 - `Schema` - Schema builder utility
 

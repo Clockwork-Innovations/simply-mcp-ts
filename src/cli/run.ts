@@ -69,8 +69,8 @@ export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
     const content = await readFile(filePath, 'utf-8');
 
     // Check for interface API (highest priority)
-    // Look for ITool, IPrompt, IResource, or IServer interface extensions
-    if (/extends\s+(ITool|IPrompt|IResource|IServer)/.test(content)) {
+    // Look for ITool, IPrompt, IResource, or IServer interface extensions or implementations
+    if (/(extends|implements)\s+(ITool|IPrompt|IResource|IServer)/.test(content)) {
       return 'interface';
     }
 
@@ -109,10 +109,11 @@ export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
 async function runFunctionalAdapter(
   filePath: string,
   useHttp: boolean,
+  useHttpStateless: boolean,
   port: number,
   verbose: boolean = false
 ): Promise<void> {
-  const { SimplyMCP } = await import('../SimplyMCP.js');
+  const { BuildMCPServer } = await import('../api/programmatic/BuildMCPServer.js');
   const { schemaToZod } = await import('../schema-builder.js');
   const { startServer, displayServerInfo } = await import('./adapter-utils.js');
 
@@ -134,7 +135,7 @@ async function runFunctionalAdapter(
   console.error(`[RunCommand] Creating server: ${config.name} v${config.version}`);
 
   // Create server
-  const server = new SimplyMCP({
+  const server = new BuildMCPServer({
     name: config.name,
     version: config.version,
     basePath: config.basePath,
@@ -184,7 +185,7 @@ async function runFunctionalAdapter(
   }
 
   displayServerInfo(server);
-  await startServer(server, { useHttp, port, verbose });
+  await startServer(server, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
 }
 
 /**
@@ -193,6 +194,7 @@ async function runFunctionalAdapter(
 async function runDecoratorAdapter(
   filePath: string,
   useHttp: boolean,
+  useHttpStateless: boolean,
   port: number,
   verbose: boolean = false
 ): Promise<void> {
@@ -205,7 +207,7 @@ async function runDecoratorAdapter(
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const distPath = resolve(__dirname, '..');
 
-  const { SimplyMCP } = await import(pathToFileURL(resolve(distPath, 'SimplyMCP.js')).href);
+  const { BuildMCPServer } = await import(pathToFileURL(resolve(distPath, 'api/programmatic/BuildMCPServer.js')).href);
   const {
     getServerConfig,
     getTools,
@@ -268,7 +270,7 @@ async function runDecoratorAdapter(
   // Parse the source file to extract types
   const parsedClass = parseTypeScriptFileWithCache(filePath);
 
-  const server = new SimplyMCP({
+  const server = new BuildMCPServer({
     name: config.name!,
     version: config.version!,
     description: config.description,
@@ -416,7 +418,7 @@ async function runDecoratorAdapter(
   }
 
   displayServerInfo(server);
-  await startServer(server, { useHttp, port, verbose });
+  await startServer(server, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
 }
 
 /**
@@ -425,6 +427,7 @@ async function runDecoratorAdapter(
 async function runInterfaceAdapter(
   filePath: string,
   useHttp: boolean,
+  useHttpStateless: boolean,
   port: number,
   verbose: boolean = false
 ): Promise<void> {
@@ -446,7 +449,7 @@ async function runInterfaceAdapter(
     });
 
     displayServerInfo(server);
-    await startServer(server, { useHttp, port, verbose });
+    await startServer(server, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
   } catch (error) {
     console.error('[RunCommand] Failed to run interface server:', error);
     if (error instanceof Error && error.stack && verbose) {
@@ -457,24 +460,62 @@ async function runInterfaceAdapter(
 }
 
 /**
+ * Check if a value is a BuildMCPServer server instance
+ */
+function isSimplyMCPInstance(value: any): boolean {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  // Check for required BuildMCPServer instance methods
+  return (
+    typeof value.addTool === 'function' &&
+    typeof value.addPrompt === 'function' &&
+    typeof value.addResource === 'function' &&
+    typeof value.start === 'function' &&
+    typeof value.getInfo === 'function' &&
+    typeof value.getStats === 'function'
+  );
+}
+
+/**
  * Run a server file with the programmatic API (direct execution)
  */
 async function runProgrammaticAdapter(
   filePath: string,
-  _useHttp: boolean,
-  _port: number,
+  useHttp: boolean,
+  useHttpStateless: boolean,
+  port: number,
   verbose: boolean = false
 ): Promise<void> {
-  console.error(
-    '[RunCommand] Note: Programmatic servers manage their own transport configuration'
-  );
-
-  // For programmatic API, just import and execute the file
-  // The file itself handles server creation and startup
   const absolutePath = resolve(process.cwd(), filePath);
 
   try {
-    await loadTypeScriptFile(absolutePath);
+    // Import the module
+    const module = await loadTypeScriptFile(absolutePath);
+
+    // Check if module exports a BuildMCPServer instance
+    const serverInstance = module.default || module.server;
+
+    if (serverInstance && isSimplyMCPInstance(serverInstance)) {
+      // Start exported instance with CLI flags
+      if (verbose) {
+        console.error('[RunCommand] Detected exported BuildMCPServer instance');
+        console.error(`[RunCommand] Transport: ${useHttp ? 'HTTP' : 'STDIO'}`);
+        if (useHttp) {
+          console.error(`[RunCommand] Port: ${port}`);
+        }
+      }
+
+      const { startServer, displayServerInfo } = await import('./adapter-utils.js');
+      displayServerInfo(serverInstance);
+      await startServer(serverInstance, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
+    } else {
+      // Preserve current behavior for self-managing servers
+      console.error(
+        '[RunCommand] Note: Programmatic servers manage their own transport configuration'
+      );
+    }
   } catch (error) {
     console.error('[RunCommand] Failed to run server:', error);
     process.exit(2);
@@ -487,6 +528,7 @@ async function runProgrammaticAdapter(
 async function runMCPBuilderAdapter(
   filePath: string,
   useHttp: boolean,
+  useHttpStateless: boolean,
   port: number,
   verbose: boolean = false
 ): Promise<void> {
@@ -505,7 +547,7 @@ async function runMCPBuilderAdapter(
     const server = await loadMCPBuilderServer(absolutePath);
 
     displayServerInfo(server);
-    await startServer(server, { useHttp, port, verbose });
+    await startServer(server, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
   } catch (error) {
     console.error('[RunCommand] Failed to run MCP Builder server:', error);
     if (error instanceof Error && error.stack && verbose) {
@@ -536,7 +578,7 @@ async function discoverServers(cwd: string = process.cwd()): Promise<string[]> {
 
         // Check for MCP server patterns
         if (
-          /extends\s+(ITool|IPrompt|IResource|IServer)/.test(content) ||
+          /(extends|implements)\s+(ITool|IPrompt|IResource|IServer)/.test(content) ||
           /@MCPServer(\s*\()?/.test(content) ||
           /defineMCP\s*\(/.test(content)
         ) {
@@ -688,6 +730,7 @@ async function spawnWithInspector(
 
   if (argv.config) scriptArgs.push('--config', argv.config);
   if (argv.http) scriptArgs.push('--http');
+  if (argv['http-stateless']) scriptArgs.push('--http-stateless');
   if (argv.port) scriptArgs.push('--port', String(argv.port));
   if (argv.style) scriptArgs.push('--style', argv.style);
   if (argv.verbose) scriptArgs.push('--verbose');
@@ -772,6 +815,10 @@ export const runCommand: CommandModule = {
       })
       .option('http', {
         describe: 'Use HTTP transport instead of stdio',
+        type: 'boolean',
+      })
+      .option('http-stateless', {
+        describe: 'Use HTTP transport in stateless mode (no session management)',
         type: 'boolean',
       })
       .option('port', {
@@ -864,6 +911,7 @@ export const runCommand: CommandModule = {
       // Pass through all flags
       if (argv.config) scriptArgs.push('--config', argv.config);
       if (argv.http) scriptArgs.push('--http');
+      if (argv['http-stateless']) scriptArgs.push('--http-stateless');
       if (argv.port) scriptArgs.push('--port', String(argv.port));
       if (argv.style) scriptArgs.push('--style', argv.style);
       if (argv.verbose) scriptArgs.push('--verbose');
@@ -871,6 +919,9 @@ export const runCommand: CommandModule = {
       if (argv.watch) scriptArgs.push('--watch');
       if (argv['watch-poll']) scriptArgs.push('--watch-poll');
       if (argv['watch-interval']) scriptArgs.push('--watch-interval', String(argv['watch-interval']));
+      if (argv.inspect) scriptArgs.push('--inspect');
+      if (argv['inspect-brk']) scriptArgs.push('--inspect-brk');
+      if (argv['inspect-port']) scriptArgs.push('--inspect-port', String(argv['inspect-port']));
 
       const child = spawn('node', [...nodeArgs, ...scriptArgs], {
         stdio: [0, 1, 2],  // Use raw file descriptors for proper redirection
@@ -938,7 +989,28 @@ export const runCommand: CommandModule = {
 
       // Extract merged values
       let useHttp = mergedOptions.http ?? false;
-      const port = mergedOptions.port ?? 3000;
+      let useHttpStateless = argv['http-stateless'] as boolean;
+
+      // Determine port: CLI flag > environment variable > default
+      let port = mergedOptions.port ?? 3000;
+      if (!mergedOptions.port && process.env.PORT) {
+        port = parseInt(process.env.PORT, 10);
+        if (mergedOptions.verbose) {
+          console.error(`[RunCommand] Using port from environment: ${port}`);
+        }
+      }
+
+      // Validate mutually exclusive flags
+      if (useHttp && useHttpStateless) {
+        console.error('[RunCommand] Error: Cannot use both --http and --http-stateless');
+        console.error('[RunCommand] Use --http for stateful mode or --http-stateless for stateless mode');
+        process.exit(1);
+      }
+
+      // If stateless is specified, enable HTTP transport
+      if (useHttpStateless) {
+        useHttp = true;
+      }
       const forceStyle = mergedOptions.style;
       const verbose = mergedOptions.verbose ?? false;
       const watch = mergedOptions.watch ?? false;
@@ -988,6 +1060,7 @@ export const runCommand: CommandModule = {
         await runMultipleServers({
           files,
           useHttp,
+          useHttpStateless,
           startPort: port,
           verbose,
           forceStyle,
@@ -1041,6 +1114,7 @@ export const runCommand: CommandModule = {
           file: filePath,
           style,
           http: useHttp,
+          httpStateless: useHttpStateless,
           port,
           poll: watchPoll,
           interval: watchInterval,
@@ -1067,19 +1141,19 @@ export const runCommand: CommandModule = {
       // Run appropriate adapter
       switch (style) {
         case 'interface':
-          await runInterfaceAdapter(filePath, useHttp, port, verbose);
+          await runInterfaceAdapter(filePath, useHttp, useHttpStateless, port, verbose);
           break;
         case 'decorator':
-          await runDecoratorAdapter(filePath, useHttp, port, verbose);
+          await runDecoratorAdapter(filePath, useHttp, useHttpStateless, port, verbose);
           break;
         case 'functional':
-          await runFunctionalAdapter(filePath, useHttp, port, verbose);
+          await runFunctionalAdapter(filePath, useHttp, useHttpStateless, port, verbose);
           break;
         case 'mcp-builder':
-          await runMCPBuilderAdapter(filePath, useHttp, port, verbose);
+          await runMCPBuilderAdapter(filePath, useHttp, useHttpStateless, port, verbose);
           break;
         case 'programmatic':
-          await runProgrammaticAdapter(filePath, useHttp, port, verbose);
+          await runProgrammaticAdapter(filePath, useHttp, useHttpStateless, port, verbose);
           break;
       }
     } catch (error) {

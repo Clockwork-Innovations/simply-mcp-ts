@@ -5,9 +5,6 @@
  * These types are used across the framework for tool, prompt, and resource configurations.
  *
  * @module types/core
- *
- * @deprecated These types were previously exported from 'src/types.ts'.
- * Import from 'simply-mcp' or 'simply-mcp/types' instead.
  */
 
 import { SecurityConfig } from '../security/types.js';

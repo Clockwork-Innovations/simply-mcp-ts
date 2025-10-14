@@ -174,7 +174,41 @@ class Calculator implements IServer {
 }
 ```
 
-**Method naming:** Tool names use `snake_case` (e.g., `add_numbers`), but implementations use `camelCase` (e.g., `addNumbers`). The framework handles the conversion automatically.
+> **⚠️ Method Naming Convention - IMPORTANT**
+>
+> Interface names use `snake_case` (MCP convention)
+> Implementation methods use `camelCase` (TypeScript convention)
+>
+> The framework automatically converts between them:
+>
+> | Interface (snake_case) | Method (camelCase) |
+> |------------------------|-------------------|
+> | `get_weather`          | `getWeather`      |
+> | `create_user`          | `createUser`      |
+> | `process_data`         | `processData`     |
+> | `add_numbers`          | `addNumbers`      |
+>
+> **Common Error:**
+> ```
+> Error: Tool "get_weather" requires method "getWeather" but it was not found on server class
+> ```
+>
+> **Fix:** Ensure your method name matches the camelCase conversion of your tool name:
+> ```typescript
+> // ✅ Correct
+> interface GetWeatherTool extends ITool {
+>   name: 'get_weather';  // snake_case in interface
+> }
+>
+> class MyServer {
+>   getWeather: GetWeatherTool = async (params) => { ... };  // camelCase method
+> }
+>
+> // ❌ Wrong
+> class MyServer {
+>   get_weather: GetWeatherTool = async (params) => { ... };  // Don't use snake_case here!
+> }
+> ```
 
 #### 2. IPrompt - Define Prompts
 
@@ -569,6 +603,169 @@ Please structure the report with:
 template: `Report for {location}.
 
 {includeDetails ? 'Include detailed analysis.' : 'Brief summary only.'}`;
+```
+
+### Working with File-Based Prompts
+
+A common pattern is loading prompts from external markdown or text files. This keeps long prompts maintainable and allows non-developers to edit them.
+
+#### Pattern 1: Static Prompts from Files (Recommended)
+
+Load file content at compile time using a constant, then use string concatenation:
+
+```typescript
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+// Load file content into a constant
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const orchestratorContent = readFileSync(
+  join(__dirname, 'prompts/orchestrator.md'),
+  'utf-8'
+);
+
+// Pattern A: Use constant directly in template field
+interface OrchestratorPrompt extends IPrompt {
+  name: 'orchestrator';
+  description: 'Agentic coding loop guide';
+  args: { context?: string };
+  // Use constant (not template literal with ${})
+  template: orchestratorContent + '\n\n## Context\n{context}';
+}
+
+// No implementation needed! Static prompt auto-registered.
+```
+
+**Why this works:**
+- `orchestratorContent` is a compile-time constant
+- String concatenation (`+`) produces a static string
+- Template uses `{context}` for runtime argument interpolation
+
+#### Pattern 2: Dynamic Prompts from Files
+
+For prompts that need runtime logic beyond simple interpolation:
+
+```typescript
+const basePrompt = readFileSync(join(__dirname, 'prompts/base.md'), 'utf-8');
+
+interface DynamicFilePrompt extends IPrompt {
+  name: 'dynamic_prompt';
+  description: 'Loaded from file with conditional logic';
+  args: {
+    context?: string;
+    includeExamples?: boolean;
+  };
+  dynamic: true;  // Requires implementation
+}
+
+export default class MyServer implements IServer {
+  name = 'my-server';
+  version = '1.0.0';
+
+  // Implement as method
+  dynamicPrompt = (args: { context?: string; includeExamples?: boolean }) => {
+    let result = basePrompt;
+
+    if (args.context) {
+      result += `\n\n## Context\n${args.context}`;
+    }
+
+    if (args.includeExamples) {
+      const examples = readFileSync(
+        join(__dirname, 'prompts/examples.md'),
+        'utf-8'
+      );
+      result += `\n\n${examples}`;
+    }
+
+    return result;
+  };
+}
+```
+
+#### Pattern 3: Hybrid Approach (Mix of Files)
+
+Combine multiple file sources:
+
+```typescript
+const header = readFileSync(join(__dirname, 'prompts/header.md'), 'utf-8');
+const footer = readFileSync(join(__dirname, 'prompts/footer.md'), 'utf-8');
+
+interface HybridPrompt extends IPrompt {
+  name: 'hybrid_prompt';
+  description: 'Combined from multiple files';
+  args: { task: string };
+  // Concatenate multiple files
+  template: header + '\n\n## Task\n{task}\n\n' + footer;
+}
+```
+
+#### ⚠️ Important: Template Literal Limitation
+
+**This will NOT work as expected:**
+
+```typescript
+// ❌ WRONG - Template literal with ${} triggers dynamic detection
+const fileContent = readFileSync('prompt.md', 'utf-8');
+
+interface BrokenPrompt extends IPrompt {
+  name: 'broken';
+  args: {};
+  template: `${fileContent}`;  // Parser sees ${} and marks as dynamic!
+}
+```
+
+**Why:** The AST parser sees `${}` syntax and assumes runtime evaluation is needed, even if the variable is a constant.
+
+**Solutions:**
+
+1. **Use string concatenation (recommended):**
+   ```typescript
+   template: fileContent + '\n\nAdditional text: {arg}'
+   ```
+
+2. **Mark as dynamic explicitly:**
+   ```typescript
+   interface MyPrompt extends IPrompt {
+     name: 'my_prompt';
+     args: { arg: string };
+     dynamic: true;
+   }
+
+   // Then implement as method
+   myPrompt = (args) => fileContent + `\n\nAdditional: ${args.arg}`;
+   ```
+
+3. **Use template literal for constants only:**
+   ```typescript
+   const PREFIX = 'System: ';
+   template: `${PREFIX}Instructions here`  // OK if PREFIX is literal string
+   ```
+
+#### Best Practices
+
+**✅ Do:**
+- Load files into constants at module level
+- Use string concatenation to combine content
+- Use `{variable}` syntax for runtime argument interpolation
+- Keep prompt files in a `prompts/` directory
+- Use meaningful file names (e.g., `orchestrator.md`, `admin-guide.md`)
+
+**❌ Don't:**
+- Use template literals with `${}` for file content
+- Load files inside interface definitions
+- Mix compile-time and runtime string interpolation without understanding the difference
+- Forget to handle file read errors in dynamic prompts
+
+**Example File Structure:**
+```
+src/
+  ├── server.ts              # Your interface server
+  └── prompts/
+      ├── orchestrator.md    # Long prompt content
+      ├── admin-guide.md     # Another prompt
+      └── examples.md        # Reusable examples
 ```
 
 ### Resource URI Patterns

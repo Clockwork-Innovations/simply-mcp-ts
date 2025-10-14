@@ -21,7 +21,7 @@ import {
   tool,
   prompt,
   resource,
-  SimplyMCP,
+  BuildMCPServer,
   defineMCP,
   MCPBuilder,
   type CLIConfig,
@@ -97,7 +97,7 @@ export default defineMCP({
 // New unified pattern (v2.5.0+)
 import { SimplyMCP } from 'simply-mcp';
 
-const server = new SimplyMCP({
+const server = new BuildMCPServer({
   name: 'my-server',
   version: '1.0.0'
 });
@@ -289,7 +289,7 @@ Keep related imports together for readability:
 import {
   // Server classes
   MCPServer,
-  SimplyMCP,
+  BuildMCPServer,
 
   // Decorators
   tool,
