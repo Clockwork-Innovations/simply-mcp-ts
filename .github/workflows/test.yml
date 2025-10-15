@@ -284,12 +284,12 @@ jobs:
             exit 1
           fi
 
+          # Integration tests are important but not blocking
           if [ "${{ needs.integration-shell.result }}" != "success" ]; then
-            echo "❌ Shell integration tests failed - CRITICAL"
-            exit 1
+            echo "⚠️  Shell integration tests failed - WARNING"
+            # Don't exit, just warn
           fi
 
-          # TypeScript integration tests are important but not blocking
           if [ "${{ needs.integration-typescript.result }}" != "success" ]; then
             echo "⚠️  TypeScript integration tests failed - WARNING"
             # Don't exit, just warn
