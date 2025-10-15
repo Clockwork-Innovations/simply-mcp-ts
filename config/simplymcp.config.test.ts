@@ -3,7 +3,7 @@
  * Demonstrates TypeScript config with named servers
  */
 
-import { defineConfig } from './dist/src/config.js';
+import { defineConfig } from '../dist/src/config.js';
 
 export default defineConfig({
   // Default server to run when no file is specified

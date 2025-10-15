@@ -339,11 +339,11 @@ jobs:
       - name: Test basic imports
         run: |
           cat > test-imports.mjs << 'EOF'
-          import { SimplyMCP } from './dist/src/index.js';
+          import { BuildMCPServer } from './dist/src/index.js';
           import { MCPServer, tool } from './dist/src/decorators.js';
           import { defineConfig } from './dist/src/config.js';
 
-          if (typeof SimplyMCP !== 'function') throw new Error('SimplyMCP not exported');
+          if (typeof BuildMCPServer !== 'function') throw new Error('BuildMCPServer not exported');
           if (typeof MCPServer !== 'function') throw new Error('MCPServer not exported');
           if (typeof defineConfig !== 'function') throw new Error('defineConfig not exported');
 

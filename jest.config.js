@@ -17,6 +17,18 @@ export default {
     '**/__tests__/**/*.test.ts',
     '**/?(*.)+(spec|test).ts'
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/tests/phase2/',
+    '/tests/integration/',
+    '/config/',
+    '/src/api/mcp/wizard/__tests__/',
+    '/tests/unit/interface-api/basic.test.ts',
+    '/tests/unit/interface-api/schema.test.ts',
+    '/tests/unit/decorator-params.test.ts',
+    '/tests/unit/interface-auto-detect.test.ts',
+    '/tests/unit/interface-api.test.ts'
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

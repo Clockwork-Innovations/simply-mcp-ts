@@ -9,13 +9,15 @@ import { BuildMCPServer } from '../src/index.js';
 import type { BuildMCPServerOptions } from '../src/index.js';
 import { z } from 'zod';
 
-// Define StartOptions interface for tests
+// Define types for tests
+type HttpMode = 'stateful' | 'stateless';
+
 interface StartOptions {
   transport: 'stdio' | 'http';
   port?: number;
   stateful?: boolean;
   http?: {
-    mode?: 'stateful' | 'stateless';
+    mode?: HttpMode;
     enableJsonResponse?: boolean;
     dnsRebindingProtection?: boolean;
   };
@@ -66,7 +68,7 @@ describe('HTTP Transport Mode Tests', () => {
     });
 
     test('should use stateful mode by default when stateful option not specified', () => {
-      server = new SimplyMCP({
+      server = new BuildMCPServer({
         name: 'test-server',
         version: '1.0.0',
       });
@@ -78,7 +80,7 @@ describe('HTTP Transport Mode Tests', () => {
 
   describe('Stateful Mode Behavior', () => {
     beforeEach(() => {
-      server = new SimplyMCP({
+      server = new BuildMCPServer({
         name: 'stateful-test-server',
         version: '1.0.0',
       });
@@ -124,7 +126,7 @@ describe('HTTP Transport Mode Tests', () => {
 
   describe('Stateless Mode Behavior', () => {
     beforeEach(() => {
-      server = new SimplyMCP({
+      server = new BuildMCPServer({
         name: 'stateless-test-server',
         version: '1.0.0',
       });
@@ -177,7 +179,7 @@ describe('HTTP Transport Mode Tests', () => {
 
   describe('Backwards Compatibility', () => {
     test('should default to stateful mode for existing code', () => {
-      server = new SimplyMCP({
+      server = new BuildMCPServer({
         name: 'legacy-server',
         version: '1.0.0',
       });
@@ -203,7 +205,7 @@ describe('HTTP Transport Mode Tests', () => {
     });
 
     test('should support explicit stateful mode', () => {
-      server = new SimplyMCP({
+      server = new BuildMCPServer({
         name: 'explicit-server',
         version: '1.0.0',
       });
@@ -222,7 +224,7 @@ describe('HTTP Transport Mode Tests', () => {
 
   describe('HTTP Options Integration', () => {
     test('should support mode alongside other HTTP options', () => {
-      server = new SimplyMCP({
+      server = new BuildMCPServer({
         name: 'options-server',
         version: '1.0.0',
       });
@@ -241,7 +243,7 @@ describe('HTTP Transport Mode Tests', () => {
     });
 
     test('should use defaults for unspecified HTTP options', () => {
-      server = new SimplyMCP({
+      server = new BuildMCPServer({
         name: 'defaults-server',
         version: '1.0.0',
       });
@@ -261,7 +263,7 @@ describe('HTTP Transport Mode Tests', () => {
 
   describe('Tool Execution in Different Modes', () => {
     beforeEach(() => {
-      server = new SimplyMCP({
+      server = new BuildMCPServer({
         name: 'execution-test-server',
         version: '1.0.0',
       });

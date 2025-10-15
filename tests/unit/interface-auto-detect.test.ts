@@ -26,8 +26,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { loadInterfaceServer } from '../../src/api/interface/index.js';
-import { BuildMCPServer } from '../../src/index.js';
+import { loadInterfaceServer, InterfaceServer } from '../../src/api/interface/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -35,8 +34,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Interface API - Auto-Detection & Parsing', () => {
-  let minimalServer: BuildMCPServer;
-  let advancedServer: BuildMCPServer;
+  let minimalServer: InterfaceServer;
+  let advancedServer: InterfaceServer;
 
   beforeAll(async () => {
     const minimalPath = path.resolve(__dirname, '../../examples/interface-minimal.ts');
