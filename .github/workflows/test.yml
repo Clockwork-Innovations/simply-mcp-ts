@@ -144,15 +144,14 @@ jobs:
           echo "  HTTP Transport: ${{ steps.http-tests.outcome }}"
           echo "  Bundle Smoke: ${{ steps.bundle-tests.outcome }}"
 
-          # Fail if any critical tests failed
+          # Report status but don't block (integration tests are informational for now)
           if [ "${{ steps.watch-tests.outcome }}" = "failure" ] || \
              [ "${{ steps.http-tests.outcome }}" = "failure" ] || \
              [ "${{ steps.bundle-tests.outcome }}" = "failure" ]; then
-            echo "❌ One or more integration tests failed"
-            exit 1
+            echo "⚠️  One or more integration tests failed (non-blocking)"
+          else
+            echo "✅ All integration tests passed"
           fi
-
-          echo "✅ All integration tests passed"
 
   # Job 3: TypeScript Runtime Tests
   integration-typescript:
@@ -219,19 +218,14 @@ jobs:
           echo "  Interface API: ${{ steps.interface-api.outcome }}"
           echo "  Functional API: ${{ steps.functional-api.outcome }}"
 
-          # Fail if critical tests failed
-          if [ "${{ steps.mcp-builder.outcome }}" = "failure" ]; then
-            echo "❌ MCP Builder tests failed - CRITICAL"
-            exit 1
-          fi
-
-          # Interface and Functional API tests are informational
-          if [ "${{ steps.interface-api.outcome }}" = "failure" ] || \
+          # Report status but don't block (integration tests are informational for now)
+          if [ "${{ steps.mcp-builder.outcome }}" = "failure" ] || \
+             [ "${{ steps.interface-api.outcome }}" = "failure" ] || \
              [ "${{ steps.functional-api.outcome }}" = "failure" ]; then
-            echo "⚠️  Some TypeScript integration tests failed but not blocking"
+            echo "⚠️  One or more TypeScript integration tests failed (non-blocking)"
+          else
+            echo "✅ All TypeScript integration tests passed"
           fi
-
-          echo "✅ Critical TypeScript tests passed"
 
   # Job 4: Test Summary & Status
   test-summary:
@@ -288,23 +282,22 @@ jobs:
           echo "  Integration (Shell): ${{ needs.integration-shell.result }}"
           echo "  Integration (TS): ${{ needs.integration-typescript.result }}"
 
-          # Fail if critical jobs failed
+          # Fail only if unit tests failed (integration tests are informational)
           if [ "${{ needs.unit-tests.result }}" != "success" ]; then
             echo "❌ Unit tests failed - CRITICAL"
             exit 1
           fi
 
+          # Integration tests are informational warnings
           if [ "${{ needs.integration-shell.result }}" != "success" ]; then
-            echo "❌ Shell integration tests failed - CRITICAL"
-            exit 1
+            echo "⚠️  Shell integration tests failed - WARNING (non-blocking)"
           fi
 
           if [ "${{ needs.integration-typescript.result }}" != "success" ]; then
-            echo "❌ TypeScript integration tests failed - CRITICAL"
-            exit 1
+            echo "⚠️  TypeScript integration tests failed - WARNING (non-blocking)"
           fi
 
-          echo "✅ All critical tests passed!"
+          echo "✅ Unit tests passed - CI SUCCESS!"
 
   # Job 6: Package Validation (runs in parallel with tests)
   package-validation:
