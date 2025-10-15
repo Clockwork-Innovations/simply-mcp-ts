@@ -42,7 +42,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "node_modules/.bin/tsc",
+    "build": "tsc",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "prepublishOnly": "npm run build",
