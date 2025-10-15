@@ -808,27 +808,18 @@ export class BuildMCPServer {
       // but the current implementation allows any request. This is actually more
       // practical for serverless use cases. Updating test expectations instead.
       app.post('/mcp', async (req, res) => {
-        try {
-          // Create a new transport for this request without session management
-          const transport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: undefined, // No session ID generation
-          });
+        // Create a new transport for this request without session management
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: undefined, // No session ID generation
+          enableJsonResponse: true, // Enable JSON-only responses for stateless mode
+        });
 
+        try {
           // Connect the server to the transport
           await this.server!.connect(transport);
 
           // Handle the request
           await transport.handleRequest(req, res, req.body);
-
-          // Close the transport after response is sent (use setImmediate to allow response to flush)
-          // This prevents hanging on concurrent requests while ensuring cleanup
-          setImmediate(async () => {
-            try {
-              await transport.close();
-            } catch (error) {
-              console.error('[BuildMCPServer] Error closing stateless transport:', error);
-            }
-          });
         } catch (error) {
           console.error('[BuildMCPServer] Error handling stateless MCP request:', error);
           if (!res.headersSent) {
@@ -840,6 +831,13 @@ export class BuildMCPServer {
               },
               id: null,
             });
+          }
+        } finally {
+          // Close transport synchronously to ensure connections are properly closed
+          try {
+            await transport.close();
+          } catch (error) {
+            console.error('[BuildMCPServer] Error closing stateless transport:', error);
           }
         }
       });

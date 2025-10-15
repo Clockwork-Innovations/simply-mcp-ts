@@ -2,7 +2,7 @@
 
 ################################################################################
 # Watch Mode Integration Test Suite
-# Simply MCP v2.5.0-beta.3
+# Simply MCP v3.0.0
 #
 # This script implements comprehensive testing for watch mode functionality
 # covering all 8 scenarios from WATCH_MODE_TEST_PLAN.md
@@ -21,7 +21,7 @@ set -u  # Exit on undefined variable
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-TARBALL_PATH="$PROJECT_ROOT/simply-mcp-2.5.0-beta.3.tgz"
+TARBALL_PATH="$PROJECT_ROOT/simply-mcp-3.0.0.tgz"
 TEST_DIR="/tmp/watch-mode-tests-$$"
 LOG_DIR="$TEST_DIR/logs"
 
@@ -978,7 +978,7 @@ print_summary() {
 }
 
 main() {
-    print_header "Watch Mode Integration Test Suite - Simply MCP v2.5.0-beta.3"
+    print_header "Watch Mode Integration Test Suite - Simply MCP v3.0.0"
 
     setup_test_environment
 
