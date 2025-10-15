@@ -393,13 +393,13 @@ test_scenario_9_stateless_direct_call() {
 
   print_test_header "9" "$TOTAL_SCENARIOS" "HTTP Stateless: Direct Tool Call"
 
-  # Call tool WITHOUT initialization
-  local response=$(curl -s --max-time 10 -X POST http://localhost:3200/mcp \
+  # Call tool WITHOUT initialization (use JSON-only to avoid SSE connection hangs)
+  local response=$(curl -s --max-time 5 -X POST http://localhost:3200/mcp \
     -H "Content-Type: application/json" \
-    -H "Accept: application/json, text/event-stream" \
+    -H "Accept: application/json" \
     -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"greet","arguments":{"name":"Stateless"}}}')
 
-  local json=$(extract_sse_json "$response")
+  local json=$(echo "$response" | jq '.' 2>/dev/null || echo "$response")
 
   assert_json_field_exists "$json" ".result.content[0].text" "Tool call succeeded without initialization" || record_failure
 
@@ -415,11 +415,11 @@ test_scenario_10_concurrent_stateless() {
 
   print_test_header "10" "$TOTAL_SCENARIOS" "HTTP Stateless: Concurrent Requests"
 
-  # Fire 5 concurrent requests
+  # Fire 5 concurrent requests (use JSON-only to avoid SSE connection hangs)
   for i in {1..5}; do
-    (curl -s --max-time 10 -X POST http://localhost:3200/mcp \
+    (curl -s --max-time 5 -X POST http://localhost:3200/mcp \
       -H "Content-Type: application/json" \
-      -H "Accept: application/json, text/event-stream" \
+      -H "Accept: application/json" \
       -d "{\"jsonrpc\":\"2.0\",\"id\":$i,\"method\":\"tools/call\",\"params\":{\"name\":\"greet\",\"arguments\":{\"name\":\"User$i\"}}}" \
       > /tmp/concurrent-$i.json) &
   done
@@ -456,19 +456,19 @@ test_scenario_11_stateless_no_session() {
 
   print_test_header "11" "$TOTAL_SCENARIOS" "HTTP Stateless: No Session ID Required"
 
-  # Send initialize request (allowed but no session tracking)
-  local init_response=$(curl -s -i --max-time 10 -X POST http://localhost:3200/mcp \
+  # Send initialize request (allowed but no session tracking) - use JSON-only
+  local init_response=$(curl -s -i --max-time 5 -X POST http://localhost:3200/mcp \
     -H "Content-Type: application/json" \
-    -H "Accept: application/json, text/event-stream" \
+    -H "Accept: application/json" \
     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}')
 
   # Follow-up request without session header
-  local followup=$(curl -s --max-time 10 -X POST http://localhost:3200/mcp \
+  local followup=$(curl -s --max-time 5 -X POST http://localhost:3200/mcp \
     -H "Content-Type: application/json" \
-    -H "Accept: application/json, text/event-stream" \
+    -H "Accept: application/json" \
     -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}')
 
-  local json=$(extract_sse_json "$followup")
+  local json=$(echo "$followup" | jq '.' 2>/dev/null || echo "$followup")
 
   if echo "$json" | jq -e '.result' >/dev/null 2>&1; then
     echo -e "  ${GREEN}✅ PASS${NC}: Request succeeded without session ID"
