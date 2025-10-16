@@ -804,22 +804,26 @@ export class BuildMCPServer {
 
     if (isStateless) {
       // STATELESS MODE: Create and close transport per request
-      // Note: The test expects that stateless mode should track initialization,
-      // but the current implementation allows any request. This is actually more
-      // practical for serverless use cases. Updating test expectations instead.
+      // Note: SSE (Server-Sent Events) is incompatible with stateless mode because SSE
+      // requires persistent connections. Stateless mode ALWAYS uses JSON-only responses.
       app.post('/mcp', async (req, res) => {
         // Create a new transport for this request without session management
+        // Always use JSON-only mode for stateless (SSE requires persistent connections)
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: undefined, // No session ID generation
-          enableJsonResponse: true, // Enable JSON-only responses for stateless mode
+          enableJsonResponse: true, // Always use JSON for stateless mode
         });
 
         try {
           // Connect the server to the transport
           await this.server!.connect(transport);
 
-          // Handle the request
+          // Handle the request - this sends the response
           await transport.handleRequest(req, res, req.body);
+
+          // Note: We don't explicitly close the transport in stateless mode.
+          // The transport will close automatically after sending the JSON response.
+          // Explicitly closing it causes the response body to be empty.
         } catch (error) {
           console.error('[BuildMCPServer] Error handling stateless MCP request:', error);
           if (!res.headersSent) {
@@ -831,13 +835,6 @@ export class BuildMCPServer {
               },
               id: null,
             });
-          }
-        } finally {
-          // Close transport synchronously to ensure connections are properly closed
-          try {
-            await transport.close();
-          } catch (error) {
-            console.error('[BuildMCPServer] Error closing stateless transport:', error);
           }
         }
       });

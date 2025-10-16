@@ -388,7 +388,7 @@ async function runTests() {
     }
   })();
 
-  await test('Stateless mode POST returns SSE directly', async () => {
+  await test('Stateless mode POST returns JSON responses', async () => {
     const server = new BuildMCPServer({ name: 'test', version: '1.0.0' });
     server.addTool({
       name: 'test',
@@ -417,9 +417,11 @@ async function runTests() {
         }
       );
 
+      // Stateless mode always uses JSON responses (SSE requires persistent connections)
       const contentType = response.headers['content-type'];
+      const hasJsonResponse = response.data && typeof response.data === 'object';
       await server.stop();
-      return contentType?.includes('text/event-stream');
+      return contentType?.includes('application/json') && hasJsonResponse;
     } catch (error) {
       await server.stop();
       throw error;

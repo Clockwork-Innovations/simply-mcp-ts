@@ -514,12 +514,12 @@ PID3=$!
 # Wait for specific jobs to complete (with timeout fallback)
 wait $PID1 $PID2 $PID3 2>/dev/null || true
 
-# Check all responses (they should be in SSE format: event: message\ndata: {...})
+# Check all responses (stateless mode returns JSON, not SSE)
 success=0
 for i in 1 2 3; do
-  if [ -f /tmp/http-mode-concurrent$i.json ] && cat /tmp/http-mode-concurrent$i.json | grep -q '^data:'; then
-    json=$(cat /tmp/http-mode-concurrent$i.json | grep '^data:' | sed 's/^data: //')
-    if echo "$json" | jq . >/dev/null 2>&1; then
+  if [ -f /tmp/http-mode-concurrent$i.json ]; then
+    # Stateless mode returns JSON directly, not SSE format
+    if cat /tmp/http-mode-concurrent$i.json | jq . >/dev/null 2>&1; then
       ((success++))
     fi
   fi
