@@ -223,10 +223,6 @@ All breaking changes have clear migration paths and are well-documented.
 
 This release adds comprehensive JSDoc documentation that clarifies how JSDoc comments map to MCP tool schemas across all API styles. All documentation updates validated by separate validation agent with 95/100 quality score.
 
-## [2.5.0-beta.3] - 2025-10-09
-
-*Note: Version beta.3 included JSDoc documentation but was replaced by beta.4 with the full documentation set.*
-
 ## [2.5.0-beta.2] - 2025-10-09
 
 ### Added

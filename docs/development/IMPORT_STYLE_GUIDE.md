@@ -1,16 +1,16 @@
 # Import Style Guide
 
-**Version:** 2.5.0+
-**Last Updated:** 2025-10-06
+**Version:** 3.0.0+
+**Last Updated:** 2025-10-17
 **Status:** Active
 
 ## Overview
 
-This guide documents the recommended import patterns for the simply-mcp package. As of version 2.5.0, all exports are available from the main package (`'simply-mcp'`), providing a unified and ergonomic developer experience.
+This guide documents the recommended (and required) import patterns for the simply-mcp package. As of version 3.0.0, **all exports come from the main package only** (`'simply-mcp'`). Subpath imports are no longer supported. See [CHANGELOG](../../CHANGELOG.md) for details.
 
 ---
 
-## Recommended Pattern (v2.5.0+)
+## Required Pattern (v3.0.0+)
 
 ### All-in-One Import (Preferred)
 
@@ -155,25 +155,13 @@ export default defineConfig({
 
 ---
 
-## Legacy Pattern (Deprecated)
+## Migration from v2.x
 
-### Old Subpath Imports (Still Works)
+**Subpath imports removed in v3.0.0:**
+- `'simply-mcp/decorators'` - No longer works, use `'simply-mcp'`
+- `'simply-mcp/config'` - No longer works, use `'simply-mcp'`
 
-```typescript
-// Old pattern - DEPRECATED as of v2.5.0
-// Will be removed in v4.0.0
-import { MCPServer, tool, prompt, resource } from 'simply-mcp/decorators';
-import { defineConfig, type CLIConfig } from 'simply-mcp/config';
-import { SimplyMCP, defineMCP } from 'simply-mcp';
-```
-
-**Why deprecated:**
-- Requires multiple import statements
-- Less intuitive for new users
-- Harder to remember which exports come from which subpath
-- Not aligned with modern JavaScript/TypeScript conventions
-
-**Migration:** Simply combine all imports into a single statement from `'simply-mcp'`.
+All exports are now available from the main package only. See CHANGELOG for breaking changes.
 
 ---
 
@@ -351,12 +339,11 @@ The package provides full TypeScript definitions for all exports. Your IDE shoul
 
 ---
 
-## Deprecation Timeline
+## Version Timeline
 
-- **v2.5.0 (Current):** Unified imports available, subpath imports deprecated with JSDoc warnings
-- **v2.x (Future):** Continued support for both patterns
-- **v3.0.0 (TBD):** Unified imports become primary pattern (subpaths still work)
-- **v4.0.0 (TBD):** Subpath imports removed entirely
+- **v2.5.0:** Unified imports available, subpath imports deprecated
+- **v3.0.0 (Current):** Subpath imports removed (breaking change)
+- **Future:** Only main package imports supported
 
 ---
 
@@ -376,27 +363,19 @@ See the [examples directory](/mnt/Shared/cs-projects/simple-mcp/examples/) for c
 
 ### Q: Do I need to update my existing code?
 
-No, the old import patterns still work and will continue to work through v3.x. However, we recommend migrating to the unified pattern for better developer experience.
+**Yes.** If you're upgrading to v3.0.0 from v2.x, you must update imports from subpaths to the main package. See the [CHANGELOG](../../CHANGELOG.md#removed-deprecated-subpath-exports) for migration details.
 
-### Q: Will this break my code?
+### Q: Will upgrading break my code?
 
-No, this is a purely additive change. All existing imports continue to work exactly as before.
-
-### Q: What if I use a mix of old and new patterns?
-
-That's fine during migration. You can gradually update your imports over time. However, for consistency, we recommend updating all imports at once.
+If you use subpath imports (`'simply-mcp/decorators'` or `'simply-mcp/config'`), yes - these are removed in v3.0.0. Update all imports to use `'simply-mcp'` main package. This is a breaking change - see [BREAKING_CHANGES_V3.md](../releases/BREAKING_CHANGES_V3.md) for full details.
 
 ### Q: Why was this change made?
 
 The unified import pattern provides a better developer experience by:
-- Reducing the number of import statements
-- Making it easier to discover available exports
+- Single import statement from main package
+- Easier to discover available exports
 - Aligning with modern JavaScript/TypeScript practices
-- Improving IDE autocomplete and type hints
-
-### Q: Can I still use subpath imports if I prefer them?
-
-Yes, subpath imports will continue to work through v3.x. They will only be removed in v4.0.0, giving you plenty of time to migrate.
+- Improved IDE autocomplete and type hints
 
 ---
 
