@@ -1,9 +1,21 @@
 # Simply MCP Examples Index
 
-All 50+ examples organized by use case. Run any with:
+All examples organized by use case. Run any with:
 ```bash
 npx tsx examples/[filename].ts
 ```
+
+## ✅ Validation Status
+
+**27 examples are actively validated** in CI/CD on every push/PR to ensure they run correctly:
+- All validated examples pass dry-run validation
+- Examples use all 4 API styles (Functional, Decorator, Interface, Programmatic)
+- See `examples-validation-report.md` for latest validation results
+- Run validation locally: `npm run test:examples`
+
+**5 experimental/demo examples excluded** from CI validation:
+- `mcp-builder-*.ts` - New MCPBuilder API (under development)
+- `ui-all-apis-demo.ts` - Demonstration of all UI API styles
 
 ## Getting Started (Pick One)
 
