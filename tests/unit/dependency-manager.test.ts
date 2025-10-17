@@ -33,7 +33,7 @@ describe('Package Manager Detection', () => {
   let testDir: string;
 
   beforeAll(async () => {
-    testDir = join(tmpdir(), `simple-mcp-test-pm-detect-${Date.now()}`);
+    testDir = join(tmpdir(), `simple-mcp-test-pm-detect-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(testDir, { recursive: true });
   });
 
@@ -118,7 +118,7 @@ describe('Dependency Installation Check', () => {
   let testDir: string;
 
   beforeAll(async () => {
-    testDir = join(tmpdir(), `simple-mcp-test-deps-check-${Date.now()}`);
+    testDir = join(tmpdir(), `simple-mcp-test-deps-check-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(testDir, { recursive: true });
   });
 
@@ -190,7 +190,7 @@ describe('Dependency Installation', () => {
   let testDir: string;
 
   beforeAll(async () => {
-    testDir = join(tmpdir(), `simple-mcp-test-install-${Date.now()}`);
+    testDir = join(tmpdir(), `simple-mcp-test-install-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(testDir, { recursive: true });
   });
 
@@ -323,7 +323,7 @@ describe('Dependency Validation', () => {
   let testDir: string;
 
   beforeAll(async () => {
-    testDir = join(tmpdir(), `simple-mcp-test-validation-${Date.now()}`);
+    testDir = join(tmpdir(), `simple-mcp-test-validation-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(testDir, { recursive: true });
   });
 
@@ -470,7 +470,7 @@ describe('Integration with Bundle Runner', () => {
   let testDir: string;
 
   beforeAll(async () => {
-    testDir = join(tmpdir(), `simple-mcp-test-integration-${Date.now()}`);
+    testDir = join(tmpdir(), `simple-mcp-test-integration-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(testDir, { recursive: true });
   });
 
@@ -538,7 +538,7 @@ describe('Edge Cases and Error Handling', () => {
   let testDir: string;
 
   beforeAll(async () => {
-    testDir = join(tmpdir(), `simple-mcp-test-edge-${Date.now()}`);
+    testDir = join(tmpdir(), `simple-mcp-test-edge-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(testDir, { recursive: true });
   });
 

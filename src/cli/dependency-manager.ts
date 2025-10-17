@@ -17,6 +17,7 @@
 
 import { spawn } from 'node:child_process';
 import { readFile, stat, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -123,9 +124,7 @@ export function detectPackageManager(bundlePath: string): PackageManager {
   for (const pm of priority) {
     try {
       const lockFilePath = join(bundlePath, LOCK_FILES[pm]);
-      // Synchronous check for lock file existence
-      const fs = require('node:fs');
-      if (fs.existsSync(lockFilePath)) {
+      if (existsSync(lockFilePath)) {
         return pm;
       }
     } catch {
