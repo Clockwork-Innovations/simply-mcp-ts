@@ -768,15 +768,18 @@ Tests verify:
 - [Documentation Index](./docs/README.md) - Complete documentation map with all guides organized by topic
 
 ### Advanced Topics
-- [Binary Content](./src/docs/features/binary-content.md) - Working with images/files
-- [Input Validation](./src/docs/guides/INPUT-VALIDATION.md) - Validating tool inputs
-- [Security](./src/security/index.ts) - Rate limiting, access control, auditing
-- [Bundling & Deployment](./src/docs/features/bundling.md) - Production deployment
+- [Bundling Guide](./docs/guides/BUNDLING.md) - Production bundling and deployment
+- [Performance Guide](./docs/guides/PERFORMANCE_GUIDE.md) - Optimization techniques
+- [Deployment Guide](./docs/guides/DEPLOYMENT_GUIDE.md) - Deploy MCP servers
+- [Error Handling](./docs/guides/ERROR_HANDLING.md) - Comprehensive error handling
+- [Testing Guide](./docs/guides/TESTING.md) - Testing MCP servers
+- [Transport Guide](./docs/guides/TRANSPORT_GUIDE.md) - Transport options (Stdio, HTTP)
 
-### API Reference
-- [API Documentation](./src/docs/INDEX.md) - Complete API reference
-- [Transports](./src/docs/reference/TRANSPORTS.md) - Transport comparison
-- [Troubleshooting](./src/docs/TROUBLESHOOTING.md) - Common issues
+### Additional Resources
+- [CLI Reference](./docs/guides/CLI_REFERENCE.md) - All CLI commands and options
+- [Watch Mode Guide](./docs/guides/WATCH_MODE_GUIDE.md) - Auto-reload during development
+- [Dry-Run Guide](./docs/guides/DRY_RUN_GUIDE.md) - Validate without running
+- [Class Wrapper Guide](./docs/guides/CLASS_WRAPPER_GUIDE.md) - Transform classes to MCP servers
 
 ## Architecture
 
@@ -811,6 +814,11 @@ simply-mcp/
 | Complexity | Low | Medium | Low |
 
 ## Examples
+
+**All 27 production examples are validated automatically on every push/PR:**
+- See [Examples Index](./examples/EXAMPLES_INDEX.md) for complete list
+- Run validation: `npm run test:examples`
+- View report: `examples-validation-report.md`
 
 ### Configuration-Based Server
 
@@ -900,13 +908,23 @@ server.addResource({
 # Run all tests
 npm test
 
+# Run unit tests
+npm run test:unit
+
+# Run example validation (validates all 27 production examples)
+npm run test:examples
+
 # Run specific test suite
 bash tests/test-stdio.sh
 bash tests/test-decorators.sh
 
 # Run with coverage
-npm run test:coverage
+npm run test:unit:coverage
 ```
+
+**CI/CD Pipeline:**
+- ✅ Unit tests + Examples validation: **Required** (blocks PRs on failure)
+- ⚠️ Integration tests: Informational (non-blocking)
 
 ## Development
 
@@ -922,6 +940,11 @@ npm run dev
 
 # Run examples
 npx simply-mcp run examples/simple-server.ts
+
+# Test your changes
+npm run test:unit          # Run unit tests
+npm run test:examples      # Validate all examples
+npm run test:unit:watch    # Watch mode for tests
 ```
 
 ## Contributing
