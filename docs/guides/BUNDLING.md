@@ -131,7 +131,12 @@ That's it! Your server is now a portable, self-contained bundle.
 
 ## Bundle Formats
 
-SimplyMCP supports four bundle formats. Choose based on your needs:
+SimplyMCP supports multiple bundle formats for different distribution needs:
+
+- **Esbuild formats** (this guide): single-file, standalone, esm, cjs
+- **Package bundles** (npm packages): See [Bundle Creation Guide](./BUNDLE_CREATION.md) for creating and [Bundle Usage Guide](./BUNDLE_USAGE.md) for running package bundles
+
+Choose based on your needs:
 
 ### Single-File Format (Recommended for Most Use Cases)
 
