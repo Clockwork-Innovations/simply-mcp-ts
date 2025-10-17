@@ -33,7 +33,7 @@ The SimplyMCP bundler creates self-contained distributions of your MCP servers u
 - Predictable, consistent behavior
 - Smaller download sizes
 
-### What's New in v2.5.0
+### Features (v3.0.0+)
 
 - **Single-file bundles** - Entire server in one executable .js file
 - **Standalone bundles** - Folder with server + minimal dependencies
@@ -145,15 +145,15 @@ A single executable `.js` file containing your entire server with all dependenci
 - You're sharing the server with non-technical users
 
 **Characteristics:**
-- Size: ~5-12 MB unminified, ~5 MB minified (beta.3 includes framework dependencies)
+- Size: ~5-12 MB unminified, ~5 MB minified (includes framework dependencies)
 - All npm dependencies bundled inline
 - Node.js built-ins remain external
 - Includes shebang (`#!/usr/bin/env node`)
 - Executable with `node` or `chmod +x`
 
-> **Note on Bundle Sizes (beta.3):** Current bundle sizes are larger than optimal (~5-12 MB)
-> as the bundler includes framework dependencies. We're working on optimizing this in future
-> releases. Use `--minify` to reduce size by ~50% (12 MB → 5 MB).
+> **Note on Bundle Sizes:** Current bundle sizes (~5-12 MB) reflect the bundler including
+> framework dependencies for complete, self-contained execution. Use `--minify` to reduce
+> size by ~50% (12 MB → 5 MB).
 
 **Example:**
 ```bash
@@ -246,7 +246,7 @@ npx simplymcp bundle [entry] [options]
 
 Output format: `single-file`, `standalone`, `esm`, `cjs`
 
-**Default:** `esm`
+**Default:** `single-file`
 
 ```bash
 # Create single-file bundle
@@ -432,7 +432,7 @@ tar -xzf my-server-v1.0.0.tar.gz
 node ./my-server.js
 ```
 
-**Distribution size:** ~5-12 MB unminified, ~5 MB minified (beta.3)
+**Distribution size:** ~5-12 MB unminified, ~5 MB minified
 
 #### Standalone Distribution
 
@@ -701,12 +701,12 @@ npx simplymcp bundle server.ts --auto-install
 
 **Symptom:** Bundle is 5-12 MB instead of expected 300KB-1MB
 
-**Cause:** Beta.3 includes framework dependencies in the bundle
+**Cause:** The bundler includes framework dependencies in the bundle for complete self-contained execution
 
 **Solutions:**
 - Use `--minify` flag to reduce size by ~50% (12 MB → 5 MB)
-- This is expected behavior in beta.3
-- Future releases will optimize bundle size
+- This is expected behavior - bundles are complete, standalone packages
+- For maximum portability, minification is recommended
 - The larger bundle is still self-contained and works correctly
 
 **Additional optimization options:**
@@ -1019,7 +1019,7 @@ tar -czf weather-server-v1.0.0.tar.gz weather-server.js README.md LICENSE
 
 The SimplyMCP bundler makes it easy to create portable, self-contained MCP servers:
 
-- **Single-file bundles** for maximum portability (~5-12 MB unminified, ~5 MB minified in beta.3)
+- **Single-file bundles** for maximum portability (~5-12 MB unminified, ~5 MB minified)
 - **Standalone bundles** for native modules (~12 MB bundled code)
 - **NPX execution** - works immediately, no installation
 - **Multiple formats** - ESM, CJS, single-file, standalone
