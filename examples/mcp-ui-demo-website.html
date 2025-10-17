@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP-UI Interactive Demo & Tutorial</title>
+    <style>
+        /* ===== RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0066cc;
+            --primary-dark: #0052a3;
+            --primary-light: #e6f2ff;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+
+            --layer1-color: #4a90e2;
+            --layer2-color: #7b68ee;
+            --layer3-color: #ff6b6b;
+            --layer4-color: #4ecdc4;
+            --layer5-color: #95e1d3;
+
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.15);
+
+            --transition: all 0.3s ease;
+            --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+
+        body {
+            font-family: var(--font-system);
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 0.75rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+
+        h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.875em;
+            background: var(--bg-tertiary);
+            padding: 0.125rem 0.375rem;
+            border-radius: 3px;
+        }
+
+        pre {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            margin-bottom: 3rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .hero h1 {
+            margin-bottom: 1rem;
+            font-size: 3rem;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.95;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: var(--bg-primary);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .layer-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+
+        .layer-1 { background: var(--layer1-color); }
+        .layer-2 { background: var(--layer2-color); }
+        .layer-3 { background: var(--layer3-color); }
+        .layer-4 { background: var(--layer4-color); }
+        .layer-5 { background: var(--layer5-color); }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-secondary);
+            color: var(--primary);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1rem;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* ===== DEMO CONTAINERS ===== */
+        .demo-container {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .demo-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .demo-panel {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+        }
+
+        .demo-panel h4 {
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* ===== IFRAME SANDBOX ===== */
+        .iframe-container {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1rem 0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .iframe-sandbox {
+            width: 100%;
+            height: 400px;
+            border: none;
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e1e1e;
+            padding: 0.5rem 1rem;
+            border-radius: 6px 6px 0 0;
+            color: #ccc;
+            font-size: 0.875rem;
+            font-family: var(--font-mono);
+        }
+
+        .copy-btn {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover {
+            background: #666;
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+        }
+
+        /* ===== LOGS & OUTPUT ===== */
+        .log-container {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            padding: 1rem;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 1rem 0;
+        }
+
+        .log-entry {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-timestamp {
+            color: #888;
+            margin-right: 0.5rem;
+        }
+
+        .log-type {
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .log-type.request { color: #4a90e2; }
+        .log-type.response { color: #28a745; }
+        .log-type.error { color: #dc3545; }
+        .log-type.info { color: #17a2b8; }
+
+        /* ===== ALERTS ===== */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert-icon {
+            font-size: 1.25rem;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid var(--info);
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid var(--success);
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid var(--warning);
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid var(--danger);
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* ===== FEATURES LIST ===== */
+        .features {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features li {
+            padding: 0.75rem 0;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .features li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+
+        /* ===== SYNTAX HIGHLIGHTING ===== */
+        .keyword { color: #ff79c6; }
+        .string { color: #f1fa8c; }
+        .function { color: #50fa7b; }
+        .comment { color: #6272a4; font-style: italic; }
+        .number { color: #bd93f9; }
+        .operator { color: #ff79c6; }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .hero {
+                padding: 2rem 1rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .demo-split {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-container {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== UTILITY CLASSES ===== */
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 1.5rem; }
+        .text-center { text-align: center; }
+        .text-muted { color: var(--text-secondary); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="#overview" class="nav-link">Overview</a>
+            <a href="#layer1" class="nav-link">Layer 1: Foundation</a>
+            <a href="#layer2" class="nav-link">Layer 2: Feature</a>
+            <a href="#layer3" class="nav-link">Layer 3: Remote DOM</a>
+            <a href="#layer4" class="nav-link">Layer 4: All APIs</a>
+            <a href="#security" class="nav-link">Security</a>
+            <a href="#workflow" class="nav-link">Complete Workflow</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>MCP-UI Interactive Demo</h1>
+        <p>
+            Explore the complete MCP-UI system with live demonstrations, mock interactions, and comprehensive tutorials.
+            Learn how AI agents can serve rich, interactive user interfaces across all five layers.
+        </p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Overview Section -->
+        <section id="overview" class="section">
+            <div class="section-header">
+                <h2>What is MCP-UI?</h2>
+            </div>
+
+            <p>
+                <strong>MCP-UI</strong> is an extension to the Model Context Protocol (MCP) that enables AI agents to serve
+                interactive user interfaces directly to client applications. Instead of just returning text or data,
+                servers can now return complete UI components that render securely in the client.
+            </p>
+
+            <div class="alert alert-info">
+                <span class="alert-icon">ℹ️</span>
+                <div>
+                    <strong>Key Concept:</strong> Think of MCP-UI as a way for AI to show you an interactive form,
+                    dashboard, or tool instead of describing it in text. The UI runs sandboxed for security.
+                </div>
+            </div>
+
+            <h3 class="mt-3">The 5 Layers</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="layer-badge layer-1">1</div>
+                    <div class="card-header">Foundation Layer</div>
+                    <p>Basic HTML UI resources rendered in sandboxed iframes. Static content with security measures.</p>
+                </div>
+                <div class="card">
+                    <div class="layer-badge layer-2">2</div>
+                    <div class="card-header">Feature Layer</div>
+                    <p>Interactive UI with postMessage callbacks, form submissions, and external URL embedding.</p>
+                </div>
+                <div class="card">
+                    <div class="layer-badge layer-3">3</div>
+                    <div class="card-header">Remote DOM Layer</div>
+                    <p>JavaScript executed in Web Worker sandbox, producing native-looking React components.</p>
+                </div>
+                <div class="card">
+                    <div class="layer-badge layer-4">4</div>
+                    <div class="card-header">API Integration Layer</div>
+                    <p>UI support across all API styles: Programmatic, Decorator, Functional, and Interface.</p>
+                </div>
+                <div class="card">
+                    <div class="layer-badge layer-5">5</div>
+                    <div class="card-header">Polish Layer</div>
+                    <p>Production features: auto-resize, loading states, error boundaries, and accessibility.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Layer 1: Foundation -->
+        <section id="layer1" class="section">
+            <div class="section-header">
+                <div class="layer-badge layer-1">1</div>
+                <h2>Layer 1: Foundation - Static HTML Resources</h2>
+            </div>
+
+            <p>
+                The Foundation Layer establishes the core capability: servers create UIResource objects containing HTML,
+                and clients render them in sandboxed iframes.
+            </p>
+
+            <h3>Server-Side Code</h3>
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('layer1', 'server')">Server</button>
+                <button class="tab" onclick="showTab('layer1', 'client')">Client</button>
+                <button class="tab" onclick="showTab('layer1', 'demo')">Live Demo</button>
+            </div>
+
+            <div id="layer1-server" class="tab-content active">
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Server</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>import { BuildMCPServer } from 'simple-mcp';
+
+const server = new BuildMCPServer({
+  name: 'product-catalog',
+  version: '1.0.0'
+});
+
+// Add a UI resource using the convenience method
+server.addUIResource(
+  'ui://product-card/widget-pro',
+  'Product Card',
+  'Displays product information',
+  'text/html',
+  `&lt;!DOCTYPE html&gt;
+  &lt;html&gt;
+  &lt;head&gt;
+    &lt;style&gt;
+      body { font-family: sans-serif; margin: 16px; }
+      .card {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      .badge {
+        background: #0066cc;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+      }
+    &lt;/style&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div class="card"&gt;
+      &lt;div class="badge"&gt;Foundation Layer&lt;/div&gt;
+      &lt;h2&gt;Widget Pro X&lt;/h2&gt;
+      &lt;p&gt;Price: $299 | Rating: 4.8★&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+  &lt;/html&gt;`
+);</code></pre>
+                </div>
+
+                <div class="alert alert-info">
+                    <span class="alert-icon">💡</span>
+                    <div>
+                        <strong>Key Points:</strong>
+                        <ul class="features">
+                            <li>URI must start with <code>ui://</code></li>
+                            <li>MIME type is <code>text/html</code></li>
+                            <li>HTML is self-contained (inline CSS/JS)</li>
+                            <li>Will render in sandboxed iframe</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="layer1-client" class="tab-content">
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Client (React)</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>import { UIResourceRenderer } from '@mcp-ui/client';
+
+function MyApp() {
+  const [uiResource, setUIResource] = useState(null);
+
+  async function loadProductCard() {
+    // Call MCP server tool
+    const response = await mcpClient.callTool('get_product_ui');
+
+    // Extract UI resource from response
+    const resource = response.content.find(
+      item => item.type === 'resource' &&
+      item.resource.uri.startsWith('ui://')
+    );
+
+    setUIResource(resource);
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;button onClick={loadProductCard}&gt;Load Product&lt;/button&gt;
+
+      {uiResource && (
+        &lt;UIResourceRenderer
+          resource={uiResource.resource}
+        /&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+                </div>
+
+                <div class="alert alert-success">
+                    <span class="alert-icon">✓</span>
+                    <div>
+                        <strong>Security Features:</strong>
+                        <ul class="features">
+                            <li>Renders in sandboxed iframe</li>
+                            <li>Isolated from parent DOM</li>
+                            <li>No access to parent JavaScript</li>
+                            <li>Sandbox attribute: <code>allow-scripts</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="layer1-demo" class="tab-content">
+                <h3>Live Demo</h3>
+                <p>Click the button to simulate loading a static HTML UI resource:</p>
+
+                <button class="btn btn-primary" onclick="runLayer1Demo()">Load Product Card</button>
+
+                <div id="layer1-log" class="log-container mt-2" style="display: none;"></div>
+                <div id="layer1-output" class="iframe-container mt-2" style="display: none;">
+                    <iframe id="layer1-iframe" class="iframe-sandbox" sandbox="allow-scripts"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Layer 2: Feature -->
+        <section id="layer2" class="section">
+            <div class="section-header">
+                <div class="layer-badge layer-2">2</div>
+                <h2>Layer 2: Feature - Interactive UI with Callbacks</h2>
+            </div>
+
+            <p>
+                The Feature Layer adds interactivity through postMessage communication between the iframe and host application.
+                Forms can submit data, buttons can trigger tool calls, and external URLs can be embedded.
+            </p>
+
+            <h3>Interactive Form Example</h3>
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('layer2', 'server')">Server</button>
+                <button class="tab" onclick="showTab('layer2', 'client')">Client</button>
+                <button class="tab" onclick="showTab('layer2', 'demo')">Live Demo</button>
+            </div>
+
+            <div id="layer2-server" class="tab-content active">
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Interactive Form Server</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>// Tool that returns an interactive form
+server.addUIResource(
+  'ui://feedback-form/v1',
+  'Feedback Form',
+  'Interactive user feedback form',
+  'text/html',
+  `&lt;!DOCTYPE html&gt;
+  &lt;html&gt;
+  &lt;body&gt;
+    &lt;form id="feedbackForm"&gt;
+      &lt;input type="text" id="name" placeholder="Your name" required&gt;
+      &lt;textarea id="message" placeholder="Feedback" required&gt;&lt;/textarea&gt;
+      &lt;button type="submit"&gt;Submit&lt;/button&gt;
+    &lt;/form&gt;
+
+    &lt;script&gt;
+      document.getElementById('feedbackForm')
+        .addEventListener('submit', (e) => {
+          e.preventDefault();
+
+          // Send tool call to host via postMessage
+          window.parent.postMessage({
+            type: 'tool',
+            payload: {
+              toolName: 'submit_feedback',
+              params: {
+                name: document.getElementById('name').value,
+                message: document.getElementById('message').value
+              }
+            }
+          }, '*');
+        });
+    &lt;/script&gt;
+  &lt;/body&gt;
+  &lt;/html&gt;`
+);
+
+// Tool that handles the form submission
+server.addTool({
+  name: 'submit_feedback',
+  description: 'Process feedback submission',
+  parameters: z.object({
+    name: z.string(),
+    message: z.string()
+  }),
+  execute: async ({ name, message }) => {
+    console.log(`Feedback from ${name}: ${message}`);
+    return { status: 'success', message: 'Thank you!' };
+  }
+});</code></pre>
+                </div>
+            </div>
+
+            <div id="layer2-client" class="tab-content">
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Client with Action Handler</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>function MyApp() {
+  const [uiResource, setUIResource] = useState(null);
+
+  // Handle UI actions (form submissions, button clicks, etc.)
+  const handleUIAction = async (action) => {
+    if (action.type === 'tool') {
+      const { toolName, params } = action.payload;
+
+      console.log(`Calling tool: ${toolName}`, params);
+
+      // Execute the tool on the server
+      const result = await mcpClient.callTool(toolName, params);
+
+      console.log('Tool result:', result);
+
+      // Optionally notify user
+      alert('Feedback submitted successfully!');
+    }
+  };
+
+  return (
+    &lt;UIResourceRenderer
+      resource={uiResource.resource}
+      onUIAction={handleUIAction}
+    /&gt;
+  );
+}</code></pre>
+                </div>
+
+                <div class="alert alert-warning">
+                    <span class="alert-icon">⚠️</span>
+                    <div>
+                        <strong>Security Note:</strong> The client validates the origin of postMessage events
+                        to prevent malicious iframes from triggering unauthorized tool calls.
+                    </div>
+                </div>
+            </div>
+
+            <div id="layer2-demo" class="tab-content">
+                <h3>Live Demo</h3>
+                <p>Submit the form to see postMessage communication in action:</p>
+
+                <button class="btn btn-primary" onclick="runLayer2Demo()">Load Feedback Form</button>
+
+                <div id="layer2-log" class="log-container mt-2" style="display: none;"></div>
+                <div id="layer2-output" class="iframe-container mt-2" style="display: none;">
+                    <iframe id="layer2-iframe" class="iframe-sandbox" sandbox="allow-scripts"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Layer 3: Remote DOM -->
+        <section id="layer3" class="section">
+            <div class="section-header">
+                <div class="layer-badge layer-3">3</div>
+                <h2>Layer 3: Remote DOM - Web Worker Sandbox</h2>
+            </div>
+
+            <p>
+                The Remote DOM Layer executes JavaScript in a Web Worker sandbox, translating DOM operations
+                into native React components. This produces UIs that match the host application's design system.
+            </p>
+
+            <h3>How It Works</h3>
+            <div class="demo-split">
+                <div class="demo-panel">
+                    <h4>1. Server Sends Script</h4>
+                    <pre><code>const script = `
+  const button = remoteDOM.createElement('button');
+  button.setTextContent('Click Me');
+  button.addEventListener('click', () => {
+    remoteDOM.callHost('notify', {
+      message: 'Button clicked!'
+    });
+  });
+`;</code></pre>
+                </div>
+                <div class="demo-panel">
+                    <h4>2. Web Worker Executes</h4>
+                    <pre><code>// In Web Worker sandbox
+remoteDOM.createElement('button')
+// Sends postMessage:
+{
+  type: 'createElement',
+  id: 'elem-xyz',
+  tagName: 'button'
+}</code></pre>
+                </div>
+                <div class="demo-panel">
+                    <h4>3. Host Translates</h4>
+                    <pre><code>// Host receives operations
+hostReceiver.processOperation({
+  type: 'createElement',
+  id: 'elem-xyz',
+  tagName: 'button'
+});
+// Creates React element</code></pre>
+                </div>
+                <div class="demo-panel">
+                    <h4>4. React Renders</h4>
+                    <pre><code>// Final React component
+&lt;button onClick={handler}&gt;
+  Click Me
+&lt;/button&gt;</code></pre>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('layer3', 'server')">Server</button>
+                <button class="tab" onclick="showTab('layer3', 'architecture')">Architecture</button>
+                <button class="tab" onclick="showTab('layer3', 'demo')">Live Demo</button>
+            </div>
+
+            <div id="layer3-server" class="tab-content active">
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Remote DOM Script</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>const remoteDOMScript = `
+// Create a counter component using Remote DOM API
+const container = remoteDOM.createElement('div', {
+  style: {
+    padding: '20px',
+    background: 'white',
+    borderRadius: '8px'
+  }
+});
+
+const title = remoteDOM.createElement('h3');
+remoteDOM.setTextContent(title, 'Counter Demo');
+remoteDOM.appendChild(container, title);
+
+const display = remoteDOM.createElement('div', {
+  style: {
+    fontSize: '32px',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    margin: '20px 0'
+  }
+});
+remoteDOM.setTextContent(display, '0');
+remoteDOM.appendChild(container, display);
+
+let count = 0;
+
+const button = remoteDOM.createElement('button', {
+  style: {
+    padding: '10px 20px',
+    background: '#0066cc',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px'
+  }
+});
+remoteDOM.setTextContent(button, 'Increment');
+remoteDOM.addEventListener(button, 'click', () => {
+  count++;
+  remoteDOM.setTextContent(display, count.toString());
+
+  remoteDOM.callHost('notify', {
+    level: 'info',
+    message: 'Count: ' + count
+  });
+});
+remoteDOM.appendChild(container, button);
+`;
+
+server.addUIResource(
+  'ui://counter/remote-dom',
+  'Counter Component',
+  'Remote DOM counter demo',
+  'application/vnd.mcp-ui.remote-dom+javascript',
+  remoteDOMScript
+);</code></pre>
+                </div>
+            </div>
+
+            <div id="layer3-architecture" class="tab-content">
+                <h3>Security Architecture</h3>
+
+                <div class="alert alert-success">
+                    <span class="alert-icon">🔒</span>
+                    <div>
+                        <strong>Web Worker Isolation:</strong>
+                        <ul class="features">
+                            <li>Script runs in separate thread</li>
+                            <li>No access to DOM or Window</li>
+                            <li>No access to parent page JavaScript</li>
+                            <li>Can only send serializable messages</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4>Operation Whitelist</h4>
+                <p>Only these operations are allowed:</p>
+                <ul class="features">
+                    <li><code>createElement(tagName, props)</code> - Create element</li>
+                    <li><code>setAttribute(id, name, value)</code> - Set attribute</li>
+                    <li><code>appendChild(parentId, childId)</code> - Append child</li>
+                    <li><code>removeChild(parentId, childId)</code> - Remove child</li>
+                    <li><code>setTextContent(id, text)</code> - Set text</li>
+                    <li><code>addEventListener(id, event, handler)</code> - Add listener</li>
+                    <li><code>callHost(action, payload)</code> - Call host action</li>
+                </ul>
+
+                <h4>Component Whitelist</h4>
+                <p>Only these components can be created:</p>
+                <div class="demo-container">
+                    <code>button, input, div, span, p, h1, h2, h3, h4, h5, h6, ul, ol, li, form, label, section, article, header, footer</code>
+                </div>
+            </div>
+
+            <div id="layer3-demo" class="tab-content">
+                <h3>Live Demo</h3>
+                <p>This simulates Remote DOM execution (actual implementation requires Web Workers):</p>
+
+                <button class="btn btn-primary" onclick="runLayer3Demo()">Execute Remote DOM Script</button>
+
+                <div id="layer3-log" class="log-container mt-2" style="display: none;"></div>
+                <div id="layer3-output" class="demo-container mt-2" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- Layer 4: All APIs -->
+        <section id="layer4" class="section">
+            <div class="section-header">
+                <div class="layer-badge layer-4">4</div>
+                <h2>Layer 4: All APIs - Four Ways to Create UI Resources</h2>
+            </div>
+
+            <p>
+                MCP-UI supports four different API styles for creating UI resources. All produce identical results;
+                choose the style that fits your development preferences.
+            </p>
+
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('layer4', 'programmatic')">Programmatic</button>
+                <button class="tab" onclick="showTab('layer4', 'decorator')">Decorator</button>
+                <button class="tab" onclick="showTab('layer4', 'functional')">Functional</button>
+                <button class="tab" onclick="showTab('layer4', 'interface')">Interface</button>
+            </div>
+
+            <div id="layer4-programmatic" class="tab-content active">
+                <h3>Programmatic API</h3>
+                <p>Imperative, builder-style API with method chaining.</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Programmatic API</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>import { BuildMCPServer } from 'simple-mcp';
+
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0'
+});
+
+// Method 1: Using convenience method
+server.addUIResource(
+  'ui://product-card/v1',
+  'Product Card',
+  'Displays product info',
+  'text/html',
+  '&lt;div&gt;Product info here&lt;/div&gt;'
+);
+
+// Method 2: Using addResource with ui:// URI
+server.addResource({
+  uri: 'ui://dashboard/v1',
+  name: 'Dashboard',
+  description: 'Analytics dashboard',
+  mimeType: 'text/html',
+  content: '&lt;div&gt;Dashboard here&lt;/div&gt;'
+});
+
+export default server;</code></pre>
+                </div>
+            </div>
+
+            <div id="layer4-decorator" class="tab-content">
+                <h3>Decorator API</h3>
+                <p>Class-based with TypeScript decorators (experimental).</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Decorator API</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>import { MCPServer, uiResource, tool } from 'simple-mcp';
+
+@MCPServer({
+  name: 'my-server',
+  version: '1.0.0'
+})
+class MyServer {
+
+  @uiResource('ui://product-card/v1', 'text/html', {
+    name: 'Product Card',
+    description: 'Displays product information'
+  })
+  async getProductCard() {
+    return `
+      &lt;div class="card"&gt;
+        &lt;h2&gt;Product Name&lt;/h2&gt;
+        &lt;p&gt;Price: $299&lt;/p&gt;
+      &lt;/div&gt;
+    `;
+  }
+
+  @uiResource('ui://dashboard/v1', 'text/html', {
+    name: 'Dashboard',
+    description: 'Analytics dashboard'
+  })
+  async getDashboard() {
+    return '&lt;div&gt;Dashboard content&lt;/div&gt;';
+  }
+
+  @tool()
+  async processOrder(orderId: string) {
+    // Tool implementation
+    return { status: 'success' };
+  }
+}
+
+export default MyServer;</code></pre>
+                </div>
+            </div>
+
+            <div id="layer4-functional" class="tab-content">
+                <h3>Functional API</h3>
+                <p>Declarative configuration object style.</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Functional API</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>import { defineMCP } from 'simple-mcp';
+
+export default defineMCP({
+  name: 'my-server',
+  version: '1.0.0',
+
+  uiResources: [
+    {
+      uri: 'ui://product-card/v1',
+      name: 'Product Card',
+      description: 'Displays product information',
+      mimeType: 'text/html',
+      content: `
+        &lt;div class="card"&gt;
+          &lt;h2&gt;Product Name&lt;/h2&gt;
+          &lt;p&gt;Price: $299&lt;/p&gt;
+        &lt;/div&gt;
+      `
+    },
+    {
+      uri: 'ui://dashboard/v1',
+      name: 'Dashboard',
+      description: 'Analytics dashboard',
+      mimeType: 'text/html',
+      content: () => {
+        // Can use functions for dynamic content
+        return '&lt;div&gt;Dashboard: ' + new Date() + '&lt;/div&gt;';
+      }
+    }
+  ],
+
+  tools: [
+    {
+      name: 'process_order',
+      description: 'Process an order',
+      parameters: { orderId: 'string' },
+      execute: async ({ orderId }) => {
+        return { status: 'success' };
+      }
+    }
+  ]
+});</code></pre>
+                </div>
+            </div>
+
+            <div id="layer4-interface" class="tab-content">
+                <h3>Interface API</h3>
+                <p>Interface-based for maximum flexibility and testing.</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span>TypeScript - Interface API</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code>import { IUIResource, IUIResourceProvider, createMCPServer } from 'simple-mcp';
+
+class MyUIResources implements IUIResourceProvider {
+  getUIResources(): IUIResource[] {
+    return [
+      {
+        uri: 'ui://product-card/v1',
+        name: 'Product Card',
+        description: 'Displays product information',
+        mimeType: 'text/html',
+        content: `
+          &lt;div class="card"&gt;
+            &lt;h2&gt;Product Name&lt;/h2&gt;
+            &lt;p&gt;Price: $299&lt;/p&gt;
+          &lt;/div&gt;
+        `
+      },
+      {
+        uri: 'ui://dashboard/v1',
+        name: 'Dashboard',
+        description: 'Analytics dashboard',
+        mimeType: 'text/html',
+        content: async () => {
+          // Async functions supported
+          const data = await fetchDashboardData();
+          return renderDashboard(data);
+        }
+      }
+    ];
+  }
+}
+
+const server = createMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  providers: [new MyUIResources()]
+});
+
+export default server;</code></pre>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <span class="alert-icon">ℹ️</span>
+                <div>
+                    <strong>Which API should I use?</strong>
+                    <ul class="features">
+                        <li><strong>Programmatic:</strong> Best for simple servers, quick prototypes</li>
+                        <li><strong>Decorator:</strong> Best for class-based servers, TypeScript projects</li>
+                        <li><strong>Functional:</strong> Best for configuration-driven servers</li>
+                        <li><strong>Interface:</strong> Best for complex servers, testing, dependency injection</li>
+                    </ul>
+                    All APIs produce identical MCP resources.
+                </div>
+            </div>
+        </section>
+
+        <!-- Security Section -->
+        <section id="security" class="section">
+            <div class="section-header">
+                <h2>🔒 Security Features</h2>
+            </div>
+
+            <p>
+                MCP-UI implements multiple layers of security to ensure safe execution of server-provided UI code.
+            </p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-header">Iframe Sandboxing</div>
+                    <p>All HTML resources render in sandboxed iframes with restricted permissions:</p>
+                    <ul class="features">
+                        <li>Isolated from parent DOM</li>
+                        <li>No access to parent JavaScript</li>
+                        <li>Opaque origin (null)</li>
+                        <li>Controlled permissions</li>
+                    </ul>
+                    <div class="demo-container">
+                        <strong>Sandbox Attributes:</strong><br>
+                        <code>sandbox="allow-scripts"</code> for inline HTML<br>
+                        <code>sandbox="allow-scripts allow-same-origin"</code> for external URLs
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Web Worker Isolation</div>
+                    <p>Remote DOM scripts execute in Web Workers:</p>
+                    <ul class="features">
+                        <li>Separate thread execution</li>
+                        <li>No DOM access</li>
+                        <li>No Window/Document access</li>
+                        <li>Only postMessage communication</li>
+                    </ul>
+                    <div class="demo-container">
+                        <strong>Isolated Context:</strong><br>
+                        Scripts cannot access or modify the parent page in any way.
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Origin Validation</div>
+                    <p>PostMessage events are validated:</p>
+                    <ul class="features">
+                        <li>Origin checking on all messages</li>
+                        <li>HTTPS required for external URLs</li>
+                        <li>Localhost allowed for development</li>
+                        <li>Rejects invalid origins</li>
+                    </ul>
+                    <div class="code-block">
+                        <pre><code>function validateOrigin(origin) {
+  if (origin === 'null') return true; // srcdoc
+  const url = new URL(origin);
+  return url.protocol === 'https:' ||
+         url.hostname === 'localhost';
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Component Whitelisting</div>
+                    <p>Remote DOM restricts allowed components:</p>
+                    <ul class="features">
+                        <li>Only safe HTML elements</li>
+                        <li>No script/iframe/object tags</li>
+                        <li>Validated before rendering</li>
+                        <li>Props sanitized</li>
+                    </ul>
+                    <div class="demo-container">
+                        <strong>Allowed:</strong> button, input, div, span, p, h1-h6, ul, ol, li, form, label<br>
+                        <strong>Blocked:</strong> script, iframe, object, embed
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Operation Validation</div>
+                    <p>All Remote DOM operations validated:</p>
+                    <ul class="features">
+                        <li>Whitelisted operations only</li>
+                        <li>Serializable data only</li>
+                        <li>No arbitrary code execution</li>
+                        <li>No Function() or eval()</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Content Security Policy</div>
+                    <p>Host can enforce additional CSP:</p>
+                    <ul class="features">
+                        <li>frame-src directive for external URLs</li>
+                        <li>script-src restrictions</li>
+                        <li>connect-src for network requests</li>
+                        <li>img-src for image sources</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-success mt-3">
+                <span class="alert-icon">✓</span>
+                <div>
+                    <strong>Security Checklist:</strong>
+                    <ul class="features">
+                        <li>All UI renders in isolated contexts (iframe or Web Worker)</li>
+                        <li>No direct access to parent page JavaScript or DOM</li>
+                        <li>All communication through validated postMessage</li>
+                        <li>Component and operation whitelisting enforced</li>
+                        <li>HTTPS required for external resources in production</li>
+                        <li>CSP headers provide additional protection layer</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Complete Workflow -->
+        <section id="workflow" class="section">
+            <div class="section-header">
+                <h2>Complete Workflow: End-to-End Example</h2>
+            </div>
+
+            <p>
+                Let's trace a complete interaction from AI request to user action to server callback.
+            </p>
+
+            <h3>Scenario: AI asks user to select a product</h3>
+
+            <div class="demo-container">
+                <h4>Step 1: AI Agent Decides to Show UI</h4>
+                <p>During its reasoning, the AI determines it needs user input to select a product.</p>
+                <div class="code-block">
+                    <pre><code>// AI reasoning (internal)
+"The user wants to order a widget. I should show them
+the available options with an interactive selector."
+
+// AI calls MCP tool
+await mcpClient.callTool('show_product_selector');</code></pre>
+                </div>
+            </div>
+
+            <div class="demo-container">
+                <h4>Step 2: Server Returns UIResource</h4>
+                <p>The MCP server creates and returns a UI resource.</p>
+                <div class="code-block">
+                    <pre><code>// Server-side tool
+server.addTool({
+  name: 'show_product_selector',
+  execute: async () => {
+    const uiResource = createInlineHTMLResource(
+      'ui://product-selector/v1',
+      `&lt;form id="selector"&gt;
+         &lt;input type="radio" name="product" value="A"&gt; Widget A
+         &lt;input type="radio" name="product" value="B"&gt; Widget B
+         &lt;button type="submit"&gt;Select&lt;/button&gt;
+         &lt;script&gt;
+           document.getElementById('selector')
+             .addEventListener('submit', (e) => {
+               e.preventDefault();
+               const product = document.querySelector(
+                 'input[name="product"]:checked'
+               ).value;
+               window.parent.postMessage({
+                 type: 'tool',
+                 payload: {
+                   toolName: 'product_selected',
+                   params: { productId: product }
+                 }
+               }, '*');
+             });
+         &lt;/script&gt;
+       &lt;/form&gt;`
+    );
+
+    return { content: [uiResource] };
+  }
+});</code></pre>
+                </div>
+            </div>
+
+            <div class="demo-container">
+                <h4>Step 3: Client Renders UI</h4>
+                <p>The host application receives the resource and renders it.</p>
+                <div class="code-block">
+                    <pre><code>// Client-side
+const response = await mcpClient.callTool('show_product_selector');
+const uiResource = response.content.find(isUIResource);
+
+// Render in React
+&lt;UIResourceRenderer
+  resource={uiResource.resource}
+  onUIAction={handleUIAction}
+/&gt;
+
+// This creates a sandboxed iframe with the form</code></pre>
+                </div>
+            </div>
+
+            <div class="demo-container">
+                <h4>Step 4: User Interacts</h4>
+                <p>User selects "Widget B" and clicks Submit.</p>
+                <div class="code-block">
+                    <pre><code>// In the sandboxed iframe:
+// 1. User clicks radio button for Widget B
+// 2. User clicks Submit button
+// 3. JavaScript handler fires:
+
+window.parent.postMessage({
+  type: 'tool',
+  payload: {
+    toolName: 'product_selected',
+    params: { productId: 'B' }
+  }
+}, '*');</code></pre>
+                </div>
+            </div>
+
+            <div class="demo-container">
+                <h4>Step 5: Host Processes Action</h4>
+                <p>The onUIAction handler receives the message.</p>
+                <div class="code-block">
+                    <pre><code>// Client-side action handler
+const handleUIAction = async (action) => {
+  if (action.type === 'tool') {
+    const { toolName, params } = action.payload;
+
+    // Validate origin (security)
+    if (!validateOrigin(event.origin)) {
+      console.warn('Invalid origin');
+      return;
+    }
+
+    // Call the tool on the server
+    console.log(`Calling ${toolName}`, params);
+    const result = await mcpClient.callTool(toolName, params);
+
+    console.log('Result:', result);
+  }
+};</code></pre>
+                </div>
+            </div>
+
+            <div class="demo-container">
+                <h4>Step 6: Server Processes Selection</h4>
+                <p>The server tool handles the user's selection.</p>
+                <div class="code-block">
+                    <pre><code>// Server-side callback tool
+server.addTool({
+  name: 'product_selected',
+  parameters: z.object({
+    productId: z.string()
+  }),
+  execute: async ({ productId }) => {
+    console.log(`User selected product: ${productId}`);
+
+    // Process the selection
+    const product = await db.getProduct(productId);
+    await cart.addItem(product);
+
+    return {
+      status: 'success',
+      message: `Added ${product.name} to cart`,
+      cartTotal: cart.getTotal()
+    };
+  }
+});</code></pre>
+                </div>
+            </div>
+
+            <div class="alert alert-success mt-3">
+                <span class="alert-icon">✓</span>
+                <div>
+                    <strong>Complete Loop:</strong>
+                    <ol>
+                        <li>AI requests UI → Server creates UIResource</li>
+                        <li>Client renders UI → User sees interactive form</li>
+                        <li>User interacts → postMessage sent to host</li>
+                        <li>Host validates → Calls server tool</li>
+                        <li>Server processes → Returns result</li>
+                        <li>Client updates → User sees confirmation</li>
+                    </ol>
+                    <p class="mt-2">
+                        This entire flow maintains security: the UI never has direct access to the parent page,
+                        all communication is validated, and only whitelisted operations are allowed.
+                    </p>
+                </div>
+            </div>
+
+            <h3 class="mt-3">Try It Live</h3>
+            <button class="btn btn-primary" onclick="runCompleteWorkflow()">Run Complete Workflow</button>
+            <div id="workflow-log" class="log-container mt-2" style="display: none;"></div>
+            <div id="workflow-output" class="iframe-container mt-2" style="display: none;">
+                <iframe id="workflow-iframe" class="iframe-sandbox" sandbox="allow-scripts"></iframe>
+            </div>
+        </section>
+
+        <!-- Best Practices -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Best Practices & Tips</h2>
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-header">Choose the Right Layer</div>
+                    <ul class="features">
+                        <li><strong>Layer 1:</strong> Simple static info cards</li>
+                        <li><strong>Layer 2:</strong> Forms, buttons, basic interaction</li>
+                        <li><strong>Layer 3:</strong> Complex, stateful, native-looking UI</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">URI Conventions</div>
+                    <ul class="features">
+                        <li>Always start with <code>ui://</code></li>
+                        <li>Use semantic paths: <code>ui://feature/component/version</code></li>
+                        <li>Include version for breaking changes</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Security First</div>
+                    <ul class="features">
+                        <li>Never disable iframe sandbox</li>
+                        <li>Always validate postMessage origin</li>
+                        <li>Use HTTPS for external URLs</li>
+                        <li>Sanitize user input before tool calls</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Error Handling</div>
+                    <ul class="features">
+                        <li>Provide fallback UI for errors</li>
+                        <li>Validate tool parameters</li>
+                        <li>Show user-friendly error messages</li>
+                        <li>Log errors for debugging</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Performance</div>
+                    <ul class="features">
+                        <li>Keep HTML resources under 100KB</li>
+                        <li>Minimize external dependencies</li>
+                        <li>Use Remote DOM for complex UIs</li>
+                        <li>Cache static resources when possible</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Accessibility</div>
+                    <ul class="features">
+                        <li>Use semantic HTML elements</li>
+                        <li>Include ARIA labels</li>
+                        <li>Support keyboard navigation</li>
+                        <li>Provide alt text for images</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resources -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Additional Resources</h2>
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-header">📚 Documentation</div>
+                    <ul>
+                        <li><a href="#">MCP-UI Official Docs</a></li>
+                        <li><a href="#">API Reference</a></li>
+                        <li><a href="#">Security Guide</a></li>
+                        <li><a href="#">Migration Guide</a></li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">💻 Code Examples</div>
+                    <ul>
+                        <li><a href="#">GitHub Repository</a></li>
+                        <li><a href="#">Example Servers</a></li>
+                        <li><a href="#">Sample UI Components</a></li>
+                        <li><a href="#">Integration Tests</a></li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">🎓 Tutorials</div>
+                    <ul>
+                        <li><a href="#">Getting Started Guide</a></li>
+                        <li><a href="#">Building Your First UI</a></li>
+                        <li><a href="#">Advanced Patterns</a></li>
+                        <li><a href="#">Video Walkthrough</a></li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">🤝 Community</div>
+                    <ul>
+                        <li><a href="#">Discord Server</a></li>
+                        <li><a href="#">GitHub Discussions</a></li>
+                        <li><a href="#">Stack Overflow Tag</a></li>
+                        <li><a href="#">Twitter Updates</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // ===== TAB FUNCTIONALITY =====
+        function showTab(section, tabName) {
+            // Hide all tabs for this section
+            const tabs = document.querySelectorAll(`#${section}-${tabName}`).forEach(content => {
+                content.style.display = 'none';
+            });
+
+            // Show the selected tab
+            const selectedContent = document.getElementById(`${section}-${tabName}`);
+            if (selectedContent) {
+                selectedContent.style.display = 'block';
+            }
+
+            // Update active tab button
+            const tabButtons = document.querySelectorAll(`#${section} .tab`);
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(tabName)) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // ===== COPY CODE FUNCTIONALITY =====
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block');
+            const code = codeBlock.querySelector('pre code').textContent;
+
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // ===== LOGGING UTILITY =====
+        function addLog(containerId, type, message) {
+            const container = document.getElementById(containerId);
+            container.style.display = 'block';
+
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-timestamp">${timestamp}</span>
+                <span class="log-type ${type}">${type.toUpperCase()}</span>
+                <span>${message}</span>
+            `;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLog(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            container.style.display = 'none';
+        }
+
+        // ===== LAYER 1 DEMO =====
+        function runLayer1Demo() {
+            clearLog('layer1-log');
+
+            addLog('layer1-log', 'request', 'Calling MCP tool: get_product_ui');
+
+            setTimeout(() => {
+                addLog('layer1-log', 'response', 'Received UIResource with MIME type: text/html');
+                addLog('layer1-log', 'info', 'URI: ui://product-card/widget-pro');
+                addLog('layer1-log', 'info', 'Creating sandboxed iframe with sandbox="allow-scripts"');
+
+                // Create the HTML content
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            body {
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                margin: 0;
+                                padding: 20px;
+                                background: #f5f5f5;
+                            }
+                            .card {
+                                background: white;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                                padding: 24px;
+                                max-width: 400px;
+                            }
+                            .badge {
+                                display: inline-block;
+                                background: #4a90e2;
+                                color: white;
+                                padding: 4px 12px;
+                                border-radius: 4px;
+                                font-size: 12px;
+                                font-weight: 600;
+                                margin-bottom: 16px;
+                            }
+                            h2 {
+                                margin: 0 0 8px 0;
+                                font-size: 20px;
+                                font-weight: 600;
+                            }
+                            .info-grid {
+                                display: grid;
+                                grid-template-columns: 1fr 1fr;
+                                gap: 16px;
+                                margin: 16px 0;
+                            }
+                            .info-item {
+                                border-left: 2px solid #4a90e2;
+                                padding-left: 12px;
+                            }
+                            .info-label {
+                                font-size: 12px;
+                                color: #999;
+                                text-transform: uppercase;
+                            }
+                            .info-value {
+                                font-size: 16px;
+                                font-weight: 600;
+                                color: #333;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <div class="badge">Foundation Layer Demo</div>
+                            <h2>Widget Pro X</h2>
+                            <p>Professional-grade widget with advanced features</p>
+
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Price</div>
+                                    <div class="info-value">$299</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Rating</div>
+                                    <div class="info-value">4.8★</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Reviews</div>
+                                    <div class="info-value">1,234</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Stock</div>
+                                    <div class="info-value">✓ In Stock</div>
+                                </div>
+                            </div>
+
+                            <p style="font-size: 14px; color: #666; margin-top: 16px;">
+                                This is a static HTML demo rendered in a sandboxed iframe.
+                                No interactivity yet - that comes in Layer 2!
+                            </p>
+                        </div>
+                    </body>
+                    </html>
+                `;
+
+                const iframe = document.getElementById('layer1-iframe');
+                iframe.srcdoc = htmlContent;
+                document.getElementById('layer1-output').style.display = 'block';
+
+                addLog('layer1-log', 'info', '✓ UI rendered successfully in sandboxed iframe');
+            }, 500);
+        }
+
+        // ===== LAYER 2 DEMO =====
+        function runLayer2Demo() {
+            clearLog('layer2-log');
+
+            addLog('layer2-log', 'request', 'Calling MCP tool: show_feedback_form');
+
+            setTimeout(() => {
+                addLog('layer2-log', 'response', 'Received interactive UIResource');
+                addLog('layer2-log', 'info', 'Setting up postMessage listener for callbacks');
+
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            * { box-sizing: border-box; }
+                            body {
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                margin: 0;
+                                padding: 20px;
+                                background: #f5f5f5;
+                            }
+                            .form-container {
+                                max-width: 500px;
+                                margin: 0 auto;
+                                background: white;
+                                padding: 24px;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                            }
+                            h2 {
+                                margin: 0 0 20px 0;
+                                color: #333;
+                            }
+                            .form-group {
+                                margin-bottom: 16px;
+                            }
+                            label {
+                                display: block;
+                                margin-bottom: 6px;
+                                font-weight: 600;
+                                font-size: 14px;
+                            }
+                            input, textarea {
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ddd;
+                                border-radius: 4px;
+                                font-family: inherit;
+                                font-size: 14px;
+                            }
+                            textarea {
+                                resize: vertical;
+                                min-height: 100px;
+                            }
+                            button {
+                                width: 100%;
+                                padding: 12px;
+                                background: #7b68ee;
+                                color: white;
+                                border: none;
+                                border-radius: 4px;
+                                font-weight: 600;
+                                cursor: pointer;
+                                font-size: 16px;
+                            }
+                            button:hover {
+                                background: #6952d6;
+                            }
+                            .status {
+                                margin-top: 16px;
+                                padding: 12px;
+                                border-radius: 4px;
+                                display: none;
+                            }
+                            .status.success {
+                                display: block;
+                                background: #d4edda;
+                                color: #155724;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="form-container">
+                            <h2>📝 Feedback Form</h2>
+                            <form id="feedbackForm">
+                                <div class="form-group">
+                                    <label for="name">Your Name</label>
+                                    <input type="text" id="name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="message">Feedback</label>
+                                    <textarea id="message" required></textarea>
+                                </div>
+                                <button type="submit">Submit Feedback</button>
+                                <div id="status" class="status"></div>
+                            </form>
+                        </div>
+
+                        <script>
+                            document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+                                e.preventDefault();
+
+                                const name = document.getElementById('name').value;
+                                const email = document.getElementById('email').value;
+                                const message = document.getElementById('message').value;
+
+                                // Send tool call via postMessage
+                                window.parent.postMessage({
+                                    type: 'tool',
+                                    payload: {
+                                        toolName: 'submit_feedback',
+                                        params: {
+                                            name: name,
+                                            email: email,
+                                            message: message
+                                        }
+                                    }
+                                }, '*');
+
+                                // Show success message
+                                const status = document.getElementById('status');
+                                status.textContent = '✓ Feedback submitted! Check the log above.';
+                                status.className = 'status success';
+
+                                // Clear form
+                                this.reset();
+                            });
+                        </script>
+                    </body>
+                    </html>
+                `;
+
+                const iframe = document.getElementById('layer2-iframe');
+                iframe.srcdoc = htmlContent;
+                document.getElementById('layer2-output').style.display = 'block';
+
+                addLog('layer2-log', 'info', '✓ Interactive form rendered. Try submitting it!');
+            }, 500);
+
+            // Set up message listener
+            window.addEventListener('message', function handler(event) {
+                if (event.data.type === 'tool' && event.data.payload.toolName === 'submit_feedback') {
+                    const params = event.data.payload.params;
+                    addLog('layer2-log', 'request', `postMessage received: ${event.data.payload.toolName}`);
+                    addLog('layer2-log', 'info', `Origin validated: ${event.origin}`);
+                    addLog('layer2-log', 'request', `Calling server tool: submit_feedback`);
+                    addLog('layer2-log', 'info', `Parameters: ${JSON.stringify(params)}`);
+
+                    setTimeout(() => {
+                        addLog('layer2-log', 'response', '✓ Feedback submitted successfully');
+                        addLog('layer2-log', 'response', `Confirmation: "Thank you ${params.name}!"`);
+                    }, 300);
+                }
+            });
+        }
+
+        // ===== LAYER 3 DEMO =====
+        function runLayer3Demo() {
+            clearLog('layer3-log');
+
+            addLog('layer3-log', 'request', 'Calling MCP tool: show_counter');
+
+            setTimeout(() => {
+                addLog('layer3-log', 'response', 'Received Remote DOM script');
+                addLog('layer3-log', 'info', 'Creating Web Worker sandbox');
+                addLog('layer3-log', 'info', 'Executing Remote DOM script in worker...');
+
+                setTimeout(() => {
+                    addLog('layer3-log', 'info', 'Operation: createElement("div", {style: ...})');
+                    addLog('layer3-log', 'info', 'Operation: createElement("h3")');
+                    addLog('layer3-log', 'info', 'Operation: setTextContent("Counter Demo")');
+                    addLog('layer3-log', 'info', 'Operation: appendChild(div, h3)');
+                    addLog('layer3-log', 'info', 'Operation: createElement("button")');
+                    addLog('layer3-log', 'info', 'Operation: addEventListener("click", handler)');
+
+                    // Create simulated Remote DOM output
+                    const output = document.getElementById('layer3-output');
+                    output.innerHTML = `
+                        <div style="max-width: 400px; margin: 0 auto; background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="display: inline-block; background: #ff6b6b; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-bottom: 16px;">
+                                Remote DOM Layer
+                            </div>
+                            <h3 style="margin: 0 0 16px 0; color: #333;">Counter Demo</h3>
+                            <div style="font-size: 48px; font-weight: bold; text-align: center; margin: 24px 0; color: #ff6b6b;" id="counter-display">0</div>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="remoteCounter('increment')" style="flex: 1; padding: 12px; background: #ff6b6b; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer;">
+                                    Increment
+                                </button>
+                                <button onclick="remoteCounter('decrement')" style="flex: 1; padding: 12px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; font-weight: 600; cursor: pointer;">
+                                    Decrement
+                                </button>
+                            </div>
+                            <p style="margin-top: 16px; font-size: 14px; color: #666;">
+                                This component was generated from a JavaScript script executed in a Web Worker sandbox.
+                                The DOM operations were translated to React components.
+                            </p>
+                        </div>
+                    `;
+                    output.style.display = 'block';
+
+                    addLog('layer3-log', 'info', '✓ Remote DOM executed successfully');
+                    addLog('layer3-log', 'info', '✓ Translated to native React components');
+                }, 800);
+            }, 500);
+        }
+
+        // Counter for layer 3 demo
+        let remoteCounterValue = 0;
+        function remoteCounter(action) {
+            if (action === 'increment') {
+                remoteCounterValue++;
+                addLog('layer3-log', 'info', `Event: click → callHost('notify', {count: ${remoteCounterValue}})`);
+            } else if (action === 'decrement') {
+                remoteCounterValue--;
+                addLog('layer3-log', 'info', `Event: click → callHost('notify', {count: ${remoteCounterValue}})`);
+            }
+            document.getElementById('counter-display').textContent = remoteCounterValue;
+        }
+
+        // ===== COMPLETE WORKFLOW DEMO =====
+        function runCompleteWorkflow() {
+            clearLog('workflow-log');
+
+            let step = 1;
+
+            addLog('workflow-log', 'info', `Step ${step++}: AI determines it needs user input`);
+            addLog('workflow-log', 'info', 'AI: "The user wants to order a product. I should show them options."');
+
+            setTimeout(() => {
+                addLog('workflow-log', 'request', `Step ${step++}: AI calls MCP tool: show_product_selector`);
+            }, 1000);
+
+            setTimeout(() => {
+                addLog('workflow-log', 'response', `Step ${step++}: Server returns UIResource`);
+                addLog('workflow-log', 'info', 'UIResource URI: ui://product-selector/v1');
+                addLog('workflow-log', 'info', 'MIME type: text/html');
+            }, 2000);
+
+            setTimeout(() => {
+                addLog('workflow-log', 'info', `Step ${step++}: Client renders UI in sandboxed iframe`);
+
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            * { box-sizing: border-box; }
+                            body {
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                margin: 0;
+                                padding: 20px;
+                                background: #f5f5f5;
+                            }
+                            .selector {
+                                max-width: 500px;
+                                margin: 0 auto;
+                                background: white;
+                                padding: 24px;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                            }
+                            h2 {
+                                margin: 0 0 20px 0;
+                            }
+                            .product {
+                                padding: 16px;
+                                margin: 12px 0;
+                                border: 2px solid #ddd;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                transition: all 0.2s;
+                            }
+                            .product:hover {
+                                border-color: #0066cc;
+                                background: #f0f7ff;
+                            }
+                            .product input {
+                                margin-right: 10px;
+                            }
+                            .product-info {
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                            }
+                            button {
+                                width: 100%;
+                                padding: 12px;
+                                background: #0066cc;
+                                color: white;
+                                border: none;
+                                border-radius: 4px;
+                                font-weight: 600;
+                                cursor: pointer;
+                                margin-top: 16px;
+                            }
+                            button:hover {
+                                background: #0052a3;
+                            }
+                            button:disabled {
+                                background: #ccc;
+                                cursor: not-allowed;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="selector">
+                            <h2>🛍️ Select a Product</h2>
+                            <form id="productForm">
+                                <label class="product">
+                                    <div class="product-info">
+                                        <div>
+                                            <input type="radio" name="product" value="widget-a" required>
+                                            <strong>Widget A</strong> - Essential features
+                                        </div>
+                                        <strong>$199</strong>
+                                    </div>
+                                </label>
+
+                                <label class="product">
+                                    <div class="product-info">
+                                        <div>
+                                            <input type="radio" name="product" value="widget-b" required>
+                                            <strong>Widget B</strong> - Advanced features
+                                        </div>
+                                        <strong>$299</strong>
+                                    </div>
+                                </label>
+
+                                <label class="product">
+                                    <div class="product-info">
+                                        <div>
+                                            <input type="radio" name="product" value="widget-c" required>
+                                            <strong>Widget C</strong> - Premium features
+                                        </div>
+                                        <strong>$399</strong>
+                                    </div>
+                                </label>
+
+                                <button type="submit">Add to Cart</button>
+                            </form>
+                        </div>
+
+                        <script>
+                            document.getElementById('productForm').addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                const product = document.querySelector('input[name="product"]:checked').value;
+
+                                window.parent.postMessage({
+                                    type: 'tool',
+                                    payload: {
+                                        toolName: 'product_selected',
+                                        params: { productId: product }
+                                    }
+                                }, '*');
+                            });
+                        </script>
+                    </body>
+                    </html>
+                `;
+
+                const iframe = document.getElementById('workflow-iframe');
+                iframe.srcdoc = htmlContent;
+                document.getElementById('workflow-output').style.display = 'block';
+
+                addLog('workflow-log', 'info', '✓ UI rendered. User can now interact.');
+            }, 3000);
+
+            // Set up workflow message listener
+            window.addEventListener('message', function workflowHandler(event) {
+                if (event.data.type === 'tool' && event.data.payload.toolName === 'product_selected') {
+                    const productId = event.data.payload.params.productId;
+
+                    addLog('workflow-log', 'info', `Step ${step++}: User selects "${productId}" and clicks submit`);
+
+                    setTimeout(() => {
+                        addLog('workflow-log', 'request', `Step ${step++}: postMessage sent to host`);
+                        addLog('workflow-log', 'info', `Message: {type: 'tool', toolName: 'product_selected', params: {productId: '${productId}'}}`);
+                    }, 200);
+
+                    setTimeout(() => {
+                        addLog('workflow-log', 'info', `Step ${step++}: Host validates origin and processes action`);
+                        addLog('workflow-log', 'info', 'Origin validation: ✓ Passed');
+                    }, 400);
+
+                    setTimeout(() => {
+                        addLog('workflow-log', 'request', `Step ${step++}: Host calls server tool: product_selected`);
+                        addLog('workflow-log', 'info', `Parameters: {productId: '${productId}'}`);
+                    }, 600);
+
+                    setTimeout(() => {
+                        addLog('workflow-log', 'response', `Step ${step++}: Server processes selection`);
+                        addLog('workflow-log', 'info', 'Server: Added product to cart, calculated total');
+                        addLog('workflow-log', 'response', '✓ Result: {status: "success", cartTotal: "$299"}');
+                    }, 1000);
+
+                    setTimeout(() => {
+                        addLog('workflow-log', 'info', `✅ Complete! End-to-end workflow executed successfully.`);
+                        addLog('workflow-log', 'info', 'The entire interaction was secure: iframe sandboxing + origin validation + operation whitelisting.');
+                    }, 1400);
+                }
+            });
+        }
+
+        // ===== NAVIGATION HIGHLIGHTING =====
+        document.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (window.scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // ===== SMOOTH SCROLLING =====
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // ===== INITIALIZE =====
+        console.log('MCP-UI Interactive Demo loaded successfully!');
+        console.log('Explore the layers, run the demos, and learn how MCP-UI works.');
+    </script>
+</body>
+</html>

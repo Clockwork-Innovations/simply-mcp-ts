@@ -53,7 +53,26 @@ export interface SingleFileResource {
   name: string;
   description: string;
   mimeType: string;
-  content: string | { [key: string]: any };
+  content: string | { [key: string]: any } | (() => string | Promise<string>);
+}
+
+/**
+ * Single-file UI resource definition
+ *
+ * A specialized resource definition for UI resources that can be rendered
+ * as interactive UI elements in MCP clients.
+ *
+ * UI resources must use the "ui://" URI scheme and support specific MIME types:
+ * - text/html: Inline HTML content
+ * - text/uri-list: External URL
+ * - application/vnd.mcp-ui.remote-dom+javascript: Remote DOM
+ */
+export interface SingleFileUIResource {
+  uri: string;
+  name: string;
+  description: string;
+  mimeType: 'text/html' | 'text/uri-list' | 'application/vnd.mcp-ui.remote-dom+javascript';
+  content: string | (() => string | Promise<string>);
 }
 
 /**
@@ -79,4 +98,5 @@ export interface SingleFileMCPConfig {
   tools?: SingleFileTool[];
   prompts?: SingleFilePrompt[];
   resources?: SingleFileResource[];
+  uiResources?: SingleFileUIResource[];
 }

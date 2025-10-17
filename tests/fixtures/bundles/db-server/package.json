@@ -1,0 +1,7 @@
+{
+  "name": "db-server",
+  "version": "1.5.0",
+  "description": "Database MCP server with main field at root",
+  "main": "index.ts",
+  "type": "module"
+}

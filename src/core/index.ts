@@ -49,3 +49,9 @@ export {
 } from './dependency-resolver.js';
 
 export * from './output-formatter.js';
+
+// UI resource helpers (MCP-UI Foundation Layer)
+export {
+  createInlineHTMLResource,
+  isUIResource,
+} from './ui-resource.js';

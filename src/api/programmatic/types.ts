@@ -62,16 +62,38 @@ export interface PromptDefinition {
  *
  * Supports both static content (data) and dynamic content (functions).
  * Dynamic content functions are called at runtime when resources/read is requested.
+ *
+ * For UI resources (MCP-UI support):
+ * - URI should start with "ui://" to indicate a UI resource
+ * - mimeType should be one of:
+ *   - text/html: For inline HTML content (Foundation Layer)
+ *   - text/uri-list: For external URLs (Feature Layer)
+ *   - application/vnd.mcp-ui.remote-dom+javascript: For Remote DOM (Layer 3)
  */
 export interface ResourceDefinition {
   uri: string;
   name: string;
   description: string;
+  /**
+   * MIME type of the resource content
+   *
+   * Standard types: text/plain, application/json, image/png, etc.
+   *
+   * UI resource types (MCP-UI):
+   * - text/html: Inline HTML content rendered in sandboxed iframe
+   * - text/uri-list: External URL loaded in iframe
+   * - application/vnd.mcp-ui.remote-dom+javascript: Remote DOM rendering
+   */
   mimeType: string;
   /**
    * Resource content or function that generates content dynamically
    * - string/object/Buffer/Uint8Array: Static content served as-is
    * - function: Called at runtime, returns content (supports async)
+   *
+   * For UI resources (uri starting with ui://):
+   * - text/html: Provide complete HTML document as string
+   * - text/uri-list: Provide URL as string
+   * - Remote DOM: Provide JavaScript module code as string
    */
   content:
     | string

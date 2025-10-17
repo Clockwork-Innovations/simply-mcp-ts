@@ -6,7 +6,7 @@
 /**
  * Supported bundle output formats
  */
-export type BundleFormat = 'single-file' | 'standalone' | 'esm' | 'cjs';
+export type BundleFormat = 'single-file' | 'standalone' | 'package' | 'esm' | 'cjs';
 
 /**
  * Target platform for bundle

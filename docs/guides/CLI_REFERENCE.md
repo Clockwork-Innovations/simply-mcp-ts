@@ -87,6 +87,7 @@ Quick reference table of all available commands:
 | `simply-mcp-func` | `simplymcp-func` | Run functional API server | Explicit functional style |
 | `simply-mcp-interface` | `simplymcp-interface` | Run interface API server | Explicit interface style |
 | `simply-mcp bundle` | `simplymcp-bundle` | Bundle server for distribution | Production deployment |
+| `simply-mcp create-bundle` | - | Create package bundle from server file | Package creation |
 | `simply-mcp list` | - | List running servers | Server management |
 | `simply-mcp stop` | - | Stop running servers | Server management |
 | `simply-mcp config` | - | Manage configuration | Configuration management |
@@ -162,9 +163,15 @@ simply-mcp run [file..] [options]
 
 | Argument | Type | Required | Description |
 |----------|------|----------|-------------|
-| `file` | string | No* | Path to server file(s) or named server from config |
+| `file` | string | No* | Path to server file(s), package bundle directory, or named server from config |
 
 *Required unless using config file with `defaultServer` or discovering servers in current directory.
+
+**Note:** The `file` argument can be:
+- A single TypeScript/JavaScript file (e.g., `server.ts`)
+- A package bundle directory with `package.json` (e.g., `./my-server`)
+- A named server from configuration file
+- Multiple files for multi-server mode
 
 #### Options
 
@@ -200,6 +207,15 @@ simply-mcp run [file..] [options]
 |--------|------|---------|-------------|
 | `--dry-run` | boolean | false | Validate without starting server |
 | `--json` | boolean | false | Output as JSON (with --dry-run) |
+
+**Package Bundle Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--auto-install` | boolean | true | Auto-install dependencies for package bundles |
+| `--no-auto-install` | boolean | - | Disable automatic dependency installation |
+| `--package-manager <pm>` | string | auto-detect | Specify package manager (npm, pnpm, yarn, bun) |
+| `--force-install` | boolean | false | Force reinstall dependencies |
 
 #### API Style Values
 
@@ -285,11 +301,37 @@ simply-mcp run server.ts --style interface
 simply-mcp run server.ts --style functional
 ```
 
+**Package Bundles:**
+
+```bash
+# Run package bundle (auto-installs dependencies)
+simply-mcp run ./my-mcp-server
+
+# Run bundle without auto-install
+simply-mcp run ./my-mcp-server --no-auto-install
+
+# Force reinstall dependencies
+simply-mcp run ./my-mcp-server --force-install
+
+# Use specific package manager
+simply-mcp run ./my-mcp-server --package-manager pnpm
+simply-mcp run ./my-mcp-server --package-manager yarn
+simply-mcp run ./my-mcp-server --package-manager bun
+
+# Run bundle with HTTP transport
+simply-mcp run ./my-mcp-server --http --port 3000
+
+# Run bundle with verbose output
+simply-mcp run ./my-mcp-server --verbose
+```
+
 #### Related Guides
 
 - [Watch Mode Guide](./WATCH_MODE_GUIDE.md) - Complete watch mode documentation
 - [Dry-Run Guide](./DRY_RUN_GUIDE.md) - Validation and testing
 - [Getting Started](./GETTING_STARTED_GUIDE.md) - Basic usage
+- [Bundle Usage Guide](./BUNDLE_USAGE.md) - Running package bundles
+- [Bundle Creation Guide](./BUNDLE_CREATION.md) - Creating package bundles
 
 ---
 
@@ -635,7 +677,101 @@ simply-mcp bundle server.ts \
 ### Related Guides
 
 - [Bundling Guide](./BUNDLING.md) - Complete bundling documentation
+- [Bundle Creation Guide](./BUNDLE_CREATION.md) - Creating package bundles
 - [Deployment Guide](./DEPLOYMENT_GUIDE.md) - Production deployment
+
+---
+
+### simply-mcp create-bundle
+
+Create a package bundle from an existing server file.
+
+#### Syntax
+
+```bash
+simply-mcp create-bundle --from <source-file> --output <bundle-dir> [options]
+```
+
+#### Arguments
+
+| Option | Short | Type | Required | Description |
+|--------|-------|------|----------|-------------|
+| `--from <file>` | - | string | Yes | Source server file (.ts or .js) |
+| `--output <dir>` | - | string | Yes | Output bundle directory |
+| `--name <name>` | - | string | No | Bundle name (default: filename) |
+| `--description <desc>` | - | string | No | Bundle description |
+| `--author <name>` | - | string | No | Author name |
+| `--version <ver>` | - | string | No | Initial version (default: 1.0.0) |
+
+#### Description
+
+The `create-bundle` command creates a complete npm package from an existing server file. It automatically:
+
+1. Analyzes imports to detect dependencies
+2. Creates directory structure (`package.json`, `README.md`, etc.)
+3. Copies source file to `src/server.ts`
+4. Generates documentation templates
+
+#### Examples
+
+**Minimal example:**
+```bash
+simplymcp create-bundle --from server.ts --output ./my-bundle
+```
+
+**Full example:**
+```bash
+simplymcp create-bundle \
+  --from server.ts \
+  --output ./weather-server \
+  --name weather-mcp-server \
+  --description "Get weather forecasts for any location" \
+  --author "Jane Developer" \
+  --version 1.0.0
+```
+
+**Using bundle command (alternative):**
+```bash
+# Equivalent to create-bundle
+simplymcp bundle server.ts --format package --output ./my-bundle
+```
+
+#### Output Structure
+
+```
+my-bundle/
+├── package.json          # Generated with dependencies
+├── README.md             # Usage instructions
+├── .env.example          # Environment variable template
+└── src/
+    └── server.ts         # Your server code (copied)
+```
+
+#### Next Steps After Creation
+
+```bash
+# 1. Navigate to bundle
+cd my-bundle
+
+# 2. Install dependencies
+npm install
+
+# 3. Test the bundle
+npx simply-mcp run .
+
+# 4. Optionally publish
+npm publish
+```
+
+#### Related Commands
+
+- `simply-mcp bundle --format package` - Alternative way to create bundles
+- `simply-mcp run <bundle-dir>` - Run the created bundle
+
+#### Related Guides
+
+- [Bundle Creation Guide](./BUNDLE_CREATION.md) - Detailed creation instructions
+- [Bundle Usage Guide](./BUNDLE_USAGE.md) - Running bundles
 
 ---
 

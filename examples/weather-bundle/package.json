@@ -1,0 +1,31 @@
+{
+  "name": "weather-mcp-server",
+  "version": "1.0.0",
+  "description": "Weather forecast MCP server - example SimpleMCP package bundle",
+  "type": "module",
+  "main": "./src/server.ts",
+  "bin": {
+    "weather-server": "./src/server.ts"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "weather",
+    "forecast",
+    "simply-mcp"
+  ],
+  "author": "SimpleMCP Team",
+  "license": "MIT",
+  "dependencies": {
+    "simply-mcp": "latest"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Clockwork-Innovations/simply-mcp-ts.git",
+    "directory": "examples/weather-bundle"
+  }
+}

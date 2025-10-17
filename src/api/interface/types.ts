@@ -318,3 +318,122 @@ export type PromptArgs<T extends IPrompt> = T extends IPrompt<infer A> ? A : nev
  * Type utility to extract data type from a resource interface
  */
 export type ResourceData<T extends IResource> = T extends IResource<infer D> ? D : never;
+
+/**
+ * UI Resource Definition
+ *
+ * Defines a UI resource that can be rendered as an interactive UI element.
+ * Used with IUIResourceProvider interface for class-based UI resource definitions.
+ */
+export interface UIResourceDefinition {
+  /**
+   * UI resource URI (must start with "ui://")
+   */
+  uri: string;
+
+  /**
+   * Display name for the UI resource
+   */
+  name: string;
+
+  /**
+   * Description of what this UI resource does
+   */
+  description: string;
+
+  /**
+   * MIME type indicating rendering method:
+   * - text/html: Inline HTML content
+   * - text/uri-list: External URL
+   * - application/vnd.mcp-ui.remote-dom+javascript: Remote DOM
+   */
+  mimeType: 'text/html' | 'text/uri-list' | 'application/vnd.mcp-ui.remote-dom+javascript';
+
+  /**
+   * Content - can be static string or dynamic function
+   */
+  content: string | (() => string | Promise<string>);
+}
+
+/**
+ * UI Resource Provider Interface
+ *
+ * Implement this interface in your server class to provide UI resources
+ * that can be rendered as interactive UI elements in MCP clients.
+ *
+ * The getUIResources() method is called during server initialization to
+ * register all UI resources automatically.
+ *
+ * @example
+ * ```typescript
+ * import type { IServer, IUIResourceProvider, UIResourceDefinition } from 'simply-mcp';
+ *
+ * interface MyServer extends IServer {
+ *   name: 'my-server';
+ *   version: '1.0.0';
+ * }
+ *
+ * export default class MyServerImpl implements MyServer, IUIResourceProvider {
+ *   // Static HTML UI resource
+ *   getUIResources(): UIResourceDefinition[] {
+ *     return [
+ *       {
+ *         uri: 'ui://form/feedback',
+ *         name: 'Feedback Form',
+ *         description: 'User feedback form',
+ *         mimeType: 'text/html',
+ *         content: '<form><h2>Feedback</h2><textarea></textarea></form>'
+ *       },
+ *       {
+ *         uri: 'ui://dashboard/stats',
+ *         name: 'Stats Dashboard',
+ *         description: 'Live statistics',
+ *         mimeType: 'text/html',
+ *         content: async () => {
+ *           const stats = await this.getStats();
+ *           return `<div><h1>Users: ${stats.users}</h1></div>`;
+ *         }
+ *       },
+ *       {
+ *         uri: 'ui://analytics/dashboard',
+ *         name: 'Analytics Dashboard',
+ *         description: 'External analytics',
+ *         mimeType: 'text/uri-list',
+ *         content: 'https://analytics.example.com/dashboard'
+ *       },
+ *       {
+ *         uri: 'ui://counter/v1',
+ *         name: 'Interactive Counter',
+ *         description: 'Counter component',
+ *         mimeType: 'application/vnd.mcp-ui.remote-dom+javascript',
+ *         content: `
+ *           const card = remoteDOM.createElement('div', { style: { padding: '20px' } });
+ *           const title = remoteDOM.createElement('h2');
+ *           remoteDOM.setTextContent(title, 'Counter');
+ *           remoteDOM.appendChild(card, title);
+ *         `
+ *       }
+ *     ];
+ *   }
+ *
+ *   private async getStats() {
+ *     return { users: 42 };
+ *   }
+ * }
+ * ```
+ *
+ * @note The server implementation automatically validates UI resource URIs
+ *       and MIME types during registration.
+ */
+export interface IUIResourceProvider {
+  /**
+   * Return array of UI resource definitions
+   *
+   * This method is called during server initialization to register
+   * all UI resources. Each definition is validated to ensure:
+   * - URI starts with "ui://"
+   * - MIME type is one of the valid UI resource types
+   * - Content is provided (static or dynamic)
+   */
+  getUIResources(): UIResourceDefinition[];
+}

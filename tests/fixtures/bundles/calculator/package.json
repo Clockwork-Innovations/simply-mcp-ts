@@ -1,0 +1,7 @@
+{
+  "name": "calculator-server",
+  "version": "1.0.0",
+  "description": "Simple calculator MCP server for testing bundle execution",
+  "main": "src/server.ts",
+  "type": "module"
+}

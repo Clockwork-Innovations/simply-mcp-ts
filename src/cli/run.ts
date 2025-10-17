@@ -30,7 +30,7 @@ export type APIStyle = 'interface' | 'decorator' | 'functional' | 'programmatic'
  * If tsx is loaded as Node loader, use direct import for decorator support
  * Otherwise use tsImport API
  */
-async function loadTypeScriptFile(absolutePath: string): Promise<any> {
+export async function loadTypeScriptFile(absolutePath: string): Promise<any> {
   // Check if tsx is loaded as Node loader (via --import tsx)
   const tsxLoaded = process.execArgv.some(arg => arg.includes('tsx') || arg.includes('--import tsx'));
 
@@ -870,6 +870,21 @@ export const runCommand: CommandModule = {
       .option('watch-interval', {
         describe: 'Polling interval in milliseconds',
         type: 'number',
+      })
+      .option('auto-install', {
+        describe: 'Auto-install dependencies for package bundles (default: true)',
+        type: 'boolean',
+        default: true,
+      })
+      .option('package-manager', {
+        describe: 'Specify package manager (npm, pnpm, yarn, bun)',
+        type: 'string',
+        choices: ['npm', 'pnpm', 'yarn', 'bun'] as const,
+      })
+      .option('force-install', {
+        describe: 'Force reinstall dependencies even if already installed',
+        type: 'boolean',
+        default: false,
       });
   },
   handler: async (argv: any) => {
@@ -959,9 +974,21 @@ export const runCommand: CommandModule = {
       let resolvedFiles = [...files];
       let serverConfigs: Array<{ entry: string; merged: RunConfig }> = [];
 
-      // Resolve each file (could be file path or server name)
+      // Resolve each file (could be file path, server name, or package bundle)
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+
+        // First, check if this is a package bundle
+        const { isPackageBundle } = await import('./package-detector.js');
+        const isBundle = await isPackageBundle(file);
+
+        if (isBundle) {
+          // This is a package bundle - will be handled specially later
+          const merged = mergeRunConfig(config, cliOptions);
+          serverConfigs.push({ entry: file, merged });
+          continue;
+        }
+
         const serverConfig = resolveServerConfig(file, config);
 
         if (serverConfig) {
@@ -1070,6 +1097,29 @@ export const runCommand: CommandModule = {
 
       // Single server mode
       const filePath = resolvedFiles[0];
+
+      // Check if this is a package bundle
+      const { isPackageBundle, runPackageBundle } = await import('./package-detector.js').then(async (m) => ({
+        isPackageBundle: m.isPackageBundle,
+        runPackageBundle: (await import('./bundle-runner.js')).runPackageBundle
+      }));
+
+      const isBundle = await isPackageBundle(filePath);
+
+      if (isBundle) {
+        // Run as package bundle
+        await runPackageBundle(filePath, {
+          http: useHttp,
+          httpStateless: useHttpStateless,
+          port,
+          style: forceStyle,
+          verbose,
+          autoInstall: argv['auto-install'] ?? true,
+          packageManager: argv['package-manager'] as any,
+          forceInstall: argv['force-install'] ?? false,
+        });
+        return;
+      }
 
       // Detect or use forced style
       const style = forceStyle || (await detectAPIStyle(filePath));

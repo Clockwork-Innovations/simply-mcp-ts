@@ -1,0 +1,27 @@
+{
+  "name": "calculator-mcp-server",
+  "version": "1.0.0",
+  "description": "Simple calculator MCP server - minimal SimpleMCP package bundle example",
+  "type": "module",
+  "main": "./src/server.ts",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "calculator",
+    "simply-mcp",
+    "example"
+  ],
+  "author": "SimpleMCP Team",
+  "license": "MIT",
+  "dependencies": {
+    "simply-mcp": "latest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Clockwork-Innovations/simply-mcp-ts.git",
+    "directory": "examples/calculator-bundle"
+  }
+}

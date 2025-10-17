@@ -286,6 +286,119 @@ export class BuildMCPServer {
   }
 
   /**
+   * Add a UI resource to the server (convenience method for MCP-UI)
+   *
+   * This is syntactic sugar for addResource() that automatically
+   * validates UI resource URIs and MIME types according to MCP-UI specifications.
+   *
+   * UI resources are special resources that clients can render as interactive
+   * UI elements. They must have URIs starting with "ui://" and use specific
+   * MIME types to indicate the rendering method.
+   *
+   * @param uri - UI resource URI (must start with "ui://")
+   * @param name - Display name for the UI resource
+   * @param description - Description of what this UI resource does
+   * @param mimeType - MIME type indicating rendering method
+   * @param content - HTML content or function that generates content
+   * @returns this for chaining
+   *
+   * @throws {Error} If URI doesn't start with "ui://"
+   * @throws {Error} If MIME type is not a valid UI resource type
+   *
+   * @example
+   * ```typescript
+   * // Static HTML UI resource
+   * server.addUIResource(
+   *   'ui://product-card/v1',
+   *   'Product Card',
+   *   'Displays a product selector',
+   *   'text/html',
+   *   '<div><h2>Select a product</h2><button>Widget A</button></div>'
+   * );
+   * ```
+   *
+   * @example
+   * ```typescript
+   * // Dynamic HTML UI resource
+   * server.addUIResource(
+   *   'ui://dashboard/stats',
+   *   'Stats Dashboard',
+   *   'Live statistics dashboard',
+   *   'text/html',
+   *   () => {
+   *     const stats = getCurrentStats();
+   *     return `<div><h1>Active Users: ${stats.activeUsers}</h1></div>`;
+   *   }
+   * );
+   * ```
+   */
+  addUIResource(
+    uri: string,
+    name: string,
+    description: string,
+    mimeType: string,
+    content: string | (() => string | Promise<string>)
+  ): this {
+    // Validate UI resource URI
+    if (!uri.startsWith('ui://')) {
+      throw new Error(
+        `UI resource URI must start with "ui://", got: "${uri}"\n\n` +
+        `What went wrong:\n` +
+        `  UI resources must use the "ui://" URI scheme to be recognized by MCP-UI clients.\n\n` +
+        `To fix:\n` +
+        `  Change the URI to start with "ui://"\n\n` +
+        `Example:\n` +
+        `  server.addUIResource(\n` +
+        `    'ui://product-card/v1',  // Correct\n` +
+        `    'Product Card',\n` +
+        `    'Product selector',\n` +
+        `    'text/html',\n` +
+        `    '<div>...</div>'\n` +
+        `  );\n\n` +
+        `Tip: Use descriptive URIs like "ui://app-name/component-name/version"`
+      );
+    }
+
+    // Validate UI resource MIME type
+    const validMimeTypes = [
+      'text/html',
+      'text/uri-list',
+      'application/vnd.mcp-ui.remote-dom+javascript'
+    ];
+
+    if (!validMimeTypes.includes(mimeType)) {
+      throw new Error(
+        `Invalid UI resource MIME type: "${mimeType}"\n\n` +
+        `What went wrong:\n` +
+        `  UI resources must use specific MIME types to indicate how they should be rendered.\n\n` +
+        `Valid MIME types:\n` +
+        `  - text/html: Inline HTML content (Foundation Layer)\n` +
+        `  - text/uri-list: External URL (Feature Layer)\n` +
+        `  - application/vnd.mcp-ui.remote-dom+javascript: Remote DOM (Layer 3)\n\n` +
+        `To fix:\n` +
+        `  Use one of the valid MIME types listed above\n\n` +
+        `Example:\n` +
+        `  server.addUIResource(\n` +
+        `    'ui://product-card/v1',\n` +
+        `    'Product Card',\n` +
+        `    'Product selector',\n` +
+        `    'text/html',  // Valid MIME type\n` +
+        `    '<div>...</div>'\n` +
+        `  );`
+      );
+    }
+
+    // Delegate to addResource with validated parameters
+    return this.addResource({
+      uri,
+      name,
+      description,
+      mimeType,
+      content,
+    });
+  }
+
+  /**
    * Start the server
    * @param options Start options (overrides configuration from constructor)
    */

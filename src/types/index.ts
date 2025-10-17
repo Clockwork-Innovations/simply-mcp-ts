@@ -49,3 +49,11 @@ export type {
   DateSchema,
   Schema,
 } from './schema.js';
+
+// UI resource types (MCP-UI Foundation Layer)
+export type {
+  UIContentType,
+  UIResourcePayload,
+  UIResource,
+  UIResourceOptions,
+} from './ui.js';

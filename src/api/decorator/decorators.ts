@@ -514,3 +514,197 @@ export function resource(uri: string, options: { name?: string; mimeType?: strin
     return descriptor;
   };
 }
+
+/**
+ * @uiResource decorator
+ *
+ * Marks a method as an MCP UI resource. Supports both legacy and stage-3 decorator formats.
+ * This is a convenience decorator that automatically validates UI resource URIs and MIME types.
+ *
+ * UI resources are special resources that can be rendered as interactive UI elements in
+ * MCP clients. They must use the "ui://" URI scheme and support specific MIME types:
+ * - text/html: Inline HTML content (Foundation Layer)
+ * - text/uri-list: External URL (Feature Layer)
+ * - application/vnd.mcp-ui.remote-dom+javascript: Remote DOM (Layer 3)
+ *
+ * @param uri - UI resource URI (must start with "ui://")
+ * @param mimeType - MIME type indicating rendering method
+ * @param options - UI resource options
+ * @param options.name - Display name (defaults to method name)
+ * @param options.description - Resource description
+ * @returns Method decorator function
+ *
+ * @throws {TypeError} If URI doesn't start with "ui://"
+ * @throws {TypeError} If MIME type is not a valid UI resource type
+ *
+ * @example
+ * ```typescript
+ * import { MCPServer, uiResource } from 'simply-mcp';
+ *
+ * @MCPServer()
+ * class MyServer {
+ *   // Static HTML UI resource
+ *   @uiResource('ui://form/feedback', 'text/html', {
+ *     name: 'Feedback Form',
+ *     description: 'User feedback form'
+ *   })
+ *   getFeedbackForm() {
+ *     return '<form><h2>Feedback</h2><textarea></textarea></form>';
+ *   }
+ *
+ *   // Dynamic HTML UI resource
+ *   @uiResource('ui://dashboard/stats', 'text/html', {
+ *     name: 'Stats Dashboard'
+ *   })
+ *   async getStatsDashboard() {
+ *     const stats = await this.getStats();
+ *     return `<div><h1>Users: ${stats.users}</h1></div>`;
+ *   }
+ *
+ *   // External URL UI resource
+ *   @uiResource('ui://analytics/dashboard', 'text/uri-list', {
+ *     name: 'Analytics Dashboard'
+ *   })
+ *   getAnalyticsDashboard() {
+ *     return 'https://analytics.example.com/dashboard';
+ *   }
+ *
+ *   // Remote DOM UI resource
+ *   @uiResource('ui://counter/v1', 'application/vnd.mcp-ui.remote-dom+javascript', {
+ *     name: 'Interactive Counter'
+ *   })
+ *   getCounterUI() {
+ *     return `
+ *       const card = remoteDOM.createElement('div', { style: { padding: '20px' } });
+ *       const title = remoteDOM.createElement('h2');
+ *       remoteDOM.setTextContent(title, 'Counter');
+ *       remoteDOM.appendChild(card, title);
+ *     `;
+ *   }
+ * }
+ * ```
+ *
+ * @note The @uiResource decorator validates UI-specific constraints and delegates to @resource.
+ *       It follows the same pattern as the BuildMCPServer.addUIResource() method.
+ */
+export function uiResource(
+  uri: string,
+  mimeType: string,
+  options: { name?: string; description?: string } = {}
+) {
+  // Runtime validation - ensure uri is a string and starts with "ui://"
+  if (typeof uri !== 'string') {
+    throw new TypeError(
+      `@uiResource decorator expects a string URI as the first parameter, got ${typeof uri}.\n\n` +
+      `Correct usage:\n` +
+      `  @uiResource('ui://form/v1', 'text/html')                    // Basic usage\n` +
+      `  @uiResource('ui://form/v1', 'text/html', { name: 'Form' })  // With options\n\n` +
+      `Invalid usage:\n` +
+      `  @uiResource({ uri: '...' })  // Missing required parameters`
+    );
+  }
+
+  if (!uri.startsWith('ui://')) {
+    throw new TypeError(
+      `UI resource URI must start with "ui://", got: "${uri}"\n\n` +
+      `What went wrong:\n` +
+      `  UI resources must use the "ui://" URI scheme to be recognized by MCP-UI clients.\n\n` +
+      `To fix:\n` +
+      `  Change the URI to start with "ui://"\n\n` +
+      `Example:\n` +
+      `  @uiResource(\n` +
+      `    'ui://product-card/v1',  // Correct\n` +
+      `    'text/html',\n` +
+      `    { name: 'Product Card' }\n` +
+      `  )\n\n` +
+      `Tip: Use descriptive URIs like "ui://app-name/component-name/version"`
+    );
+  }
+
+  // Runtime validation - ensure mimeType is valid for UI resources
+  if (typeof mimeType !== 'string') {
+    throw new TypeError(
+      `@uiResource decorator expects a string MIME type as the second parameter, got ${typeof mimeType}.\n\n` +
+      `Correct usage:\n` +
+      `  @uiResource('ui://form/v1', 'text/html')  // Correct\n\n` +
+      `Invalid usage:\n` +
+      `  @uiResource('ui://form/v1', {})  // Wrong parameter type`
+    );
+  }
+
+  const validMimeTypes = [
+    'text/html',
+    'text/uri-list',
+    'application/vnd.mcp-ui.remote-dom+javascript'
+  ];
+
+  if (!validMimeTypes.includes(mimeType)) {
+    throw new TypeError(
+      `Invalid UI resource MIME type: "${mimeType}"\n\n` +
+      `What went wrong:\n` +
+      `  UI resources must use specific MIME types to indicate how they should be rendered.\n\n` +
+      `Valid MIME types:\n` +
+      `  - text/html: Inline HTML content (Foundation Layer)\n` +
+      `  - text/uri-list: External URL (Feature Layer)\n` +
+      `  - application/vnd.mcp-ui.remote-dom+javascript: Remote DOM (Layer 3)\n\n` +
+      `To fix:\n` +
+      `  Use one of the valid MIME types listed above\n\n` +
+      `Example:\n` +
+      `  @uiResource(\n` +
+      `    'ui://product-card/v1',\n` +
+      `    'text/html',  // Valid MIME type\n` +
+      `    { name: 'Product Card' }\n` +
+      `  );`
+    );
+  }
+
+  return function (
+    target: any,
+    propertyKeyOrContext: string | any,
+    descriptor?: PropertyDescriptor
+  ) {
+    // Handle both legacy and stage-3 decorator formats
+    const isStage3 = typeof propertyKeyOrContext === 'object' && propertyKeyOrContext !== null && 'kind' in propertyKeyOrContext;
+
+    if (isStage3) {
+      // Stage-3 decorators
+      const context = propertyKeyOrContext;
+      const propertyKey = context.name;
+      const fn = target;
+
+      // Use addInitializer to register metadata after class is constructed
+      context.addInitializer(function(this: any) {
+        const targetConstructor = this.constructor;
+        const resources = Reflect.getMetadata(RESOURCES_KEY, targetConstructor) || [];
+
+        resources.push({
+          methodName: propertyKey,
+          uri,
+          name: options.name || propertyKey,
+          description: options.description || extractDocstring(fn),
+          mimeType,
+        });
+
+        Reflect.defineMetadata(RESOURCES_KEY, resources, targetConstructor);
+      });
+    } else {
+      // Legacy decorators
+      const propertyKey = propertyKeyOrContext;
+      const targetConstructor = target.constructor;
+      const resources = Reflect.getMetadata(RESOURCES_KEY, targetConstructor) || [];
+      const fn = descriptor?.value || target[propertyKey];
+
+      resources.push({
+        methodName: propertyKey,
+        uri,
+        name: options.name || propertyKey,
+        description: options.description || extractDocstring(fn),
+        mimeType,
+      });
+
+      Reflect.defineMetadata(RESOURCES_KEY, resources, targetConstructor);
+    }
+
+    return descriptor;
+  };
+}

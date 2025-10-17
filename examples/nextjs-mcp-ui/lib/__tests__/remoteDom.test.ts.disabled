@@ -1,0 +1,658 @@
+/**
+ * Remote DOM Renderer Tests
+ *
+ * Comprehensive test suite for Remote DOM component serialization,
+ * deserialization, rendering, and DOM reconciliation.
+ *
+ * Layer 3 Phase 1: Foundation testing (30+ tests)
+ *
+ * @module lib/__tests__/remoteDom.test
+ */
+
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import {
+  RemoteDomRenderer,
+  createRemoteDomRenderer,
+  RemoteDomSerializer,
+  RemoteDomPerformance,
+} from '../remoteDom.js';
+import type { RemoteDomComponent, ComponentDefinition, DomDiff } from '../types.js';
+
+describe('Remote DOM Renderer', () => {
+  let renderer: RemoteDomRenderer;
+
+  beforeEach(() => {
+    renderer = createRemoteDomRenderer();
+  });
+
+  afterEach(() => {
+    if (renderer && !renderer.isDisposed()) {
+      try {
+        renderer.clear();
+      } catch (e) {
+        // Ignore clear errors in tests
+      }
+    }
+  });
+
+  describe('Initialization', () => {
+    it('should create a RemoteDomRenderer instance', () => {
+      expect(renderer).toBeInstanceOf(RemoteDomRenderer);
+    });
+
+    it('should start with empty components', () => {
+      expect(renderer.getComponentCount()).toBe(0);
+    });
+
+    it('should not be disposed initially', () => {
+      expect(() => renderer.getAllComponents()).not.toThrow();
+    });
+  });
+
+  describe('Component Serialization', () => {
+    it('should serialize a simple component', () => {
+      const component: RemoteDomComponent = {
+        id: 'test-1',
+        type: 'div',
+        props: { className: 'container' },
+        children: 'Hello World',
+      };
+
+      const serialized = renderer.serializeComponent(component);
+      expect(serialized).toContain('test-1');
+      expect(serialized).toContain('div');
+      expect(serialized).toContain('Hello World');
+    });
+
+    it('should serialize component with nested children', () => {
+      const component: RemoteDomComponent = {
+        id: 'parent',
+        type: 'div',
+        props: {},
+        children: [
+          {
+            id: 'child-1',
+            type: 'span',
+            props: { className: 'text' },
+            children: 'Child 1',
+          },
+          {
+            id: 'child-2',
+            type: 'span',
+            props: { className: 'text' },
+            children: 'Child 2',
+          },
+        ],
+      };
+
+      const serialized = renderer.serializeComponent(component);
+      expect(serialized).toContain('parent');
+      expect(serialized).toContain('child-1');
+      expect(serialized).toContain('child-2');
+    });
+
+    it('should serialize component with metadata', () => {
+      const component: RemoteDomComponent = {
+        id: 'dashboard',
+        type: 'section',
+        props: {},
+        children: 'Dashboard Content',
+        meta: {
+          'mcpui.dev/ui-preferred-frame-size': { width: 800, height: 600 },
+          'mcpui.dev/remote-dom': true,
+        },
+      };
+
+      const serialized = renderer.serializeComponent(component);
+      expect(serialized).toContain('dashboard');
+      expect(serialized).toContain('800');
+      expect(serialized).toContain('600');
+    });
+  });
+
+  describe('Component Deserialization', () => {
+    it('should deserialize a valid component', () => {
+      const component: RemoteDomComponent = {
+        id: 'test-1',
+        type: 'div',
+        props: { className: 'container' },
+        children: 'Hello World',
+      };
+
+      const serialized = renderer.serializeComponent(component);
+      const deserialized = renderer.deserializeComponent(serialized);
+
+      expect(deserialized.id).toBe('test-1');
+      expect(deserialized.type).toBe('div');
+      expect(deserialized.props.className).toBe('container');
+      expect(deserialized.children).toBe('Hello World');
+    });
+
+    it('should deserialize nested components', () => {
+      const component: RemoteDomComponent = {
+        id: 'parent',
+        type: 'div',
+        props: {},
+        children: [
+          {
+            id: 'child-1',
+            type: 'span',
+            props: {},
+            children: 'Child 1',
+          },
+        ],
+      };
+
+      const serialized = renderer.serializeComponent(component);
+      const deserialized = renderer.deserializeComponent(serialized);
+
+      expect(Array.isArray(deserialized.children)).toBe(true);
+      expect((deserialized.children as RemoteDomComponent[])[0].id).toBe('child-1');
+    });
+
+    it('should throw error for invalid JSON', () => {
+      expect(() => renderer.deserializeComponent('invalid json')).toThrow();
+    });
+
+    it('should throw error for malformed component', () => {
+      const invalid = JSON.stringify({ type: 'div' }); // Missing id and props
+      expect(() => renderer.deserializeComponent(invalid)).toThrow();
+    });
+
+    it('should throw error if renderer is disposed', () => {
+      const disposableRenderer = createRemoteDomRenderer();
+      disposableRenderer.dispose();
+      const component: RemoteDomComponent = {
+        id: 'test',
+        type: 'div',
+        props: {},
+        children: 'Test',
+      };
+
+      expect(() => disposableRenderer.serializeComponent(component)).toThrow('disposed');
+    });
+  });
+
+  describe('Component Rendering', () => {
+    it('should render a simple component', async () => {
+      const component: RemoteDomComponent = {
+        id: 'test-div',
+        type: 'div',
+        props: { className: 'container', id: 'my-div' },
+        children: 'Test Content',
+      };
+
+      const element = await renderer.renderRemote(component);
+
+      expect(element).toBeInstanceOf(HTMLElement);
+      expect(element.tagName).toBe('DIV');
+      expect(element.id).toBe('test-div');
+      expect(element.className).toContain('container');
+      expect(element.textContent).toContain('Test Content');
+    });
+
+    it('should render component with children', async () => {
+      const component: RemoteDomComponent = {
+        id: 'parent-div',
+        type: 'div',
+        props: {},
+        children: [
+          {
+            id: 'span-1',
+            type: 'span',
+            props: {},
+            children: 'Span 1',
+          },
+          {
+            id: 'span-2',
+            type: 'span',
+            props: {},
+            children: 'Span 2',
+          },
+        ],
+      };
+
+      const element = await renderer.renderRemote(component);
+
+      expect(element.tagName).toBe('DIV');
+      expect(element.children.length).toBe(2);
+      expect(element.children[0].tagName).toBe('SPAN');
+      expect(element.children[1].tagName).toBe('SPAN');
+    });
+
+    it('should render component with frame size metadata', async () => {
+      const component: RemoteDomComponent = {
+        id: 'framed-div',
+        type: 'div',
+        props: {},
+        children: 'Content',
+        meta: {
+          'mcpui.dev/ui-preferred-frame-size': { width: 400, height: 300 },
+        },
+      };
+
+      const element = await renderer.renderRemote(component);
+
+      expect(element.style.width).toBe('400px');
+      expect(element.style.height).toBe('300px');
+      expect(element.style.overflow).toBe('auto');
+    });
+
+    it('should track rendered components', async () => {
+      const component: RemoteDomComponent = {
+        id: 'tracked-div',
+        type: 'div',
+        props: {},
+        children: 'Test',
+      };
+
+      await renderer.renderRemote(component);
+
+      expect(renderer.getComponentCount()).toBe(1);
+      const retrieved = renderer.getElement('tracked-div');
+      expect(retrieved).toBeInstanceOf(HTMLElement);
+    });
+  });
+
+  describe('DOM Reconciliation', () => {
+    it('should detect new components', () => {
+      const oldTree: RemoteDomComponent[] = [];
+      const newTree: RemoteDomComponent[] = [
+        {
+          id: 'new-1',
+          type: 'div',
+          props: {},
+          children: 'New Component',
+        },
+      ];
+
+      const diffs = renderer.reconcileTree(oldTree, newTree);
+
+      expect(diffs).toHaveLength(1);
+      expect(diffs[0].type).toBe('insert');
+      expect(diffs[0].componentId).toBe('new-1');
+    });
+
+    it('should detect removed components', () => {
+      const oldTree: RemoteDomComponent[] = [
+        {
+          id: 'removed-1',
+          type: 'div',
+          props: {},
+          children: 'To Remove',
+        },
+      ];
+      const newTree: RemoteDomComponent[] = [];
+
+      const diffs = renderer.reconcileTree(oldTree, newTree);
+
+      expect(diffs).toHaveLength(1);
+      expect(diffs[0].type).toBe('remove');
+      expect(diffs[0].componentId).toBe('removed-1');
+    });
+
+    it('should detect updated components', () => {
+      const oldTree: RemoteDomComponent[] = [
+        {
+          id: 'updated-1',
+          type: 'div',
+          props: { className: 'old' },
+          children: 'Old',
+        },
+      ];
+      const newTree: RemoteDomComponent[] = [
+        {
+          id: 'updated-1',
+          type: 'div',
+          props: { className: 'new' },
+          children: 'New',
+        },
+      ];
+
+      const diffs = renderer.reconcileTree(oldTree, newTree);
+
+      expect(diffs).toHaveLength(1);
+      expect(diffs[0].type).toBe('update');
+      expect(diffs[0].componentId).toBe('updated-1');
+    });
+
+    it('should handle complex reconciliation', () => {
+      const oldTree: RemoteDomComponent[] = [
+        { id: 'a', type: 'div', props: {}, children: 'A' },
+        { id: 'b', type: 'div', props: {}, children: 'B' },
+        { id: 'c', type: 'div', props: {}, children: 'C' },
+      ];
+      const newTree: RemoteDomComponent[] = [
+        { id: 'a', type: 'div', props: { className: 'updated' }, children: 'A' },
+        { id: 'd', type: 'div', props: {}, children: 'D' },
+        { id: 'c', type: 'div', props: {}, children: 'C' },
+      ];
+
+      const diffs = renderer.reconcileTree(oldTree, newTree);
+
+      const updateDiffs = diffs.filter((d) => d.type === 'update');
+      const insertDiffs = diffs.filter((d) => d.type === 'insert');
+      const removeDiffs = diffs.filter((d) => d.type === 'remove');
+
+      expect(updateDiffs).toHaveLength(1); // 'a' updated
+      expect(insertDiffs).toHaveLength(1); // 'd' inserted
+      expect(removeDiffs).toHaveLength(1); // 'b' removed
+    });
+  });
+
+  describe('Component Updates', () => {
+    it('should update component properties', async () => {
+      const component: RemoteDomComponent = {
+        id: 'update-test',
+        type: 'div',
+        props: { className: 'old' },
+        children: 'Original',
+      };
+
+      await renderer.renderRemote(component);
+
+      renderer.updateComponent('update-test', {
+        props: { className: 'new' },
+        children: 'Updated',
+      });
+
+      expect(renderer.getComponentCount()).toBe(1);
+    });
+
+    it('should notify subscribers of updates', async () => {
+      const component: RemoteDomComponent = {
+        id: 'notify-test',
+        type: 'div',
+        props: {},
+        children: 'Test',
+      };
+
+      await renderer.renderRemote(component);
+
+      const updates: RemoteDomComponent[] = [];
+      const unsubscribe = renderer.onUpdate('notify-test', (updated) => {
+        updates.push(updated);
+      });
+
+      renderer.updateComponent('notify-test', { props: { className: 'updated' } });
+
+      expect(updates).toHaveLength(1);
+      expect(updates[0].props.className).toBe('updated');
+
+      unsubscribe();
+
+      // Should not notify after unsubscribe
+      renderer.updateComponent('notify-test', { props: { className: 'again' } });
+      expect(updates).toHaveLength(1);
+    });
+
+    it('should throw error updating non-existent component', () => {
+      expect(() => renderer.updateComponent('non-existent', { props: {} })).toThrow(
+        'not found'
+      );
+    });
+  });
+
+  describe('Component Retrieval', () => {
+    it('should get all components', async () => {
+      const comp1: RemoteDomComponent = {
+        id: 'comp-1',
+        type: 'div',
+        props: {},
+        children: 'Comp 1',
+      };
+      const comp2: RemoteDomComponent = {
+        id: 'comp-2',
+        type: 'div',
+        props: {},
+        children: 'Comp 2',
+      };
+
+      await renderer.renderRemote(comp1);
+      await renderer.renderRemote(comp2);
+
+      const all = renderer.getAllComponents();
+
+      expect(all).toHaveLength(2);
+      expect(all.map((c) => c.id)).toContain('comp-1');
+      expect(all.map((c) => c.id)).toContain('comp-2');
+    });
+
+    it('should get element by component ID', async () => {
+      const component: RemoteDomComponent = {
+        id: 'elem-test',
+        type: 'div',
+        props: { className: 'test' },
+        children: 'Test',
+      };
+
+      await renderer.renderRemote(component);
+      const element = renderer.getElement('elem-test');
+
+      expect(element).toBeInstanceOf(HTMLElement);
+      expect(element?.className).toBe('test');
+    });
+
+    it('should return undefined for non-existent element', () => {
+      const element = renderer.getElement('non-existent');
+      expect(element).toBeUndefined();
+    });
+  });
+
+  describe('Memory Management', () => {
+    it('should clear all components', async () => {
+      const component: RemoteDomComponent = {
+        id: 'clear-test',
+        type: 'div',
+        props: {},
+        children: 'Test',
+      };
+
+      await renderer.renderRemote(component);
+      expect(renderer.getComponentCount()).toBe(1);
+
+      renderer.clear();
+      expect(renderer.getComponentCount()).toBe(0);
+    });
+
+    it('should dispose renderer properly', async () => {
+      const disposeTestRenderer = createRemoteDomRenderer();
+      const component: RemoteDomComponent = {
+        id: 'dispose-test',
+        type: 'div',
+        props: {},
+        children: 'Test',
+      };
+
+      await disposeTestRenderer.renderRemote(component);
+      disposeTestRenderer.dispose();
+
+      expect(() => disposeTestRenderer.renderRemote(component)).toThrow('disposed');
+      expect(() => disposeTestRenderer.getAllComponents()).toThrow('disposed');
+    });
+
+    it('should not throw error when disposing already disposed renderer', () => {
+      const disposeAgainRenderer = createRemoteDomRenderer();
+      disposeAgainRenderer.dispose();
+      expect(() => disposeAgainRenderer.dispose()).not.toThrow();
+    });
+  });
+
+  describe('Serializer Utilities', () => {
+    it('should convert components to NDJSON', () => {
+      const components: RemoteDomComponent[] = [
+        { id: 'c1', type: 'div', props: {}, children: 'C1' },
+        { id: 'c2', type: 'span', props: {}, children: 'C2' },
+      ];
+
+      const ndjson = RemoteDomSerializer.toNDJSON(components);
+      const lines = ndjson.split('\n').filter((line) => line.trim());
+
+      expect(lines).toHaveLength(2);
+      expect(lines[0]).toContain('c1');
+      expect(lines[1]).toContain('c2');
+    });
+
+    it('should parse NDJSON back to components', () => {
+      const components: RemoteDomComponent[] = [
+        { id: 'c1', type: 'div', props: {}, children: 'C1' },
+        { id: 'c2', type: 'span', props: {}, children: 'C2' },
+      ];
+
+      const ndjson = RemoteDomSerializer.toNDJSON(components);
+      const parsed = RemoteDomSerializer.fromNDJSON(ndjson);
+
+      expect(parsed).toHaveLength(2);
+      expect(parsed[0].id).toBe('c1');
+      expect(parsed[1].id).toBe('c2');
+    });
+
+    it('should convert component to binary format', () => {
+      const component: RemoteDomComponent = {
+        id: 'binary-test',
+        type: 'div',
+        props: {},
+        children: 'Binary',
+      };
+
+      const binary = RemoteDomSerializer.toBinary(component);
+
+      expect(binary).toBeInstanceOf(Uint8Array);
+      expect(binary.length).toBeGreaterThan(0);
+    });
+
+    it('should parse binary format back to component', () => {
+      const component: RemoteDomComponent = {
+        id: 'binary-test',
+        type: 'div',
+        props: {},
+        children: 'Binary',
+      };
+
+      const binary = RemoteDomSerializer.toBinary(component);
+      const parsed = RemoteDomSerializer.fromBinary(binary);
+
+      expect(parsed.id).toBe('binary-test');
+      expect(parsed.type).toBe('div');
+      expect(parsed.children).toBe('Binary');
+    });
+  });
+
+  describe('Performance Utilities', () => {
+    it('should calculate component tree size', () => {
+      const component: RemoteDomComponent = {
+        id: 'size-test',
+        type: 'div',
+        props: { className: 'test' },
+        children: 'Content',
+      };
+
+      const size = RemoteDomPerformance.calculateTreeSize(component);
+
+      expect(size).toBeGreaterThan(0);
+      expect(typeof size).toBe('number');
+    });
+
+    it('should estimate memory usage', async () => {
+      const comp1: RemoteDomComponent = {
+        id: 'mem-1',
+        type: 'div',
+        props: {},
+        children: 'Memory Test 1',
+      };
+      const comp2: RemoteDomComponent = {
+        id: 'mem-2',
+        type: 'div',
+        props: {},
+        children: 'Memory Test 2',
+      };
+
+      await renderer.renderRemote(comp1);
+      await renderer.renderRemote(comp2);
+
+      const usage = RemoteDomPerformance.estimateMemoryUsage(renderer);
+
+      expect(usage.components).toBe(2);
+      expect(usage.bytes).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Integration Tests', () => {
+    it('should handle complete workflow', async () => {
+      // Create components
+      const parent: RemoteDomComponent = {
+        id: 'parent-workflow',
+        type: 'div',
+        props: { className: 'container' },
+        children: [
+          {
+            id: 'child-1',
+            type: 'span',
+            props: {},
+            children: 'Child 1',
+          },
+        ],
+      };
+
+      // Render
+      const element = await renderer.renderRemote(parent);
+      expect(element.children).toHaveLength(1);
+
+      // Serialize
+      const serialized = renderer.serializeComponent(parent);
+      expect(serialized).toContain('parent-workflow');
+
+      // Update
+      renderer.updateComponent('parent-workflow', {
+        props: { className: 'updated-container' },
+      });
+
+      // Reconcile
+      const newTree: RemoteDomComponent[] = [
+        {
+          id: 'parent-workflow',
+          type: 'div',
+          props: { className: 'updated-container' },
+          children: [
+            { id: 'child-1', type: 'span', props: {}, children: 'Child 1' },
+            { id: 'child-2', type: 'span', props: {}, children: 'Child 2' },
+          ],
+        },
+      ];
+
+      const diffs = renderer.reconcileTree([parent], newTree);
+      expect(diffs.length).toBeGreaterThan(0);
+
+      // Cleanup
+      renderer.clear();
+      expect(renderer.getComponentCount()).toBe(0);
+    });
+
+    it('should handle performance with many components', async () => {
+      const components: RemoteDomComponent[] = [];
+
+      // Create 100 components
+      for (let i = 0; i < 100; i++) {
+        const component: RemoteDomComponent = {
+          id: `perf-comp-${i}`,
+          type: 'div',
+          props: { className: 'perf-test' },
+          children: `Component ${i}`,
+        };
+        components.push(component);
+        await renderer.renderRemote(component);
+      }
+
+      expect(renderer.getComponentCount()).toBe(100);
+
+      const all = renderer.getAllComponents();
+      expect(all).toHaveLength(100);
+
+      const usage = RemoteDomPerformance.estimateMemoryUsage(renderer);
+      expect(usage.components).toBe(100);
+
+      renderer.clear();
+      expect(renderer.getComponentCount()).toBe(0);
+    });
+  });
+});

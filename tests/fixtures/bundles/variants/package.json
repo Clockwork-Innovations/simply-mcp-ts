@@ -1,0 +1,7 @@
+{
+  "name": "variants-server",
+  "version": "1.0.0",
+  "description": "Test server with multiple entry point field variants",
+  "module": "src/server.ts",
+  "type": "module"
+}

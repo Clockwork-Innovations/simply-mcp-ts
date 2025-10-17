@@ -1,0 +1,9 @@
+{
+  "name": "weather-server",
+  "version": "2.0.0",
+  "description": "Weather MCP server with bin field for testing",
+  "bin": {
+    "weather-server": "src/server.ts"
+  },
+  "type": "module"
+}

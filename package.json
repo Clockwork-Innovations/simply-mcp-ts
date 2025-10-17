@@ -13,6 +13,11 @@
       "import": "./dist/src/index.js",
       "default": "./dist/src/index.js"
     },
+    "./client": {
+      "types": "./dist/src/client/index.d.ts",
+      "import": "./dist/src/client/index.js",
+      "default": "./dist/src/client/index.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
@@ -122,8 +127,10 @@
     "@jest/globals": "^30.2.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24",
+    "@types/react": "^19.2.2",
     "@types/yargs": "^17.0.33",
     "jest": "^30.2.0",
+    "react": "^19.2.0",
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2"
   }
