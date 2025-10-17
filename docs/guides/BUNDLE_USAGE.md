@@ -792,6 +792,6 @@ npm version major  # 1.1.0 -> 2.0.0
 
 ---
 
-**Version:** 2.5.0+
-**Last Updated:** 2025-10-16
+**Version:** 3.0.0+
+**Last Updated:** 2025-10-17
 **License:** MIT

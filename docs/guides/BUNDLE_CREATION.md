@@ -426,7 +426,7 @@ dist/
 ```json
 {
   "dependencies": {
-    "simply-mcp": "^2.5.0",
+    "simply-mcp": "^3.0.0",
     "axios": "^1.6.0",
     "dotenv": "^16.0.0"
   },
@@ -551,7 +551,7 @@ Update package.json:
 ```json
 {
   "dependencies": {
-    "simply-mcp": "2.5.0",        // Exact version
+    "simply-mcp": "3.0.0",        // Exact version
     "axios": "~1.6.0",            // Patch updates only
     "dotenv": "^16.0.0"           // Minor updates allowed
   }
@@ -921,6 +921,6 @@ npx simply-mcp run .
 
 ---
 
-**Version:** 2.5.0+
-**Last Updated:** 2025-10-16
+**Version:** 3.0.0+
+**Last Updated:** 2025-10-17
 **License:** MIT
