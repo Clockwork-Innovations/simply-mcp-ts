@@ -779,8 +779,8 @@ npm version major  # 1.1.0 -> 2.0.0
 
 - [Bundle Creation Guide](./BUNDLE_CREATION.md) - How to create bundles
 - [CLI Reference](./CLI_REFERENCE.md) - Complete CLI documentation
-- [Getting Started](./GETTING_STARTED_GUIDE.md) - Basic SimpleMCP usage
-- [Transport Guide](./TRANSPORT_GUIDE.md) - HTTP and STDIO transports
+- [Quick Start](./QUICK_START.md) - 5-minute intro to SimpleMCP
+- [Documentation Index](../README.md) - Complete documentation map
 
 ---
 

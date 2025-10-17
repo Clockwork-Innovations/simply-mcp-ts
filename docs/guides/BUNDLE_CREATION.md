@@ -908,7 +908,7 @@ npx simply-mcp run .
 
 - [Bundle Usage Guide](./BUNDLE_USAGE.md) - Running bundles
 - [CLI Reference](./CLI_REFERENCE.md) - Complete CLI documentation
-- [Getting Started](./GETTING_STARTED_GUIDE.md) - Basic usage
+- [Quick Start](./QUICK_START.md) - 5-minute intro to SimpleMCP
 - [Bundling Guide](./BUNDLING.md) - Advanced bundling
 
 ---

@@ -714,8 +714,8 @@ Choose based on your preference!
 
 ## See Also
 
-- [Interface API Guide](../guides/INTERFACE_API_GUIDE.md) - Complete documentation
-- [Decorator API Guide](../development/DECORATOR-API.md) - Decorator reference
+- [Interface API Reference](../guides/INTERFACE_API_REFERENCE.md) - Complete documentation
+- [Decorator API Reference](../guides/DECORATOR_API_REFERENCE.md) - Decorator reference
 - [Examples](../../examples/) - See both APIs in action
   - `interface-*.ts` - Interface API examples
   - `class-*.ts` - Decorator API examples

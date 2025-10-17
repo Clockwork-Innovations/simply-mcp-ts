@@ -94,7 +94,7 @@ export default class Calculator {
 }
 ```
 
-> **JSDoc Integration:** JSDoc comments are automatically extracted and become tool and parameter descriptions visible to AI agents. See [Decorator API Guide](./docs/guides/DECORATOR_API_GUIDE.md) for details.
+> **JSDoc Integration:** JSDoc comments are automatically extracted and become tool and parameter descriptions visible to AI agents. See [Decorator API Reference](./docs/guides/DECORATOR_API_REFERENCE.md) for details.
 
 
 > **Important:** The class must be exported (using `export default` or named export). Non-exported classes are never evaluated by JavaScript's module system, so decorators won't run.
@@ -535,7 +535,7 @@ npx simply-mcp run weather-service.ts --http --port 3000
 
 ### Learn More
 
-See the [Interface API Guide](./docs/guides/INTERFACE_API_GUIDE.md) for complete documentation including:
+See the [Interface API Reference](./docs/guides/INTERFACE_API_REFERENCE.md) for complete documentation including:
 - TypeScript to Zod schema conversion
 - JSDoc validation tags
 - Template interpolation
@@ -754,18 +754,18 @@ Tests verify:
 
 ### Learn More
 
-- [MCP Builder Guide](./docs/guides/MCP_BUILDER_GUIDE.md) - Complete guide
+- [MCP Builder API Reference](./docs/guides/MCCPBUILDER_API_REFERENCE.md) - Complete guide
 - [Example Servers](./examples/) - Working examples
 
 ## Documentation
 
 ### Core Guides
-- [Quick Start](./src/docs/QUICK-START.md) - Get started in 5 minutes
-- [Interface API Guide](./docs/guides/INTERFACE_API_GUIDE.md) - Complete Interface API documentation
-- [Decorator API](./docs/development/DECORATOR-API.md) - Using decorators
+- [Quick Start](./docs/guides/QUICK_START.md) - Get started in 5 minutes
+- [Interface API Reference](./docs/guides/INTERFACE_API_REFERENCE.md) - Complete Interface API documentation
+- [Decorator API Reference](./docs/guides/DECORATOR_API_REFERENCE.md) - Using decorators
 - [Import Style Guide](./docs/development/IMPORT_STYLE_GUIDE.md) - Import patterns and best practices
-- [HTTP Transport](./src/docs/HTTP-TRANSPORT.md) - HTTP server setup
-- [Handler Development](./src/docs/guides/HANDLER-DEVELOPMENT.md) - Creating handlers
+- [Configuration Guide](./docs/guides/CONFIGURATION.md) - Environment and runtime options
+- [Documentation Index](./docs/README.md) - Complete documentation map with all guides organized by topic
 
 ### Advanced Topics
 - [Binary Content](./src/docs/features/binary-content.md) - Working with images/files

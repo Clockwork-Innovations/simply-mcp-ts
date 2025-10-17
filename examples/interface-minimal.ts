@@ -24,7 +24,7 @@
  *   npx simply-mcp run examples/interface-minimal.ts --dry-run
  *
  * Learn More:
- *   See docs/guides/INTERFACE_API_GUIDE.md for complete documentation
+ *   See docs/guides/INTERFACE_API_REFERENCE.md for complete documentation
  */
 
 import type { ITool, IServer } from 'simply-mcp';

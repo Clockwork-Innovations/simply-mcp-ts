@@ -29,7 +29,7 @@
  *   npx simply-mcp run examples/interface-advanced.ts --watch
  *
  * Learn More:
- *   See docs/guides/INTERFACE_API_GUIDE.md for complete documentation
+ *   See docs/guides/INTERFACE_API_REFERENCE.md for complete documentation
  */
 
 import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';

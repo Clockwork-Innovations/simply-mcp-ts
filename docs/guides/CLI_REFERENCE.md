@@ -329,7 +329,7 @@ simply-mcp run ./my-mcp-server --verbose
 
 - [Watch Mode Guide](./WATCH_MODE_GUIDE.md) - Complete watch mode documentation
 - [Dry-Run Guide](./DRY_RUN_GUIDE.md) - Validation and testing
-- [Getting Started](./GETTING_STARTED_GUIDE.md) - Basic usage
+- [Quick Start](./QUICK_START.md) - 5-minute intro to SimpleMCP
 - [Bundle Usage Guide](./BUNDLE_USAGE.md) - Running package bundles
 - [Bundle Creation Guide](./BUNDLE_CREATION.md) - Creating package bundles
 
@@ -1769,7 +1769,7 @@ This CLI reference documents all commands, options, and usage patterns for Simpl
 - **Production features**: Bundling, minification, deployment
 
 **Next Steps:**
-- [Getting Started Guide](./GETTING_STARTED_GUIDE.md) - Basic usage
+- [Quick Start](./QUICK_START.md) - 5-minute intro
 - [Watch Mode Guide](./WATCH_MODE_GUIDE.md) - Auto-restart development
 - [Bundling Guide](./BUNDLING.md) - Create distributions
 - [Deployment Guide](./DEPLOYMENT_GUIDE.md) - Production deployment
