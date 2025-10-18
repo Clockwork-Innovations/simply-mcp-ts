@@ -76,6 +76,48 @@ export interface SingleFileUIResource {
 }
 
 /**
+ * Single-file router definition
+ *
+ * Routers group related tools together, making them discoverable through a single
+ * router tool. This is useful for organizing large APIs and improving discoverability.
+ *
+ * @example
+ * ```typescript
+ * import { defineRouter } from 'simply-mcp';
+ *
+ * const weatherRouter = defineRouter({
+ *   name: 'weather-tools',
+ *   description: 'Weather information tools',
+ *   tools: ['get-weather', 'get-forecast']
+ * });
+ * ```
+ */
+export interface SingleFileRouter {
+  /**
+   * Router name (kebab-case recommended)
+   * Used as the router tool name
+   */
+  name: string;
+
+  /**
+   * Router description
+   * Explains what this group of tools does
+   */
+  description: string;
+
+  /**
+   * Array of tool names to include in this router
+   * Tool names must match the names of tools defined in the tools array
+   */
+  tools: string[];
+
+  /**
+   * Optional metadata for the router
+   */
+  metadata?: Record<string, unknown>;
+}
+
+/**
  * Server configuration options
  */
 export interface ServerOptions {
@@ -99,4 +141,5 @@ export interface SingleFileMCPConfig {
   prompts?: SingleFilePrompt[];
   resources?: SingleFileResource[];
   uiResources?: SingleFileUIResource[];
+  routers?: SingleFileRouter[];
 }

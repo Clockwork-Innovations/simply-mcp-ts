@@ -1,0 +1,23 @@
+{
+  "name": "weather-router-example",
+  "version": "1.0.0",
+  "description": "Weather service demonstrating router pattern with simply-mcp",
+  "type": "module",
+  "scripts": {
+    "start": "npx tsx server.ts",
+    "start:http": "npx tsx server.ts --http --port 3000"
+  },
+  "keywords": [
+    "mcp",
+    "router",
+    "weather",
+    "example"
+  ],
+  "dependencies": {
+    "simply-mcp": "workspace:*",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1"
+  }
+}

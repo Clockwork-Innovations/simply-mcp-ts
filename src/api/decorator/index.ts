@@ -158,6 +158,7 @@ export type {
   PromptMetadata,
   ResourceMetadata,
   ParameterInfo,
+  RouterMetadata,
 } from './types.js';
 
 // ============================================================================
@@ -169,6 +170,7 @@ export {
   tool,
   prompt,
   resource,
+  Router,
 } from './decorators.js';
 
 // ============================================================================
@@ -180,6 +182,7 @@ export {
   getTools,
   getPrompts,
   getResources,
+  getRouters,
   extractJSDoc,
   getParameterInfo,
   getParameterNames,

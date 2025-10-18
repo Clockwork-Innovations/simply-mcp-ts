@@ -277,3 +277,58 @@ export interface ParameterInfo {
    */
   type?: any;
 }
+
+/**
+ * Router metadata
+ *
+ * Metadata extracted from @Router decorated classes.
+ * Contains information needed to register and configure a router tool.
+ *
+ * @example
+ * ```typescript
+ * import { getRouters } from 'simply-mcp';
+ *
+ * @MCPServer()
+ * @Router({
+ *   name: 'weather-tools',
+ *   description: 'Weather-related operations',
+ *   tools: ['getWeather', 'getForecast']
+ * })
+ * class MyServer {
+ *   @tool('Get current weather')
+ *   getWeather(city: string) {
+ *     return `Weather in ${city}`;
+ *   }
+ *
+ *   @tool('Get weather forecast')
+ *   getForecast(city: string) {
+ *     return `Forecast for ${city}`;
+ *   }
+ * }
+ *
+ * const routers = getRouters(MyServer);
+ * console.log(routers[0].name); // 'weather-tools'
+ * console.log(routers[0].tools); // ['getWeather', 'getForecast']
+ * ```
+ */
+export interface RouterMetadata {
+  /**
+   * Router name (used as the router tool name)
+   */
+  name: string;
+
+  /**
+   * Router description
+   */
+  description: string;
+
+  /**
+   * Array of method names to assign to this router
+   */
+  tools: string[];
+
+  /**
+   * Optional metadata for the router
+   */
+  metadata?: Record<string, unknown>;
+}

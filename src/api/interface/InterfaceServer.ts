@@ -6,7 +6,7 @@
  */
 
 import { BuildMCPServer } from '../programmatic/BuildMCPServer.js';
-import type { StartOptions } from '../programmatic/types.js';
+import type { StartOptions, RouterToolDefinition } from '../programmatic/types.js';
 
 /**
  * InterfaceServer - MCP Protocol Wrapper
@@ -159,6 +159,55 @@ export class InterfaceServer {
     return await this.buildServer.readResourceDirect(uri);
   }
 
+  // ===== Router Methods =====
+
+  /**
+   * Add a router tool to organize related tools
+   *
+   * Routers are special tools that group related tools together.
+   * When called, they return a list of their assigned tools.
+   *
+   * @param definition Router definition with name, description, and optional tools
+   * @returns this for method chaining
+   *
+   * @example
+   * ```typescript
+   * server
+   *   .addRouterTool({
+   *     name: 'weather_tools',
+   *     description: 'Weather information tools',
+   *     tools: ['get_weather', 'get_forecast']
+   *   })
+   *   .assignTools('weather_tools', ['get_weather', 'get_forecast']);
+   * ```
+   */
+  addRouterTool(definition: RouterToolDefinition): this {
+    this.buildServer.addRouterTool(definition);
+    return this;
+  }
+
+  /**
+   * Assign tools to a router
+   *
+   * Tools can be assigned to multiple routers.
+   * Assigned tools are hidden from the main tools list (unless flattenRouters is enabled).
+   *
+   * @param routerName Name of the router
+   * @param toolNames Array of tool names to assign
+   * @returns this for method chaining
+   *
+   * @example
+   * ```typescript
+   * server
+   *   .addRouterTool({ name: 'admin_tools', description: 'Admin tools' })
+   *   .assignTools('admin_tools', ['reset_cache', 'clear_logs']);
+   * ```
+   */
+  assignTools(routerName: string, toolNames: string[]): this {
+    this.buildServer.assignTools(routerName, toolNames);
+    return this;
+  }
+
   // ===== Lifecycle Methods =====
 
   /**
@@ -186,9 +235,17 @@ export class InterfaceServer {
 
   /**
    * Get statistics about registered items
-   * @returns Stats with counts of tools, prompts, and resources
+   * @returns Stats with counts of tools, prompts, resources, and router information
    */
-  getStats(): { tools: number; prompts: number; resources: number } {
+  getStats(): {
+    tools: number;
+    routers: number;
+    assignedTools: number;
+    unassignedTools: number;
+    prompts: number;
+    resources: number;
+    flattenRouters: boolean;
+  } {
     return this.buildServer.getStats();
   }
 

@@ -101,11 +101,13 @@ export {
   tool,
   prompt,
   resource,
+  Router,
   type ServerConfig,
   type JSDocInfo,
   type ToolMetadata,
   type PromptMetadata,
   type ResourceMetadata,
+  type RouterMetadata,
 } from './decorators.js';
 
 // ============================================================================
@@ -116,12 +118,16 @@ export {
   defineTool,
   definePrompt,
   defineResource,
+  defineUIResource,
+  defineRouter,
   createMCP,
   MCPBuilder,
   Schema,
   type SingleFileTool,
   type SingleFilePrompt,
   type SingleFileResource,
+  type SingleFileUIResource,
+  type SingleFileRouter,
   type ServerOptions,
   type SingleFileMCPConfig,
 } from './single-file-types.js';
@@ -253,6 +259,7 @@ export type {
   PromptDefinition,
   ResourceDefinition,
   ExecuteFunction,
+  RouterToolDefinition,
 } from './api/programmatic/types.js';
 
 // Alias for backward compatibility

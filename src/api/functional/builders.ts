@@ -32,6 +32,7 @@ import type {
   SingleFilePrompt,
   SingleFileResource,
   SingleFileUIResource,
+  SingleFileRouter,
   ServerOptions,
 } from './types.js';
 import { Schema } from '../../schema-builder.js';
@@ -66,6 +67,30 @@ export function definePrompt(prompt: SingleFilePrompt): SingleFilePrompt {
  */
 export function defineResource(resource: SingleFileResource): SingleFileResource {
   return resource;
+}
+
+/**
+ * Helper function to define a router with type safety
+ *
+ * Routers group related tools together for better organization and discoverability.
+ * This helper provides type checking for router definitions.
+ *
+ * @param router - Router definition
+ * @returns The same router definition (for type checking)
+ *
+ * @example
+ * ```typescript
+ * import { defineRouter } from 'simply-mcp';
+ *
+ * const weatherRouter = defineRouter({
+ *   name: 'weather-tools',
+ *   description: 'Weather information and forecast tools',
+ *   tools: ['get-weather', 'get-forecast', 'get-alerts']
+ * });
+ * ```
+ */
+export function defineRouter(router: SingleFileRouter): SingleFileRouter {
+  return router;
 }
 
 /**
@@ -260,6 +285,47 @@ export class MCPBuilder {
     const validated = defineUIResource(uiResource);
     this.config.uiResources = this.config.uiResources || [];
     this.config.uiResources.push(validated);
+    return this;
+  }
+
+  /**
+   * Add a router to the server
+   *
+   * Routers group related tools together for better organization and discoverability.
+   * Tool names in the router must reference tools defined in the tools array.
+   *
+   * @param router - Router definition
+   * @returns this for chaining
+   *
+   * @example
+   * ```typescript
+   * import { createMCP } from 'simply-mcp';
+   * import { z } from 'zod';
+   *
+   * const server = createMCP({ name: 'weather-server', version: '1.0.0' })
+   *   .tool({
+   *     name: 'get-weather',
+   *     description: 'Get current weather',
+   *     parameters: z.object({ city: z.string() }),
+   *     execute: async (args) => `Weather in ${args.city}`
+   *   })
+   *   .tool({
+   *     name: 'get-forecast',
+   *     description: 'Get weather forecast',
+   *     parameters: z.object({ city: z.string() }),
+   *     execute: async (args) => `Forecast for ${args.city}`
+   *   })
+   *   .router({
+   *     name: 'weather-tools',
+   *     description: 'Weather information tools',
+   *     tools: ['get-weather', 'get-forecast']
+   *   })
+   *   .build();
+   * ```
+   */
+  router(router: SingleFileRouter): this {
+    this.config.routers = this.config.routers || [];
+    this.config.routers.push(router);
     return this;
   }
 

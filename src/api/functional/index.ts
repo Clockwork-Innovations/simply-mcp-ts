@@ -46,6 +46,8 @@ export type {
   SingleFileTool,
   SingleFilePrompt,
   SingleFileResource,
+  SingleFileUIResource,
+  SingleFileRouter,
   ServerOptions,
   SingleFileMCPConfig,
 } from './types.js';
@@ -56,6 +58,8 @@ export {
   defineTool,
   definePrompt,
   defineResource,
+  defineUIResource,
+  defineRouter,
   createMCP,
   MCPBuilder,
   Schema,

@@ -14,6 +14,7 @@ export type {
   ToolResult,
   PromptArgs,
   ResourceData,
+  RouterToolDefinition,
 } from './types.js';
 
 // Parser

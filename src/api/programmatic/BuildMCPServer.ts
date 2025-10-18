@@ -79,6 +79,7 @@ import type {
   TransportType,
   StartOptions,
   InternalTool,
+  RouterToolDefinition,
 } from './types.js';
 
 /**
@@ -95,6 +96,11 @@ export class BuildMCPServer {
   private transports: Map<string, StreamableHTTPServerTransport> = new Map();
   private isRunning: boolean = false;
   private dependencies?: ParsedDependencies;
+
+  // Router management
+  private routers: Set<string> = new Set();
+  private toolToRouters: Map<string, Set<string>> = new Map();
+  private routerToTools: Map<string, Set<string>> = new Map();
 
   /**
    * Create a new BuildMCPServer
@@ -114,6 +120,7 @@ export class BuildMCPServer {
       capabilities: options.capabilities || {},
       dependencies: options.dependencies || undefined,
       autoInstall: options.autoInstall,
+      flattenRouters: options.flattenRouters ?? false, // Default to false (hide router-assigned tools)
     } as Required<BuildMCPServerOptions>;
 
     this.handlerManager = new HandlerManager({
@@ -201,6 +208,233 @@ export class BuildMCPServer {
     });
 
     return this;
+  }
+
+  /**
+   * Add a router tool to the server
+   * Router tools are special tools that group other tools together.
+   * When called, a router returns a list of its assigned tools in MCP format.
+   *
+   * @param definition Router tool definition
+   * @returns this for chaining
+   */
+  addRouterTool(definition: RouterToolDefinition): this {
+    if (this.isRunning) {
+      throw new Error(
+        `Cannot add router tools after server has started\n\n` +
+        `What went wrong:\n` +
+        `  The server is already running and cannot accept new router tools.\n\n` +
+        `To fix:\n` +
+        `  1. Add all router tools before calling server.start()\n` +
+        `  2. Or stop the server, add router tools, then restart\n\n` +
+        `Example:\n` +
+        `  // Correct order:\n` +
+        `  server.addRouterTool({ ... });\n` +
+        `  await server.start();\n\n` +
+        `  // Incorrect order:\n` +
+        `  await server.start();\n` +
+        `  server.addRouterTool({ ... }); // ERROR!`
+      );
+    }
+
+    // Validate router name doesn't conflict with existing tools
+    if (this.tools.has(definition.name)) {
+      throw new Error(
+        `Router '${definition.name}' conflicts with an existing tool\n\n` +
+        `What went wrong:\n` +
+        `  A tool with the name '${definition.name}' is already registered.\n\n` +
+        `To fix:\n` +
+        `  1. Choose a different name for the router\n` +
+        `  2. Remove the conflicting tool first\n` +
+        `  3. Use a naming convention like 'router-name' to avoid conflicts\n\n` +
+        `Tip: Router names must be unique and not conflict with tool names.`
+      );
+    }
+
+    // Validate router name is unique
+    if (this.routers.has(definition.name)) {
+      throw new Error(
+        `Router '${definition.name}' is already registered\n\n` +
+        `What went wrong:\n` +
+        `  You attempted to register a router with a name that's already in use.\n\n` +
+        `To fix:\n` +
+        `  1. Choose a different name for the new router\n` +
+        `  2. Remove the duplicate registration\n` +
+        `  3. Use descriptive unique names for routers\n\n` +
+        `Tip: Router names should be unique and descriptive.`
+      );
+    }
+
+    // Create the router tool with auto-generated execute function
+    const routerTool: ToolDefinition<{}> = {
+      name: definition.name,
+      description: definition.description,
+      parameters: z.object({}), // Router tools take no parameters
+      execute: async () => {
+        // Return list of assigned tools in MCP format
+        return this.listRouterTools(definition.name);
+      },
+    };
+
+    // Convert Zod schema to JSON Schema
+    const jsonSchema = zodToJsonSchema(routerTool.parameters, {
+      target: 'openApi3',
+    });
+
+    // Store as a regular tool
+    this.tools.set(definition.name, {
+      definition: routerTool,
+      jsonSchema,
+    });
+
+    // Register as a router
+    this.routers.add(definition.name);
+    this.routerToTools.set(definition.name, new Set());
+
+    // If tools are provided in definition, assign them
+    if (definition.tools && definition.tools.length > 0) {
+      this.assignTools(definition.name, definition.tools);
+    }
+
+    return this;
+  }
+
+  /**
+   * Assign tools to a router
+   * Tools can be assigned to multiple routers.
+   *
+   * @param routerName Name of the router
+   * @param toolNames Array of tool names to assign
+   * @returns this for chaining
+   */
+  assignTools(routerName: string, toolNames: string[]): this {
+    if (this.isRunning) {
+      throw new Error(
+        `Cannot assign tools after server has started\n\n` +
+        `What went wrong:\n` +
+        `  The server is already running and cannot accept tool assignments.\n\n` +
+        `To fix:\n` +
+        `  1. Assign all tools before calling server.start()\n` +
+        `  2. Or stop the server, assign tools, then restart\n\n` +
+        `Example:\n` +
+        `  // Correct order:\n` +
+        `  server.assignTools('router-name', ['tool1', 'tool2']);\n` +
+        `  await server.start();\n\n` +
+        `  // Incorrect order:\n` +
+        `  await server.start();\n` +
+        `  server.assignTools('router-name', ['tool1', 'tool2']); // ERROR!`
+      );
+    }
+
+    // Validate router exists
+    if (!this.routers.has(routerName)) {
+      const availableRouters = Array.from(this.routers).join(', ') || 'none';
+      throw new Error(
+        `Router '${routerName}' does not exist\n\n` +
+        `What went wrong:\n` +
+        `  You attempted to assign tools to a router that hasn't been registered.\n\n` +
+        `Available routers: ${availableRouters}\n\n` +
+        `To fix:\n` +
+        `  1. Register the router first with server.addRouterTool()\n` +
+        `  2. Check the router name for typos\n` +
+        `  3. Ensure the router was created before assigning tools\n\n` +
+        `Example:\n` +
+        `  server.addRouterTool({ name: '${routerName}', description: '...' });\n` +
+        `  server.assignTools('${routerName}', ['tool1', 'tool2']);`
+      );
+    }
+
+    // Validate all tools exist
+    for (const toolName of toolNames) {
+      if (!this.tools.has(toolName)) {
+        const availableTools = Array.from(this.tools.keys())
+          .filter(name => !this.routers.has(name))
+          .join(', ') || 'none';
+        throw new Error(
+          `Tool '${toolName}' does not exist\n\n` +
+          `What went wrong:\n` +
+          `  You attempted to assign a tool that hasn't been registered.\n\n` +
+          `Available tools: ${availableTools}\n\n` +
+          `To fix:\n` +
+          `  1. Register the tool first with server.addTool()\n` +
+          `  2. Check the tool name for typos\n` +
+          `  3. Ensure the tool was created before assigning it to routers\n\n` +
+          `Example:\n` +
+          `  server.addTool({ name: '${toolName}', ... });\n` +
+          `  server.assignTools('${routerName}', ['${toolName}']);`
+        );
+      }
+
+      // Don't allow assigning routers to routers
+      if (this.routers.has(toolName)) {
+        throw new Error(
+          `Cannot assign router '${toolName}' to router '${routerName}'\n\n` +
+          `What went wrong:\n` +
+          `  You attempted to assign a router to another router.\n\n` +
+          `To fix:\n` +
+          `  Only assign regular tools to routers, not other routers.\n\n` +
+          `Tip: Routers can only contain regular tools, not other routers.`
+        );
+      }
+    }
+
+    // Update mappings
+    const routerTools = this.routerToTools.get(routerName)!;
+    for (const toolName of toolNames) {
+      // Add to routerToTools
+      routerTools.add(toolName);
+
+      // Add to toolToRouters
+      if (!this.toolToRouters.has(toolName)) {
+        this.toolToRouters.set(toolName, new Set());
+      }
+      this.toolToRouters.get(toolName)!.add(routerName);
+    }
+
+    return this;
+  }
+
+  /**
+   * List tools assigned to a router in MCP format
+   * @private
+   */
+  private listRouterTools(routerName: string): HandlerResult {
+    const assignedToolNames = this.routerToTools.get(routerName);
+
+    if (!assignedToolNames || assignedToolNames.size === 0) {
+      // Return empty tools array if no tools assigned
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({ tools: [] }, null, 2),
+          },
+        ],
+      };
+    }
+
+    // Build MCP tools list
+    const toolsList = Array.from(assignedToolNames)
+      .map(toolName => {
+        const tool = this.tools.get(toolName);
+        if (!tool) return null;
+
+        return {
+          name: tool.definition.name,
+          description: tool.definition.description,
+          inputSchema: tool.jsonSchema,
+        };
+      })
+      .filter(tool => tool !== null);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({ tools: toolsList }, null, 2),
+        },
+      ],
+    };
   }
 
   /**
@@ -505,22 +739,79 @@ export class BuildMCPServer {
 
     // List tools handler
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      const toolsList = Array.from(this.tools.values()).map((tool) => ({
+      let toolsList = Array.from(this.tools.values()).map((tool) => ({
         name: tool.definition.name,
         description: tool.definition.description,
         inputSchema: tool.jsonSchema,
       }));
+
+      // Layer 2: Filter based on flattenRouters option
+      if (!this.options.flattenRouters) {
+        // Hide tools that are assigned to routers
+        toolsList = toolsList.filter((tool) => !this.toolToRouters.has(tool.name));
+      }
 
       return { tools: toolsList };
     });
 
     // Call tool handler
     this.server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
-      const toolName = request.params.name;
-      const tool = this.tools.get(toolName);
+      let toolName = request.params.name;
+      let namespaceRouter: string | undefined = undefined;
+
+      // Layer 2: Check for namespace format (router__tool)
+      if (toolName.includes('__')) {
+        const parts = toolName.split('__');
+        if (parts.length === 2) {
+          const [routerName, subToolName] = parts;
+
+          // Verify router exists
+          if (!this.routers.has(routerName)) {
+            throw new Error(
+              `Unknown router in namespace: ${routerName}\n\n` +
+              `What went wrong:\n` +
+              `  The namespace '${toolName}' references a router '${routerName}' that doesn't exist.\n\n` +
+              `Available routers: ${Array.from(this.routers).join(', ') || 'none'}\n\n` +
+              `To fix:\n` +
+              `  1. Check the router name in the namespace\n` +
+              `  2. Use the format: router_name__tool_name\n` +
+              `  3. Call the router first to see available tools\n\n` +
+              `Tip: Namespace format uses double underscore (__)between router and tool names.`
+            );
+          }
+
+          // Verify router owns this tool
+          const routerTools = this.routerToTools.get(routerName);
+          if (!routerTools || !routerTools.has(subToolName)) {
+            const availableToolsInRouter = routerTools ? Array.from(routerTools).join(', ') : 'none';
+            throw new Error(
+              `Tool '${subToolName}' not found in router '${routerName}'\n\n` +
+              `What went wrong:\n` +
+              `  The router '${routerName}' does not have a tool named '${subToolName}'.\n\n` +
+              `Available tools in ${routerName}: ${availableToolsInRouter}\n\n` +
+              `To fix:\n` +
+              `  1. Call the router '${routerName}' to see its available tools\n` +
+              `  2. Use the correct tool name from the router's tool list\n` +
+              `  3. Check for typos in the tool name\n\n` +
+              `Tip: Call the router directly to get its full tool list.`
+            );
+          }
+
+          // Set the actual tool name and track namespace
+          toolName = subToolName;
+          namespaceRouter = routerName;
+        }
+      }
+
+      // Check if tool exists (either directly or as a sub-tool)
+      let tool = this.tools.get(toolName);
+      const routerOwners = this.toolToRouters.get(toolName);
 
       if (!tool) {
+        // Tool not found - check if it might be a sub-tool
+        const isSubTool = routerOwners && routerOwners.size > 0;
         const availableTools = Array.from(this.tools.keys()).join(', ') || 'none';
+
         throw new Error(
           `Unknown tool: ${toolName}\n\n` +
           `What went wrong:\n` +
@@ -557,6 +848,15 @@ export class BuildMCPServer {
           metadata: {
             toolName,
             progressToken,
+            // Include router information if tool belongs to any routers
+            ...(routerOwners && routerOwners.size > 0 ? {
+              routers: Array.from(routerOwners),
+            } : {}),
+            // Layer 2: Include namespace information if called via namespace
+            ...(namespaceRouter ? {
+              namespace: namespaceRouter,
+              namespacedCall: true,
+            } : {}),
           },
         };
 
@@ -1252,11 +1552,27 @@ export class BuildMCPServer {
   /**
    * Get statistics about registered items
    */
-  getStats(): { tools: number; prompts: number; resources: number } {
+  getStats(): {
+    tools: number;
+    routers: number;
+    assignedTools: number;
+    unassignedTools: number;
+    prompts: number;
+    resources: number;
+    flattenRouters: boolean;
+  } {
+    // Calculate assigned and unassigned tools
+    const assignedToolsCount = this.toolToRouters.size;
+    const unassignedToolsCount = this.tools.size - this.routers.size - assignedToolsCount;
+
     return {
       tools: this.tools.size,
+      routers: this.routers.size,
+      assignedTools: assignedToolsCount,
+      unassignedTools: unassignedToolsCount,
       prompts: this.prompts.size,
       resources: this.resources.size,
+      flattenRouters: this.options.flattenRouters,
     };
   }
 
@@ -1654,14 +1970,62 @@ export class BuildMCPServer {
    * @returns Tool execution result
    */
   async executeToolDirect(toolName: string, args: any): Promise<any> {
-    const tool = this.tools.get(toolName);
+    let actualToolName = toolName;
+    let namespaceRouter: string | undefined = undefined;
+
+    // Layer 2: Check for namespace format (router__tool)
+    if (toolName.includes('__')) {
+      const parts = toolName.split('__');
+      if (parts.length === 2) {
+        const [routerName, subToolName] = parts;
+
+        // Verify router exists
+        if (!this.routers.has(routerName)) {
+          throw new Error(
+            `Unknown router in namespace: ${routerName}\n\n` +
+            `What went wrong:\n` +
+            `  The namespace '${toolName}' references a router '${routerName}' that doesn't exist.\n\n` +
+            `Available routers: ${Array.from(this.routers).join(', ') || 'none'}\n\n` +
+            `To fix:\n` +
+            `  1. Check the router name in the namespace\n` +
+            `  2. Use the format: router_name__tool_name\n` +
+            `  3. Call the router first to see available tools\n\n` +
+            `Tip: Namespace format uses double underscore (__) between router and tool names.`
+          );
+        }
+
+        // Verify router owns this tool
+        const routerTools = this.routerToTools.get(routerName);
+        if (!routerTools || !routerTools.has(subToolName)) {
+          const availableToolsInRouter = routerTools ? Array.from(routerTools).join(', ') : 'none';
+          throw new Error(
+            `Tool '${subToolName}' not found in router '${routerName}'\n\n` +
+            `What went wrong:\n` +
+            `  The router '${routerName}' does not have a tool named '${subToolName}'.\n\n` +
+            `Available tools in ${routerName}: ${availableToolsInRouter}\n\n` +
+            `To fix:\n` +
+            `  1. Call the router '${routerName}' to see its available tools\n` +
+            `  2. Use the correct tool name from the router's tool list\n` +
+            `  3. Check for typos in the tool name\n\n` +
+            `Tip: Call the router directly to get its full tool list.`
+          );
+        }
+
+        // Set the actual tool name and track namespace
+        actualToolName = subToolName;
+        namespaceRouter = routerName;
+      }
+    }
+
+    const tool = this.tools.get(actualToolName);
+    const routerOwners = this.toolToRouters.get(actualToolName);
 
     if (!tool) {
       const availableTools = Array.from(this.tools.keys()).join(', ') || 'none';
       throw new Error(
-        `Unknown tool: ${toolName}\n\n` +
+        `Unknown tool: ${actualToolName}\n\n` +
         `What went wrong:\n` +
-        `  The requested tool '${toolName}' is not registered with this server.\n\n` +
+        `  The requested tool '${actualToolName}' is not registered with this server.\n\n` +
         `Available tools: ${availableTools}\n\n` +
         `To fix:\n` +
         `  1. Check the tool name for typos\n` +
@@ -1682,13 +2046,22 @@ export class BuildMCPServer {
           }
         : undefined;
 
-    const logger = createDefaultLogger(`[Tool:${toolName}]`, logNotificationCallback);
+    const logger = createDefaultLogger(`[Tool:${actualToolName}]`, logNotificationCallback);
 
     // Create handler context
     const context: HandlerContext = {
       logger,
       metadata: {
-        toolName,
+        toolName: actualToolName,
+        // Include router information if tool belongs to any routers
+        ...(routerOwners && routerOwners.size > 0 ? {
+          routers: Array.from(routerOwners),
+        } : {}),
+        // Layer 2: Include namespace information if called via namespace
+        ...(namespaceRouter ? {
+          namespace: namespaceRouter,
+          namespacedCall: true,
+        } : {}),
       },
     };
 

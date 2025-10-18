@@ -185,6 +185,116 @@ No, all examples work with JavaScript. TypeScript support is optional.
 
 ---
 
+## Router Tools API
+
+Router tools are available in all API styles for organizing related tools.
+
+### addRouterTool(definition)
+
+Registers a router tool that groups related tools together.
+
+**Parameters:**
+- `definition: RouterToolDefinition`
+  - `name`: string - Router name (use snake_case)
+  - `description`: string - What this router provides
+  - `tools?`: string[] - Initial tools to assign (optional)
+  - `metadata?`: Record<string, unknown> - Custom metadata (optional)
+
+**Returns:** `this` (for method chaining)
+
+**Example:**
+```typescript
+server.addRouterTool({
+  name: 'weather_router',
+  description: 'Weather information tools',
+  tools: ['get_weather', 'get_forecast']
+});
+```
+
+### assignTools(routerName, toolNames)
+
+Assigns tools to an existing router.
+
+**Parameters:**
+- `routerName`: string - Name of the router
+- `toolNames`: string[] - Array of tool names to assign
+
+**Returns:** `this` (for method chaining)
+
+**Example:**
+```typescript
+server.assignTools('weather_router', ['get_weather', 'get_forecast']);
+```
+
+### getStats()
+
+Returns server statistics including router information.
+
+**Returns:**
+```typescript
+{
+  tools: number;              // Total tools (including routers)
+  routers: number;            // Number of routers
+  assignedTools: number;      // Tools assigned to routers
+  unassignedTools: number;    // Tools not in any router
+  prompts: number;            // Number of prompts
+  resources: number;          // Number of resources
+  flattenRouters: boolean;    // Current flattenRouters setting
+}
+```
+
+**Example:**
+```typescript
+const stats = server.getStats();
+console.log(`${stats.routers} routers organizing ${stats.assignedTools} tools`);
+```
+
+### Router Configuration Options
+
+Control router behavior with server options:
+
+```typescript
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  flattenRouters: false  // Hide router-assigned tools (default)
+});
+
+// Or enable testing mode:
+flattenRouters: true  // Show all tools including router-assigned ones
+```
+
+**flattenRouters Modes:**
+- `false` (default) - Production mode, hides router-assigned tools
+- `true` - Testing mode, shows all tools
+
+### Invocation Patterns
+
+Tools in routers can be called two ways:
+
+```typescript
+// Direct call (if flattenRouters=true or tool unassigned)
+get_weather({ location: 'NYC' })
+
+// Namespace call (always works)
+weather_router__get_weather({ location: 'NYC' })
+```
+
+**Namespace format:** `router_name__tool_name` (double underscore)
+
+### API-Specific Router Usage
+
+Router tools work with all 4 API styles:
+
+- **Decorator API**: Use `@Router` decorator on your server class
+- **Functional API**: Add routers to the `routers` array in config
+- **Interface API**: Use `addRouterTool()` on BuildMCPServer instance
+- **MCPBuilder API**: Use `addRouterTool()` on BuildMCPServer instance
+
+See [Router Tools Guide](./ROUTER_TOOLS.md) for complete documentation including API-specific examples, best practices, and migration guides.
+
+---
+
 ## Next Steps
 
 1. **Pick one API** from the comparison above
@@ -192,5 +302,6 @@ No, all examples work with JavaScript. TypeScript support is optional.
 3. **Read the code**: Understand the structure
 4. **Modify the example**: Add your own tool
 5. **Read the full API docs** when you need advanced features
+6. **Organize tools?** See [Router Tools Guide](./ROUTER_TOOLS.md)
 
 Start with [QUICK_START.md](./QUICK_START.md) if you haven't already!

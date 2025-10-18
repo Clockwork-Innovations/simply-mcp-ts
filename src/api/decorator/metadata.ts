@@ -13,6 +13,7 @@ import type {
   PromptMetadata,
   ResourceMetadata,
   ParameterInfo,
+  RouterMetadata,
 } from './types.js';
 
 // Metadata keys (must match those in decorators.ts)
@@ -20,6 +21,7 @@ const TOOLS_KEY = Symbol.for('mcp:tools');
 const PROMPTS_KEY = Symbol.for('mcp:prompts');
 const RESOURCES_KEY = Symbol.for('mcp:resources');
 const SERVER_CONFIG_KEY = Symbol.for('mcp:config');
+const ROUTERS_KEY = Symbol.for('mcp:routers');
 
 /**
  * Get server configuration from decorated class
@@ -137,6 +139,46 @@ export function getPrompts(target: any): PromptMetadata[] {
  */
 export function getResources(target: any): ResourceMetadata[] {
   return Reflect.getMetadata(RESOURCES_KEY, target) || [];
+}
+
+/**
+ * Get routers from decorated class
+ *
+ * Retrieves all router metadata from classes decorated with @Router.
+ *
+ * @param target - The decorated class constructor
+ * @returns Array of router metadata (empty array if no routers)
+ *
+ * @example
+ * ```typescript
+ * import { MCPServer, Router, tool, getRouters } from 'simply-mcp';
+ *
+ * @MCPServer()
+ * @Router({
+ *   name: 'weather-tools',
+ *   description: 'Weather-related operations',
+ *   tools: ['getWeather', 'getForecast']
+ * })
+ * class MyServer {
+ *   @tool('Get current weather')
+ *   getWeather(city: string) {
+ *     return `Weather in ${city}`;
+ *   }
+ *
+ *   @tool('Get weather forecast')
+ *   getForecast(city: string) {
+ *     return `Forecast for ${city}`;
+ *   }
+ * }
+ *
+ * const routers = getRouters(MyServer);
+ * console.log(routers.length); // 1
+ * console.log(routers[0].name); // 'weather-tools'
+ * console.log(routers[0].tools); // ['getWeather', 'getForecast']
+ * ```
+ */
+export function getRouters(target: any): RouterMetadata[] {
+  return Reflect.getMetadata(ROUTERS_KEY, target) || [];
 }
 
 /**

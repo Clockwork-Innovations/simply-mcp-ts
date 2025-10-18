@@ -135,6 +135,14 @@ export interface BuildMCPServerOptions {
 
   // Auto-installation support (Phase 2, Feature 3)
   autoInstall?: boolean | InstallOptions; // Enable automatic dependency installation
+
+  // Router features (Layer 2)
+  /**
+   * When true, all tools (including router-assigned) appear in main tools/list
+   * When false (default), tools assigned to routers are hidden from main list
+   * Useful for testing or debugging router configurations
+   */
+  flattenRouters?: boolean;
 }
 
 /**
@@ -151,6 +159,16 @@ export interface StartOptions {
   transport?: TransportType;   // Override transport type
   port?: number;               // Override port (HTTP only)
   stateful?: boolean;          // Override stateful mode (HTTP only, default: true)
+}
+
+/**
+ * Router tool definition (simplified - no execute function needed)
+ */
+export interface RouterToolDefinition {
+  name: string;
+  description: string;
+  tools?: string[]; // Optional: assign tools in definition
+  metadata?: Record<string, unknown>;
 }
 
 /**

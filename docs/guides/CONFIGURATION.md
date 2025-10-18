@@ -296,8 +296,142 @@ node server.js
 
 ---
 
+## flattenRouters Option
+
+Control how router-assigned tools appear in the tools list.
+
+**Default:** `false` (production mode - hides router-assigned tools)
+
+**Option:** `flattenRouters?: boolean`
+
+### Modes
+
+**flattenRouters: false (Production - Default)**
+- Router-assigned tools are HIDDEN from tools/list
+- Only routers and unassigned tools appear
+- Recommended for production
+- Reduces cognitive load for models
+- Cleaner, more organized tool list
+
+**flattenRouters: true (Testing/Development)**
+- ALL tools appear in tools/list
+- Including router-assigned tools
+- Recommended for development and exploration
+- Useful for testing tool discovery
+- Models can call any tool directly
+
+### Example
+
+```typescript
+import { BuildMCPServer } from 'simply-mcp';
+
+// Production (default) - hide router-assigned tools
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  flattenRouters: false  // or omit (this is the default)
+});
+
+// Testing mode - show all tools
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  flattenRouters: true
+});
+
+// Environment-based configuration
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  flattenRouters: process.env.NODE_ENV === 'development'
+});
+```
+
+### What's Visible?
+
+**Production (flattenRouters=false):**
+```typescript
+server.addTool({ name: 'tool1', ... });  // Assigned to router
+server.addTool({ name: 'tool2', ... });  // Assigned to router
+server.addTool({ name: 'tool3', ... });  // Not assigned
+
+server.addRouterTool({
+  name: 'my_router',
+  tools: ['tool1', 'tool2']
+});
+
+// tools/list shows:
+// - my_router (router)
+// - tool3 (unassigned tool)
+// Hidden: tool1, tool2
+```
+
+**Testing (flattenRouters=true):**
+```typescript
+// Same setup as above
+
+// tools/list shows:
+// - my_router (router)
+// - tool1 (visible)
+// - tool2 (visible)
+// - tool3 (unassigned tool)
+```
+
+### Notes
+
+- `flattenRouters` only affects visibility, not tool execution
+- Tools can be called directly regardless of flattenRouters setting
+- Namespace calling (`router__tool`) works in both modes
+- Does NOT affect performance or functionality
+
+### Use Cases
+
+**Use flattenRouters=false (production) when:**
+- Deploying to production
+- You want a clean, organized tool list
+- You have many tools and want to hide complexity
+- Models should discover tools progressively
+
+**Use flattenRouters=true (testing) when:**
+- Developing and testing your server
+- Debugging tool discovery issues
+- Exploring available tools
+- You want direct access to all tools
+
+### Environment Variables
+
+Configure based on environment:
+
+```typescript
+// Option 1: NODE_ENV
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  flattenRouters: process.env.NODE_ENV !== 'production'
+});
+
+// Option 2: Custom variable
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  flattenRouters: process.env.FLATTEN_ROUTERS === 'true'
+});
+
+// Option 3: Debug mode
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  flattenRouters: process.env.DEBUG === 'true'
+});
+```
+
+For complete router documentation, see [Router Tools Guide](./ROUTER_TOOLS.md).
+
+---
+
 ## Next Steps
 
+- **Organize tools?** See [ROUTER_TOOLS.md](./ROUTER_TOOLS.md)
 - **Deploy?** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
 - **Bundle?** See [BUNDLING.md](./BUNDLING.md)
 - **Debug?** See [DEBUGGING.md](./DEBUGGING.md)

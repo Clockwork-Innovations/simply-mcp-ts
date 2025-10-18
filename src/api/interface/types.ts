@@ -33,6 +33,9 @@
  * ```
  */
 
+// Import router types from programmatic API
+import type { RouterToolDefinition as ProgrammaticRouterToolDefinition } from '../programmatic/types.js';
+
 /**
  * Base Tool interface
  *
@@ -437,3 +440,34 @@ export interface IUIResourceProvider {
    */
   getUIResources(): UIResourceDefinition[];
 }
+
+/**
+ * Router Tool Definition
+ *
+ * Routers are organizational tools that group related tools together.
+ * They appear as special tools in the MCP tools list, but when called,
+ * they return a list of their assigned tools.
+ *
+ * Note: Routers are an operational concern (not a type definition concern).
+ * Use the Interface API's programmatic methods to add routers after loading
+ * your server definition.
+ *
+ * @example
+ * ```typescript
+ * import { loadInterfaceServer } from 'simply-mcp';
+ *
+ * const server = await loadInterfaceServer({ filePath: './server.ts' });
+ *
+ * // Add routers programmatically (after tools are loaded)
+ * server
+ *   .addRouterTool({
+ *     name: 'weather_tools',
+ *     description: 'Weather information tools',
+ *     tools: ['get_weather', 'get_forecast']
+ *   })
+ *   .assignTools('weather_tools', ['get_weather', 'get_forecast']);
+ *
+ * await server.start();
+ * ```
+ */
+export type RouterToolDefinition = ProgrammaticRouterToolDefinition;

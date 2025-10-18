@@ -384,8 +384,71 @@ npx simply-mcp run server.ts --watch
 
 ---
 
+## Router Tools and Sub-Tools
+
+Router tools organize related operations under a single discovery endpoint. Instead of exposing many individual tools, you can group them under routers.
+
+### When to Use Router Tools
+
+Use routers when you have:
+- 5+ related tools in a domain (weather, database, API, etc.)
+- Tools that are often used together
+- A need to reduce tool count in the main list
+
+### Quick Example
+
+```typescript
+import { BuildMCPServer } from 'simply-mcp';
+import { z } from 'zod';
+
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0'
+});
+
+// Define tools
+server.addTool({
+  name: 'get_weather',
+  description: 'Get current weather',
+  parameters: z.object({ location: z.string() }),
+  execute: async (args) => `Weather: ${args.location}`
+});
+
+server.addTool({
+  name: 'get_forecast',
+  description: 'Get forecast',
+  parameters: z.object({ location: z.string() }),
+  execute: async (args) => `Forecast: ${args.location}`
+});
+
+// Group under router
+server.addRouterTool({
+  name: 'weather_router',
+  description: 'Weather tools',
+  tools: ['get_weather', 'get_forecast']
+});
+```
+
+### How It Works
+
+1. Call the router to discover tools: `weather_router()`
+2. Call tools via namespace: `weather_router__get_weather`
+3. Or call directly (if `flattenRouters=true`): `get_weather`
+
+### Benefits
+
+- **Organization** - Group related tools by domain
+- **Scalability** - 20 tools become 3-4 routers
+- **Discovery** - Progressive disclosure of functionality
+- **Flexibility** - One tool can belong to multiple routers
+
+For complete documentation, see [Router Tools Guide](./ROUTER_TOOLS.md).
+
+---
+
 ## Next Steps
 
+- **Organize tools?** See [ROUTER_TOOLS.md](./ROUTER_TOOLS.md)
 - **Add prompts?** See [PROMPTS.md](./PROMPTS.md)
 - **Add resources?** See [RESOURCES.md](./RESOURCES.md)
 - **Deploy tools?** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)

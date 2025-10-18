@@ -729,3 +729,8 @@ export function getParameterInfo(fn: Function): ParameterInfo[] {
 export function getParameterNames(fn: Function): string[] {
   return getParameterInfo(fn).map(p => p.name);
 }
+
+// Re-export Router and RouterMetadata from the new decorator API
+export { Router } from './api/decorator/decorators.js';
+export type { RouterMetadata } from './api/decorator/types.js';
+export { getRouters } from './api/decorator/metadata.js';

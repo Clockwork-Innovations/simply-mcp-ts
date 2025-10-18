@@ -3,6 +3,10 @@
  *
  * Bridges interface definitions to BuildMCPServer core.
  * Loads TypeScript files, parses interfaces, and registers tools/prompts/resources.
+ *
+ * Note: Routers are an operational concern (not a type definition concern).
+ * The adapter does not parse router definitions from interfaces.
+ * Instead, users can add routers programmatically using the returned InterfaceServer instance.
  */
 
 import { pathToFileURL } from 'url';

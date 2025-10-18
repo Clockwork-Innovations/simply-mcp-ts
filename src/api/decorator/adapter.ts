@@ -16,7 +16,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { BuildMCPServer } from '../programmatic/BuildMCPServer.js';
 import type { BuildMCPServer as BuildMCPServerType } from '../programmatic/BuildMCPServer.js';
-import { getServerConfig, getTools, getPrompts, getResources, getParameterInfo, getParameterNames, extractJSDoc } from './metadata.js';
+import { getServerConfig, getTools, getPrompts, getResources, getRouters, getParameterInfo, getParameterNames, extractJSDoc } from './metadata.js';
 import { parseTypeScriptFileWithCache, getMethodParameterTypes, inferZodSchema } from './type-inference.js';
 import type { ParameterInfo } from './types.js';
 import type { ParsedClass } from './type-inference.js';
@@ -329,6 +329,93 @@ export function createServerFromClass(ServerClass: any, sourceFilePath: string):
       description: resourceMeta.description || `Resource ${resourceMeta.name}`,
       mimeType: resourceMeta.mimeType,
       content,
+    });
+  }
+
+  // Register routers with validation
+  const routers = getRouters(ServerClass);
+
+  // Build a map of all registered tools (decorated + auto-registered)
+  const registeredToolNames = new Set<string>();
+
+  // Add decorated tools
+  for (const tool of tools) {
+    registeredToolNames.add(tool.methodName);
+  }
+
+  // Add auto-registered public methods
+  for (const methodName of publicMethods) {
+    if (!decoratedTools.has(methodName) &&
+        !decoratedPrompts.has(methodName) &&
+        !decoratedResources.has(methodName)) {
+      registeredToolNames.add(methodName);
+    }
+  }
+
+  // Validate and register routers
+  for (const routerMeta of routers) {
+    // Validate each tool exists
+    const missingTools: string[] = [];
+    const availableTools = Array.from(registeredToolNames).sort();
+
+    for (const toolMethodName of routerMeta.tools) {
+      if (!registeredToolNames.has(toolMethodName)) {
+        missingTools.push(toolMethodName);
+      }
+    }
+
+    if (missingTools.length > 0) {
+      // Find closest matches for helpful suggestions
+      const suggestions = new Map<string, string[]>();
+      for (const missing of missingTools) {
+        const matches = availableTools.filter(available => {
+          const lower = available.toLowerCase();
+          const missingLower = missing.toLowerCase();
+          return lower.includes(missingLower) || missingLower.includes(lower);
+        });
+        if (matches.length > 0) {
+          suggestions.set(missing, matches);
+        }
+      }
+
+      let errorMessage = `Router '${routerMeta.name}' configuration error:\n\n`;
+      errorMessage += `The following tools do not exist in class '${ServerClass.name}':\n`;
+
+      for (const missing of missingTools) {
+        errorMessage += `  - '${missing}'\n`;
+        const matches = suggestions.get(missing);
+        if (matches && matches.length > 0) {
+          errorMessage += `    Did you mean: ${matches.map(m => `'${m}'`).join(', ')}?\n`;
+        }
+      }
+
+      errorMessage += `\nAvailable tools in ${ServerClass.name}:\n`;
+      if (availableTools.length === 0) {
+        errorMessage += `  (none - add @tool decorators or public methods)\n`;
+      } else {
+        for (const toolName of availableTools) {
+          const isDecorated = decoratedTools.has(toolName);
+          const label = isDecorated ? '(from @tool decorator)' : '(auto-registered public method)';
+          errorMessage += `  - ${toolName} ${label}\n`;
+        }
+      }
+
+      errorMessage += `\nTo fix:\n`;
+      errorMessage += `  1. Check the spelling of tool names in the router configuration\n`;
+      errorMessage += `  2. Ensure the methods exist and are decorated with @tool or are public\n`;
+      errorMessage += `  3. Method names are case-sensitive\n`;
+
+      throw new Error(errorMessage);
+    }
+
+    // Convert method names to kebab-case tool names
+    const toolNames = routerMeta.tools.map(methodName => toKebabCase(methodName));
+
+    server.addRouterTool({
+      name: routerMeta.name,
+      description: routerMeta.description,
+      tools: toolNames,
+      metadata: routerMeta.metadata,
     });
   }
 

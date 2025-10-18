@@ -8,7 +8,7 @@
  */
 
 import 'reflect-metadata';
-import type { ServerConfig, JSDocInfo } from './types.js';
+import type { ServerConfig, JSDocInfo, RouterMetadata } from './types.js';
 
 // Metadata keys
 // CRITICAL: Use Symbol.for() to register symbols in the global symbol registry.
@@ -19,6 +19,7 @@ const TOOLS_KEY = Symbol.for('mcp:tools');
 const PROMPTS_KEY = Symbol.for('mcp:prompts');
 const RESOURCES_KEY = Symbol.for('mcp:resources');
 const SERVER_CONFIG_KEY = Symbol.for('mcp:config');
+const ROUTERS_KEY = Symbol.for('mcp:routers');
 
 // Note: We explored using a global registry to avoid requiring exports, but hit a fundamental limitation:
 // Non-exported classes are never evaluated by the JavaScript engine (tree-shaking), so decorators never run.
@@ -706,5 +707,153 @@ export function uiResource(
     }
 
     return descriptor;
+  };
+}
+
+/**
+ * @Router decorator
+ *
+ * Marks a class with router metadata for organizing tools into logical groups.
+ * Routers create a hierarchical tool structure where tools are accessed through
+ * a parent router tool.
+ *
+ * @param config - Router configuration
+ * @param config.name - Router name (required, used as the router tool name)
+ * @param config.description - Router description (required)
+ * @param config.tools - Array of method names to assign to this router (required)
+ * @param config.metadata - Optional metadata for the router
+ * @returns Class decorator function
+ *
+ * @example
+ * ```typescript
+ * import { MCPServer, Router, tool } from 'simply-mcp';
+ *
+ * // Basic router usage
+ * @MCPServer()
+ * @Router({
+ *   name: 'weather-tools',
+ *   description: 'Weather-related operations',
+ *   tools: ['getWeather', 'getForecast']
+ * })
+ * class WeatherServer {
+ *   @tool('Get current weather')
+ *   getWeather(city: string) {
+ *     return `Weather in ${city}`;
+ *   }
+ *
+ *   @tool('Get weather forecast')
+ *   getForecast(city: string) {
+ *     return `Forecast for ${city}`;
+ *   }
+ * }
+ * ```
+ *
+ * @note Foundation layer supports single router per class.
+ *       Multiple routers will be added in the feature layer.
+ */
+export function Router(config: {
+  name: string;
+  description: string;
+  tools: string[];
+  metadata?: Record<string, unknown>;
+}) {
+  // Runtime validation - ensure required fields are present
+  if (!config || typeof config !== 'object') {
+    throw new TypeError(
+      `@Router decorator expects a configuration object, got ${typeof config}.\n\n` +
+      `Correct usage:\n` +
+      `  @Router({\n` +
+      `    name: 'my-router',\n` +
+      `    description: 'My router description',\n` +
+      `    tools: ['tool1', 'tool2']\n` +
+      `  })\n` +
+      `  class MyServer { }\n\n` +
+      `Invalid usage:\n` +
+      `  @Router('my-router')  // Missing required fields`
+    );
+  }
+
+  if (!config.name || typeof config.name !== 'string') {
+    throw new TypeError(
+      `@Router decorator requires a 'name' field (string), got ${typeof config.name}.\n\n` +
+      `What went wrong:\n` +
+      `  The router name is required and must be a string.\n\n` +
+      `To fix:\n` +
+      `  Add a 'name' field to the router configuration:\n` +
+      `  @Router({\n` +
+      `    name: 'weather-tools',  // Required\n` +
+      `    description: 'Weather operations',\n` +
+      `    tools: ['getWeather', 'getForecast']\n` +
+      `  })\n\n` +
+      `Tip: Use a descriptive name that indicates the router's purpose.`
+    );
+  }
+
+  if (!config.description || typeof config.description !== 'string') {
+    throw new TypeError(
+      `@Router decorator requires a 'description' field (string), got ${typeof config.description}.\n\n` +
+      `What went wrong:\n` +
+      `  The router description is required and must be a string.\n\n` +
+      `To fix:\n` +
+      `  Add a 'description' field to the router configuration:\n` +
+      `  @Router({\n` +
+      `    name: 'weather-tools',\n` +
+      `    description: 'Weather-related operations',  // Required\n` +
+      `    tools: ['getWeather', 'getForecast']\n` +
+      `  })\n\n` +
+      `Tip: Describe what the router does and what tools it contains.`
+    );
+  }
+
+  if (!Array.isArray(config.tools)) {
+    throw new TypeError(
+      `@Router decorator requires a 'tools' field (array), got ${typeof config.tools}.\n\n` +
+      `What went wrong:\n` +
+      `  The tools field must be an array of method names.\n\n` +
+      `To fix:\n` +
+      `  Add a 'tools' field with an array of method names:\n` +
+      `  @Router({\n` +
+      `    name: 'weather-tools',\n` +
+      `    description: 'Weather-related operations',\n` +
+      `    tools: ['getWeather', 'getForecast']  // Required array\n` +
+      `  })\n\n` +
+      `Tip: List the method names you want to assign to this router.`
+    );
+  }
+
+  return function <T extends { new (...args: any[]): {} }>(constructor: T) {
+    const routers = Reflect.getMetadata(ROUTERS_KEY, constructor) || [];
+
+    // Validate router name uniqueness
+    const existingRouter = routers.find((r: RouterMetadata) => r.name === config.name);
+    if (existingRouter) {
+      const routerNames = routers.map((r: RouterMetadata) => r.name);
+      throw new TypeError(
+        `Duplicate router name: '${config.name}'\n\n` +
+        `What went wrong:\n` +
+        `  A router with the name '${config.name}' is already defined on this class.\n\n` +
+        `Existing routers:\n` +
+        routerNames.map(name => `  - ${name}`).join('\n') + '\n\n' +
+        `To fix:\n` +
+        `  Choose a unique name for this router.\n\n` +
+        `Example:\n` +
+        `  @Router({\n` +
+        `    name: '${config.name}-v2',  // Changed to be unique\n` +
+        `    description: '${config.description}',\n` +
+        `    tools: ${JSON.stringify(config.tools)}\n` +
+        `  })\n\n` +
+        `Tip: Use descriptive names that indicate the router's specific purpose.`
+      );
+    }
+
+    routers.push({
+      name: config.name,
+      description: config.description,
+      tools: config.tools,
+      metadata: config.metadata,
+    });
+
+    Reflect.defineMetadata(ROUTERS_KEY, routers, constructor);
+    return constructor;
   };
 }
