@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-10-17
+
+### Added
+
+- **Router Tools (Layer 1 & 2)**: New advanced feature for organizing tools at scale
+  - Layer 1: Router registration, tool assignment, invocation
+  - Layer 2: `flattenRouters` option, namespace support (`router__tool`), enhanced statistics
+  - Tools can belong to multiple routers
+  - Namespace calling: `router__tool` includes router metadata in context
+  - Enhanced statistics: Track assigned vs unassigned tools
+
+- **Package Bundle Support**: Improved bundle format handling
+  - Better TypeScript file bundling
+  - Support for inline dependencies
+  - Improved serverless deployment compatibility
+
+- **Comprehensive Documentation**: 9 new feature guides (250-300 lines each)
+  - Router Tools Guide
+  - Configuration Reference
+  - Tools, Prompts, Resources guides
+  - API Reference guides for all 4 API styles
+  - Debugging and Troubleshooting Guide
+
+- **CI/CD Enhancements**: Automated example validation
+  - All 30+ examples validated automatically
+  - Catches breaking changes early
+  - Ensures documentation stays up-to-date
+
+### Fixed
+
+- **HTTP Transport Reliability**: Critical fixes for production use
+  - Fixed SSE connection hang with concurrent requests
+  - Improved session management for stateful HTTP
+  - Better connection timeout handling
+  - Enhanced error recovery from network issues
+
+- **TypeScript Build Issues**: Resolved decorator metadata and type generation issues
+- **Test Suite**: Improved reliability and fixed race conditions
+
+### Backward Compatibility
+
+✅ **100% Backward Compatible** - All existing code continues to work without changes
+
 ## [3.0.0] - 2025-10-13
 
 ### Breaking Changes

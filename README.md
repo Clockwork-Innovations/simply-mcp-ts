@@ -28,6 +28,7 @@
 - Comprehensive CLI tools
 
 🚀 **Advanced Features**
+- Router tools for organizing and scaling servers
 - Handler system (file, inline, HTTP, registry)
 - Binary content support (images, PDFs, audio)
 - Session management for stateful transports
@@ -201,6 +202,100 @@ Choose the API style that matches your preferences:
 - `capabilities`: Automatically configured based on your tools
 
 **Same command works for all API styles!**
+
+### Router Tools (v3.1.0+)
+
+Organize related tools under routers to reduce tool count and improve discoverability. New in v3.1.0 with advanced features like namespace support and statistics!
+
+```typescript
+import { BuildMCPServer } from 'simply-mcp';
+import { z } from 'zod';
+
+const server = new BuildMCPServer({
+  name: 'my-server',
+  version: '1.0.0',
+  flattenRouters: false  // Hide router-assigned tools from main list (new in v3.1.0)
+});
+
+// Define tools
+server.addTool({
+  name: 'get_weather',
+  description: 'Get current weather',
+  parameters: z.object({ location: z.string() }),
+  execute: async (args) => `Weather in ${args.location}: Sunny, 72°F`
+});
+
+server.addTool({
+  name: 'get_forecast',
+  description: 'Get weather forecast',
+  parameters: z.object({ location: z.string(), days: z.number() }),
+  execute: async (args) => `${args.days}-day forecast for ${args.location}`
+});
+
+server.addTool({
+  name: 'get_alerts',
+  description: 'Get weather alerts',
+  parameters: z.object({ location: z.string() }),
+  execute: async (args) => `No active alerts for ${args.location}`
+});
+
+// Create router and assign tools
+server.addRouterTool({
+  name: 'weather_router',
+  description: 'Weather information toolkit',
+  tools: ['get_weather', 'get_forecast', 'get_alerts']
+});
+
+// Get enhanced statistics (new in v3.1.0)
+console.log(server.getStats());
+// {
+//   tools: 4,                    // 3 tools + 1 router
+//   routers: 1,                  // weather_router
+//   assignedTools: 3,            // Tools in routers
+//   unassignedTools: 0,
+//   prompts: 0,
+//   resources: 0,
+//   flattenRouters: false
+// }
+
+await server.start();
+```
+
+**Key Features:**
+- **Organization** - Group 10+ tools into 2-3 routers by domain
+- **Multi-router support** - One tool can belong to multiple routers
+- **Namespace calling** - `weather_router__get_weather` for explicit routing (v3.1.0+)
+- **flattenRouters option** - Toggle tool visibility for testing vs production (v3.1.0+)
+- **Enhanced statistics** - Track assigned vs unassigned tools (v3.1.0+)
+- **Production-ready** - Used in all Simply MCP example servers
+
+**Invocation methods:**
+```typescript
+// Method 1: Call router to discover tools
+weather_router()
+// Returns: { tools: [ { name: 'get_weather', ... }, ... ] }
+
+// Method 2: Call tool via namespace (v3.1.0+)
+weather_router__get_weather({ location: 'NYC' })
+
+// Method 3: Call tool directly (if flattenRouters=true)
+get_weather({ location: 'NYC' })
+```
+
+**New in v3.1.0:**
+- ✨ **Namespace support** - Call tools with full router context: `router__tool`
+- ✨ **flattenRouters option** - Control whether router-assigned tools appear in main list
+- ✨ **Enhanced statistics** - Track assigned and unassigned tools separately
+- ✨ **Better organization** - Cleaner interfaces for complex servers
+
+**Use cases:**
+- Servers with 5+ related tools (weather, database, API operations)
+- Multi-domain systems (products, users, orders)
+- Progressive tool discovery for AI models
+- Reducing cognitive overhead with large tool sets
+- Scaling to 100+ tools across multiple domains
+
+See [Router Tools Guide](./docs/guides/ROUTER_TOOLS.md) for complete documentation and examples.
 
 ## CLI Usage
 
