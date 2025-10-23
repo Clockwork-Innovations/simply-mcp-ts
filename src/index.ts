@@ -91,6 +91,7 @@
 // ============================================================================
 // BuildMCPServer - Programmatic API for building MCP servers
 export { BuildMCPServer } from './api/programmatic/BuildMCPServer.js';
+export { BuildMCPServer as SimplyMCP } from './api/programmatic/BuildMCPServer.js';
 export type { BuildMCPServerOptions } from './api/programmatic/types.js';
 
 // ============================================================================
