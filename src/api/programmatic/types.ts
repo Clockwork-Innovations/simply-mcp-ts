@@ -116,6 +116,7 @@ export interface BuildMCPServerOptions {
   description?: string;           // Server description
   basePath?: string;             // Base path for file operations (default: cwd)
   defaultTimeout?: number;       // Default timeout for handlers (ms, default: 5000)
+  silent?: boolean;              // Suppress console logging (default: false)
 
   // Transport configuration (consolidated)
   transport?: {

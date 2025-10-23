@@ -64,10 +64,24 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
   const moduleUrl = `${fileUrl}?t=${Date.now()}`;
 
   const module = await import(moduleUrl);
-  const ServerClass = module.default;
+  let ServerClass = module.default;
+
+  // If no default export, try named exports
+  if (!ServerClass && parseResult.className) {
+    if (verbose) {
+      console.log(`[Interface Adapter] No default export found, checking for named export: ${parseResult.className}`);
+    }
+    ServerClass = module[parseResult.className];
+
+    if (ServerClass) {
+      if (verbose) {
+        console.log(`[Interface Adapter] Found class '${parseResult.className}' as named export`);
+      }
+    }
+  }
 
   if (!ServerClass) {
-    throw new Error(`No default export found in ${filePath}`);
+    throw new Error(`No default export or class '${parseResult.className || 'unknown'}' found in ${filePath}`);
   }
 
   // Step 3: Create server instance
@@ -78,6 +92,7 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     name: serverName || parseResult.server?.name || 'interface-server',
     version: serverVersion || parseResult.server?.version || '1.0.0',
     description: parseResult.server?.description,
+    silent: !verbose, // Suppress HandlerManager logging unless verbose mode enabled
   });
 
   // Step 5: Register tools (with hybrid approach)

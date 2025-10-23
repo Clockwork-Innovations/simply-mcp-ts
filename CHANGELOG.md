@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2025-10-22
+
+### Added
+
+- **Interface API: Named Export Support**: Server classes can now use `export class` instead of `export default class`
+  - Cleaner syntax: `export class MyServer` works automatically
+  - Framework auto-detects classes by name pattern (e.g., `*Server`, `*Service`, `*Impl`)
+  - 50% less export boilerplate
+  - Both named and default exports fully supported
+  - Backward compatible - existing code continues to work
+
+- **Interface API: Direct Type Assignment**: Cleaner tool implementation syntax
+  - New syntax: `myTool: MyTool = async (params) => { ... }`
+  - Replaces verbose: `myTool = async (params: MyTool['params']): Promise<MyTool['result']> => { ... }`
+  - 37% reduction in boilerplate
+  - Full type inference and IDE autocomplete
+  - Supports both sync and async methods
+  - Parameter destructuring: `async ({ location, units }) => { ... }`
+  - Note: For TypeScript strict mode, use `ToolHandler<T>` utility type
+
+- **Silent Logging by Default**: Clean console output for library usage
+  - HandlerManager logs suppressed by default in Interface API
+  - Enable with `verbose: true` flag for debugging
+  - Programmatic API: new `silent` option in BuildMCPServerOptions
+  - Reduces noise in tests and production environments
+
+### Changed
+
+- **Documentation: Streamlined README**: Removed version references and historical notes
+  - Focus on current capabilities, not version history
+  - Cleaner, more professional presentation
+  - Version history preserved in CHANGELOG.md
+  - Examples updated to show latest best practices
+
+### Fixed
+
+- **Interface API: Resolved export boilerplate complaints**: Addressed user feedback about excessive boilerplate
+  - No more `declare readonly` needed (never was required)
+  - `export default` keyword now optional
+  - Framework validates metadata from interfaces, not class properties
+
+### Backward Compatibility
+
+✅ **100% Backward Compatible** - All existing code continues to work without changes:
+- `export default class` still works alongside `export class`
+- Verbose tool syntax still supported
+- All v3.1 features remain unchanged
+- No breaking changes to any API
+
 ## [3.1.0] - 2025-10-17
 
 ### Added

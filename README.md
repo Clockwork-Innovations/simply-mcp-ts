@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="simply-mcp-banner.png" alt="Simply MCP" width="100%">
+</div>
+
 # Simply MCP
 
 > A powerful, type-safe TypeScript framework for building Model Context Protocol (MCP) servers with support for multiple transports and decorator-based APIs.
@@ -66,7 +70,8 @@ interface Calculator extends IServer {
   version: '1.0.0';
 }
 
-export default class CalculatorService implements Calculator {
+export class CalculatorService {
+  // Direct type assignment - params are fully typed!
   add: AddTool = async (params) => ({
     sum: params.a + params.b
   });
@@ -203,9 +208,9 @@ Choose the API style that matches your preferences:
 
 **Same command works for all API styles!**
 
-### Router Tools (v3.1.0+)
+### Router Tools
 
-Organize related tools under routers to reduce tool count and improve discoverability. New in v3.1.0 with advanced features like namespace support and statistics!
+Organize related tools under routers to reduce tool count and improve discoverability with namespace support and statistics.
 
 ```typescript
 import { BuildMCPServer } from 'simply-mcp';
@@ -214,7 +219,7 @@ import { z } from 'zod';
 const server = new BuildMCPServer({
   name: 'my-server',
   version: '1.0.0',
-  flattenRouters: false  // Hide router-assigned tools from main list (new in v3.1.0)
+  flattenRouters: false  // Hide router-assigned tools from main list
 });
 
 // Define tools
@@ -246,7 +251,7 @@ server.addRouterTool({
   tools: ['get_weather', 'get_forecast', 'get_alerts']
 });
 
-// Get enhanced statistics (new in v3.1.0)
+// Get enhanced statistics
 console.log(server.getStats());
 // {
 //   tools: 4,                    // 3 tools + 1 router
@@ -264,9 +269,9 @@ await server.start();
 **Key Features:**
 - **Organization** - Group 10+ tools into 2-3 routers by domain
 - **Multi-router support** - One tool can belong to multiple routers
-- **Namespace calling** - `weather_router__get_weather` for explicit routing (v3.1.0+)
-- **flattenRouters option** - Toggle tool visibility for testing vs production (v3.1.0+)
-- **Enhanced statistics** - Track assigned vs unassigned tools (v3.1.0+)
+- **Namespace calling** - `weather_router__get_weather` for explicit routing
+- **flattenRouters option** - Toggle tool visibility for testing vs production
+- **Enhanced statistics** - Track assigned vs unassigned tools
 - **Production-ready** - Used in all Simply MCP example servers
 
 **Invocation methods:**
@@ -275,18 +280,12 @@ await server.start();
 weather_router()
 // Returns: { tools: [ { name: 'get_weather', ... }, ... ] }
 
-// Method 2: Call tool via namespace (v3.1.0+)
+// Method 2: Call tool via namespace
 weather_router__get_weather({ location: 'NYC' })
 
 // Method 3: Call tool directly (if flattenRouters=true)
 get_weather({ location: 'NYC' })
 ```
-
-**New in v3.1.0:**
-- ✨ **Namespace support** - Call tools with full router context: `router__tool`
-- ✨ **flattenRouters option** - Control whether router-assigned tools appear in main list
-- ✨ **Enhanced statistics** - Track assigned and unassigned tools separately
-- ✨ **Better organization** - Cleaner interfaces for complex servers
 
 **Use cases:**
 - Servers with 5+ related tools (weather, database, API operations)
@@ -534,24 +533,72 @@ The Interface API is the cleanest way to define MCP servers using pure TypeScrip
 - Pure interface definitions
 - No runtime overhead
 - Easy to read and maintain
+- Loader validates your implementations automatically — annotate parameters with `MyTool['params']` if you want compile-time hints under `noImplicitAny`.
+
+### Clean Syntax with Direct Type Assignment
+
+Write clean implementation code with minimal boilerplate using direct type assignment:
+
+```typescript
+// Direct type assignment - clean and type-safe!
+getWeather: GetWeatherTool = async (params) => {
+  return { temperature: 20, conditions: 'Sunny' };
+};
+```
+
+**Features:**
+- Minimal boilerplate
+- Full IDE autocomplete and IntelliSense
+- Parameter and return types automatically inferred
+- Supports destructuring: `async ({ location, units }) => { ... }`
+- Works with both sync and async methods
+
+**Note:** For TypeScript strict mode (`strict: true`), use `ToolHandler<T>` instead:
+```typescript
+import type { ToolHandler } from 'simply-mcp';
+
+getWeather: ToolHandler<GetWeatherTool> = async (params) => {
+  return { temperature: 20, conditions: 'Sunny' };
+};
+```
+
+[Learn more →](docs/guides/INTERFACE_API_REFERENCE.md)
 
 ### Complete Example
 
 ```typescript
-import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';
+import type { ITool, IParam, IPrompt, IResource, IServer } from 'simply-mcp';
 
-// Define a tool
+// Define structured parameters with IParam (optional but recommended)
+interface LocationParam extends IParam<string> {
+  description: 'City or location name';
+  minLength: 1;
+  maxLength: 100;
+}
+
+// Define a tool with simple params
 interface GetWeatherTool extends ITool {
   name: 'get_weather';
   description: 'Get current weather for a location';
   params: {
-    location: string;
-    units?: 'celsius' | 'fahrenheit';
+    location: string;                              // Simple type
+    units?: 'celsius' | 'fahrenheit';             // Optional param
   };
   result: {
     temperature: number;
     conditions: string;
   };
+}
+
+// Or use IParam for richer documentation and validation
+interface GetForecastTool extends ITool {
+  name: 'get_forecast';
+  description: 'Get weather forecast';
+  params: {
+    location: LocationParam;                       // IParam with validation
+    days?: number;                                  // Can mix simple types
+  };
+  result: Array<{ date: string; temp: number }>;
 }
 
 // Define a static prompt (no implementation needed!)
@@ -581,8 +628,9 @@ interface WeatherServer extends IServer {
 }
 
 // Implement the server
-export default class WeatherService implements WeatherServer {
-  // Tool implementation - full IntelliSense on params!
+export class WeatherService {
+
+  // Tool implementation using direct type assignment - full IntelliSense on params!
   getWeather: GetWeatherTool = async (params) => {
     const temp = 72;
     return {
@@ -600,8 +648,10 @@ export default class WeatherService implements WeatherServer {
 
 **Tools:**
 - Define with `ITool` interface
+- **Optional:** Use `IParam` for structured parameters with descriptions, validation, and nested objects
 - TypeScript types auto-convert to Zod schemas
 - Full IntelliSense on parameters and return types
+- Programmatic calls to `executeTool()` now return the raw handler value by default; use `executeToolEnvelope()` when you need the MCP transport payload.
 
 **Prompts:**
 - **Static**: Define template with `{variable}` syntax
@@ -863,6 +913,8 @@ Tests verify:
 - [Documentation Index](./docs/README.md) - Complete documentation map with all guides organized by topic
 
 ### Advanced Topics
+- [Context System](./src/docs/guides/CONTEXT-SYSTEM.md) - Access server metadata, session methods, and request context
+- [Lifecycle Management](./src/docs/guides/LIFECYCLE-MANAGEMENT.md) - Resource initialization and cleanup with lifecycle hooks
 - [Bundling Guide](./docs/guides/BUNDLING.md) - Production bundling and deployment
 - [Performance Guide](./docs/guides/PERFORMANCE_GUIDE.md) - Optimization techniques
 - [Deployment Guide](./docs/guides/DEPLOYMENT_GUIDE.md) - Deploy MCP servers

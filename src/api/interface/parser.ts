@@ -161,20 +161,49 @@ export function parseInterfaceFile(filePath: string): ParseResult {
     }
 
     // Check for class declarations implementing IServer
-    if (ts.isClassDeclaration(node) && node.name) {
-      const className = node.name.text;
+    if (ts.isClassDeclaration(node)) {
+      const className = node.name?.text;
+      if (!className) {
+        ts.forEachChild(node, visit);
+        return;
+      }
 
+      const modifiers = node.modifiers ? Array.from(node.modifiers) : [];
+      const hasDefaultExport = modifiers.some(mod => mod.kind === ts.SyntaxKind.DefaultKeyword);
+      const hasExport = modifiers.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword);
+
+      // Priority 1: Explicit export default (backward compatible)
+      if (hasExport && hasDefaultExport) {
+        result.className = className;
+        if (result.server) {
+          result.server.className = className;
+        }
+      }
+
+      // Priority 2: Class implements server interface
       if (node.heritageClauses) {
         for (const clause of node.heritageClauses) {
           if (clause.token === ts.SyntaxKind.ImplementsKeyword) {
             for (const type of clause.types) {
               const typeName = type.expression.getText(sourceFile);
-              // Check if this class implements a server interface
               if (result.server && typeName === result.server.interfaceName) {
                 result.server.className = className;
-                result.className = className;
+                if (!result.className) {
+                  result.className = className;
+                }
               }
             }
+          }
+        }
+      }
+
+      // Priority 3: Auto-detect class by naming pattern (fallback)
+      if (!result.className && !hasDefaultExport) {
+        const isServerClass = /Server|Service|Impl|Handler|Provider|Manager$/i.test(className);
+        if (isServerClass) {
+          result.className = className;
+          if (result.server) {
+            result.server.className = className;
           }
         }
       }

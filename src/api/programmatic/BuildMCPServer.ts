@@ -112,6 +112,7 @@ export class BuildMCPServer {
       description: options.description,
       basePath: options.basePath || process.cwd(),
       defaultTimeout: options.defaultTimeout || 5000,
+      silent: options.silent ?? false,
       transport: {
         type: options.transport?.type || 'stdio',
         port: options.transport?.port || 3000,
@@ -126,6 +127,7 @@ export class BuildMCPServer {
     this.handlerManager = new HandlerManager({
       basePath: this.options.basePath,
       defaultTimeout: this.options.defaultTimeout,
+      silent: this.options.silent,
     });
 
     // Store dependencies if provided
