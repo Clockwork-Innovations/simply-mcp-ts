@@ -145,6 +145,7 @@ export {
 // Interface-Driven API (v3.0.0 - In Development)
 // ============================================================================
 export type {
+  IParam,
   ITool,
   IPrompt,
   IResource,

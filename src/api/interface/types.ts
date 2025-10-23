@@ -37,6 +37,136 @@
 import type { RouterToolDefinition as ProgrammaticRouterToolDefinition } from '../programmatic/types.js';
 
 /**
+ * Parameter Definition Interface
+ *
+ * IParam provides a structured way to define parameter constraints with descriptions
+ * and validation rules. This improves LLM accuracy when calling tools by providing
+ * richer parameter metadata in the generated JSON Schema.
+ *
+ * @template T - The base TypeScript type (string, number, boolean, etc.)
+ *
+ * @example String Parameter
+ * ```typescript
+ * interface NameParam extends IParam<string> {
+ *   description: 'User full name';
+ *   required: true;
+ *   minLength: 1;
+ *   maxLength: 100;
+ * }
+ * ```
+ *
+ * @example Number Parameter
+ * ```typescript
+ * interface AgeParam extends IParam<number> {
+ *   description: 'User age in years';
+ *   required: true;
+ *   min: 0;
+ *   max: 150;
+ *   int: true;  // Must be integer
+ * }
+ * ```
+ *
+ * @example Optional Email Parameter
+ * ```typescript
+ * interface EmailParam extends IParam<string> {
+ *   description: 'Email address for notifications';
+ *   required: false;
+ *   format: 'email';
+ * }
+ * ```
+ *
+ * @example Mixed Parameters in Tool
+ * ```typescript
+ * interface RegisterUserTool extends ITool {
+ *   name: 'register_user';
+ *   description: 'Register a new user';
+ *   params: {
+ *     name: NameParam;           // IParam with validation
+ *     age: AgeParam;             // IParam with validation
+ *     newsletter?: boolean;      // Simple TypeScript type
+ *   };
+ *   result: { userId: string };
+ * }
+ * ```
+ */
+export interface IParam<T = any> {
+  /**
+   * Human-readable description of this parameter
+   * Included in JSON Schema to help LLMs understand parameter purpose
+   */
+  description: string;
+
+  /**
+   * Whether this parameter is required
+   * Default: true
+   */
+  required?: boolean;
+
+  // String validation constraints
+  /**
+   * Minimum string length (string types only)
+   */
+  minLength?: number;
+
+  /**
+   * Maximum string length (string types only)
+   */
+  maxLength?: number;
+
+  /**
+   * String format validation (string types only)
+   * Common values: 'email', 'uri', 'date-time', 'uuid', etc.
+   */
+  format?: string;
+
+  /**
+   * Regular expression pattern (string types only)
+   */
+  pattern?: string;
+
+  // Number validation constraints
+  /**
+   * Minimum value (number types only)
+   */
+  min?: number;
+
+  /**
+   * Maximum value (number types only)
+   */
+  max?: number;
+
+  /**
+   * Must be an integer (number types only)
+   */
+  int?: boolean;
+
+  /**
+   * Must be a multiple of this value (number types only)
+   */
+  multipleOf?: number;
+
+  // Array validation constraints
+  /**
+   * Minimum array length (array types only)
+   */
+  minItems?: number;
+
+  /**
+   * Maximum array length (array types only)
+   */
+  maxItems?: number;
+
+  /**
+   * All array items must be unique (array types only)
+   */
+  uniqueItems?: boolean;
+
+  // Callable signature - allows IParam to be used as a value type
+  // This is structural compatibility for TypeScript type system
+  (value: T): T;
+}
+
+/**
  * Base Tool interface
  *
  * Tools require implementation as class methods because they contain dynamic logic.
@@ -48,10 +178,15 @@ import type { RouterToolDefinition as ProgrammaticRouterToolDefinition } from '.
  * - `params`: Parameter types (TypeScript types, converted to Zod schema)
  * - `result`: Return type
  *
+ * Parameters can be:
+ * - Simple TypeScript types (string, number, boolean, etc.)
+ * - IParam interfaces for richer validation and documentation
+ * - Complex nested objects
+ *
  * @template TParams - Parameter object type
  * @template TResult - Return value type
  *
- * @example
+ * @example Simple Parameters
  * ```typescript
  * interface GreetTool extends ITool {
  *   name: 'greet_user';
@@ -59,7 +194,26 @@ import type { RouterToolDefinition as ProgrammaticRouterToolDefinition } from '.
  *   params: { name: string; formal?: boolean };
  *   result: string;
  * }
+ * ```
  *
+ * @example IParam Parameters
+ * ```typescript
+ * interface NameParam extends IParam<string> {
+ *   description: 'User full name';
+ *   minLength: 1;
+ *   maxLength: 100;
+ * }
+ *
+ * interface GreetTool extends ITool {
+ *   name: 'greet_user';
+ *   description: 'Greet a user by name';
+ *   params: { name: NameParam };
+ *   result: string;
+ * }
+ * ```
+ *
+ * @example Implementation
+ * ```typescript
  * class MyServer implements IServer {
  *   // Method name is camelCase version of tool name
  *   greetUser: GreetTool = async (params) => {

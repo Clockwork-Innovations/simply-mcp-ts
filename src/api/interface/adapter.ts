@@ -235,16 +235,57 @@ function generateSchema(tool: ParsedTool, filePath: string): z.ZodTypeAny {
   // If we have the AST node, use it for accurate schema generation
   if (tool.paramsNode) {
     try {
-      // Load source file for schema generation
-      const sourceCode = readFileSync(resolve(filePath), 'utf-8');
-      const sourceFile = ts.createSourceFile(
-        filePath,
-        sourceCode,
-        ts.ScriptTarget.Latest,
-        true
-      );
+      // Create a TypeChecker for resolving IParam interfaces
+      const compilerOptions: ts.CompilerOptions = {
+        target: ts.ScriptTarget.Latest,
+        module: ts.ModuleKind.ESNext,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        strict: true,
+      };
 
-      return typeNodeToZodSchema(tool.paramsNode, sourceFile);
+      const compilerHost = ts.createCompilerHost(compilerOptions);
+      const program = ts.createProgram([resolve(filePath)], compilerOptions, compilerHost);
+      const checker = program.getTypeChecker();
+
+      // Get the source file from the program (so types are resolved)
+      const sourceFile = program.getSourceFile(resolve(filePath));
+      if (!sourceFile) {
+        throw new Error('Failed to get source file from program');
+      }
+
+      // Re-find the tool interface in the new program's AST
+      // We need to do this because tool.paramsNode is from a different program/sourceFile
+      let paramsTypeNode: ts.TypeNode | undefined;
+
+      function findToolInterface(node: ts.Node): void {
+        if (ts.isInterfaceDeclaration(node)) {
+          const interfaceName = node.name.text;
+
+          // Check if this is our tool interface
+          if (interfaceName === tool.interfaceName) {
+            // Found the interface, now extract the params property type
+            for (const member of node.members) {
+              if (ts.isPropertySignature(member) && member.name) {
+                const memberName = member.name.getText(sourceFile);
+                if (memberName === 'params' && member.type) {
+                  paramsTypeNode = member.type;
+                  return;
+                }
+              }
+            }
+          }
+        }
+
+        ts.forEachChild(node, findToolInterface);
+      }
+
+      findToolInterface(sourceFile);
+
+      if (!paramsTypeNode) {
+        throw new Error(`Could not find params type for ${tool.interfaceName}`);
+      }
+
+      return typeNodeToZodSchema(paramsTypeNode, sourceFile, undefined, checker);
     } catch (error: any) {
       console.warn(
         `[Interface Adapter] Failed to generate schema for ${tool.name}: ${error.message}`

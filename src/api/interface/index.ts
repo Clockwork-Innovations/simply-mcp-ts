@@ -6,6 +6,7 @@
 
 // Type definitions
 export type {
+  IParam,
   ITool,
   IPrompt,
   IResource,

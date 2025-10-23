@@ -12,6 +12,10 @@ import { z, ZodTypeAny } from 'zod';
  * JSDoc validation tags that can be applied to parameters
  */
 export interface ValidationTags {
+  /** Description of the parameter (from IParam or JSDoc) */
+  description?: string;
+  /** Whether the parameter is required (from IParam) */
+  required?: boolean;
   /** Minimum value for numbers */
   min?: number;
   /** Maximum value for numbers */
@@ -30,6 +34,189 @@ export interface ValidationTags {
   minItems?: number;
   /** Maximum items for arrays */
   maxItems?: number;
+  /** Multiple of value for numbers */
+  multipleOf?: number;
+  /** Unique items for arrays */
+  uniqueItems?: boolean;
+}
+
+/**
+ * Check if a type reference extends IParam and extract its properties
+ *
+ * @param typeNode - The type reference node to check
+ * @param sourceFile - The source file containing the type
+ * @param checker - Optional TypeChecker for resolving types
+ * @returns ValidationTags if this extends IParam, null otherwise
+ */
+function extractIParamProperties(
+  typeNode: ts.TypeReferenceNode,
+  sourceFile: ts.SourceFile,
+  checker?: ts.TypeChecker
+): { tags: ValidationTags; baseType: ts.TypeNode } | null {
+  if (!checker) {
+    return null;
+  }
+
+  const type = checker.getTypeAtLocation(typeNode);
+  const symbol = type.getSymbol();
+
+  if (!symbol) {
+    return null;
+  }
+
+  const declarations = symbol.getDeclarations();
+  if (!declarations || declarations.length === 0) {
+    return null;
+  }
+
+  const declaration = declarations[0];
+
+  // Check if this is an interface declaration
+  if (!ts.isInterfaceDeclaration(declaration)) {
+    return null;
+  }
+
+  // Check if it has members
+  if (!declaration.members || declaration.members.length === 0) {
+    return null;
+  }
+
+  // Check if it extends IParam
+  const heritageClauses = declaration.heritageClauses;
+  if (!heritageClauses) {
+    return null;
+  }
+
+  let extendsIParam = false;
+  let baseTypeNode: ts.TypeNode | null = null;
+
+  for (const clause of heritageClauses) {
+    if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
+      for (const type of clause.types) {
+        const typeName = type.expression.getText(sourceFile);
+        if (typeName === 'IParam') {
+          extendsIParam = true;
+          // Extract the generic type argument (e.g., <string> from IParam<string>)
+          if (type.typeArguments && type.typeArguments.length > 0) {
+            baseTypeNode = type.typeArguments[0];
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  if (!extendsIParam || !baseTypeNode) {
+    return null;
+  }
+
+  // Extract IParam properties from the interface
+  const tags: ValidationTags = {};
+
+  for (const member of declaration.members) {
+    if (ts.isPropertySignature(member) && member.name) {
+      const propertyName = member.name.getText(sourceFile);
+
+      // Extract the literal value if present
+      const propertyType = member.type;
+      let value: any = undefined;
+
+      if (propertyType) {
+        if (ts.isLiteralTypeNode(propertyType)) {
+          const literal = propertyType.literal;
+          if (ts.isStringLiteral(literal)) {
+            value = literal.text;
+          } else if (ts.isNumericLiteral(literal)) {
+            value = parseFloat(literal.text);
+          } else if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+            value = true;
+          } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+            value = false;
+          }
+        } else if (propertyType.kind === ts.SyntaxKind.NumberKeyword) {
+          // For number properties without literal value, skip
+          continue;
+        } else if (propertyType.kind === ts.SyntaxKind.StringKeyword) {
+          // For string properties without literal value, skip
+          continue;
+        } else if (propertyType.kind === ts.SyntaxKind.BooleanKeyword) {
+          // For boolean properties without literal value, skip
+          continue;
+        }
+      }
+
+      // Map IParam properties to ValidationTags
+      switch (propertyName) {
+        case 'description':
+          if (typeof value === 'string') {
+            tags.description = value;
+          }
+          break;
+        case 'required':
+          if (typeof value === 'boolean') {
+            tags.required = value;
+          }
+          break;
+        case 'min':
+          if (typeof value === 'number') {
+            tags.min = value;
+          }
+          break;
+        case 'max':
+          if (typeof value === 'number') {
+            tags.max = value;
+          }
+          break;
+        case 'minLength':
+          if (typeof value === 'number') {
+            tags.minLength = value;
+          }
+          break;
+        case 'maxLength':
+          if (typeof value === 'number') {
+            tags.maxLength = value;
+          }
+          break;
+        case 'minItems':
+          if (typeof value === 'number') {
+            tags.minItems = value;
+          }
+          break;
+        case 'maxItems':
+          if (typeof value === 'number') {
+            tags.maxItems = value;
+          }
+          break;
+        case 'pattern':
+          if (typeof value === 'string') {
+            tags.pattern = value;
+          }
+          break;
+        case 'format':
+          if (typeof value === 'string' && (value === 'email' || value === 'url' || value === 'uuid')) {
+            tags.format = value as 'email' | 'url' | 'uuid';
+          }
+          break;
+        case 'int':
+          if (typeof value === 'boolean') {
+            tags.int = value;
+          }
+          break;
+        case 'multipleOf':
+          if (typeof value === 'number') {
+            tags.multipleOf = value;
+          }
+          break;
+        case 'uniqueItems':
+          if (typeof value === 'boolean') {
+            tags.uniqueItems = value;
+          }
+          break;
+      }
+    }
+  }
+
+  return { tags, baseType: baseTypeNode };
 }
 
 /**
@@ -86,7 +273,8 @@ export function extractValidationTags(node: ts.Node, sourceFile: ts.SourceFile):
 export function typeNodeToZodSchema(
   typeNode: ts.TypeNode,
   sourceFile: ts.SourceFile,
-  validationTags?: ValidationTags
+  validationTags?: ValidationTags,
+  checker?: ts.TypeChecker
 ): ZodTypeAny {
   const tags = validationTags || {};
 
@@ -103,7 +291,7 @@ export function typeNodeToZodSchema(
         t => t.kind !== ts.SyntaxKind.UndefinedKeyword
       );
       if (nonUndefinedType) {
-        const baseSchema = typeNodeToZodSchema(nonUndefinedType, sourceFile, tags);
+        const baseSchema = typeNodeToZodSchema(nonUndefinedType, sourceFile, tags, checker);
         return baseSchema.optional();
       }
     }
@@ -127,13 +315,13 @@ export function typeNodeToZodSchema(
     }
 
     // For other unions, use z.union()
-    const schemas = typeNode.types.map(t => typeNodeToZodSchema(t, sourceFile, tags));
+    const schemas = typeNode.types.map(t => typeNodeToZodSchema(t, sourceFile, tags, checker));
     return z.union(schemas as [ZodTypeAny, ZodTypeAny, ...ZodTypeAny[]]);
   }
 
   // Handle array types
   if (ts.isArrayTypeNode(typeNode)) {
-    const elementSchema = typeNodeToZodSchema(typeNode.elementType, sourceFile);
+    const elementSchema = typeNodeToZodSchema(typeNode.elementType, sourceFile, undefined, checker);
     let arraySchema = z.array(elementSchema);
 
     if (tags.minItems !== undefined) {
@@ -148,10 +336,10 @@ export function typeNodeToZodSchema(
 
   // Handle type literals (object types like { name: string; age: number })
   if (ts.isTypeLiteralNode(typeNode)) {
-    return typeLiteralToZodSchema(typeNode, sourceFile);
+    return typeLiteralToZodSchema(typeNode, sourceFile, checker);
   }
 
-  // Handle type references (like Date, Array<string>, etc.)
+  // Handle type references (like Date, Array<string>, IParam interfaces, etc.)
   if (ts.isTypeReferenceNode(typeNode)) {
     const typeName = typeNode.typeName.getText(sourceFile);
 
@@ -162,7 +350,7 @@ export function typeNodeToZodSchema(
     if (typeName === 'Array') {
       const typeArgs = typeNode.typeArguments;
       if (typeArgs && typeArgs.length > 0) {
-        const elementSchema = typeNodeToZodSchema(typeArgs[0], sourceFile);
+        const elementSchema = typeNodeToZodSchema(typeArgs[0], sourceFile, undefined, checker);
         let arraySchema = z.array(elementSchema);
 
         if (tags.minItems !== undefined) {
@@ -175,6 +363,28 @@ export function typeNodeToZodSchema(
         return arraySchema;
       }
       return z.array(z.any());
+    }
+
+    // Check if this type extends IParam
+    const iparamInfo = extractIParamProperties(typeNode, sourceFile, checker);
+    if (iparamInfo) {
+      // Merge IParam tags with existing tags (IParam takes precedence)
+      const mergedTags = { ...tags, ...iparamInfo.tags };
+
+      // Recursively process the base type with IParam constraints
+      let baseSchema = typeNodeToZodSchema(iparamInfo.baseType, sourceFile, mergedTags, checker);
+
+      // Apply description if present
+      if (mergedTags.description) {
+        baseSchema = baseSchema.describe(mergedTags.description);
+      }
+
+      // Make optional if required: false
+      if (mergedTags.required === false) {
+        baseSchema = baseSchema.optional();
+      }
+
+      return baseSchema;
     }
 
     // Default: treat as object
@@ -223,6 +433,9 @@ export function typeNodeToZodSchema(
       if (tags.max !== undefined) {
         numberSchema = numberSchema.max(tags.max);
       }
+      if (tags.multipleOf !== undefined) {
+        numberSchema = numberSchema.multipleOf(tags.multipleOf);
+      }
 
       return numberSchema;
     }
@@ -255,7 +468,8 @@ export function typeNodeToZodSchema(
  */
 function typeLiteralToZodSchema(
   typeLiteral: ts.TypeLiteralNode,
-  sourceFile: ts.SourceFile
+  sourceFile: ts.SourceFile,
+  checker?: ts.TypeChecker
 ): z.ZodObject<any> {
   const shape: Record<string, ZodTypeAny> = {};
 
@@ -268,9 +482,10 @@ function typeLiteralToZodSchema(
         // Extract validation tags from JSDoc
         const tags = extractValidationTags(member, sourceFile);
 
-        let propertySchema = typeNodeToZodSchema(member.type, sourceFile, tags);
+        let propertySchema = typeNodeToZodSchema(member.type, sourceFile, tags, checker);
 
-        // Make optional if it has a question token
+        // Make optional if it has a question token (TypeScript optional syntax: field?: type)
+        // Note: IParam's required: false is handled within typeNodeToZodSchema
         if (isOptional && !propertySchema._def.typeName?.includes('Optional')) {
           propertySchema = propertySchema.optional();
         }

@@ -70,6 +70,158 @@ interface ITool {
 
 Implement as class method with camelCase name.
 
+### IParam
+
+`IParam` provides structured parameter definitions with descriptions and validation constraints. This **improves LLM accuracy** by providing richer metadata in the generated JSON Schema.
+
+```typescript
+interface IParam<T> {
+  description: string;       // Parameter description (required)
+  required?: boolean;        // Is required (default: true)
+
+  // String constraints
+  minLength?: number;
+  maxLength?: number;
+  format?: string;           // 'email', 'uri', 'date-time', etc.
+  pattern?: string;          // Regex pattern
+
+  // Number constraints
+  min?: number;
+  max?: number;
+  int?: boolean;             // Must be integer
+  multipleOf?: number;
+
+  // Array constraints
+  minItems?: number;
+  maxItems?: number;
+  uniqueItems?: boolean;
+}
+```
+
+**Basic Usage:**
+
+```typescript
+import type { IParam, ITool } from 'simply-mcp';
+
+interface NameParam extends IParam<string> {
+  description: 'User full name';
+  minLength: 1;
+  maxLength: 100;
+}
+
+interface AgeParam extends IParam<number> {
+  description: 'User age in years';
+  min: 0;
+  max: 150;
+  int: true;
+}
+
+interface GreetTool extends ITool {
+  name: 'greet_user';
+  description: 'Greet a user';
+  params: {
+    name: NameParam;         // Structured parameter
+    age: AgeParam;           // Structured parameter
+    formal?: boolean;        // Can mix simple types
+  };
+  result: string;
+}
+```
+
+**Why Use IParam:**
+
+1. **Better LLM Accuracy**: Descriptions help LLMs understand parameter purpose
+2. **Runtime Validation**: Constraints are enforced via Zod schemas
+3. **Self-Documenting**: Validation rules visible in type definitions
+4. **IDE Support**: Full autocomplete for all constraints
+5. **Backward Compatible**: Mix with simple TypeScript types
+
+**String Validation Example:**
+
+```typescript
+interface EmailParam extends IParam<string> {
+  description: 'Email address for notifications';
+  required: false;
+  format: 'email';
+}
+
+interface URLParam extends IParam<string> {
+  description: 'API endpoint URL';
+  required: true;
+  format: 'uri';
+  pattern: '^https://';
+}
+```
+
+**Number Validation Example:**
+
+```typescript
+interface PortParam extends IParam<number> {
+  description: 'Server port number';
+  required: true;
+  min: 1024;
+  max: 65535;
+  int: true;
+}
+
+interface TemperatureParam extends IParam<number> {
+  description: 'Temperature in Celsius';
+  min: -273.15;  // Absolute zero
+  multipleOf: 0.1;
+}
+```
+
+**Array Validation Example:**
+
+```typescript
+interface TagsParam extends IParam<string[]> {
+  description: 'List of tags';
+  minItems: 1;
+  maxItems: 10;
+  uniqueItems: true;
+}
+```
+
+**Complete Example:**
+
+```typescript
+interface LocationParam extends IParam<string> {
+  description: 'City or location name';
+  minLength: 1;
+  maxLength: 100;
+}
+
+interface DaysParam extends IParam<number> {
+  description: 'Number of forecast days';
+  required: false;
+  min: 1;
+  max: 14;
+  int: true;
+}
+
+interface GetForecastTool extends ITool {
+  name: 'get_forecast';
+  description: 'Get weather forecast';
+  params: {
+    location: LocationParam;
+    days: DaysParam;
+  };
+  result: Array<{ date: string; temp: number }>;
+}
+
+export default class WeatherServer implements IServer {
+  name: 'weather-service';
+  version: '1.0.0';
+
+  getForecast: GetForecastTool = async ({ location, days = 7 }) => {
+    // Implementation
+    return [];
+  };
+}
+```
+
+**See Also:** [examples/interface-params.ts](../../examples/interface-params.ts)
+
 ### Prompts: Static and Dynamic
 
 Prompts can be static (template-based) or dynamic (runtime-generated).
@@ -502,22 +654,6 @@ npx simply-mcp run server.ts --http --port 3000
 
 # Watch mode
 npx simply-mcp run server.ts --watch
-```
-
----
-
-## When to Use This API
-
-✅ **Use if:**
-- You need strict type safety
-- Your team has TypeScript standards
-- Building critical applications
-- You want compile-time validation
-
-❌ **Don't use if:**
-- Learning MCP for the first time → Use [Functional API](./FUNCTIONAL_API_REFERENCE.md)
-- You prefer class-based code → Use [Decorator API](./DECORATOR_API_REFERENCE.md)
-- You need simpler setup → Use [Functional API](./FUNCTIONAL_API_REFERENCE.md)
 
 ---
 
