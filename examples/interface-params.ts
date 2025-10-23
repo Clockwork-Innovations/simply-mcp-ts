@@ -11,28 +11,31 @@
 import type { ITool, IParam, IServer } from 'simply-mcp';
 
 // Define structured parameters with IParam
-interface NameParam extends IParam<string> {
+interface NameParam extends IParam {
+  type: 'string';
   description: 'User full name';
   required: true;  // Default is true, but shown for clarity
   minLength: 1;
   maxLength: 100;
 }
 
-interface AgeParam extends IParam<number> {
+interface AgeParam extends IParam {
+  type: 'integer';
   description: 'User age in years';
   required: true;
   min: 0;
   max: 150;
-  int: true;  // Must be integer
 }
 
-interface EmailParam extends IParam<string> {
+interface EmailParam extends IParam {
+  type: 'string';
   description: 'Email address for notifications';
   required: false;  // Optional parameter
   format: 'email';
 }
 
-interface TitleParam extends IParam<string> {
+interface TitleParam extends IParam {
+  type: 'string';
   description: 'Professional title or honorific';
   required: false;
   maxLength: 50;

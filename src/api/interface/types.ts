@@ -37,59 +37,193 @@
 import type { RouterToolDefinition as ProgrammaticRouterToolDefinition } from '../programmatic/types.js';
 
 /**
- * Parameter Definition Interface
+ * Enhanced parameter definition with validation constraints
  *
- * IParam provides a structured way to define parameter constraints with descriptions
- * and validation rules. This improves LLM accuracy when calling tools by providing
+ * IParam provides a single unified interface for all parameter types with a required
+ * type discriminant field. This improves LLM accuracy when calling tools by providing
  * richer parameter metadata in the generated JSON Schema.
  *
- * @template T - The base TypeScript type (string, number, boolean, etc.)
+ * The `type` field acts as a discriminant to determine which validation constraints
+ * apply to the parameter. All constraint fields are optional and type-specific
+ * (e.g., minLength only applies to strings, min/max only apply to numbers).
  *
- * @example String Parameter
+ * @example Basic String
  * ```typescript
- * interface NameParam extends IParam<string> {
+ * interface NameParam extends IParam {
+ *   type: 'string';
  *   description: 'User full name';
- *   required: true;
  *   minLength: 1;
  *   maxLength: 100;
  * }
  * ```
  *
- * @example Number Parameter
+ * @example Email Format
  * ```typescript
- * interface AgeParam extends IParam<number> {
- *   description: 'User age in years';
- *   required: true;
- *   min: 0;
- *   max: 150;
- *   int: true;  // Must be integer
- * }
- * ```
- *
- * @example Optional Email Parameter
- * ```typescript
- * interface EmailParam extends IParam<string> {
- *   description: 'Email address for notifications';
- *   required: false;
+ * interface EmailParam extends IParam {
+ *   type: 'string';
+ *   description: 'User email address';
  *   format: 'email';
  * }
  * ```
  *
- * @example Mixed Parameters in Tool
+ * @example Pattern Validation
  * ```typescript
- * interface RegisterUserTool extends ITool {
- *   name: 'register_user';
- *   description: 'Register a new user';
- *   params: {
- *     name: NameParam;           // IParam with validation
- *     age: AgeParam;             // IParam with validation
- *     newsletter?: boolean;      // Simple TypeScript type
+ * interface UsernameParam extends IParam {
+ *   type: 'string';
+ *   description: 'Username (alphanumeric only)';
+ *   pattern: '^[a-zA-Z0-9]+$';
+ *   minLength: 3;
+ *   maxLength: 20;
+ * }
+ * ```
+ *
+ * @example Integer Age
+ * ```typescript
+ * interface AgeParam extends IParam {
+ *   type: 'integer';
+ *   description: 'User age in years';
+ *   min: 0;
+ *   max: 150;
+ * }
+ * ```
+ *
+ * @example Float Temperature
+ * ```typescript
+ * interface TemperatureParam extends IParam {
+ *   type: 'number';
+ *   description: 'Temperature in Celsius';
+ *   min: -273.15;
+ *   max: 1000;
+ * }
+ * ```
+ *
+ * @example Port Number
+ * ```typescript
+ * interface PortParam extends IParam {
+ *   type: 'integer';
+ *   description: 'Network port';
+ *   min: 1;
+ *   max: 65535;
+ * }
+ * ```
+ *
+ * @example Boolean
+ * ```typescript
+ * interface EnabledParam extends IParam {
+ *   type: 'boolean';
+ *   description: 'Whether the feature is enabled';
+ * }
+ * ```
+ *
+ * @example String Array
+ * ```typescript
+ * interface TagsParam extends IParam {
+ *   type: 'array';
+ *   description: 'User tags';
+ *   items: {
+ *     type: 'string';
+ *     description: 'A single tag';
+ *     minLength: 1;
  *   };
- *   result: { userId: string };
+ *   minItems: 0;
+ *   maxItems: 10;
+ * }
+ * ```
+ *
+ * @example Number Array
+ * ```typescript
+ * interface ScoresParam extends IParam {
+ *   type: 'array';
+ *   description: 'Test scores';
+ *   items: {
+ *     type: 'integer';
+ *     description: 'Individual score';
+ *     min: 0;
+ *     max: 100;
+ *   };
+ *   minItems: 1;
+ * }
+ * ```
+ *
+ * @example Nested Object Array
+ * ```typescript
+ * interface UsersParam extends IParam {
+ *   type: 'array';
+ *   description: 'List of users';
+ *   items: {
+ *     type: 'object';
+ *     description: 'User object';
+ *     properties: {
+ *       name: { type: 'string'; description: 'User name' };
+ *       age: { type: 'integer'; description: 'User age'; min: 0 };
+ *     };
+ *     requiredProperties: ['name'];
+ *   };
+ * }
+ * ```
+ *
+ * @example User Object
+ * ```typescript
+ * interface UserParam extends IParam {
+ *   type: 'object';
+ *   description: 'User information';
+ *   properties: {
+ *     name: {
+ *       type: 'string';
+ *       description: 'User name';
+ *       minLength: 1;
+ *     };
+ *     age: {
+ *       type: 'integer';
+ *       description: 'User age';
+ *       min: 0;
+ *     };
+ *     email: {
+ *       type: 'string';
+ *       description: 'Email address';
+ *       format: 'email';
+ *     };
+ *   };
+ *   requiredProperties: ['name'];
+ * }
+ * ```
+ *
+ * @example Nested Objects
+ * ```typescript
+ * interface AddressParam extends IParam {
+ *   type: 'object';
+ *   description: 'Mailing address';
+ *   properties: {
+ *     street: { type: 'string'; description: 'Street address' };
+ *     city: { type: 'string'; description: 'City' };
+ *     country: { type: 'string'; description: 'Country code'; pattern: '^[A-Z]{2}$' };
+ *   };
+ *   requiredProperties: ['street', 'city', 'country'];
+ * }
+ * ```
+ *
+ * @example Null Parameter
+ * ```typescript
+ * interface NullParam extends IParam {
+ *   type: 'null';
+ *   description: 'Explicitly null value';
  * }
  * ```
  */
-export interface IParam<T = any> {
+export interface IParam {
+  /**
+   * The JSON Schema type discriminant
+   *
+   * This required field determines which validation constraints apply:
+   * - 'string': Use minLength, maxLength, format, pattern, enum
+   * - 'number' | 'integer': Use min, max, exclusiveMin, exclusiveMax, multipleOf
+   * - 'boolean': No additional constraints
+   * - 'array': Use items, minItems, maxItems, uniqueItems
+   * - 'object': Use properties, requiredProperties, additionalProperties
+   * - 'null': No additional constraints
+   */
+  type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object' | 'null';
+
   /**
    * Human-readable description of this parameter
    * Included in JSON Schema to help LLMs understand parameter purpose
@@ -102,68 +236,98 @@ export interface IParam<T = any> {
    */
   required?: boolean;
 
-  // String validation constraints
+  // String constraints (type: 'string')
+
   /**
-   * Minimum string length (string types only)
+   * Minimum length for string values
    */
   minLength?: number;
 
   /**
-   * Maximum string length (string types only)
+   * Maximum length for string values
    */
   maxLength?: number;
 
   /**
-   * String format validation (string types only)
-   * Common values: 'email', 'uri', 'date-time', 'uuid', etc.
+   * String format validation
    */
-  format?: string;
+  format?: 'email' | 'url' | 'uuid' | 'date-time' | 'uri' | 'ipv4' | 'ipv6';
 
   /**
-   * Regular expression pattern (string types only)
+   * Regex pattern for string validation
    */
   pattern?: string;
 
-  // Number validation constraints
   /**
-   * Minimum value (number types only)
+   * Enum values - restrict to specific allowed strings
+   */
+  enum?: string[];
+
+  // Number constraints (type: 'number' | 'integer')
+
+  /**
+   * Minimum value (inclusive)
    */
   min?: number;
 
   /**
-   * Maximum value (number types only)
+   * Maximum value (inclusive)
    */
   max?: number;
 
   /**
-   * Must be an integer (number types only)
-   */
-  int?: boolean;
-
-  /**
-   * Must be a multiple of this value (number types only)
+   * Number must be a multiple of this value
    */
   multipleOf?: number;
 
-  // Array validation constraints
   /**
-   * Minimum array length (array types only)
+   * Exclusive minimum (value must be greater than this)
+   */
+  exclusiveMin?: number;
+
+  /**
+   * Exclusive maximum (value must be less than this)
+   */
+  exclusiveMax?: number;
+
+  // Array constraints (type: 'array')
+
+  /**
+   * Schema for array items (can be any IParam type)
+   */
+  items?: IParam;
+
+  /**
+   * Minimum number of items in array
    */
   minItems?: number;
 
   /**
-   * Maximum array length (array types only)
+   * Maximum number of items in array
    */
   maxItems?: number;
 
   /**
-   * All array items must be unique (array types only)
+   * Whether array items must be unique
    */
   uniqueItems?: boolean;
 
-  // Callable signature - allows IParam to be used as a value type
-  // This is structural compatibility for TypeScript type system
-  (value: T): T;
+  // Object constraints (type: 'object')
+
+  /**
+   * Object properties (each is an IParam)
+   */
+  properties?: Record<string, IParam>;
+
+  /**
+   * Array of required property names
+   */
+  requiredProperties?: string[];
+
+  /**
+   * Whether additional properties are allowed
+   */
+  additionalProperties?: boolean;
 }
 
 /**
@@ -198,7 +362,8 @@ export interface IParam<T = any> {
  *
  * @example IParam Parameters
  * ```typescript
- * interface NameParam extends IParam<string> {
+ * interface NameParam extends IParam {
+ *   type: 'string';
  *   description: 'User full name';
  *   minLength: 1;
  *   maxLength: 100;

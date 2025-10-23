@@ -570,10 +570,18 @@ getWeather: ToolHandler<GetWeatherTool> = async (params) => {
 import type { ITool, IParam, IPrompt, IResource, IServer } from 'simply-mcp';
 
 // Define structured parameters with IParam (optional but recommended)
-interface LocationParam extends IParam<string> {
+interface LocationParam extends IParam {
+  type: 'string';
   description: 'City or location name';
   minLength: 1;
   maxLength: 100;
+}
+
+interface DaysParam extends IParam {
+  type: 'integer';
+  description: 'Number of forecast days';
+  min: 1;
+  max: 14;
 }
 
 // Define a tool with simple params
@@ -596,7 +604,7 @@ interface GetForecastTool extends ITool {
   description: 'Get weather forecast';
   params: {
     location: LocationParam;                       // IParam with validation
-    days?: number;                                  // Can mix simple types
+    days?: DaysParam;                              // IParam (optional)
   };
   result: Array<{ date: string; temp: number }>;
 }

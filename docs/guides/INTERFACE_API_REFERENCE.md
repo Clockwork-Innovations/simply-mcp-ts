@@ -72,29 +72,41 @@ Implement as class method with camelCase name.
 
 ### IParam
 
-`IParam` provides structured parameter definitions with descriptions and validation constraints. This **improves LLM accuracy** by providing richer metadata in the generated JSON Schema.
+`IParam` provides structured parameter definitions with explicit types, descriptions, and validation constraints. This **improves LLM accuracy** by providing richer metadata in the generated JSON Schema.
+
+The IParam interface uses an explicit `type` field for type discrimination:
 
 ```typescript
-interface IParam<T> {
+// Single unified interface - all params extend this
+interface IParam {
+  type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object' | 'null';
   description: string;       // Parameter description (required)
   required?: boolean;        // Is required (default: true)
 
-  // String constraints
+  // String-specific fields
   minLength?: number;
   maxLength?: number;
-  format?: string;           // 'email', 'uri', 'date-time', etc.
+  format?: 'email' | 'url' | 'uuid' | 'date-time' | 'uri' | 'ipv4' | 'ipv6';
   pattern?: string;          // Regex pattern
+  enum?: string[];           // Allowed values
 
-  // Number constraints
-  min?: number;
-  max?: number;
-  int?: boolean;             // Must be integer
+  // Number-specific fields
+  min?: number;              // Inclusive minimum
+  max?: number;              // Inclusive maximum
+  exclusiveMin?: number;     // Exclusive minimum
+  exclusiveMax?: number;     // Exclusive maximum
   multipleOf?: number;
 
-  // Array constraints
+  // Array-specific fields
+  items?: IParam;            // Schema for array items
   minItems?: number;
   maxItems?: number;
   uniqueItems?: boolean;
+
+  // Object-specific fields
+  properties?: Record<string, IParam>;
+  requiredProperties?: string[];
+  additionalProperties?: boolean;
 }
 ```
 
@@ -103,17 +115,18 @@ interface IParam<T> {
 ```typescript
 import type { IParam, ITool } from 'simply-mcp';
 
-interface NameParam extends IParam<string> {
+interface NameParam extends IParam {
+  type: 'string';
   description: 'User full name';
   minLength: 1;
   maxLength: 100;
 }
 
-interface AgeParam extends IParam<number> {
+interface AgeParam extends IParam {
+  type: 'integer';
   description: 'User age in years';
   min: 0;
   max: 150;
-  int: true;
 }
 
 interface GreetTool extends ITool {
@@ -130,73 +143,176 @@ interface GreetTool extends ITool {
 
 **Why Use IParam:**
 
-1. **Better LLM Accuracy**: Descriptions help LLMs understand parameter purpose
+1. **Better LLM Accuracy**: Explicit types and descriptions help LLMs understand parameters
 2. **Runtime Validation**: Constraints are enforced via Zod schemas
 3. **Self-Documenting**: Validation rules visible in type definitions
-4. **IDE Support**: Full autocomplete for all constraints
-5. **Backward Compatible**: Mix with simple TypeScript types
+4. **Type Discrimination**: The `type` field enables precise type checking
+5. **IDE Support**: Full autocomplete for type-specific constraints
+6. **Backward Compatible**: Mix with simple TypeScript types
 
-**String Validation Example:**
+**String Validation Examples:**
 
 ```typescript
-interface EmailParam extends IParam<string> {
+// Basic string with length constraints
+interface UsernameParam extends IParam {
+  type: 'string';
+  description: 'Username (alphanumeric only)';
+  minLength: 3;
+  maxLength: 20;
+  pattern: '^[a-zA-Z0-9]+$';
+}
+
+// Email format validation
+interface EmailParam extends IParam {
+  type: 'string';
   description: 'Email address for notifications';
   required: false;
   format: 'email';
 }
 
-interface URLParam extends IParam<string> {
+// URL with pattern constraint
+interface ApiUrlParam extends IParam {
+  type: 'string';
   description: 'API endpoint URL';
-  required: true;
   format: 'uri';
   pattern: '^https://';
 }
+
+// String enum (restricted values)
+interface RoleParam extends IParam {
+  type: 'string';
+  description: 'User role';
+  enum: ['admin', 'user', 'guest'];
+}
 ```
 
-**Number Validation Example:**
+**Number Validation Examples:**
 
 ```typescript
-interface PortParam extends IParam<number> {
+// Integer with inclusive range
+interface PortParam extends IParam {
+  type: 'integer';
   description: 'Server port number';
-  required: true;
   min: 1024;
   max: 65535;
-  int: true;
 }
 
-interface TemperatureParam extends IParam<number> {
+// Float with exclusive bounds
+interface PercentageParam extends IParam {
+  type: 'number';
+  description: 'Percentage value';
+  exclusiveMin: 0;    // Must be > 0
+  exclusiveMax: 100;  // Must be < 100
+}
+
+// Temperature with minimum
+interface TemperatureParam extends IParam {
+  type: 'number';
   description: 'Temperature in Celsius';
-  min: -273.15;  // Absolute zero
-  multipleOf: 0.1;
+  min: -273.15;       // Absolute zero
+  multipleOf: 0.1;    // One decimal place
 }
 ```
 
-**Array Validation Example:**
+**Array Examples:**
 
 ```typescript
-interface TagsParam extends IParam<string[]> {
-  description: 'List of tags';
+// Simple string array
+interface TagsParam extends IParam {
+  type: 'array';
+  description: 'User tags';
+  items: {
+    type: 'string';
+    description: 'A single tag';
+    minLength: 1;
+  };
   minItems: 1;
   maxItems: 10;
   uniqueItems: true;
+}
+
+// Number array
+interface ScoresParam extends IParam {
+  type: 'array';
+  description: 'Test scores';
+  items: {
+    type: 'integer';
+    description: 'Individual score';
+    min: 0;
+    max: 100;
+  };
+  minItems: 1;
+}
+```
+
+**Object Examples:**
+
+```typescript
+// Simple object
+interface AddressParam extends IParam {
+  type: 'object';
+  description: 'Mailing address';
+  properties: {
+    street: {
+      type: 'string';
+      description: 'Street address';
+      minLength: 1;
+    };
+    city: {
+      type: 'string';
+      description: 'City name';
+    };
+    zipCode: {
+      type: 'string';
+      description: 'ZIP code';
+      pattern: '^[0-9]{5}$';
+    };
+  };
+  requiredProperties: ['street', 'city'];
+}
+
+// Object with nested structures
+interface UserParam extends IParam {
+  type: 'object';
+  description: 'User information';
+  properties: {
+    name: {
+      type: 'string';
+      description: 'Full name';
+      minLength: 1;
+    };
+    age: {
+      type: 'integer';
+      description: 'Age in years';
+      min: 0;
+    };
+    email: {
+      type: 'string';
+      description: 'Email address';
+      format: 'email';
+    };
+  };
+  requiredProperties: ['name', 'email'];
+  additionalProperties: false;
 }
 ```
 
 **Complete Example:**
 
 ```typescript
-interface LocationParam extends IParam<string> {
+interface LocationParam extends IParam {
+  type: 'string';
   description: 'City or location name';
   minLength: 1;
   maxLength: 100;
 }
 
-interface DaysParam extends IParam<number> {
+interface DaysParam extends IParam {
+  type: 'integer';
   description: 'Number of forecast days';
   required: false;
   min: 1;
   max: 14;
-  int: true;
 }
 
 interface GetForecastTool extends ITool {

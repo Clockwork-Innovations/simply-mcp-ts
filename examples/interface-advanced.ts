@@ -3,6 +3,7 @@
  *
  * Demonstrates advanced Interface API capabilities:
  * - Complex tools with nested types and enum parameters
+ * - IParam for validation (format, pattern, min/max, length constraints)
  * - Static prompts (no implementation needed!)
  * - Static resources (no implementation needed!)
  * - Dynamic resources (runtime data generation)
@@ -10,10 +11,11 @@
  *
  * Key Features Demonstrated:
  * 1. Tools with complex parameter types
- * 2. Static prompts with {variable} template syntax
- * 3. Static resources with literal data
- * 4. Dynamic resources that generate fresh data
- * 5. Automatic static/dynamic detection
+ * 2. IParam validation (email format, patterns, ranges, lengths)
+ * 3. Static prompts with {variable} template syntax
+ * 4. Static resources with literal data
+ * 5. Dynamic resources that generate fresh data
+ * 6. Automatic static/dynamic detection
  *
  * Usage:
  *   # Auto-detection (recommended)
@@ -32,7 +34,7 @@
  *   See docs/guides/INTERFACE_API_REFERENCE.md for complete documentation
  */
 
-import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';
+import type { ITool, IParam, IPrompt, IResource, IServer } from 'simply-mcp';
 
 // ============================================================================
 // TOOL INTERFACES
@@ -43,6 +45,10 @@ import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';
 // 2. Generates Zod schemas from TypeScript types
 // 3. Validates MCP requests against those schemas
 // 4. Calls your type-safe implementation methods
+//
+// IParam Usage:
+// You can use plain TypeScript types OR IParam for richer validation.
+// IParam provides: descriptions, constraints, format validation, and more.
 // ============================================================================
 
 /**
@@ -80,23 +86,46 @@ interface GetWeatherTool extends ITool {
 }
 
 /**
- * Create user tool - demonstrates arrays and structured results
+ * Create user tool - demonstrates IParam validation
  *
  * Features:
- * - Required parameters (username, email, age)
+ * - IParam with validation constraints (minLength, maxLength, format, min, max)
+ * - Email format validation
+ * - Age range validation
+ * - Username pattern validation
  * - Optional array parameter (tags)
  * - Structured result with generated data (id, createdAt)
  */
+
+// IParam definitions for create_user tool
+interface UsernameParam extends IParam {
+  type: 'string';
+  description: 'Username (alphanumeric, 3-20 characters)';
+  pattern: '^[a-zA-Z0-9_]+$';
+  minLength: 3;
+  maxLength: 20;
+}
+
+interface EmailParam extends IParam {
+  type: 'string';
+  description: 'Email address';
+  format: 'email';
+}
+
+interface AgeParam extends IParam {
+  type: 'integer';
+  description: 'User age in years';
+  min: 13;
+  max: 150;
+}
+
 interface CreateUserTool extends ITool {
   name: 'create_user';
-  description: 'Create a new user account';
+  description: 'Create a new user account with validation';
   params: {
-    /** Username for the new account */
-    username: string;
-    /** Email address */
-    email: string;
-    /** User's age */
-    age: number;
+    username: UsernameParam;    // IParam with pattern + length validation
+    email: EmailParam;          // IParam with email format validation
+    age: AgeParam;              // IParam with range validation
     /** Optional tags to associate with user */
     tags?: string[];
   };

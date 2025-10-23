@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp",
-  "version": "3.2.1",
+  "version": "3.3.0",
   "description": "Model Context Protocol (MCP) server framework with support for multiple transports",
   "private": false,
   "type": "module",

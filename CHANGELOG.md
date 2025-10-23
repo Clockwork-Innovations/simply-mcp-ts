@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2025-10-23
+
+### Changed
+
+- **BREAKING: IParam Simplified to Single Unified Interface**
+  - Removed 7 specialty interfaces: `IParamBase`, `IStringParam`, `INumberParam`, `IIntegerParam`, `IBooleanParam`, `IArrayParam`, `IObjectParam`, `INullParam`
+  - Replaced with single `IParam` interface using `type` discriminant field
+  - Migration: Change `extends IStringParam` to `extends IParam` with `type: 'string'`
+  - All constraint fields preserved (minLength, maxLength, min, max, items, properties, etc.)
+  - Helpful error messages guide developers to correct usage patterns
+  - Affected files: `src/api/interface/types.ts`, `src/api/interface/schema-generator.ts`
+
+### Added
+
+- **IParam Nested Validation: Comprehensive Test Coverage**
+  - Added `test-iparam-nested.mjs` with 7 comprehensive test scenarios
+  - Tests nested objects (2-3 levels deep) with validation at each level
+  - Tests arrays of objects with item-level validation
+  - Tests objects containing arrays with array property validation
+  - Tests arrays of arrays (multi-dimensional) with nested constraints
+  - Tests mixed nesting patterns (object → array → object)
+  - Tests error detection for inline object literals
+  - All tests verify recursive validation through entire data structure
+
+- **IParam Documentation: Nested Validation Guide**
+  - Added `IPARAM-NESTED-VALIDATION-GUIDE.md` with complete nesting patterns
+  - Documents how recursive schema generation works (lines 657-715 in schema-generator.ts)
+  - Provides 6 real-world nesting scenarios with validation examples
+  - Shows best practices for naming, constraint placement, and error handling
+  - Includes test suite instructions and expected output
+
 ## [3.2.1] - 2025-10-23
 
 ### Fixed
