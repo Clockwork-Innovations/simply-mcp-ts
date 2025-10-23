@@ -31,7 +31,7 @@ interface TypeChartResource extends IResource<typeof TYPE_CHART> {
 }
 
 export default class StaticResourceFixture {
-  ping = async (params: PingTool['params']): Promise<PingTool['result']> => ({
+  ping: PingTool = async (params) => ({
     echoed: params.message,
   });
 }

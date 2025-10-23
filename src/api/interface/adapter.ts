@@ -197,15 +197,48 @@ async function registerTool(
   const method = serverInstance[methodName];
 
   if (!method) {
-    throw new Error(
-      `Tool "${name}" requires method "${methodName}" but it was not found on server class.\n` +
-      `Expected: class implements { ${methodName}: ${tool.interfaceName} }`
-    );
+    // Get available methods for helpful error message
+    const availableMethods = Object.keys(serverInstance)
+      .filter(key => typeof serverInstance[key] === 'function')
+      .map(key => `  - ${key}`)
+      .join('\n');
+
+    // Check if there's a snake_case version that might be the issue
+    const snakeCaseMethodName = name.replace(/-/g, '_');
+    const hasSnakeCaseMethod = serverInstance[snakeCaseMethodName];
+
+    let errorMessage =
+      `❌ Tool "${name}" requires method "${methodName}" but it was not found on server class.\n\n` +
+      `Expected pattern:\n` +
+      `  interface ${tool.interfaceName} extends ITool {\n` +
+      `    name: '${name}';  // ← Tool name (snake_case)\n` +
+      `    // ...\n` +
+      `  }\n\n` +
+      `  export default class YourServer {\n` +
+      `    ${methodName}: ${tool.interfaceName} = async (params) => { ... };  // ← Method (camelCase)\n` +
+      `  }\n\n`;
+
+    if (hasSnakeCaseMethod) {
+      errorMessage +=
+        `⚠️  Common Mistake: Found method "${snakeCaseMethodName}" but expected "${methodName}"\n` +
+        `   Tool names use snake_case, but method names must use camelCase!\n\n`;
+    }
+
+    if (availableMethods) {
+      errorMessage += `Available methods on your class:\n${availableMethods}\n\n`;
+    }
+
+    errorMessage +=
+      `📚 Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md`;
+
+    throw new Error(errorMessage);
   }
 
   if (typeof method !== 'function') {
     throw new Error(
-      `Tool "${name}" method "${methodName}" is not a function (found: ${typeof method})`
+      `❌ Tool "${name}" method "${methodName}" is not a function (found: ${typeof method})\n\n` +
+      `Expected: ${methodName}: ${tool.interfaceName} = async (params) => { ... };\n\n` +
+      `📚 Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md`
     );
   }
 

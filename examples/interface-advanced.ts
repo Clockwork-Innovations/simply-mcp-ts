@@ -61,7 +61,7 @@ import type { ITool, IParam, IPrompt, IResource, IServer } from 'simply-mcp';
  * - Conditional result (hourly data only if requested)
  */
 interface GetWeatherTool extends ITool {
-  name: 'get_weather';
+  name: 'getWeather';
   description: 'Get current weather for a location';
   params: {
     /** Location name (city, country, etc.) */
@@ -120,7 +120,7 @@ interface AgeParam extends IParam {
 }
 
 interface CreateUserTool extends ITool {
-  name: 'create_user';
+  name: 'createUser';
   description: 'Create a new user account with validation';
   params: {
     username: UsernameParam;    // IParam with pattern + length validation
@@ -165,7 +165,7 @@ interface CreateUserTool extends ITool {
  * No implementation method needed!
  */
 interface WeatherPrompt extends IPrompt {
-  name: 'weather_report';
+  name: 'weatherReport';
   description: 'Generate a weather report in various styles';
   args: {
     /** Location for weather report */
@@ -360,7 +360,7 @@ export default class WeatherService implements WeatherServer {
    *
    * @returns Current user statistics
    */
-  'stats://users' = async () => ({
+  'stats://users': UserStatsResource = async () => ({
     totalUsers: 42,
     activeUsers: 15,
   });

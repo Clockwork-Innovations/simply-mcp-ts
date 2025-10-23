@@ -38,7 +38,7 @@ import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';
  * Complex tool demonstrating nested objects, arrays, and enums
  */
 interface SearchTool extends ITool {
-  name: 'search_documents';
+  name: 'searchDocuments';
   description: 'Search documents with filters and pagination';
   params: {
     /** Search query string */
@@ -87,7 +87,7 @@ interface SearchTool extends ITool {
  * Note: Validation tags should be on the interface members, not the top-level interface
  */
 interface CreateUserTool extends ITool {
-  name: 'create_user';
+  name: 'createUser';
   description: 'Create a new user with validation';
   params: {
     /**
@@ -124,7 +124,7 @@ interface CreateUserTool extends ITool {
  * Simple tool with primitive result
  */
 interface GetTemperatureTool extends ITool {
-  name: 'get_temperature';
+  name: 'getTemperature';
   description: 'Get current temperature';
   params: {
     location: string;
@@ -145,7 +145,7 @@ interface GetTemperatureTool extends ITool {
  * Placeholders: {variable} syntax
  */
 interface SearchPrompt extends IPrompt {
-  name: 'search_assistant';
+  name: 'searchAssistant';
   description: 'Generate search query with style customization';
   args: {
     query: string;
@@ -161,7 +161,7 @@ Please analyze the query and suggest relevant search terms, filters, and strateg
  * STATIC PROMPT - With conditional template syntax
  */
 interface WeatherPrompt extends IPrompt {
-  name: 'weather_report';
+  name: 'weatherReport';
   description: 'Generate weather report prompt';
   args: {
     location: string;
@@ -185,7 +185,7 @@ Format the response in a clear, easy-to-read style.`;
  * PromptDefinition to accept functions like tools do.
  */
 interface ContextualPrompt extends IPrompt {
-  name: 'contextual_search';
+  name: 'contextualSearch';
   description: 'Context-aware search prompt with runtime customization';
   args: {
     query: string;
@@ -375,7 +375,7 @@ export default class SearchService implements SearchServer {
    * prompts/get for 'contextual_search'. It generates different prompts
    * based on the user's experience level.
    */
-  contextualSearch = (args: { query: string; userLevel?: 'beginner' | 'intermediate' | 'expert' }) => {
+  contextualSearch: ContextualPrompt = (args) => {
     const level = args.userLevel || 'intermediate';
 
     const prompts = {
@@ -414,7 +414,7 @@ Provide comprehensive results with technical details, advanced filters, and expe
    * resources/read for 'stats://search'. It generates fresh statistics
    * data on each request.
    */
-  'stats://search' = async () => {
+  'stats://search': StatsResource = async () => {
     return {
       totalSearches: Math.floor(Math.random() * 10000),
       averageResponseTime: Math.random() * 100,
@@ -427,7 +427,7 @@ Provide comprehensive results with technical details, advanced filters, and expe
    * Dynamic resource: Cache status
    * Property name: 'cache://status' (the URI itself)
    */
-  'cache://status' = async () => {
+  'cache://status': CacheResource = async () => {
     return {
       size: Math.floor(Math.random() * 1000),
       hits: Math.floor(Math.random() * 5000),

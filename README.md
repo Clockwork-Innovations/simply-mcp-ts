@@ -56,27 +56,59 @@ Pure TypeScript interfaces with zero boilerplate:
 
 ```typescript
 // server.ts
-import type { ITool, IServer } from 'simply-mcp';
+import type { ITool, IParam, IServer } from 'simply-mcp';
 
+// 1. Define your tool interface (extends ITool)
 interface AddTool extends ITool {
-  name: 'add';
-  description: 'Add two numbers';
-  params: { a: number; b: number };
-  result: { sum: number };
+  name: 'add';                           // Tool name (snake_case for MCP)
+  description: 'Add two numbers';        // Tool description
+  params: { a: number; b: number };      // Input parameters (simple types)
+  result: { sum: number };               // Return type
 }
 
+// 2. (Optional) Use IParam for richer validation
+interface AgeParam extends IParam {
+  type: 'integer';                       // Explicit type
+  description: 'User age in years';      // LLM-visible description
+  min: 0;                                // Validation constraint
+  max: 150;                              // Validation constraint
+}
+
+interface ValidateTool extends ITool {
+  name: 'validateAge';                   // Tool name (camelCase or snake_case, auto-normalized)
+  description: 'Validate user age';
+  params: { age: AgeParam };             // Use IParam for validation
+  result: { valid: boolean };
+}
+
+// 3. Define server metadata
 interface Calculator extends IServer {
-  name: 'calculator';
-  version: '1.0.0';
+  name: 'calculator';                    // Server name
+  version: '1.0.0';                      // Version
 }
 
-export class CalculatorService {
-  // Direct type assignment - params are fully typed!
+// 4. Implement the server class
+export default class CalculatorService implements Calculator {
+  // ✅ Method name is camelCase (add), even though tool name is snake_case
+  // ✅ Type annotation provides full IntelliSense on params
   add: AddTool = async (params) => ({
-    sum: params.a + params.b
+    sum: params.a + params.b             // params.a and params.b are typed!
+  });
+
+  // ✅ Method name is camelCase: validateAge (tool name: validate_age)
+  validateAge: ValidateTool = async (params) => ({
+    valid: params.age >= 0 && params.age <= 150
   });
 }
 ```
+
+> **⚠️ Important Pattern Notes:**
+> - Tool names can be `camelCase` or `snake_case` - both auto-normalize to `snake_case` for MCP
+> - Method names use `camelCase` (e.g., `validateAge`)
+> - Use `ITool` for basic tools, add `IParam` for validation/constraints
+> - Type annotation (`add: AddTool =`) gives you full type safety
+>
+> **📚 See [Interface API Reference](https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md) for complete documentation**
 
 #### Option 2: Decorator API (Class-Based)
 
@@ -628,6 +660,22 @@ interface ConfigResource extends IResource {
   };
 }
 
+// Define a dynamic prompt (requires implementation)
+interface DynamicPrompt extends IPrompt {
+  name: 'context_aware';
+  description: 'Context-aware weather prompt';
+  args: { location: string; timeOfDay?: string };
+  dynamic: true;
+}
+
+// Define a dynamic resource (requires implementation)
+interface StatsResource extends IResource {
+  uri: 'stats://requests';
+  name: 'Request Statistics';
+  mimeType: 'application/json';
+  data: { count: number; lastRequest: string };
+}
+
 // Define server metadata
 interface WeatherServer extends IServer {
   name: 'weather-service';
@@ -638,7 +686,7 @@ interface WeatherServer extends IServer {
 // Implement the server
 export class WeatherService {
 
-  // Tool implementation using direct type assignment - full IntelliSense on params!
+  // Tool implementation using typed pattern - full IntelliSense on params!
   getWeather: GetWeatherTool = async (params) => {
     const temp = 72;
     return {
@@ -646,6 +694,18 @@ export class WeatherService {
       conditions: 'Sunny'
     };
   };
+
+  // Dynamic prompt implementation - typed pattern with IntelliSense on args!
+  contextAware: DynamicPrompt = (args) => {
+    const time = args.timeOfDay || 'day';
+    return `Generate a ${time}-time weather report for ${args.location}`;
+  };
+
+  // Dynamic resource implementation - typed pattern with return type checking!
+  'stats://requests': StatsResource = () => ({
+    count: 42,
+    lastRequest: new Date().toISOString()
+  });
 
   // Static prompt - no implementation needed!
   // Static resource - no implementation needed!

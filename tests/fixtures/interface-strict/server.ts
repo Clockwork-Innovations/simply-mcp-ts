@@ -35,7 +35,7 @@ interface PokemonListResource extends IResource<typeof POKEMON_DATA> {
 }
 
 export default class StrictFixtureServer {
-  getPokemon = async (params: GetPokemonTool['params']): Promise<GetPokemonTool['result']> => {
+  getPokemon: GetPokemonTool = async (params) => {
     const key = params.name.toLowerCase() as PokemonName;
     const match = POKEMON_DATA[key];
     if (!match) {
@@ -44,5 +44,5 @@ export default class StrictFixtureServer {
     return match;
   };
 
-  'pokemon://list' = (): PokemonListResource['data'] => POKEMON_DATA;
+  'pokemon://list': PokemonListResource = () => POKEMON_DATA;
 }

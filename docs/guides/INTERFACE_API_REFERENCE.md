@@ -61,12 +61,17 @@ interface IServer {
 
 ```typescript
 interface ITool {
-  name: string;              // Tool name (snake_case)
+  name: string;              // Tool name (camelCase or snake_case - auto-normalized)
   description: string;       // Tool description
   params: Record<string, any>;  // Parameter types
   result: any;               // Return type
 }
 ```
+
+**Tool Name Normalization:**
+- Tool names can be written in `camelCase` (e.g., `'getWeather'`) or `snake_case` (e.g., `'get_weather'`)
+- Both are automatically normalized to `snake_case` for MCP compliance
+- This allows you to use natural TypeScript naming conventions
 
 Implement as class method with camelCase name.
 

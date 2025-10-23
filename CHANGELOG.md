@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2025-10-23
+
+### Added
+
+- **Interface API: Callable Signatures for IPrompt and IResource**
+  - Added callable signature `(args: TArgs): string | Promise<string>` to IPrompt
+  - Added callable signature `(): TData | Promise<TData>` to IResource
+  - Enables consistent typed pattern across all interface types (ITool, IPrompt, IResource)
+  - Full type inference on prompt args: `myPrompt: MyPromptInterface = (args) => { ... }`
+  - Full type inference on resource data: `myResource: MyResourceInterface = () => { ... }`
+  - Return type enforcement ensures prompts return string, resources match data type
+  - Zero runtime changes - pure type-level enhancement for better developer experience
+  - Affected files: `src/api/interface/types.ts` (lines 489, 575)
+
+### Changed
+
+- **Examples: Updated to Use Typed Pattern**
+  - Updated `examples/interface-advanced.ts` to use typed resource implementation
+  - Updated `examples/interface-file-prompts.ts` to use typed prompt implementations
+  - Updated `examples/interface-comprehensive.ts` to use typed prompt/resource implementations
+  - All dynamic prompts/resources now follow: `name: Interface = (args) => { ... }`
+  - Demonstrates full IntelliSense and type safety benefits
+
+- **Tests: Updated to Use Typed Pattern**
+  - Updated `tests/fixtures/interface-strict/server.ts` with typed tool/resource pattern
+  - Updated `tests/fixtures/interface-static-resource.ts` with typed tool pattern
+  - All test fixtures now demonstrate best practices for type-safe implementations
+
+### Documentation
+
+- **README: Enhanced Interface API Examples**
+  - Added dynamic prompt example with typed pattern and IntelliSense comments
+  - Added dynamic resource example with typed pattern and return type checking
+  - Shows complete workflow: tools, static prompts/resources, and dynamic prompts/resources
+  - Demonstrates consistent pattern across all interface types
+
 ## [3.3.0] - 2025-10-23
 
 ### Changed

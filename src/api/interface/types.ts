@@ -448,7 +448,7 @@ export interface ITool<TParams = any, TResult = any> {
  * }
  *
  * class MyServer implements IServer {
- *   dynamicWeather = (args) => {
+ *   dynamicWeather: DynamicPrompt = (args) => {
  *     const timeOfDay = new Date().getHours() < 12 ? 'morning' : 'evening';
  *     return `Good ${timeOfDay}! Weather for ${args.location}...`;
  *   }
@@ -482,6 +482,11 @@ export interface IPrompt<TArgs = any> {
    * When true, must be implemented as a method
    */
   dynamic?: boolean;
+
+  /**
+   * Callable signature - the actual implementation for dynamic prompts
+   */
+  (args: TArgs): string | Promise<string>;
 }
 
 /**
@@ -524,7 +529,7 @@ export interface IPrompt<TArgs = any> {
  * }
  *
  * class MyServer implements IServer {
- *   stats = async () => ({
+ *   'stats://current': StatsResource = async () => ({
  *     requestCount: await getCount(),
  *     uptime: process.uptime()
  *   })
@@ -563,6 +568,11 @@ export interface IResource<TData = any> {
    * When true, must be implemented as a method
    */
   dynamic?: boolean;
+
+  /**
+   * Callable signature - the actual implementation for dynamic resources
+   */
+  (): TData | Promise<TData>;
 }
 
 /**

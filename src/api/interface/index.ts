@@ -30,6 +30,8 @@ export type {
 export {
   parseInterfaceFile,
   snakeToCamel,
+  camelToSnake,
+  normalizeToolName,
 } from './parser.js';
 
 // Schema Generator

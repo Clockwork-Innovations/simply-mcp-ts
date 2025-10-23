@@ -110,6 +110,36 @@ export function snakeToCamel(str: string): string {
 }
 
 /**
+ * Convert camelCase to snake_case
+ * Examples: 'getWeather' -> 'get_weather', 'createUser' -> 'create_user'
+ */
+export function camelToSnake(str: string): string {
+  return str
+    .replace(/([A-Z])/g, '_$1')
+    .toLowerCase()
+    .replace(/^_/, ''); // Remove leading underscore
+}
+
+/**
+ * Normalize tool name to snake_case (accepts both camelCase and snake_case)
+ * If the name already contains underscores, assume it's snake_case and return as-is.
+ * Otherwise, convert from camelCase to snake_case.
+ *
+ * Examples:
+ * - 'getWeather' -> 'get_weather' (camelCase conversion)
+ * - 'get_weather' -> 'get_weather' (already snake_case)
+ * - 'greet' -> 'greet' (single word, unchanged)
+ */
+export function normalizeToolName(name: string): string {
+  // If already snake_case (contains underscores), return as-is
+  if (name.includes('_')) {
+    return name;
+  }
+  // Otherwise convert camelCase to snake_case
+  return camelToSnake(name);
+}
+
+/**
  * Parse a TypeScript file to discover interface-driven API definitions
  */
 export function parseInterfaceFile(filePath: string): ParseResult {
@@ -247,7 +277,7 @@ function parseToolInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Source
       if (memberName === 'name' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
         if (ts.isStringLiteral(literal)) {
-          name = literal.text;
+          name = normalizeToolName(literal.text);
         }
       } else if (memberName === 'description' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
@@ -300,7 +330,7 @@ function parsePromptInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Sour
       if (memberName === 'name' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
         if (ts.isStringLiteral(literal)) {
-          name = literal.text;
+          name = normalizeToolName(literal.text);
         }
       } else if (memberName === 'description' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
@@ -520,7 +550,7 @@ function parseServerInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Sour
       if (memberName === 'name' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
         if (ts.isStringLiteral(literal)) {
-          name = literal.text;
+          name = normalizeToolName(literal.text);
         }
       } else if (memberName === 'version' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
