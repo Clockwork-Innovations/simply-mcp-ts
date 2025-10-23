@@ -166,8 +166,11 @@ jobs:
             # Standard release (patch/minor/major)
             if [ -n "$SPECIFIC_VERSION" ]; then
               NEW_VERSION="$SPECIFIC_VERSION"
+              echo "version_type=specific" >> $GITHUB_OUTPUT
             else
-              NEW_VERSION=$(npm version $VERSION_TYPE --no-git-tag-version)
+              # Store version type for bumping later (don't modify package.json yet)
+              echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+              NEW_VERSION="$VERSION_TYPE"
             fi
             echo "is_beta=false" >> $GITHUB_OUTPUT
             echo "npm_tag=latest" >> $GITHUB_OUTPUT
@@ -180,7 +183,10 @@ jobs:
 
       - name: Bump version
         run: |
-          npm version ${{ steps.version-strategy.outputs.new_version }} --no-git-tag-version
+          VERSION_ARG="${{ steps.version-strategy.outputs.new_version }}"
+          # If new_version is a type (patch/minor/major), npm version handles it
+          # If it's a specific version like "3.2.0" or "v3.2.0", pass it directly
+          npm version $VERSION_ARG --no-git-tag-version
           echo "NEW_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
           git add package.json package-lock.json
           git commit -m "chore(release): v$(node -p "require('./package.json').version")"
