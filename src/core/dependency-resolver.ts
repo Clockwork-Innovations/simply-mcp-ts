@@ -55,7 +55,7 @@ const KNOWN_NATIVE_MODULES = [
  *   entryPoint: './server.ts',
  *   autoInstall: true
  * });
- * console.log(resolved.dependencies); // { axios: '^1.6.0', ... }
+ * console.log(resolved.dependencies); // { express: '^4.18.0', ... }
  * console.log(resolved.nativeModules); // ['fsevents']
  * ```
  */
@@ -225,7 +225,7 @@ export function mergeDependencies(
  *
  * @example
  * ```typescript
- * const deps = { 'axios': '^1.0.0', '@types/node': '^20.0.0', 'zod': '^3.0.0' };
+ * const deps = { 'express': '^4.18.0', '@types/node': '^20.0.0', 'zod': '^3.0.0' };
  *
  * // Include only @types/* packages
  * const types = filterDependencies(deps, [/^@types\//], true);
@@ -233,7 +233,7 @@ export function mergeDependencies(
  *
  * // Exclude @types/* packages
  * const noTypes = filterDependencies(deps, [/^@types\//], false);
- * // { 'axios': '^1.0.0', 'zod': '^3.0.0' }
+ * // { 'express': '^4.18.0', 'zod': '^3.0.0' }
  * ```
  */
 export function filterDependencies(

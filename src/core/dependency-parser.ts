@@ -5,7 +5,7 @@
  * Format:
  * ```typescript
  * // /// dependencies
- * // axios@^1.6.0
+ * // express@^4.18.0
  * // zod@^3.22.0
  * // ///
  * ```
@@ -66,12 +66,12 @@ const MAX_LINE_LENGTH = 1000;
  * ```typescript
  * const source = `
  * // /// dependencies
- * // axios@^1.6.0
+ * // express@^4.18.0
  * // zod@^3.22.0
  * // ///
  * `;
  * const result = parseInlineDependencies(source);
- * console.log(result.dependencies); // { 'axios': '^1.6.0', 'zod': '^3.22.0' }
+ * console.log(result.dependencies); // { 'express': '^4.18.0', 'zod': '^3.22.0' }
  * ```
  */
 export function parseInlineDependencies(

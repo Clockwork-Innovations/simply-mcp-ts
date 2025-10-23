@@ -5,7 +5,6 @@
 
 import { BuildMCPServer } from '../dist/src/index.js';
 import { z } from 'zod';
-import axios from 'axios';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -116,17 +115,18 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const response = await axios.get('http://localhost:5001/health', { timeout: 5000 });
+      const response = await fetch('http://localhost:5001/health', { signal: AbortSignal.timeout(5000) });
+      const data = await response.json();
       const valid =
-        response.data.status === 'ok' &&
-        response.data.server.name === 'health-test' &&
-        response.data.server.version === '1.0.0' &&
-        response.data.server.description === 'Health test server' &&
-        response.data.transport.type === 'http' &&
-        response.data.transport.mode === 'stateless' &&
-        response.data.resources.tools === 1 &&
-        typeof response.data.uptime === 'number' &&
-        typeof response.data.timestamp === 'string';
+        data.status === 'ok' &&
+        data.server.name === 'health-test' &&
+        data.server.version === '1.0.0' &&
+        data.server.description === 'Health test server' &&
+        data.transport.type === 'http' &&
+        data.transport.mode === 'stateless' &&
+        data.resources.tools === 1 &&
+        typeof data.uptime === 'number' &&
+        typeof data.timestamp === 'string';
 
       await server.stop();
       return valid;
@@ -153,13 +153,14 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const response = await axios.get('http://localhost:5002/', { timeout: 5000 });
+      const response = await fetch('http://localhost:5002/', { signal: AbortSignal.timeout(5000) });
+      const data = await response.json();
       const valid =
-        response.data.message.includes('root-test') &&
-        response.data.endpoints.health === '/health' &&
-        response.data.endpoints.mcp === '/mcp' &&
-        response.data.transport.type === 'http' &&
-        response.data.transport.mode === 'stateful';
+        data.message.includes('root-test') &&
+        data.endpoints.health === '/health' &&
+        data.endpoints.mcp === '/mcp' &&
+        data.transport.type === 'http' &&
+        data.transport.mode === 'stateful';
 
       await server.stop();
       return valid;
@@ -193,8 +194,9 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const response = await axios.get('http://localhost:5003/health');
-      const valid = response.data.resources.tools === 2;
+      const response = await fetch('http://localhost:5003/health');
+      const data = await response.json();
+      const valid = data.resources.tools === 2;
 
       await server.stop();
       return valid;
@@ -224,28 +226,30 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const response = await axios.post(
+      const response = await fetch(
         'http://localhost:5004/mcp',
         {
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'initialize',
-          params: {
-            protocolVersion: '2024-11-05',
-            capabilities: {},
-            clientInfo: { name: 'test', version: '1.0.0' },
-          },
-        },
-        {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json, text/event-stream',
           },
-          timeout: 5000,
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+              protocolVersion: '2024-11-05',
+              capabilities: {},
+              clientInfo: { name: 'test', version: '1.0.0' },
+            },
+          }),
+          signal: AbortSignal.timeout(5000),
         }
       );
 
-      const valid = response.status === 200 && response.data.includes('event: message');
+      const text = await response.text();
+      const valid = response.status === 200 && text.includes('event: message');
 
       await server.stop();
       return valid;
@@ -272,20 +276,21 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const response = await axios.post(
+      const response = await fetch(
         'http://localhost:5005/mcp',
         {
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/list',
-          params: {},
-        },
-        {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json, text/event-stream',
           },
-          timeout: 5000,
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/list',
+            params: {},
+          }),
+          signal: AbortSignal.timeout(5000),
         }
       );
 
@@ -316,21 +321,21 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const response = await axios.post(
+      const response = await fetch(
         'http://localhost:5006/mcp',
         {
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/list',
-          params: {},
-        },
-        {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json', // Missing text/event-stream
           },
-          timeout: 5000,
-          validateStatus: () => true,
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/list',
+            params: {},
+          }),
+          signal: AbortSignal.timeout(5000),
         }
       );
 
@@ -360,23 +365,24 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const response = await axios.post(
+      const response = await fetch(
         'http://localhost:5007/mcp',
         {
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'initialize',
-          params: {
-            protocolVersion: '2024-11-05',
-            capabilities: {},
-            clientInfo: { name: 'test', version: '1.0.0' },
-          },
-        },
-        {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json, text/event-stream',
           },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+              protocolVersion: '2024-11-05',
+              capabilities: {},
+              clientInfo: { name: 'test', version: '1.0.0' },
+            },
+          }),
         }
       );
 
@@ -401,25 +407,27 @@ async function runTests() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      const response = await axios.post(
+      const response = await fetch(
         'http://localhost:5008/mcp',
         {
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/list',
-          params: {},
-        },
-        {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json, text/event-stream',
           },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/list',
+            params: {},
+          }),
         }
       );
 
       // Stateless mode always uses JSON responses (SSE requires persistent connections)
-      const contentType = response.headers['content-type'];
-      const hasJsonResponse = response.data && typeof response.data === 'object';
+      const contentType = response.headers.get('content-type');
+      const data = await response.json();
+      const hasJsonResponse = data && typeof data === 'object';
       await server.stop();
       return contentType?.includes('application/json') && hasJsonResponse;
     } catch (error) {

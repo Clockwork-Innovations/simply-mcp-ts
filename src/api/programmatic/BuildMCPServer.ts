@@ -1604,8 +1604,8 @@ export class BuildMCPServer {
    *
    * @example
    * ```typescript
-   * if (server.hasDependency('axios')) {
-   *   console.log('Server uses axios');
+   * if (server.hasDependency('express')) {
+   *   console.log('Server uses express');
    * }
    * ```
    */
@@ -1621,8 +1621,8 @@ export class BuildMCPServer {
    *
    * @example
    * ```typescript
-   * const version = server.getDependencyVersion('axios');
-   * console.log(`axios version: ${version}`);
+   * const version = server.getDependencyVersion('express');
+   * console.log(`express version: ${version}`);
    * ```
    */
   getDependencyVersion(packageName: string): string | undefined {

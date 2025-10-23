@@ -1,6 +1,9 @@
 name: Release & Publish
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -27,7 +30,7 @@ jobs:
   pre-release-validation:
     name: Pre-Release Validation
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.skip_validation != 'true' }}
+    if: ${{ github.event.inputs.skip_validation != 'true' || github.event_name == 'push' }}
 
     steps:
       - name: Checkout code
@@ -127,6 +130,21 @@ jobs:
       - name: Determine version strategy
         id: version-strategy
         run: |
+          # If triggered by tag push, extract version from tag
+          if [ "${{ github.event_name }}" == "push" ]; then
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            VERSION="${TAG_NAME#v}"
+            echo "Triggered by tag push: $TAG_NAME"
+            echo "Version: $VERSION"
+            echo "is_beta=false" >> $GITHUB_OUTPUT
+            echo "npm_tag=latest" >> $GITHUB_OUTPUT
+            echo "new_version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_promotion=false" >> $GITHUB_OUTPUT
+            echo "version_type=tag" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Manual workflow dispatch
           VERSION_TYPE="${{ github.event.inputs.version }}"
           SPECIFIC_VERSION="${{ github.event.inputs.specific_version }}"
 
@@ -184,15 +202,22 @@ jobs:
       - name: Bump version
         run: |
           VERSION_ARG="${{ steps.version-strategy.outputs.new_version }}"
-          # If new_version is a type (patch/minor/major), npm version handles it
-          # If it's a specific version like "3.2.0" or "v3.2.0", pass it directly
-          npm version $VERSION_ARG --no-git-tag-version
-          echo "NEW_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
-          git add package.json package-lock.json
-          git commit -m "chore(release): v$(node -p "require('./package.json').version")"
-          git tag "v$(node -p "require('./package.json').version")"
+
+          # If triggered by tag, version is already set - just export it
+          if [ "${{ steps.version-strategy.outputs.version_type }}" == "tag" ]; then
+            echo "Version already set by tag: $VERSION_ARG"
+            echo "NEW_VERSION=$VERSION_ARG" >> $GITHUB_ENV
+          else
+            # Manual workflow - do version bump
+            npm version $VERSION_ARG --no-git-tag-version
+            echo "NEW_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+            git add package.json package-lock.json
+            git commit -m "chore(release): v$(node -p "require('./package.json').version")"
+            git tag "v$(node -p "require('./package.json').version")"
+          fi
 
       - name: Push changes
+        if: ${{ steps.version-strategy.outputs.version_type != 'tag' }}
         run: |
           git push origin main --follow-tags
 

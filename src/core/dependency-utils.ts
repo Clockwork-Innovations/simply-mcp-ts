@@ -17,7 +17,7 @@ import {
  *
  * @example
  * ```typescript
- * const deps = { 'axios': '^1.6.0', 'typescript': '^5.0.0' };
+ * const deps = { 'express': '^4.18.0', 'typescript': '^5.0.0' };
  * const pkg = generatePackageJson(deps, {
  *   name: 'my-server',
  *   version: '1.0.0',
@@ -91,11 +91,11 @@ export function generatePackageJson(
  *
  * @example
  * ```typescript
- * const inline = { 'axios': '^1.6.0' };
- * const pkgJson = { dependencies: { 'axios': '^1.5.0', 'zod': '^3.22.0' } };
+ * const inline = { 'express': '^4.18.0' };
+ * const pkgJson = { dependencies: { 'express': '^4.17.0', 'zod': '^3.22.0' } };
  * const result = mergeDependencies(inline, pkgJson);
- * // result.dependencies: { 'axios': '^1.5.0', 'zod': '^3.22.0' }
- * // result.conflicts: ['axios']
+ * // result.dependencies: { 'express': '^4.17.0', 'zod': '^3.22.0' }
+ * // result.conflicts: ['express']
  * ```
  */
 export function mergeDependencies(
@@ -151,9 +151,9 @@ export function mergeDependencies(
  *
  * @example
  * ```typescript
- * const deps = { 'axios': '^1.6.0', 'zod': '^3.22.0' };
+ * const deps = { 'express': '^4.18.0', 'zod': '^3.22.0' };
  * console.log(formatDependencyList(deps));
- * // axios@^1.6.0
+ * // express@^4.18.0
  * // zod@^3.22.0
  * ```
  */
@@ -256,7 +256,7 @@ export function sortDependencies(deps: InlineDependencies): InlineDependencies {
  *
  * @example
  * ```typescript
- * const deps = { '@types/node': '^20', '@types/express': '^4', 'axios': '^1' };
+ * const deps = { '@types/node': '^20', '@types/express': '^4', 'chalk': '^5.0.0' };
  * const typesDeps = filterDependencies(deps, '@types/*');
  * // { '@types/node': '^20', '@types/express': '^4' }
  * ```

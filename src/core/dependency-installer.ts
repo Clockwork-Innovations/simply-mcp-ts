@@ -20,10 +20,10 @@ import { validatePackageName, validateSemverRange } from './dependency-validator
  * @example
  * ```typescript
  * const result = await installDependencies({
- *   'axios': '^1.6.0',
+ *   'express': '^4.18.0',
  *   'zod': '^3.22.0'
  * });
- * console.log(result.installed); // ['axios@^1.6.0', 'zod@^3.22.0']
+ * console.log(result.installed); // ['express@^4.18.0', 'zod@^3.22.0']
  * ```
  */
 export async function installDependencies(

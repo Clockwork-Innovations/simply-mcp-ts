@@ -1,6 +1,29 @@
 # Pre-Release Checklist
 
-Run these tests locally **before pushing any release**:
+## ⚠️ IMPORTANT: Automated Release Process
+
+The release is **fully automated** when you push a git tag.
+
+## Correct Release Process
+
+1. **Run all tests locally** (see Required Tests below)
+2. **Update CHANGELOG.md** - Move `[Unreleased]` section to `[X.Y.Z] - YYYY-MM-DD`
+3. **Bump version**: `npm version [patch|minor|major] --no-git-tag-version`
+4. **Commit changes**: `git add . && git commit -m "chore(release): vX.Y.Z"`
+5. **Create and push tag**: `git tag vX.Y.Z && git push && git push --tags`
+6. **Monitor**: GitHub Actions automatically runs validation and publishes to npm
+
+## What Happens Automatically
+
+When you push a tag (`vX.Y.Z`):
+- ✅ Pre-release validation runs (package validation, pre-release tests, integration tests)
+- ✅ GitHub release is created
+- ✅ Package is published to npm with `latest` tag
+- ✅ Release notes are generated
+
+No manual GitHub Actions trigger needed!
+
+## Tests to Run Locally Before Release
 
 ## Required Tests (in order)
 

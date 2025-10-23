@@ -51,7 +51,7 @@ const DANGEROUS_CHARS = /[;<>&|`$(){}[\]\\'"]/;
  * @example
  * ```typescript
  * const deps = {
- *   'axios': '^1.6.0',
+ *   'express': '^4.18.0',
  *   'INVALID': '1.0.0',  // Invalid: uppercase
  *   'zod': 'not-a-version'  // Invalid: bad version
  * };
@@ -108,7 +108,7 @@ export function validateDependencies(deps: InlineDependencies): ValidationResult
  *
  * @example
  * ```typescript
- * validatePackageName('axios'); // { valid: true }
+ * validatePackageName('express'); // { valid: true }
  * validatePackageName('@types/node'); // { valid: true }
  * validatePackageName('UPPERCASE'); // { valid: false, reason: 'must be lowercase' }
  * ```
@@ -247,8 +247,8 @@ export function validateSemverRange(
  * @example
  * ```typescript
  * const deps = {
- *   'axios': '^1.6.0',
- *   'AXIOS': '^1.5.0'  // Case-insensitive duplicate
+ *   'express': '^4.18.0',
+ *   'EXPRESS': '^4.17.0'  // Case-insensitive duplicate
  * };
  * const report = detectConflicts(deps);
  * console.log(report.hasConflicts); // true

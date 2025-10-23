@@ -9,7 +9,7 @@
  * Example:
  * ```typescript
  * const deps: InlineDependencies = {
- *   'axios': '^1.6.0',
+ *   'express': '^4.18.0',
  *   'zod': '^3.22.0',
  *   '@types/node': '^20.0.0'
  * };
@@ -119,7 +119,7 @@ export interface DependencyError {
  */
 export interface Dependency {
   /**
-   * Package name (e.g., 'axios', '@types/node')
+   * Package name (e.g., 'express', '@types/node')
    */
   name: string;
 

@@ -18,7 +18,7 @@ import { InlineDependencies } from './dependency-types.js';
  * @example
  * ```typescript
  * const status = await checkDependencies({
- *   'axios': '^1.6.0',
+ *   'express': '^4.18.0',
  *   'zod': '^3.22.0'
  * });
  * console.log('Missing:', status.missing);
@@ -79,8 +79,8 @@ export async function checkDependencies(
  *
  * @example
  * ```typescript
- * const hasAxios = await isPackageInstalled('axios');
- * console.log(hasAxios); // true or false
+ * const hasExpress = await isPackageInstalled('express');
+ * console.log(hasExpress); // true or false
  * ```
  */
 export async function isPackageInstalled(
@@ -108,8 +108,8 @@ export async function isPackageInstalled(
  *
  * @example
  * ```typescript
- * const version = await getInstalledVersion('axios');
- * console.log(version); // '1.6.0' or null
+ * const version = await getInstalledVersion('express');
+ * console.log(version); // '4.18.0' or null
  * ```
  */
 export async function getInstalledVersion(
