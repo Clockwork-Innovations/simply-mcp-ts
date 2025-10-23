@@ -21,6 +21,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Follows industry standard pattern (TypeScript, Prettier, ESLint all do this)
   - Users can easily discover documentation on GitHub or npm.js website
 
+### Documentation
+
+- **Interface API Reference: Comprehensive Enhancement**
+  - Added naming conventions section with snake_case → camelCase mapping table
+  - Added multi-tool server patterns with complete 4-tool user management example
+  - Added static vs dynamic prompt patterns with decision guides
+  - Added static vs dynamic resource patterns with implementation examples
+  - Added complete 373-line weather server example (production-quality)
+  - Added enhanced error handling patterns (throw vs return strategies)
+  - Removed incorrect Functional API content mixed into Interface API docs
+  - Document expanded from 351 to 1,110 lines (216% growth)
+
+- **Configuration Guide: MCP Client Integration**
+  - Added MCP client configuration section (.mcp.json, ~/.claude.json)
+  - Added configuration precedence table (4 priority levels)
+  - Added Claude CLI integration guide (claude mcp add/list/remove)
+  - Added transport configuration examples (STDIO, HTTP, HTTP stateless)
+  - Added multi-server configuration patterns
+  - Added environment variable passing through MCP config
+  - Document expanded from 442 to 827 lines (87% growth)
+
 ## [3.2.0] - 2025-10-22
 
 ### Added

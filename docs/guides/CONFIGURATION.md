@@ -4,6 +4,391 @@ Configure your MCP server for different environments and use cases.
 
 ---
 
+## MCP Client Configuration
+
+Configure MCP clients (Claude CLI, Claude Desktop, etc.) to connect to your Simply-MCP servers.
+
+### Configuration Files
+
+MCP clients use JSON configuration files to define available servers:
+
+**`.mcp.json`** - Project-scoped configuration
+- Location: Project root directory
+- Use case: Team-shared, project-specific servers
+- Version controlled with your project
+
+**`~/.claude.json`** - User-global configuration
+- Location: User home directory (`~/.claude.json` or `%USERPROFILE%\.claude.json`)
+- Use case: Personal utilities, system-wide tools
+- Persists across all projects
+
+**Difference from `simplymcp.config.ts`:**
+- `simplymcp.config.ts` = Server-side CLI configuration (how to run/bundle servers)
+- `.mcp.json` / `~/.claude.json` = Client-side configuration (how clients connect to servers)
+
+### File Format
+
+MCP client configuration uses the `mcpServers` object structure:
+
+```json
+{
+  "mcpServers": {
+    "server-name": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "server.ts"],
+      "env": {
+        "API_KEY": "your-key",
+        "LOG_LEVEL": "debug"
+      }
+    }
+  }
+}
+```
+
+**Fields:**
+- `command` - Executable to run (npx, node, etc.)
+- `args` - Array of command arguments
+- `env` - Optional environment variables
+
+### Configuration Priority
+
+Configuration files are evaluated in order of precedence (highest to lowest):
+
+| Priority | Source | Scope | Override |
+|----------|--------|-------|----------|
+| 1 (Highest) | `--mcp-config` flag | Single command | Always wins |
+| 2 | `.mcp.json` | Project directory | Overrides global |
+| 3 | `~/.claude.json` | User home | Overrides defaults |
+| 4 (Lowest) | Client defaults | Built-in | Fallback only |
+
+**Important:** Configs do not merge. The highest priority config completely replaces lower priority configs.
+
+**Example precedence:**
+```bash
+# Uses .mcp.json (project-scoped)
+claude
+
+# Uses custom.json (--mcp-config wins)
+claude --mcp-config custom.json
+
+# Uses ~/.claude.json (no .mcp.json in project)
+cd ~/empty-dir && claude
+```
+
+### Transport Configuration
+
+#### STDIO Transport (Default)
+
+Standard input/output communication:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "server.ts"]
+    }
+  }
+}
+```
+
+**Use when:**
+- Single client per server
+- Desktop applications (Claude Desktop)
+- CLI integrations
+
+#### HTTP Transport
+
+HTTP server with multiple client support:
+
+```json
+{
+  "mcpServers": {
+    "my-http-server": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "server.ts", "--http", "--port", "3000"]
+    }
+  }
+}
+```
+
+**Use when:**
+- Multiple clients need to connect
+- Web application integration
+- Load-balanced services
+
+#### HTTP Stateless Transport
+
+HTTP without session management (serverless compatible):
+
+```json
+{
+  "mcpServers": {
+    "my-stateless-server": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "server.ts", "--http-stateless", "--port", "3000"]
+    }
+  }
+}
+```
+
+**Use when:**
+- Serverless deployments (AWS Lambda)
+- Each request is independent
+- No conversation state needed
+
+### Multiple Servers
+
+Configure multiple servers in a single config file:
+
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "weather-server.ts"]
+    },
+    "database": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "db-server.ts", "--http", "--port", "3001"]
+    },
+    "calculator": {
+      "command": "node",
+      "args": ["dist/calculator.js"]
+    }
+  }
+}
+```
+
+Each server gets its own key in the `mcpServers` object.
+
+### Environment Variables
+
+Pass environment variables to servers through the `env` field:
+
+```json
+{
+  "mcpServers": {
+    "api-server": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "api-server.ts"],
+      "env": {
+        "API_KEY": "sk-1234567890",
+        "DATABASE_URL": "postgresql://localhost/mydb",
+        "LOG_LEVEL": "debug",
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+**Best practices:**
+- Never commit secrets to version control
+- Use `.env` files for local development
+- Use secret management for production
+
+### Bundled Servers
+
+Configure bundled servers (distributed as single files):
+
+```json
+{
+  "mcpServers": {
+    "my-bundled-server": {
+      "command": "node",
+      "args": ["dist/server.js"]
+    }
+  }
+}
+```
+
+Or as npm packages:
+
+```json
+{
+  "mcpServers": {
+    "weather-service": {
+      "command": "npx",
+      "args": ["weather-mcp-server"]
+    }
+  }
+}
+```
+
+### When to Use Each
+
+**Use `.mcp.json` for:**
+- Project-specific servers
+- Team-shared configuration
+- Version-controlled setups
+- Development workflows
+
+**Use `~/.claude.json` for:**
+- Personal utility servers
+- System-wide tools
+- Cross-project servers
+- Global defaults
+
+**Use `--mcp-config` for:**
+- Testing new servers
+- Temporary configurations
+- CI/CD pipelines
+- One-off commands
+
+---
+
+## Claude CLI Integration
+
+Integrate Simply-MCP servers with Claude CLI for interactive development and testing.
+
+### Adding Servers
+
+#### Using `claude mcp add`
+
+Add a server to your global configuration:
+
+```bash
+# Add server with stdio transport
+claude mcp add my-server "npx simply-mcp run server.ts"
+
+# Add server with HTTP transport
+claude mcp add api-server "npx simply-mcp run api.ts --http --port 3000"
+
+# Add with watch mode for development
+claude mcp add dev-server "npx simply-mcp run server.ts --watch"
+```
+
+#### Manual Configuration
+
+Edit `~/.claude.json` or `.mcp.json` directly:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "server.ts"]
+    }
+  }
+}
+```
+
+#### Listing Servers
+
+View configured servers:
+
+```bash
+# List all configured servers
+claude mcp list
+
+# Show detailed server information
+claude mcp list --verbose
+```
+
+#### Removing Servers
+
+Remove servers from configuration:
+
+```bash
+# Remove specific server
+claude mcp remove my-server
+
+# Remove all servers
+claude mcp remove --all
+```
+
+### Inline Configuration
+
+Test servers without modifying config files using the `--mcp-config` flag:
+
+```bash
+# Inline JSON configuration
+claude --mcp-config '{"mcpServers":{"test":{"command":"npx","args":["simply-mcp","run","server.ts"]}}}'
+
+# Using a temporary config file
+claude --mcp-config ./test-config.json
+```
+
+**Use cases:**
+- Quick testing without permanent changes
+- CI/CD pipeline configurations
+- Debugging server issues
+- Temporary server connections
+
+### Testing Servers
+
+Recommended workflow for testing new servers:
+
+```bash
+# 1. Create your server
+# server.ts already exists
+
+# 2. Test with inline config
+claude --mcp-config '{"mcpServers":{"test":{"command":"npx","args":["simply-mcp","run","server.ts"]}}}'
+
+# 3. Test the server tools interactively
+# (use Claude to call your server's tools)
+
+# 4. If working, add to permanent config
+claude mcp add my-server "npx simply-mcp run server.ts"
+
+# 5. Remove temporary config (automatic with inline)
+# Or remove added server if not needed
+claude mcp remove my-server
+```
+
+**Testing with permissions:**
+```bash
+# Bypass permission prompts for testing
+claude --mcp-config config.json --permission-mode bypassPermissions
+
+# Strict mode (only use configured servers)
+claude --mcp-config config.json --strict-mcp-config
+```
+
+### Bundled Servers
+
+Configure bundled servers created with `simply-mcp bundle`:
+
+**Single-file bundle:**
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": ["dist/server.js"]
+    }
+  }
+}
+```
+
+**NPM package:**
+```json
+{
+  "mcpServers": {
+    "weather-service": {
+      "command": "npx",
+      "args": ["weather-mcp-server"]
+    }
+  }
+}
+```
+
+**Local package bundle:**
+```json
+{
+  "mcpServers": {
+    "local-server": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "./my-server-package"]
+    }
+  }
+}
+```
+
+---
+
 ## Environment Variables
 
 ### Required Configuration
@@ -431,6 +816,7 @@ For complete router documentation, see [Router Tools Guide](./ROUTER_TOOLS.md).
 
 ## Next Steps
 
+- **Need more CLI options?** See [CLI_REFERENCE.md](./CLI_REFERENCE.md)
 - **Organize tools?** See [ROUTER_TOOLS.md](./ROUTER_TOOLS.md)
 - **Deploy?** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
 - **Bundle?** See [BUNDLING.md](./BUNDLING.md)
