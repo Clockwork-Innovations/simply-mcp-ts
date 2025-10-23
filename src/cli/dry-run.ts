@@ -551,6 +551,22 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
       }
     }
 
+    // Load the server instance to check for resource implementations
+    let serverInstance: any = null;
+    try {
+      const module = await loadTypeScriptFile(absolutePath);
+      const ServerClass =
+        module.default ||
+        (parsed.className ? module[parsed.className] : null);
+
+      if (ServerClass) {
+        serverInstance = new ServerClass();
+      }
+    } catch (error) {
+      // If we can't load the instance, we'll skip implementation checks
+      // This is a non-fatal error for dry-run validation
+    }
+
     // Extract resource metadata with actual URIs and descriptions
     for (const resource of parsed.resources) {
       resources.push({
@@ -563,9 +579,17 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
         warnings.push(`Resource '${resource.uri}' has no description. Add a description field to improve documentation.`);
       }
 
-      // Note dynamic resources require implementation
+      // Check if dynamic resources have implementation
+      // Only warn if the resource is dynamic AND no implementation exists
       if (resource.dynamic) {
-        warnings.push(`Resource '${resource.uri}' is dynamic and requires implementation as property '${resource.methodName}'`);
+        // Check if implementation exists on server instance
+        const hasImplementation = serverInstance &&
+                                   serverInstance[resource.methodName] !== undefined &&
+                                   typeof serverInstance[resource.methodName] === 'function';
+
+        if (!hasImplementation) {
+          warnings.push(`Resource '${resource.uri}' is dynamic and requires implementation as property '${resource.methodName}'`);
+        }
       }
     }
 

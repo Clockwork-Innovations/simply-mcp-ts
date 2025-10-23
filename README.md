@@ -562,7 +562,7 @@ getWeather: ToolHandler<GetWeatherTool> = async (params) => {
 };
 ```
 
-[Learn more →](docs/guides/INTERFACE_API_REFERENCE.md)
+[Learn more →](https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md)
 
 ### Complete Example
 
@@ -680,7 +680,7 @@ npx simply-mcp run weather-service.ts --http --port 3000
 
 ### Learn More
 
-See the [Interface API Reference](./docs/guides/INTERFACE_API_REFERENCE.md) for complete documentation including:
+See the [Interface API Reference](https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md) for complete documentation including:
 - TypeScript to Zod schema conversion
 - JSDoc validation tags
 - Template interpolation
@@ -906,7 +906,7 @@ Tests verify:
 
 ### Core Guides
 - [Quick Start](./docs/guides/QUICK_START.md) - Get started in 5 minutes
-- [Interface API Reference](./docs/guides/INTERFACE_API_REFERENCE.md) - Complete Interface API documentation
+- [Interface API Reference](https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md) - Complete Interface API documentation
 - [Decorator API Reference](./docs/guides/DECORATOR_API_REFERENCE.md) - Using decorators
 - [Import Style Guide](./docs/development/IMPORT_STYLE_GUIDE.md) - Import patterns and best practices
 - [Configuration Guide](./docs/guides/CONFIGURATION.md) - Environment and runtime options

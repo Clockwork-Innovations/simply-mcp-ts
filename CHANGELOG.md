@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2025-10-23
+
+### Fixed
+
+- **Dry-run Validation: Eliminate False Positive Resource Warnings**
+  - Resource warnings no longer appear for properly implemented dynamic resources
+  - Only warns when dynamic resources are truly unimplemented
+  - Improves confidence in validation output
+  - Affected file: `src/cli/dry-run.ts`
+
+- **Documentation: Fix Broken README Links**
+  - Updated 3 README.md links from local paths to GitHub URLs (lines 565, 683, 909)
+  - Links now accessible for npm users (docs folder intentionally excluded from package)
+  - Follows industry standard pattern (TypeScript, Prettier, ESLint all do this)
+  - Users can easily discover documentation on GitHub or npm.js website
+
 ## [3.2.0] - 2025-10-22
 
 ### Added
