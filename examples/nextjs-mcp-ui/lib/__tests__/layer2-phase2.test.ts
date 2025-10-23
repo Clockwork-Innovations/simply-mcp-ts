@@ -7,8 +7,8 @@
  * @module lib/__tests__/layer2-phase2.test.ts
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from '@jest/globals';
-import type { UIResourceContent } from '../../../src/client/ui-types.js';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import type { UIResourceContent } from '../../../../src/client/ui-types.js';
 import { DEMO_RESOURCES, getAllDemoResources, getDemoResource } from '../demoResources.js';
 import { isValidUIResource } from '../utils.js';
 

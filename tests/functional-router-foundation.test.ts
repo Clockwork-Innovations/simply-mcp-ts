@@ -11,9 +11,9 @@
  * - Router metadata and validation
  */
 
-import { describe, it, expect } from 'vitest';
-import type { SingleFileRouter, SingleFileMCPConfig } from 'simply-mcp';
-import { defineRouter, defineMCP, createMCP, Schema } from 'simply-mcp';
+import { describe, it, expect } from '@jest/globals';
+import type { SingleFileRouter, SingleFileMCPConfig } from '../src/single-file-types.js';
+import { defineRouter, defineMCP, createMCP, Schema } from '../src/single-file-types.js';
 import { z } from 'zod';
 import { BuildMCPServer } from '../src/api/programmatic/BuildMCPServer.js';
 
