@@ -31,10 +31,6 @@ const REPORT_FILE = 'examples-validation-report.md';
 // Examples to exclude from validation (experimental/demo-only)
 // These examples showcase features that are still being integrated
 const EXCLUDED_EXAMPLES = [
-  'mcp-builder-complete.ts',      // Uses experimental defineMCPBuilder API
-  'mcp-builder-foundation.ts',    // Uses experimental defineMCPBuilder API
-  'mcp-builder-interactive.ts',   // Uses experimental defineMCPBuilder API
-  'mcp-builder-layer2.ts',        // Uses experimental defineMCPBuilder API
   'ui-all-apis-demo.ts'           // Demo-only file, showcases API styles
 ];
 

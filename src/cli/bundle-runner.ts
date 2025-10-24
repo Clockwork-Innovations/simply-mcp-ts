@@ -480,38 +480,6 @@ export async function runPackageBundle(
       }
     }));
 
-    const { runMCPBuilderAdapter } = await import('./run.js').then(mod => ({
-      runMCPBuilderAdapter: async (
-        filePath: string,
-        useHttp: boolean,
-        useHttpStateless: boolean,
-        port: number,
-        verbose: boolean
-      ) => {
-        const { loadMCPBuilderServer } = await import('../api/mcp/adapter.js');
-        const { startServer, displayServerInfo } = await import('./adapter-utils.js');
-
-        const absolutePath = resolve(process.cwd(), filePath);
-
-        if (verbose) {
-          console.error(`[RunCommand] Loading MCP Builder server from: ${filePath}`);
-        }
-
-        try {
-          const server = await loadMCPBuilderServer(absolutePath);
-
-          displayServerInfo(server);
-          await startServer(server, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
-        } catch (error) {
-          console.error('[RunCommand] Failed to run MCP Builder server:', error);
-          if (error instanceof Error && error.stack && verbose) {
-            console.error('[RunCommand] Stack:', error.stack);
-          }
-          process.exit(2);
-        }
-      }
-    }));
-
     const { runProgrammaticAdapter } = await import('./run.js').then(mod => ({
       runProgrammaticAdapter: async (
         filePath: string,
@@ -578,15 +546,6 @@ export async function runPackageBundle(
     switch (style) {
       case 'interface':
         await runInterfaceAdapter(entryPoint, useHttp, useHttpStateless, port, verbose);
-        break;
-      case 'decorator':
-        await runDecoratorAdapter(entryPoint, useHttp, useHttpStateless, port, verbose);
-        break;
-      case 'functional':
-        await runFunctionalAdapter(entryPoint, useHttp, useHttpStateless, port, verbose);
-        break;
-      case 'mcp-builder':
-        await runMCPBuilderAdapter(entryPoint, useHttp, useHttpStateless, port, verbose);
         break;
       case 'programmatic':
         await runProgrammaticAdapter(entryPoint, useHttp, useHttpStateless, port, verbose);

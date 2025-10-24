@@ -15,21 +15,18 @@
  */
 export const ErrorMessages = {
   /**
-   * Error when no valid MCP server class is found in a file
+   * Error when no valid MCP server is found in a file
    */
   INVALID_SERVER_CLASS: (file: string) =>
-    `No MCP server class found in: ${file}\n\n` +
+    `No MCP server found in: ${file}\n\n` +
     `Expected:\n` +
-    `  - A class decorated with @MCPServer\n` +
-    `  - Exported as default: export default class MyServer { }\n` +
-    `  - Or as named export: export class MyServer { }\n\n` +
+    `  - A BuildMCPServer instance exported as default\n` +
+    `  - Or an Interface API implementation exported as default\n\n` +
     `Example:\n` +
-    `  import { MCPServer } from 'simply-mcp';\n\n` +
-    `  @MCPServer()\n` +
-    `  export default class MyServer {\n` +
-    `    // Your tools here\n` +
-    `  }\n\n` +
-    `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts#decorator-api`,
+    `  import { BuildMCPServer } from 'simply-mcp';\n\n` +
+    `  const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });\n` +
+    `  export default server;\n\n` +
+    `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts`,
 
   /**
    * Error when file cannot be loaded
@@ -46,29 +43,31 @@ export const ErrorMessages = {
     `See: https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/IMPORT_STYLE_GUIDE.md`,
 
   /**
-   * Error when class is not decorated with @MCPServer
+   * Error when server is not properly configured
    */
   MISSING_SERVER_DECORATOR: (className: string) =>
-    `Class '${className}' must be decorated with @MCPServer\n\n` +
+    `Server configuration error for '${className}'\n\n` +
     `What went wrong:\n` +
-    `  The class was found but is missing the @MCPServer decorator.\n\n` +
+    `  The file was found but doesn't contain a valid MCP server configuration.\n\n` +
     `Expected:\n` +
-    `  @MCPServer()\n` +
-    `  class ${className} { ... }\n\n` +
+    `  - BuildMCPServer instance\n` +
+    `  - Interface API implementation\n\n` +
     `To fix:\n` +
-    `  1. Import MCPServer: import { MCPServer } from 'simply-mcp';\n` +
-    `  2. Add decorator: @MCPServer() above your class\n` +
-    `  3. Configure server: @MCPServer({ name: 'my-server', version: '1.0.0' })\n\n` +
+    `  1. Import: import { BuildMCPServer } from 'simply-mcp';\n` +
+    `  2. Create server: const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });\n` +
+    `  3. Export: export default server;\n\n` +
     `Example:\n` +
-    `  import { MCPServer, tool } from 'simply-mcp';\n\n` +
-    `  @MCPServer({ name: 'my-server', version: '1.0.0' })\n` +
-    `  export default class ${className} {\n` +
-    `    @tool()\n` +
-    `    greet(name: string) {\n` +
-    `      return \`Hello, \${name}!\`;\n` +
-    `    }\n` +
-    `  }\n\n` +
-    `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts#decorator-api`,
+    `  import { BuildMCPServer } from 'simply-mcp';\n` +
+    `  import { z } from 'zod';\n\n` +
+    `  const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });\n` +
+    `  server.addTool({\n` +
+    `    name: 'greet',\n` +
+    `    description: 'Greet a user',\n` +
+    `    parameters: z.object({ name: z.string() }),\n` +
+    `    execute: async (args) => \`Hello, \${args.name}!\`\n` +
+    `  });\n` +
+    `  export default server;\n\n` +
+    `Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts`,
 
   /**
    * Error when tool configuration is invalid

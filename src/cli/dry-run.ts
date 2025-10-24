@@ -347,136 +347,6 @@ async function dryRunDecorator(filePath: string, useHttp: boolean, port: number)
 }
 
 /**
- * Perform dry-run for functional API style
- */
-async function dryRunFunctional(filePath: string, useHttp: boolean, port: number): Promise<DryRunResult> {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const tools: Array<{ name: string; description?: string }> = [];
-  const prompts: Array<{ name: string; description?: string }> = [];
-  const resources: Array<{ name: string; description?: string }> = [];
-
-  let serverConfig = {
-    name: '',
-    version: '',
-    port: undefined as number | undefined,
-  };
-
-  try {
-    // Load config
-    const absolutePath = resolve(process.cwd(), filePath);
-    const module = await loadTypeScriptFile(absolutePath);
-    const config = module.default;
-
-    if (!config) {
-      errors.push('Config file must have a default export');
-      return {
-        success: false,
-        detectedStyle: 'functional',
-        serverConfig,
-        tools,
-        prompts,
-        resources,
-        transport: useHttp ? 'http' : 'stdio',
-        portConfig: port,
-        warnings,
-        errors,
-      };
-    }
-
-    // Extract server config
-    serverConfig = {
-      name: config.name || '',
-      version: config.version || '',
-      port: config.port,
-    };
-
-    // Validate server config
-    validateServerConfig(serverConfig.name, serverConfig.version, errors, warnings);
-
-    // Extract tools
-    if (config.tools && Array.isArray(config.tools)) {
-      for (const tool of config.tools) {
-        if (!tool.name) {
-          warnings.push('Tool found with missing name');
-          continue;
-        }
-
-        tools.push({
-          name: tool.name,
-          description: tool.description,
-        });
-      }
-    }
-
-    // Extract prompts
-    if (config.prompts && Array.isArray(config.prompts)) {
-      for (const prompt of config.prompts) {
-        if (!prompt.name) {
-          warnings.push('Prompt found with missing name');
-          continue;
-        }
-
-        prompts.push({
-          name: prompt.name,
-          description: prompt.description,
-        });
-      }
-    }
-
-    // Extract resources
-    if (config.resources && Array.isArray(config.resources)) {
-      for (const resource of config.resources) {
-        if (!resource.name) {
-          warnings.push('Resource found with missing name');
-          continue;
-        }
-
-        resources.push({
-          name: resource.name,
-          description: resource.description,
-        });
-      }
-    }
-
-    // Validate tools
-    validateToolNames(tools, errors, warnings);
-
-    // Validate port if HTTP is used
-    if (useHttp) {
-      validatePort(port, errors);
-    }
-
-    return {
-      success: errors.length === 0,
-      detectedStyle: 'functional',
-      serverConfig,
-      tools,
-      prompts,
-      resources,
-      transport: useHttp ? 'http' : 'stdio',
-      portConfig: port,
-      warnings,
-      errors,
-    };
-  } catch (error) {
-    errors.push(`Failed to load functional config: ${error instanceof Error ? error.message : String(error)}`);
-    return {
-      success: false,
-      detectedStyle: 'functional',
-      serverConfig,
-      tools,
-      prompts,
-      resources,
-      transport: useHttp ? 'http' : 'stdio',
-      portConfig: port,
-      warnings,
-      errors,
-    };
-  }
-}
-
-/**
  * Perform dry-run for interface API style
  */
 async function dryRunInterface(filePath: string, useHttp: boolean, port: number): Promise<DryRunResult> {
@@ -761,12 +631,6 @@ export async function runDryRun(
     case 'interface':
       result = await dryRunInterface(filePath, useHttp, port);
       break;
-    case 'decorator':
-      result = await dryRunDecorator(filePath, useHttp, port);
-      break;
-    case 'functional':
-      result = await dryRunFunctional(filePath, useHttp, port);
-      break;
     case 'programmatic':
       result = await dryRunProgrammatic(filePath, useHttp, port);
       break;
@@ -799,10 +663,6 @@ export async function runDryRun(
 // Legacy adapter functions for backward compatibility
 export async function dryRunDecoratorAdapter(filePath: string, useHttp: boolean, port: number): Promise<void> {
   await runDryRun(filePath, 'decorator', useHttp, port, false);
-}
-
-export async function dryRunFunctionalAdapter(filePath: string, useHttp: boolean, port: number): Promise<void> {
-  await runDryRun(filePath, 'functional', useHttp, port, false);
 }
 
 export async function dryRunProgrammaticAdapter(filePath: string, useHttp: boolean, port: number): Promise<void> {

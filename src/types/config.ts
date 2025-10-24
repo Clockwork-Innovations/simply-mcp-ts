@@ -10,7 +10,7 @@
 /**
  * API style types
  */
-export type APIStyle = 'decorator' | 'functional' | 'programmatic';
+export type APIStyle = 'interface' | 'programmatic';
 
 /**
  * Transport types

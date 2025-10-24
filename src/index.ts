@@ -2,40 +2,8 @@
  * SimplyMCP - Model Context Protocol Server Framework
  *
  * A comprehensive MCP server framework with support for multiple API styles:
- * - Decorator-based class API
- * - Functional single-file API
  * - Programmatic API
- * - Interface-driven API (v2.5.0+)
- * - MCP Builder API (v2.5.0+) - Build MCP servers using MCP itself
- *
- * @example Decorator API
- * ```typescript
- * import { MCPServer } from 'simply-mcp';
- *
- * @MCPServer({ name: 'my-server', version: '1.0.0' })
- * class MyServer {
- *   greet(name: string): string {
- *     return `Hello, ${name}!`;
- *   }
- * }
- * ```
- *
- * @example Functional API
- * ```typescript
- * import { defineMCP } from 'simply-mcp';
- * import { z } from 'zod';
- *
- * export default defineMCP({
- *   name: 'my-server',
- *   version: '1.0.0',
- *   tools: [{
- *     name: 'greet',
- *     description: 'Greet a user',
- *     parameters: z.object({ name: z.string() }),
- *     execute: async (args) => `Hello, ${args.name}!`
- *   }]
- * });
- * ```
+ * - Interface-driven API (v3.0.0+)
  *
  * @example Programmatic API (BuildMCPServer)
  * ```typescript
@@ -52,7 +20,7 @@
  * await server.start();
  * ```
  *
- * @example Interface-Driven API (v3.0.0 - In Development)
+ * @example Interface-Driven API (v3.0.0+)
  * ```typescript
  * import type { ITool, IServer } from 'simply-mcp';
  *
@@ -72,18 +40,6 @@
  *   greet: GreetTool = async (params) => `Hello, ${params.name}!`;
  * }
  * ```
- *
- * @example MCP Builder API (v2.5.0+)
- * ```typescript
- * import { defineMCPBuilder, ValidationToolsPreset, WorkflowPromptsPreset } from 'simply-mcp';
- *
- * export default defineMCPBuilder({
- *   name: 'mcp-dev',
- *   version: '1.0.0',
- *   toolPresets: [ValidationToolsPreset],
- *   promptPresets: [WorkflowPromptsPreset]
- * });
- * ```
  */
 
 // ============================================================================
@@ -93,45 +49,6 @@
 export { BuildMCPServer } from './api/programmatic/BuildMCPServer.js';
 export { BuildMCPServer as SimplyMCP } from './api/programmatic/BuildMCPServer.js';
 export type { BuildMCPServerOptions } from './api/programmatic/types.js';
-
-// ============================================================================
-// Decorator API
-// ============================================================================
-export {
-  MCPServer,
-  tool,
-  prompt,
-  resource,
-  Router,
-  type ServerConfig,
-  type JSDocInfo,
-  type ToolMetadata,
-  type PromptMetadata,
-  type ResourceMetadata,
-  type RouterMetadata,
-} from './decorators.js';
-
-// ============================================================================
-// Single-File Functional API
-// ============================================================================
-export {
-  defineMCP,
-  defineTool,
-  definePrompt,
-  defineResource,
-  defineUIResource,
-  defineRouter,
-  createMCP,
-  MCPBuilder,
-  Schema,
-  type SingleFileTool,
-  type SingleFilePrompt,
-  type SingleFileResource,
-  type SingleFileUIResource,
-  type SingleFileRouter,
-  type ServerOptions,
-  type SingleFileMCPConfig,
-} from './single-file-types.js';
 
 // ============================================================================
 // Schema Builder
@@ -168,88 +85,6 @@ export {
   type ParseResult,
   type InterfaceAdapterOptions,
 } from './api/interface/index.js';
-
-// ============================================================================
-// MCP Builder API (v2.5.0+)
-// ============================================================================
-/**
- * MCP Builder API - Build MCP servers using MCP itself
- *
- * A specialized API for creating MCP servers that help build other MCP servers.
- * Uses sampling-based validation to leverage your LLM for intelligent feedback.
- *
- * Layer 1: Foundation - Basic design tools
- * Layer 2: Feature - Sampling-based validation, workflow guidance
- *
- * @example Basic usage
- * ```typescript
- * import { defineMCPBuilder, DesignToolsPreset } from 'simply-mcp';
- *
- * export default defineMCPBuilder({
- *   name: 'mcp-dev',
- *   version: '1.0.0',
- *   toolPresets: [DesignToolsPreset]
- * });
- * ```
- *
- * @example Advanced usage with sampling
- * ```typescript
- * import {
- *   createMCPBuilder,
- *   ValidationToolsPreset,
- *   WorkflowPromptsPreset
- * } from 'simply-mcp';
- *
- * export default createMCPBuilder({
- *   name: 'mcp-dev-complete',
- *   version: '1.0.0'
- * })
- *   .useToolPreset(ValidationToolsPreset)
- *   .usePromptPreset(WorkflowPromptsPreset)
- *   .build();
- * ```
- */
-
-// Builder functions
-export {
-  defineMCPBuilder,
-  createMCPBuilder,
-  MCPBuilderBuilder,
-} from './api/mcp/builders.js';
-
-// Adapter functions
-export {
-  createServerFromMCPBuilder,
-  loadMCPBuilderServer,
-  isMCPBuilderFile,
-} from './api/mcp/adapter.js';
-
-// Presets
-export {
-  DesignToolsPreset,                    // Layer 1: Basic design tools
-  ValidationToolsPreset,                 // Layer 2: Sampling-based validation
-  InteractiveValidationToolsPreset,     // Layer 2: Interactive validation (no sampling - works with Claude Code CLI!)
-  CodeGenerationToolsPreset,            // Layer 2: Code generation (complete the workflow!)
-  WorkflowPromptsPreset,                 // Layer 2: Workflow guidance
-} from './api/mcp/presets/index.js';
-
-// Wizard Servers
-export {
-  WizardServer,                         // Foundation: Interactive wizard for building MCP servers
-} from './api/mcp/wizard-server.js';
-
-export {
-  ClassWrapperWizard,                   // Foundation: Interactive wizard for wrapping TypeScript classes
-} from './api/mcp/class-wrapper-wizard.js';
-
-// Types
-export type {
-  MCPBuilderConfig,
-  MCPBuilderTool,
-  ToolPreset,
-  PromptPreset,
-  ResourcePreset,
-} from './api/mcp/types.js';
 
 // ============================================================================
 // Core Types

@@ -13,7 +13,6 @@ import { runCommand } from './run.js';
 import { listCommand } from './list.js';
 import { stopCommand } from './stop.js';
 import { configCommand } from './config-command.js';
-import { createCommand } from './create.js';
 
 // Get package version from package.json
 // Using createRequire for reliable package.json loading from compiled dist/
@@ -28,7 +27,6 @@ yargs(hideBin(process.argv))
   .command(runCommand)
   .command(bundleCommand)
   .command(createBundleCommand)
-  .command(createCommand)
   .command(listCommand)
   .command(stopCommand)
   .command(configCommand)
