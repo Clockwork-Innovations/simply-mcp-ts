@@ -2,6 +2,10 @@
 
 Quick reference for running tests in Simply MCP.
 
+**Test Examples:**
+- Basic: [examples/interface-minimal.ts](../../examples/interface-minimal.ts)
+- Comprehensive: [examples/interface-protocol-comprehensive.ts](../../examples/interface-protocol-comprehensive.ts)
+
 ## Quick Start
 
 ```bash

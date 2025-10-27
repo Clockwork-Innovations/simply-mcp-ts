@@ -7,7 +7,7 @@ import { readFile } from 'fs/promises';
 import { resolve, join } from 'path';
 import { existsSync } from 'fs';
 import { pathToFileURL } from 'url';
-import type { SimplyMCPConfig, BundleOptions } from './bundle-types.js';
+import type { SimplyMCPConfig, BundleOptions } from '../features/dependencies/bundle-types';
 
 /**
  * Load configuration from file

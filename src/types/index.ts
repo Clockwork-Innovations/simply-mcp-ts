@@ -7,7 +7,7 @@
  * @module types
  *
  * This module consolidates all type definitions from across the framework
- * into a single, well-organized location following the pattern of src/api/interface/
+ * into a single, well-organized location.
  */
 
 // Core framework types (tools, prompts, resources)
@@ -34,7 +34,7 @@ export type {
   RunConfig,
   BundleConfig,
   CLIConfig,
-} from './config.js';
+} from '../core/config.js';
 
 // Schema builder types
 export type {
@@ -57,3 +57,15 @@ export type {
   UIResource,
   UIResourceOptions,
 } from './ui.js';
+
+// Handler framework types (execution and routing)
+export type {
+  BaseHandlerConfig,
+  InlineHandlerConfig,
+  FileHandlerConfig,
+  HttpHandlerConfig,
+  RegistryHandlerConfig,
+  HandlerConfig,
+  HandlerContext,
+  HandlerExecutionOptions,
+} from './handler.js';

@@ -61,7 +61,7 @@
     "**/*.spec.ts",
     "test-*.ts",
     "src/servers/**/*",
-    "src/configurableServer.ts",
+    "src/cli/servers/**/*",
     "src/adapter.ts",
     "src/validation/**/*",
     "src/handlers/**/*",

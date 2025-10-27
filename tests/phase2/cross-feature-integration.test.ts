@@ -8,20 +8,20 @@
  * - Feature 4.1: Core Bundling (dependency resolution)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
 // Feature 2: Inline Dependencies
-import { parseInlineDependencies, parseInlineDependenciesDetailed } from '../../core/dependency-parser.js';
+import { parseInlineDependencies, parseInlineDependenciesDetailed } from '../../features/dependencies/dependency-parser.js';
 
 // Feature 3: Auto-Installation
-import { checkDependencies, isPackageInstalled } from '../../core/dependency-checker.js';
-import { installDependencies } from '../../core/dependency-installer.js';
+import { checkDependencies, isPackageInstalled } from '../../features/dependencies/dependency-checker.js';
+import { installDependencies } from '../../features/dependencies/dependency-installer.js';
 
 // Feature 4.1: Core Bundling
-import { resolveDependencies } from '../../core/dependency-resolver.js';
+import { resolveDependencies } from '../../features/dependencies/dependency-resolver.js';
 import { bundle } from '../../core/bundler.js';
 
 const TEMP_DIR = '/tmp/mcp-test-cross-feature-integration';

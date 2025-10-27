@@ -1,0 +1,10 @@
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+}
+#calculator {
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+}

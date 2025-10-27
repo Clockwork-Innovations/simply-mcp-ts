@@ -21,7 +21,7 @@ import {
   createInlineHTMLResource,
   createExternalURLResource,
   isUIResource,
-} from '../src/core/ui-resource.js';
+} from '../src/features/ui/ui-resource.js';
 import type { UIResource, UIResourceOptions } from '../src/types/ui.js';
 
 describe('UI Resource Creation', () => {

@@ -5,8 +5,8 @@
  * Supports both static prompts (pure template strings) and dynamic prompts (requiring implementation).
  */
 
-import type { ParsedPrompt } from './parser.js';
-import type { BuildMCPServer } from '../programmatic/BuildMCPServer.js';
+import type { ParsedPrompt } from '../server/parser.js';
+import type { BuildMCPServer } from '../server/builder-server.js';
 
 /**
  * Parse args type string to generate argument definitions

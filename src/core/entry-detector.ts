@@ -1,14 +1,16 @@
 /**
  * Entry point detection and validation
- * Detects and validates SimplyMCP server entry points
+ * Detects and validates interface-driven MCP server entry points
  */
 
 import { readFile, access } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, resolve, isAbsolute } from 'path';
+import { isInterfaceFile } from '../server/adapter.js';
+import { parseInterfaceFile } from '../server/parser.js';
 
 /**
- * Detect SimplyMCP entry point from various sources
+ * Detect interface-driven server entry point from various sources
  *
  * Priority order:
  * 1. Provided entry point (validated)
@@ -30,10 +32,10 @@ export async function detectEntryPoint(
   providedEntry?: string,
   basePath: string = process.cwd()
 ): Promise<string> {
-  // 1. If provided, validate it exists and is SimplyMCP
+  // 1. If provided, validate it exists and is interface-driven server
   if (providedEntry) {
     const resolvedPath = resolveEntryPath(providedEntry, basePath);
-    await validateSimplyMCPEntry(resolvedPath);
+    await validateInterfaceEntry(resolvedPath);
     return resolvedPath;
   }
 
@@ -46,7 +48,7 @@ export async function detectEntryPoint(
 
       if (pkg.main) {
         const mainPath = resolveEntryPath(pkg.main, basePath);
-        if (await isSimplyMCPFile(mainPath)) {
+        if (isInterfaceServerFile(mainPath)) {
           return mainPath;
         }
       }
@@ -74,14 +76,14 @@ export async function detectEntryPoint(
   for (const file of conventions) {
     const path = join(basePath, file);
     if (existsSync(path)) {
-      if (await isSimplyMCPFile(path)) {
+      if (isInterfaceServerFile(path)) {
         return path;
       }
     }
   }
 
   throw new Error(
-    'No SimplyMCP entry point found. Please provide an entry point or create one of: ' +
+    'No interface-driven server entry point found. Please provide an entry point or create one of: ' +
     conventions.slice(0, 6).join(', ')
   );
 }
@@ -101,17 +103,25 @@ export function resolveEntryPath(entryPath: string, basePath: string): string {
 }
 
 /**
- * Validate that a file is a valid SimplyMCP entry point
+ * Validate that a file is a valid interface-driven entry point
  *
  * Checks:
  * 1. File exists
- * 2. File imports SimplyMCP
- * 3. File instantiates or exports SimplyMCP
+ * 2. File contains valid interface-driven server (via AST parsing)
+ *
+ * Note: isInterfaceFile() is synchronous but we keep this async for API consistency.
+ *
+ * Note on error handling:
+ * isInterfaceFile() catches all parsing errors and returns false.
+ * This means validateInterfaceEntry() will show generic "not a valid interface-driven server"
+ * for both:
+ * 1. Valid TypeScript that doesn't match the pattern
+ * 2. Invalid TypeScript with syntax errors
  *
  * @param filePath - Absolute path to file
  * @throws Error if validation fails
  */
-export async function validateSimplyMCPEntry(filePath: string): Promise<void> {
+export async function validateInterfaceEntry(filePath: string): Promise<void> {
   // Check file exists
   try {
     await access(filePath);
@@ -119,70 +129,37 @@ export async function validateSimplyMCPEntry(filePath: string): Promise<void> {
     throw new Error(`Entry point does not exist: ${filePath}`);
   }
 
-  // Read file content
-  let content: string;
-  try {
-    content = await readFile(filePath, 'utf-8');
-  } catch (error) {
+  // Validate interface-driven server structure
+  // Note: isInterfaceFile is synchronous but we keep this async for API consistency
+  if (!isInterfaceFile(filePath)) {
     throw new Error(
-      `Failed to read entry point: ${filePath}. ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
-
-  // Check if file imports SimplyMCP (or variants like SimpleMCP, MCPServer)
-  // Accept: simply-mcp, simplemcp, @simplemcp/*, or relative imports
-  const hasImport =
-    /from\s+['"]simply-mcp['"]/.test(content) ||
-    /from\s+['"]simplemcp['"]/.test(content) ||
-    /from\s+['"]@simplemcp\//.test(content) ||
-    /from\s+['"]@simply-mcp\//.test(content) ||
-    /from\s+['"]\.\.?\/.*[Mm][Cc][Pp]/.test(content) ||
-    content.includes('SimpleMCP') ||
-    content.includes('SimplyMCP') ||
-    content.includes('MCPServer');
-
-  if (!hasImport) {
-    throw new Error(
-      `Entry point does not appear to import SimplyMCP: ${filePath}\n` +
-      'Expected: import { SimpleMCP } from "simply-mcp" or similar'
-    );
-  }
-
-  // Check if file instantiates SimplyMCP (or variants)
-  // This includes:
-  // 1. Direct instantiation: new SimplyMCP(...)
-  // 2. Factory methods: SimplyMCP.fromFile(...)
-  // 3. Named exports containing MCP classes
-  const hasInstantiation =
-    /new\s+SimplyMCP\s*\(/.test(content) ||
-    /new\s+SimpleMCP\s*\(/.test(content) ||
-    /new\s+MCPServer\s*\(/.test(content) ||
-    /new\s+BuildMCPServer\s*\(/.test(content) ||
-    /SimplyMCP\.fromFile\s*\(/.test(content) ||
-    /SimpleMCP\.fromFile\s*\(/.test(content) ||
-    /MCPServer\.fromFile\s*\(/.test(content) ||
-    /export\s+default.*(?:Simply|Simple)?MCP/.test(content) ||
-    /export\s*\{.*(?:Simply|Simple)?MCP.*\}/.test(content);
-
-  if (!hasInstantiation) {
-    throw new Error(
-      `Entry point does not appear to create a SimplyMCP instance: ${filePath}\n` +
-      'Expected: new SimplyMCP(...), SimplyMCP.fromFile(...), or export default'
+      `Entry point is not a valid interface-driven server: ${filePath}\n\n` +
+      'Expected structure:\n' +
+      '  import type { ITool, IServer } from "simply-mcp";\n\n' +
+      '  interface MyTool extends ITool { ... }\n' +
+      '  interface MyServer extends IServer { name: ...; version: ...; }\n\n' +
+      '  export default class implements MyServer {\n' +
+      '    myTool: MyTool = async (params) => { ... };\n' +
+      '  }\n\n' +
+      'The file must have:\n' +
+      '  - An interface extending IServer\n' +
+      '  - At least one tool interface extending ITool\n' +
+      '  - export default class implementing the server interface\n\n' +
+      'Learn more: https://github.com/QuantGeekDev/simply-mcp/blob/main/docs/guides/QUICK_START.md'
     );
   }
 }
 
 /**
- * Check if a file appears to be a SimplyMCP server
- * Non-throwing version of validateSimplyMCPEntry
+ * Check if a file appears to be an interface-driven server
+ * Non-throwing version of validateInterfaceEntry
  *
  * @param filePath - Path to file
- * @returns True if file appears to be SimplyMCP server
+ * @returns True if file appears to be interface-driven server
  */
-export async function isSimplyMCPFile(filePath: string): Promise<boolean> {
+export function isInterfaceServerFile(filePath: string): boolean {
   try {
-    await validateSimplyMCPEntry(filePath);
-    return true;
+    return isInterfaceFile(filePath);
   } catch {
     return false;
   }
@@ -191,7 +168,7 @@ export async function isSimplyMCPFile(filePath: string): Promise<boolean> {
 /**
  * Extract server name from entry point
  * Tries to extract from:
- * 1. SimplyMCP constructor options
+ * 1. Interface-driven server definition
  * 2. Filename (fallback)
  *
  * @param filePath - Entry point file path
@@ -199,12 +176,12 @@ export async function isSimplyMCPFile(filePath: string): Promise<boolean> {
  */
 export async function extractServerName(filePath: string): Promise<string> {
   try {
-    const content = await readFile(filePath, 'utf-8');
-
-    // Try to extract name from SimplyMCP/SimpleMCP/MCPServer constructor
-    const nameMatch = /new\s+(?:Simply|Simple)?MCP(?:Server)?\s*\(\s*\{[^}]*name\s*:\s*['"]([^'"]+)['"]/.exec(content);
-    if (nameMatch && nameMatch[1]) {
-      return nameMatch[1];
+    // For interface-driven servers, parse the file to get server name
+    if (isInterfaceFile(filePath)) {
+      const parseResult = parseInterfaceFile(filePath);
+      if (parseResult.server?.name) {
+        return parseResult.server.name;
+      }
     }
 
     // Fallback: use filename without extension

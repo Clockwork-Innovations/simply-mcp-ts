@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import { loadInterfaceServer } from '../../../src/api/interface/adapter.js';
+import { loadInterfaceServer } from '../../../src/adapter.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

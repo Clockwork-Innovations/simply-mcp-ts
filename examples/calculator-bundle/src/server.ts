@@ -1,105 +1,123 @@
 /**
- * Calculator MCP Server - Minimal Package Bundle Example
+ * Calculator MCP Server - Interface API Bundle Example
  *
- * This is a minimal example of a SimpleMCP package bundle.
- * It demonstrates the basic structure with four simple arithmetic tools.
+ * This is a complete example of a SimpleMCP bundle using the Interface API.
+ * It demonstrates basic arithmetic operations with proper error handling.
+ *
+ * Features:
+ * - Add, subtract, multiply, and divide operations
+ * - Input validation
+ * - Error handling (division by zero)
+ * - Clean Interface API pattern
+ *
+ * Usage:
+ *   # From bundle directory
+ *   npx simply-mcp run .
+ *
+ *   # HTTP mode
+ *   npx simply-mcp run . --http --port 3000
+ *
+ *   # Dry-run validation
+ *   npx simply-mcp run . --dry-run
  */
 
-export default {
-  name: 'calculator-mcp-server',
-  version: '1.0.0',
-  description: 'Simple calculator with basic arithmetic operations',
+import type { ITool, IServer } from 'simply-mcp';
 
-  tools: [
-    {
-      name: 'add',
-      description: 'Add two numbers together',
-      parameters: {
-        type: 'object',
-        properties: {
-          a: {
-            type: 'number',
-            description: 'First number'
-          },
-          b: {
-            type: 'number',
-            description: 'Second number'
-          }
-        },
-        required: ['a', 'b']
-      },
-      execute: async (args: any) => {
-        return String(args.a + args.b);
-      }
-    },
+// ============================================================================
+// Tool Interfaces
+// ============================================================================
 
-    {
-      name: 'subtract',
-      description: 'Subtract second number from first number',
-      parameters: {
-        type: 'object',
-        properties: {
-          a: {
-            type: 'number',
-            description: 'First number (minuend)'
-          },
-          b: {
-            type: 'number',
-            description: 'Second number (subtrahend)'
-          }
-        },
-        required: ['a', 'b']
-      },
-      execute: async (args: any) => {
-        return String(args.a - args.b);
-      }
-    },
+interface AddTool extends ITool {
+  name: 'add';
+  description: 'Add two numbers together';
+  params: {
+    /** First number */
+    a: number;
+    /** Second number */
+    b: number;
+  };
+  result: number;
+}
 
-    {
-      name: 'multiply',
-      description: 'Multiply two numbers',
-      parameters: {
-        type: 'object',
-        properties: {
-          a: {
-            type: 'number',
-            description: 'First number'
-          },
-          b: {
-            type: 'number',
-            description: 'Second number'
-          }
-        },
-        required: ['a', 'b']
-      },
-      execute: async (args: any) => {
-        return String(args.a * args.b);
-      }
-    },
+interface SubtractTool extends ITool {
+  name: 'subtract';
+  description: 'Subtract second number from first number';
+  params: {
+    /** First number (minuend) */
+    a: number;
+    /** Second number (subtrahend) */
+    b: number;
+  };
+  result: number;
+}
 
-    {
-      name: 'divide',
-      description: 'Divide first number by second number',
-      parameters: {
-        type: 'object',
-        properties: {
-          a: {
-            type: 'number',
-            description: 'Numerator'
-          },
-          b: {
-            type: 'number',
-            description: 'Denominator (cannot be zero)'
-          }
-        },
-        required: ['a', 'b']
-      },
-      execute: async (args: any) => {
-        if (args.b === 0) {
-          return 'Error: Division by zero is undefined';
-        }
-        return String(args.a / args.b);
-      }
+interface MultiplyTool extends ITool {
+  name: 'multiply';
+  description: 'Multiply two numbers';
+  params: {
+    /** First number */
+    a: number;
+    /** Second number */
+    b: number;
+  };
+  result: number;
+}
+
+interface DivideTool extends ITool {
+  name: 'divide';
+  description: 'Divide first number by second number';
+  params: {
+    /** Numerator */
+    a: number;
+    /** Denominator (cannot be zero) */
+    b: number;
+  };
+  result: number | string;
+}
+
+// ============================================================================
+// Server Interface
+// ============================================================================
+
+interface CalculatorServer extends IServer {
+  name: 'calculator-mcp-server';
+  version: '1.0.0';
+  description: 'Simple calculator with basic arithmetic operations';
+}
+
+// ============================================================================
+// Server Implementation
+// ============================================================================
+
+export default class CalculatorServerImpl implements CalculatorServer {
+  /**
+   * Add two numbers
+   */
+  add: AddTool = async ({ a, b }) => {
+    return a + b;
+  };
+
+  /**
+   * Subtract second number from first
+   */
+  subtract: SubtractTool = async ({ a, b }) => {
+    return a - b;
+  };
+
+  /**
+   * Multiply two numbers
+   */
+  multiply: MultiplyTool = async ({ a, b }) => {
+    return a * b;
+  };
+
+  /**
+   * Divide first number by second with zero-division check
+   */
+  divide: DivideTool = async ({ a, b }) => {
+    if (b === 0) {
+      return 'Error: Division by zero is undefined';
     }
-  ]
-};
+    return a / b;
+  };
+}

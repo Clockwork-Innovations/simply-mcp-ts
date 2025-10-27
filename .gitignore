@@ -9,6 +9,10 @@ dist/
 build/
 *.tsbuildinfo
 
+# Release artifacts
+/simply-mcp
+/simply-mcp-*.tgz
+
 # Environment variables
 .env
 .env.local
@@ -34,7 +38,9 @@ coverage/
 
 # Temporary files
 tmp/
+!tmp/handoff/README.md
 temp/
+trash/
 *.tmp
 mcp/tests/TEST-REPORT.md
 
@@ -67,3 +73,18 @@ tests/assets/*.bin
 tests/assets/*.zip
 tests/assets/*.pdf
 !tests/assets/README.md
+
+# Test artifacts from aggressive testing
+/tmp/mcp-ui-aggressive-test/
+/tmp/mcp-ui-e2e-test/
+tests/artifacts/
+*.test-artifact.*
+*.large-payload.*
+
+# Test result files
+tests/results/
+tests/utils/test-data/
+TEST-REPORT-*.md
+REPORT.md
+REPORT.html
+*.test.log

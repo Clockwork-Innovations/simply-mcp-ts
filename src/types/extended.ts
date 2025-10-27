@@ -7,8 +7,8 @@
  * @module types/extended
  */
 
-import { SecurityConfig } from '../security/types.js';
-import { HandlerConfig } from '../core/types.js';
+import { SecurityConfig } from '../features/auth/security/types.js';
+import { HandlerConfig } from '../types/handler.js';
 import type { PromptConfig, ResourceConfig } from './core.js';
 
 /**

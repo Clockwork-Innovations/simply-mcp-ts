@@ -53,7 +53,7 @@ run_dep_resolver_test() {
   local test_script="$2"
 
   cat > "$TEST_TEMP_DIR/test-runner.ts" <<EOFTEST
-import { resolveDependencies, detectNativeModules, isNativeModule, mergeDependencies, filterDependencies, detectPeerDependencies, getBuiltinModules } from '$MCP_ROOT/../dist/src/core/dependency-resolver.js';
+import { resolveDependencies, detectNativeModules, isNativeModule, mergeDependencies, filterDependencies, detectPeerDependencies, getBuiltinModules } from '$MCP_ROOT/../dist/src/features/dependencies/dependency-resolver.js';
 
 async function runTest() {
   try {

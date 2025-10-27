@@ -2,7 +2,7 @@
  * Logger implementation for handler execution
  */
 
-import { Logger } from './types.js';
+import { Logger } from '../types/handler.js';
 
 /**
  * Log level type for MCP logging notifications

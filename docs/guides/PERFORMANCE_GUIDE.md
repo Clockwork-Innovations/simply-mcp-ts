@@ -250,6 +250,9 @@ updatePerformanceMetrics({ load: 50.5 });
 
 ## Examples
 
+**Working Example:**
+- Production optimizations: [examples/interface-production-optimized.ts](../../examples/interface-production-optimized.ts)
+
 ### Basic Usage
 
 ```typescript

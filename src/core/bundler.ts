@@ -3,11 +3,11 @@
  * Feature 4: Bundling Command
  */
 
-import * as esbuild from 'esbuild';
+import type * as esbuildType from 'esbuild';
 import { stat, readFile, chmod, writeFile } from 'fs/promises';
-import { BundleOptions, BundleResult, BundleError, BundleMetadata } from './bundle-types.js';
+import { BundleOptions, BundleResult, BundleError, BundleMetadata } from '../features/dependencies/bundle-types';
 import { detectEntryPoint } from './entry-detector.js';
-import { resolveDependencies, getBuiltinModules } from './dependency-resolver.js';
+import { resolveDependencies, getBuiltinModules } from '../features/dependencies/dependency-resolver.js';
 import { formatOutput } from './output-formatter.js';
 import { createStandaloneBundle } from './formatters/standalone-formatter.js';
 import { handleSourceMap } from './formatters/sourcemap-handler.js';
@@ -39,6 +39,18 @@ export async function bundle(options: BundleOptions): Promise<BundleResult> {
   const errors: BundleError[] = [];
 
   try {
+    // Import esbuild with error handling
+    let esbuild: typeof esbuildType;
+    try {
+      esbuild = await import('esbuild');
+    } catch (error) {
+      throw new Error(
+        'Bundle command requires esbuild.\n' +
+        'Install it with: npm install esbuild\n\n' +
+        'Or use run command instead of bundle.'
+      );
+    }
+
     // 1. Detect and validate entry point
     const basePath = options.basePath || process.cwd();
     if (options.onProgress) {
@@ -239,7 +251,7 @@ function buildEsbuildConfig(
   options: BundleOptions,
   entry: string,
   deps: any
-): esbuild.BuildOptions {
+): esbuildType.BuildOptions {
   const format = options.format || 'single-file';
 
   // Handle external dependencies based on format
@@ -305,7 +317,7 @@ function buildEsbuildConfig(
 /**
  * Convert bundle format to esbuild format
  */
-function getEsbuildFormat(format: string): esbuild.Format {
+function getEsbuildFormat(format: string): esbuildType.Format {
   switch (format) {
     case 'esm':
       return 'esm';
@@ -324,9 +336,21 @@ function getEsbuildFormat(format: string): esbuild.Format {
  */
 async function bundleWatch(
   options: BundleOptions,
-  esbuildConfig: esbuild.BuildOptions
+  esbuildConfig: esbuildType.BuildOptions
 ): Promise<BundleResult> {
   const startTime = Date.now();
+
+  // Import esbuild with error handling
+  let esbuild: typeof esbuildType;
+  try {
+    esbuild = await import('esbuild');
+  } catch (error) {
+    throw new Error(
+      'Watch mode requires esbuild.\n' +
+      'Install it with: npm install esbuild\n\n' +
+      'Or run without --watch flag.'
+    );
+  }
 
   return new Promise((resolve) => {
     let isFirstBuild = true;
@@ -415,7 +439,7 @@ async function getDirectorySize(filePaths: string[]): Promise<number> {
 /**
  * Format esbuild message (warning or error)
  */
-function formatEsbuildMessage(msg: esbuild.Message): string {
+function formatEsbuildMessage(msg: esbuildType.Message): string {
   let formatted = msg.text;
 
   if (msg.location) {
@@ -446,7 +470,7 @@ function formatSize(bytes: number): string {
  * Stop watching (for watch mode)
  * Note: This would need to be exposed via a context object
  */
-export async function stopWatch(context: esbuild.BuildContext): Promise<void> {
+export async function stopWatch(context: esbuildType.BuildContext): Promise<void> {
   await context.dispose();
 }
 

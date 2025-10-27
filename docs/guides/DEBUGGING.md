@@ -147,23 +147,16 @@ npm install
 npx simply-mcp run server.ts
 ```
 
-### Scenario 2: API Style Not Detected
+### Scenario 2: Server Configuration Issues
 
-**Problem:** Wrong API detected, server behaves unexpectedly
+**Problem:** Server not starting or behaving unexpectedly
 
 ```bash
 # Check what's detected
 npx simply-mcp run server.ts --verbose
 
-# Force specific style
-npx simply-mcp run server.ts --style decorator
-npx simply-mcp run server.ts --style functional
-npx simply-mcp run server.ts --style interface
-
-# Or use explicit command
-npx simplymcp-class server.ts
-npx simplymcp-func server.ts
-npx simplymcp-interface server.ts
+# Validate configuration
+npx simply-mcp run server.ts --dry-run --verbose
 ```
 
 ### Scenario 3: Tool Not Appearing
@@ -177,14 +170,15 @@ npx simply-mcp run server.ts --dry-run --json
 # 2. Check verbose output
 npx simply-mcp run server.ts --verbose
 
-# 3. Verify tool definition
-# - Tool name is correct (snake_case in interface, camelCase in impl)
-# - Tool is public (not prefixed with _)
-# - Tool has description
+# 3. Verify tool definition (Interface API)
+# - Tool name is correct (snake_case)
+# - Tool extends ITool interface
+# - Tool has description in interface
 # - Parameters are valid
+# - Method is implemented in class
 
-# 4. For interface/class APIs, ensure export
-export default class MyServer { ... }
+# 4. Ensure export
+export default class MyServer implements IServer { ... }
 ```
 
 ### Scenario 4: Type Errors
@@ -198,14 +192,10 @@ npx simply-mcp run server.ts --verbose
 # For IDE support (optional):
 npx tsc --noEmit
 
-# Check tsconfig.json for decorators (if using decorator API)
-# Should have:
-# {
-#   "compilerOptions": {
-#     "experimentalDecorators": true,
-#     "emitDecoratorMetadata": true
-#   }
-# }
+# With Interface API, ensure:
+# - Interfaces extend ITool, IPrompt, IResource, or IServer
+# - Class implements the server interface
+# - Tool methods match interface signatures
 ```
 
 ### Scenario 5: Performance Issues
@@ -323,16 +313,17 @@ npx simply-mcp run ./my-bundle --force-install
 ls node_modules
 ```
 
-### "API style not detected"
+### "Server validation failed"
 
 ```bash
-# Force correct style
-npx simply-mcp run server.ts --style functional
+# Get detailed validation errors
+npx simply-mcp run server.ts --dry-run --json
 
-# Check file for API patterns
-# Functional: export default defineMCP(...)
-# Decorator: @MCPServer() class MyServer ...
-# Interface: extends ITool, IServer, etc.
+# Check for Interface API patterns:
+# - Interface extends IServer
+# - Class implements server interface
+# - Tool interfaces extend ITool
+# - All tools are properly typed
 ```
 
 ### "Tool validation failed"
@@ -437,13 +428,13 @@ npx tsx test-server.ts
 
 ```bash
 # Run example servers
-npx simply-mcp run examples/single-file-basic.ts --verbose
+npx simply-mcp run examples/interface-minimal.ts --verbose
 
-# Test with another tool
-npx simply-mcp run examples/class-advanced.ts --inspect
+# Test with advanced example
+npx simply-mcp run examples/interface-advanced.ts --inspect
 
 # Multiple examples
-npx simply-mcp run examples/single-file-basic.ts examples/class-basic.ts --verbose
+npx simply-mcp run examples/interface-minimal.ts examples/interface-protocol-comprehensive.ts --verbose
 ```
 
 ---
@@ -499,7 +490,7 @@ node --max-old-space-size=4096 server.ts
 - [ERROR_HANDLING.md](./ERROR_HANDLING.md) - Error handling in code
 - [WATCH_MODE_GUIDE.md](./WATCH_MODE_GUIDE.md) - Watch mode details
 - [DRY_RUN_GUIDE.md](./DRY_RUN_GUIDE.md) - Validation details
-- [CLI_REFERENCE.md](./CLI_REFERENCE.md) - All CLI options
+- [CLI_ADVANCED.md](./CLI_ADVANCED.md) - All CLI options
 - [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Production debugging
 
 ---

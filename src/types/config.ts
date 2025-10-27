@@ -86,6 +86,42 @@ export interface DefaultsConfig {
 }
 
 /**
+ * UI watch mode configuration
+ */
+export interface UIWatchModeConfig {
+  /**
+   * Enable UI file watching and hot reload
+   * @default false
+   */
+  enabled?: boolean;
+
+  /**
+   * Debounce delay in milliseconds
+   * Prevents excessive recompilation when files change rapidly
+   * @default 300
+   */
+  debounceMs?: number;
+
+  /**
+   * Enable verbose logging
+   * @default false
+   */
+  verbose?: boolean;
+
+  /**
+   * File patterns to watch (glob patterns)
+   * @default ['**\/*.{html,css,js,jsx,ts,tsx}']
+   */
+  patterns?: string[];
+
+  /**
+   * Patterns to ignore (glob patterns)
+   * @default ['**\/node_modules/**', '**\/.git/**', '**\/dist/**']
+   */
+  ignored?: string[];
+}
+
+/**
  * Run command configuration options
  */
 export interface RunConfig {
@@ -141,6 +177,11 @@ export interface RunConfig {
    * @default false
    */
   verbose?: boolean;
+
+  /**
+   * UI watch mode configuration
+   */
+  uiWatch?: UIWatchModeConfig;
 }
 
 /**

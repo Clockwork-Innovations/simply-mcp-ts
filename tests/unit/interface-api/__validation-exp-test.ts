@@ -1,5 +1,5 @@
 
-import type { ITool, IServer } from '../../../src/api/interface/types.js';
+import type { ITool, IServer } from '../../../src/interface-types.js';
 
 interface GetWeatherTool extends ITool {
   name: 'get_weather';

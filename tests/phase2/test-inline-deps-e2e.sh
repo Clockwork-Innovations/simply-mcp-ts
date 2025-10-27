@@ -77,8 +77,8 @@ EOF
 
   npx tsx -e "
 import { readFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
-import { validateDependencies } from './src/core/dependency-validator.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
+import { validateDependencies } from './src/features/dependencies/dependency-validator.js';
 
 (async () => {
   (async () => {
@@ -111,7 +111,7 @@ EOF
 
   npx tsx -e "
 import { readFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
 
 (async () => {
   const source = await readFile('$server_file', 'utf-8');
@@ -143,8 +143,8 @@ EOF
 
   npx tsx -e "
 import { readFile, writeFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
-import { generatePackageJson } from './src/core/dependency-utils.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
+import { generatePackageJson } from './src/features/dependencies/dependency-utils.js';
 
 (async () => {
   const source = await readFile('$server_file', 'utf-8');
@@ -193,8 +193,8 @@ EOF
 
   npx tsx -e "
 import { readFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
-import { mergeDependencies } from './src/core/dependency-utils.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
+import { mergeDependencies } from './src/features/dependencies/dependency-utils.js';
 
 (async () => {
   const source = await readFile('$inline_file', 'utf-8');
@@ -256,8 +256,8 @@ EOF
 
   npx tsx -e "
 import { readFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
-import { validateDependencies } from './src/core/dependency-validator.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
+import { validateDependencies } from './src/features/dependencies/dependency-validator.js';
 
 (async () => {
   const source = await readFile('$server_file', 'utf-8');
@@ -300,8 +300,8 @@ EOF
 
   npx tsx -e "
 import { readFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
-import { mergeDependencies } from './src/core/dependency-utils.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
+import { mergeDependencies } from './src/features/dependencies/dependency-utils.js';
 
 (async () => {
   const source = await readFile('$inline_file', 'utf-8');
@@ -332,8 +332,8 @@ test_large_project() {
 
   npx tsx -e "
 import { readFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
-import { validateDependencies } from './src/core/dependency-validator.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
+import { validateDependencies } from './src/features/dependencies/dependency-validator.js';
 
 (async () => {
   const source = await readFile('$server_file', 'utf-8');
@@ -358,7 +358,7 @@ test_security_injection() {
 
   npx tsx -e "
 import { readFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
 
 (async () => {
   const source = await readFile('$server_file', 'utf-8');
@@ -385,10 +385,10 @@ test_real_world() {
 
   npx tsx -e "
 import { readFile } from 'fs/promises';
-import { parseInlineDependencies } from './src/core/dependency-parser.js';
-import { validateDependencies } from './src/core/dependency-validator.js';
-import { generatePackageJson } from './src/core/dependency-utils.js';
-import { getDependencyStats } from './src/core/dependency-utils.js';
+import { parseInlineDependencies } from './src/features/dependencies/dependency-parser.js';
+import { validateDependencies } from './src/features/dependencies/dependency-validator.js';
+import { generatePackageJson } from './src/features/dependencies/dependency-utils.js';
+import { getDependencyStats } from './src/features/dependencies/dependency-utils.js';
 
 // Parse
 (async () => {

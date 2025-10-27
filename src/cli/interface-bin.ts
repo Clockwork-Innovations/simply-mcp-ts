@@ -134,7 +134,7 @@ What is the Interface-Driven API?
   const distPath = resolve(__dirname, '..');
 
   const { loadInterfaceServer } = await import(
-    pathToFileURL(resolve(distPath, 'api/interface/index.js')).href
+    pathToFileURL(resolve(distPath, 'server', 'adapter.js')).href
   );
 
   // Load the interface server

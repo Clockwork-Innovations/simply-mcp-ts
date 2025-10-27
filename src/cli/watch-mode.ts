@@ -256,8 +256,17 @@ export async function startWatchMode(options: WatchModeOptions): Promise<void> {
   }
   console.error(`[Watch] Press Ctrl+C to stop\n`);
 
-  // Import chokidar
-  const chokidar = await import('chokidar');
+  // Import chokidar with error handling
+  let chokidar: typeof import('chokidar');
+  try {
+    chokidar = await import('chokidar');
+  } catch (error) {
+    throw new Error(
+      'Watch mode requires chokidar.\n' +
+      'Install it with: npm install chokidar\n\n' +
+      'Or run without --watch flag.'
+    );
+  }
 
   // Initialize state
   const state: WatchState = {

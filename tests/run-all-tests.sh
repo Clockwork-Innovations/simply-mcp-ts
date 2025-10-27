@@ -79,19 +79,15 @@ echo "Timestamp: $TIMESTAMP"
 echo ""
 
 # Run all test suites
-run_suite "v2.4.5 Bug Fixes" "tests/test-bug-fixes.sh"
-sleep 2  # Allow server cleanup
+# NOTE: Deprecated tests for old APIs have been archived to tests/deprecated/
+# Only Interface API tests are maintained going forward
 run_suite "Stdio Transport" "tests/test-stdio.sh"
-sleep 2  # Allow server cleanup
-run_suite "Decorator API" "tests/test-decorators.sh"
 sleep 2  # Allow server cleanup
 run_suite "Stateless HTTP Transport" "tests/test-stateless-http.sh"
 sleep 2  # Allow server cleanup
 run_suite "Stateful HTTP Transport" "tests/test-stateful-http.sh"
 sleep 2  # Allow server cleanup
 run_suite "HTTP Modes (Stateful/Stateless)" "tests/test-http-modes.sh"
-sleep 2  # Allow server cleanup
-run_suite "CLI Commands" "tests/test-cli-run.sh"
 
 END_TIME=$(date +%s)
 TOTAL_DURATION=$((END_TIME - START_TIME))
@@ -116,7 +112,7 @@ echo "-------------------------------------------"
 printf "% -30s | %s\n" "Test Suite" "Result"
 echo "-------------------------------------------"
 
-for suite in "v2.4.5 Bug Fixes" "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "CLI Commands"; do
+for suite in "Stdio Transport" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -163,7 +159,7 @@ cat > "$REPORT_FILE" << EOF
 |----------------|--------|----------|
 EOF
 
-for suite in "v2.4.5 Bug Fixes" "Stdio Transport" "Decorator API" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)" "CLI Commands"; do
+for suite in "Stdio Transport" "Stateless HTTP Transport" "Stateful HTTP Transport" "HTTP Modes (Stateful/Stateless)"; do
   result="${SUITE_RESULTS[$suite]}"
   duration="${SUITE_DURATION[$suite]}"
 
@@ -184,29 +180,33 @@ cat >> "$REPORT_FILE" << EOF
 - **Session:** Per-process
 - **Tests:** Initialize, tools, prompts, resources, validation
 
-### 2. Decorator API
-- **Type:** Class-based decorator syntax (@tool, @prompt, @resource)
-- **Use Case:** TypeScript servers with decorators
-- **Session:** Per-process (stdio)
-- **Tests:** Decorator registration, JSDoc parsing, parameter validation, type inference, edge cases
-
-### 3. Stateless HTTP Transport
+### 2. Stateless HTTP Transport
 - **Type:** HTTP without session persistence
 - **Use Case:** Simple REST APIs, serverless functions
 - **Session:** None (new transport per request)
 - **Tests:** Independent requests, concurrent requests, no session tracking
 
-### 4. Stateful HTTP Transport
+### 3. Stateful HTTP Transport
 - **Type:** HTTP with session management
 - **Use Case:** Long-running applications, persistent connections
 - **Session:** Tracked via Mcp-Session-Id header
 - **Tests:** Session creation, reuse, isolation, termination, SSE streaming
 
-### 5. CLI Commands
-- **Type:** Simplified CLI interface
-- **Use Case:** Running MCP servers with auto-detection
-- **Session:** N/A (adapter selection)
-- **Tests:** Auto-detection (decorator, functional, programmatic), explicit commands (simplymcp-class, simplymcp-func), flags (--style, --verbose, --help, --http), error handling
+### 4. HTTP Modes
+- **Type:** Testing both stateful and stateless HTTP modes
+- **Use Case:** Verify correct behavior of both modes
+- **Session:** Varies by mode
+- **Tests:** Mode-specific behavior, backwards compatibility
+
+## Deprecated Tests
+
+The following test suites have been archived to `tests/deprecated/`:
+- **Decorator API** - Removed in v4.0.0 (archived to `tests/deprecated/decorator-api/`)
+- **Functional API** - Removed in v4.0.0 (archived to `tests/deprecated/functional-api/`)
+- **Auto-detect** - Removed in v4.0.0 (archived to `tests/deprecated/auto-detect/`)
+- **Old Version Bug Fixes** - Archived to `tests/deprecated/old-versions/`
+
+All servers now use the **Interface API** exclusively. See `docs/guides/QUICK_START.md` for current usage.
 
 ## Notes
 

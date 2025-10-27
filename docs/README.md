@@ -9,8 +9,8 @@ Master index for all Simply MCP guides and examples. Find what you need below.
 **New to Simply MCP?** Start with one of these:
 
 1. **[QUICK_START.md](./guides/QUICK_START.md)** - 5-minute intro with runnable examples
-2. **[EXAMPLES_INDEX.md](../examples/EXAMPLES_INDEX.md)** - Browse all 50+ code examples by use case
-3. **[API_GUIDE.md](./guides/API_GUIDE.md)** - Compare the 4 API styles
+2. **[API Core Reference](./guides/API_CORE.md)** - Core types and transport configuration
+3. **[EXAMPLES_INDEX.md](../examples/EXAMPLES_INDEX.md)** - Browse all 50+ code examples by use case
 
 ---
 
@@ -18,30 +18,28 @@ Master index for all Simply MCP guides and examples. Find what you need below.
 
 ### Understanding the Basics
 
-- **[What is MCP?](./guides/API_GUIDE.md#-quick-comparison)** - Model Context Protocol overview
-- **[API Styles](./guides/API_GUIDE.md)** - Functional vs Decorator vs Interface vs MCPBuilder
-  - Which should you use? See [API_GUIDE.md](./guides/API_GUIDE.md#decision-tree)
-- **[Your First Server](./guides/QUICK_START.md#your-first-server-choose-your-style)** - Complete working example
+- **[What is MCP?](https://modelcontextprotocol.io)** - Model Context Protocol overview
+- **[API Core](./guides/API_CORE.md)** - Core types and transport configuration
+- **[API Features](./guides/API_FEATURES.md)** - Tools, prompts, and resources
+- **[API Protocol](./guides/API_PROTOCOL.md)** - Sampling, elicitation, roots, subscriptions
+- **[Your First Server](./guides/QUICK_START.md)** - Complete working example
 
 ### Building Servers
 
-- **Adding Tools** - See [examples/single-file-advanced.ts](../examples/single-file-advanced.ts)
-- **Adding Prompts** - See [examples/class-prompts-resources.ts](../examples/class-prompts-resources.ts)
-- **Adding Resources** - See [examples/class-prompts-resources.ts](../examples/class-prompts-resources.ts)
-- **Error Handling** - See [examples/auto-install-error-handling.ts](../examples/auto-install-error-handling.ts)
+- **Adding Tools** - See [TOOLS.md](./guides/TOOLS.md) and [examples/interface-advanced.ts](../examples/interface-advanced.ts)
+- **Adding Prompts** - See [PROMPTS.md](./guides/PROMPTS.md) and [examples/interface-file-prompts.ts](../examples/interface-file-prompts.ts)
+- **Adding Resources** - See [RESOURCES.md](./guides/RESOURCES.md) and [examples/interface-protocol-comprehensive.ts](../examples/interface-protocol-comprehensive.ts)
+- **Error Handling** - See [ERROR_HANDLING.md](./guides/ERROR_HANDLING.md)
 
 ### API Reference
 
-Choose your API style for detailed reference:
+**Core API Documentation:**
+- **[API Core](./guides/API_CORE.md)** - Core types and transport configuration
+- **[API Features](./guides/API_FEATURES.md)** - Tools, prompts, and resources
+- **[API Protocol](./guides/API_PROTOCOL.md)** - Sampling, elicitation, roots, subscriptions
 
-- **[Functional API](./guides/FUNCTIONAL_API_REFERENCE.md)** - Simple, JavaScript-first
-  - Example: [examples/single-file-basic.ts](../examples/single-file-basic.ts)
-- **[Decorator API](./guides/DECORATOR_API_REFERENCE.md)** - Class-based, OOP
-  - Example: [examples/class-basic.ts](../examples/class-basic.ts)
-- **[Interface API](./guides/INTERFACE_API_REFERENCE.md)** - Strict types, TypeScript-first
-  - Example: [examples/interface-minimal.ts](../examples/interface-minimal.ts)
-- **[MCPBuilder](./guides/MCCPBUILDER_API_REFERENCE.md)** - Fluent builder pattern
-  - Example: [examples/mcp-builder-foundation.ts](../examples/mcp-builder-foundation.ts)
+Type-safe, interface-based development with full IDE support and autocomplete.
+Example: [examples/interface-minimal.ts](../examples/interface-minimal.ts)
 
 ---
 
@@ -68,19 +66,17 @@ Choose your API style for detailed reference:
 
 ### Communication & Transport
 
-- **[Transport Guide](./guides/TRANSPORT_GUIDE.md)** - HTTP, WebSocket, stdio
-  - Stateful vs stateless HTTP
-  - Performance considerations
-  - WebSocket for real-time
+- **[Transport Overview](./guides/TRANSPORT_OVERVIEW.md)** - Compare and choose transport
+- **[Stdio Transport](./guides/TRANSPORT_STDIO.md)** - For Claude Desktop integration
+- **[HTTP Transport](./guides/TRANSPORT_HTTP.md)** - Stateful/stateless modes
+- **[Advanced Transport](./guides/TRANSPORT_ADVANCED.md)** - Multi-transport, production deployment
 
 ### Development Tools
 
-- **[CLI Reference](./guides/CLI_REFERENCE.md)** - Command-line interface
-  - `simplymcp run`, `bundle`, `create-bundle`
-  - Flags and options
+- **[CLI Basics](./guides/CLI_BASICS.md)** - Basic commands and common usage
+- **[CLI Advanced](./guides/CLI_ADVANCED.md)** - Bundling, debugging, advanced features
 - **[Watch Mode Guide](./guides/WATCH_MODE_GUIDE.md)** - Auto-reload during development
 - **[Debugging](./guides/DEBUGGING.md)** - Debug your server
-  - Breakpoints, logs, verbose output
 
 ---
 
@@ -89,16 +85,16 @@ Choose your API style for detailed reference:
 ### For Different Scenarios
 
 **Building a simple tool?**
-→ [QUICK_START.md](./guides/QUICK_START.md) → [examples/single-file-basic.ts](../examples/single-file-basic.ts)
+→ [QUICK_START.md](./guides/QUICK_START.md) → [examples/interface-minimal.ts](../examples/interface-minimal.ts)
 
 **Building a production server?**
 → [DEPLOYMENT_GUIDE.md](./guides/DEPLOYMENT_GUIDE.md) → [Bundling Guide](./guides/BUNDLING.md)
 
-**Integrating with existing code?**
-→ [API_GUIDE.md](./guides/API_GUIDE.md) → Pick your API style → See examples/
+**Need API documentation?**
+→ [API Core](./guides/API_CORE.md) → [API Features](./guides/API_FEATURES.md) → See examples/
 
 **Need HTTP endpoints?**
-→ [TRANSPORT_GUIDE.md](./guides/TRANSPORT_GUIDE.md)
+→ [Transport Overview](./guides/TRANSPORT_OVERVIEW.md) → [HTTP Transport](./guides/TRANSPORT_HTTP.md)
 
 **Want to bundle for sharing?**
 → [BUNDLING.md](./guides/BUNDLING.md)
@@ -110,12 +106,12 @@ Choose your API style for detailed reference:
 
 **Beginner**
 1. [QUICK_START.md](./guides/QUICK_START.md) - Get running in 5 minutes
-2. [API_GUIDE.md](./guides/API_GUIDE.md) - Understand your options
+2. [API Core](./guides/API_CORE.md) - Core types and configuration
 3. [EXAMPLES_INDEX.md](../examples/EXAMPLES_INDEX.md) - Find a similar example
 
 **Intermediate**
 1. [TOOLS.md](./guides/TOOLS.md) - Add capabilities
-2. [TRANSPORT_GUIDE.md](./guides/TRANSPORT_GUIDE.md) - Use HTTP or WebSocket
+2. [Transport Overview](./guides/TRANSPORT_OVERVIEW.md) - Choose your transport
 3. [WATCH_MODE_GUIDE.md](./guides/WATCH_MODE_GUIDE.md) - Speed up development
 
 **Advanced**
@@ -134,13 +130,11 @@ Quick access to common patterns:
 
 | Need | Example | Run |
 |------|---------|-----|
-| Hello World (Functional) | `single-file-basic.ts` | `npx tsx examples/single-file-basic.ts` |
-| Hello World (Decorator) | `class-basic.ts` | `npx tsx examples/class-basic.ts` |
-| Add tools | `single-file-advanced.ts` | `npx tsx examples/single-file-advanced.ts` |
-| Prompts & Resources | `class-prompts-resources.ts` | `npx tsx examples/class-prompts-resources.ts` |
-| Error handling | `auto-install-error-handling.ts` | `npx tsx examples/auto-install-error-handling.ts` |
-| Bundle example | See `calculator-bundle/` | `cd examples/calculator-bundle && npm install && npm start` |
-| HTTP transport | Any example with `--http` flag | `npx simply-mcp run examples/single-file-basic.ts --http --port 3000` |
+| Hello World | `interface-minimal.ts` | `npx tsx examples/interface-minimal.ts` |
+| Add tools | `interface-advanced.ts` | `npx tsx examples/interface-advanced.ts` |
+| Prompts & Resources | `interface-comprehensive.ts` | `npx tsx examples/interface-comprehensive.ts` |
+| File-based prompts | `interface-file-prompts.ts` | `npx tsx examples/interface-file-prompts.ts` |
+| HTTP transport | Any example with `--http` flag | `npx simply-mcp run examples/interface-minimal.ts --http --port 3000` |
 
 **Run any example with:**
 ```bash
@@ -157,12 +151,10 @@ npx tsx examples/[filename].ts
 - Run `grep -r "your-topic" docs/` to find mentions
 - Check [DEBUGGING.md](./guides/DEBUGGING.md) for common issues
 
-**API-specific issues?**
+**API questions?**
 
-- Functional API → See [FUNCTIONAL_API_REFERENCE.md](./guides/FUNCTIONAL_API_REFERENCE.md)
-- Decorator API → See [DECORATOR_API_REFERENCE.md](./guides/DECORATOR_API_REFERENCE.md)
-- Interface API → See [INTERFACE_API_REFERENCE.md](./guides/INTERFACE_API_REFERENCE.md)
-- MCPBuilder → See [MCCPBUILDER_API_REFERENCE.md](./guides/MCCPBUILDER_API_REFERENCE.md)
+- See [API Core](./guides/API_CORE.md), [API Features](./guides/API_FEATURES.md), or [API Protocol](./guides/API_PROTOCOL.md)
+- See [EXAMPLES_INDEX.md](../examples/EXAMPLES_INDEX.md) for code patterns
 
 **Deployment issues?**
 
@@ -171,7 +163,8 @@ npx tsx examples/[filename].ts
 
 **Performance issues?**
 
-- See [TRANSPORT_GUIDE.md](./guides/TRANSPORT_GUIDE.md) - Connection options
+- See [Transport Overview](./guides/TRANSPORT_OVERVIEW.md) - Choose optimal transport
+- See [Transport Advanced](./guides/TRANSPORT_ADVANCED.md) - Production optimization
 - See [CONFIGURATION.md](./guides/CONFIGURATION.md) - Performance tuning
 
 ---
@@ -185,35 +178,42 @@ docs/
 ├── README.md (YOU ARE HERE - master index)
 ├── guides/
 │   ├── QUICK_START.md              (→ START HERE!)
-│   ├── API_GUIDE.md                (Compare all 4 APIs)
+│   │
+│   ├── API_CORE.md                 (Core types & transport config)
+│   ├── API_FEATURES.md             (Tools, prompts, resources)
+│   ├── API_PROTOCOL.md             (Sampling, elicitation, roots, subscriptions)
+│   │
 │   ├── TOOLS.md                    (Adding tools)
 │   ├── PROMPTS.md                  (Prompts & templates)
 │   ├── RESOURCES.md                (Resources)
 │   ├── CONFIGURATION.md            (Server config)
 │   ├── ERROR_HANDLING.md           (Error management)
+│   │
+│   ├── TRANSPORT_OVERVIEW.md       (Compare & choose transport)
+│   ├── TRANSPORT_STDIO.md          (Claude Desktop integration)
+│   ├── TRANSPORT_HTTP.md           (Stateful/stateless modes)
+│   ├── TRANSPORT_ADVANCED.md       (Multi-transport, production)
+│   │
+│   ├── CLI_BASICS.md               (Basic commands)
+│   ├── CLI_ADVANCED.md             (Bundling, debugging)
+│   │
 │   ├── BUNDLING.md                 (Distribution)
-│   ├── TRANSPORT_GUIDE.md          (HTTP, WebSocket, stdio)
 │   ├── DEPLOYMENT_GUIDE.md         (Production)
-│   ├── CLI_REFERENCE.md            (Commands)
 │   ├── WATCH_MODE_GUIDE.md         (Development)
-│   ├── DEBUGGING.md                (Troubleshooting)
-│   ├── FUNCTIONAL_API_REFERENCE.md (Functional API details)
-│   ├── DECORATOR_API_REFERENCE.md  (Decorator API details)
-│   ├── INTERFACE_API_REFERENCE.md  (Interface API details)
-│   └── MCCPBUILDER_API_REFERENCE.md (MCPBuilder details)
+│   └── DEBUGGING.md                (Troubleshooting)
 │
-├── development/
-│   └── IMPORT_STYLE_GUIDE.md       (For contributors)
+├── migration/
+│   └── DECORATOR_TO_INTERFACE.md   (Migration guide)
 │
 └── [other development docs]
 
 examples/
-├── EXAMPLES_INDEX.md               (All 50+ examples organized)
-├── single-file-basic.ts            (Functional API - START HERE!)
-├── class-basic.ts                  (Decorator API)
-├── interface-minimal.ts            (Interface API)
-├── mcp-builder-foundation.ts       (MCPBuilder)
-├── [40+ more examples...]
+├── EXAMPLES_INDEX.md               (All examples organized)
+├── interface-minimal.ts            (START HERE!)
+├── interface-advanced.ts           (Multiple tools)
+├── interface-comprehensive.ts      (Full-featured server)
+├── interface-file-prompts.ts       (File-based prompts)
+├── [legacy examples for migration reference]
 └── [subdirectories for bundles, ui, etc.]
 ```
 
@@ -224,14 +224,16 @@ examples/
 | I want to... | Go to |
 |---|---|
 | Get started quickly | [QUICK_START.md](./guides/QUICK_START.md) |
-| Learn about APIs | [API_GUIDE.md](./guides/API_GUIDE.md) |
+| Learn core API types | [API Core](./guides/API_CORE.md) |
+| Add features (tools/prompts/resources) | [API Features](./guides/API_FEATURES.md) |
+| Use protocol features | [API Protocol](./guides/API_PROTOCOL.md) |
 | See working code | [EXAMPLES_INDEX.md](../examples/EXAMPLES_INDEX.md) |
-| Add tools to my server | [TOOLS.md](./guides/TOOLS.md) |
-| Use HTTP transport | [TRANSPORT_GUIDE.md](./guides/TRANSPORT_GUIDE.md) |
-| Bundle for sharing | [BUNDLING.md](./guides/BUNDLING.md) |
+| Choose a transport | [Transport Overview](./guides/TRANSPORT_OVERVIEW.md) |
+| Use stdio (Claude Desktop) | [Stdio Transport](./guides/TRANSPORT_STDIO.md) |
+| Use HTTP transport | [HTTP Transport](./guides/TRANSPORT_HTTP.md) |
+| Learn CLI commands | [CLI Basics](./guides/CLI_BASICS.md) |
+| Bundle or debug | [CLI Advanced](./guides/CLI_ADVANCED.md) |
 | Deploy to production | [DEPLOYMENT_GUIDE.md](./guides/DEPLOYMENT_GUIDE.md) |
-| Find a command | [CLI_REFERENCE.md](./guides/CLI_REFERENCE.md) |
-| Debug issues | [DEBUGGING.md](./guides/DEBUGGING.md) |
 | Speed up development | [WATCH_MODE_GUIDE.md](./guides/WATCH_MODE_GUIDE.md) |
 
 ---

@@ -12,7 +12,7 @@ import {
   ToolHandler,
   HandlerContext,
   HandlerResult,
-} from '../core/types.js';
+} from '../types/handler.js';
 import { HandlerLoadError, HandlerConfigError } from '../core/errors.js';
 
 /**

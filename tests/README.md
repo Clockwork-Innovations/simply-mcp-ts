@@ -161,7 +161,7 @@ brew install jq
 ### "Server failed to start"
 - Check if port is already in use
 - Review server logs in /tmp/mcp-*-server.log
-- Ensure config file exists: src/config-test.json
+- Ensure config file exists: tests/fixtures/config/config-test.json
 
 ### "Connection refused"
 - Server may not have started fully
@@ -188,7 +188,8 @@ src/
 │   ├── stdioServer.ts         # Stdio transport server
 │   ├── statelessServer.ts     # Stateless HTTP server
 │   └── sseServer.ts           # SSE transport server
-├── configurableServer.ts      # Stateful HTTP server (main)
+├── cli/servers/
+│   └── configurable-server.ts  # Stateful HTTP server (main)
 └── test-framework.sh          # Original test script (stateful HTTP)
 ```
 

@@ -5,6 +5,7 @@ Create minimal, self-contained distributions of your MCP servers that can be exe
 ## Table of Contents
 
 - [Overview](#overview)
+- [Requirements](#requirements)
 - [Quick Start](#quick-start)
 - [Bundle Formats](#bundle-formats)
 - [Command Reference](#command-reference)
@@ -12,12 +13,13 @@ Create minimal, self-contained distributions of your MCP servers that can be exe
 - [Advanced Usage](#advanced-usage)
 - [Troubleshooting](#troubleshooting)
 - [Best Practices](#best-practices)
+- [Examples](#examples)
 
 ## Overview
 
 ### What is Bundling?
 
-The SimplyMCP bundler creates self-contained distributions of your MCP servers using esbuild. These bundles include all your code and dependencies in optimized packages that can be shared and executed without requiring users to run `npm install`.
+The Simply MCP bundler creates self-contained distributions of your MCP servers using esbuild. These bundles include all your code and dependencies in optimized packages that can be shared and executed without requiring users to run `npm install`.
 
 ### Why Use Bundled Distributions?
 
@@ -33,7 +35,7 @@ The SimplyMCP bundler creates self-contained distributions of your MCP servers u
 - Predictable, consistent behavior
 - Smaller download sizes
 
-### Features (v3.0.0+)
+### Key Features
 
 - **Single-file bundles** - Entire server in one executable .js file
 - **Standalone bundles** - Folder with server + minimal dependencies
@@ -42,101 +44,53 @@ The SimplyMCP bundler creates self-contained distributions of your MCP servers u
 - **Native module support** - Standalone format handles native dependencies
 - **Watch mode** - Auto-rebuild on file changes during development
 
+## Requirements
+
+The bundle command requires servers built with the interface-driven API:
+
+- Server interface extending `IServer` with `name` and `version`
+- At least one tool interface extending `ITool`
+- Default export class implementing the server interface
+
+**Example:**
+```typescript
+import type { IServer, ITool } from 'simply-mcp';
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+interface MyTool extends ITool {
+  name: 'my_tool';
+  params: { input: string };
+  result: { output: string };
+}
+
+export default class implements MyServer {
+  my_tool: MyTool = async ({ input }) => {
+    return { output: `Processed: ${input}` };
+  };
+}
+```
+
 ## Quick Start
 
-### Installation
-
-```bash
-npm install simply-mcp
-```
-
-### 1. Create a Server
-
-```typescript
-// server.ts
-import { BuildMCPServer } from 'simply-mcp';
-import { z } from 'zod';
-
-const server = new BuildMCPServer({
-  name: 'greeting-server',
-  version: '1.0.0',
-});
-
-server.addTool({
-  name: 'greet',
-  description: 'Greet someone warmly',
-  parameters: z.object({
-    name: z.string().describe('Name of person to greet'),
-  }),
-  execute: async (args) => {
-    return `Hello, ${args.name}! Welcome to SimplyMCP!`;
-  },
-});
-
-server.start({ transport: 'stdio' });
-```
-
-### 2. Bundle It
+**Bundle your server:**
 
 ```bash
 # Create single executable file
-npx simplymcp bundle server.ts -f single-file -o greeting-server.js
+npx simplymcp bundle examples/bundle-test-server.ts -f single-file -o my-server.js
+
+# Run it
+node ./my-server.js
 ```
 
-Output:
-```
-SimplyMCP Bundler
-=================
-
-Entry:    /path/to/server.ts
-Output:   /path/to/greeting-server.js
-Format:   single-file
-Minify:   Yes
-Platform: node
-Target:   node20
-
-✓ Bundle created successfully!
-
-Output:   /path/to/greeting-server.js
-Size:     11.9 MB  (5.0 MB with --minify)
-Duration: 1243ms
-Modules:  42
-```
-
-### 3. Run It
-
-```bash
-# Execute with node (recommended for single-file bundles)
-node ./greeting-server.js
-
-# Or make it directly executable
-chmod +x greeting-server.js
-./greeting-server.js
-```
-
-**Note:** Use `node` for single-file bundles, or make executable with `chmod +x` and run directly. Use `npx` for standalone bundles (directories with package.json).
-
-### 4. Share It
-
-```bash
-# Package for distribution
-tar -czf greeting-server.tar.gz greeting-server.js
-
-# User extracts and runs - no npm install needed!
-tar -xzf greeting-server.tar.gz
-node ./greeting-server.js
-```
-
-That's it! Your server is now a portable, self-contained bundle.
+See [Bundle Formats](#bundle-formats) below for different distribution options.
 
 ## Bundle Formats
 
-SimplyMCP supports multiple bundle formats for different distribution needs:
-
-- **Esbuild formats** (this guide): single-file, standalone, esm, cjs
-- **Package bundles** (npm packages): See [Bundle Creation Guide](./BUNDLE_CREATION.md) for creating and [Bundle Usage Guide](./BUNDLE_USAGE.md) for running package bundles
-
-Choose based on your needs:
+Simply MCP supports multiple bundle formats for different distribution needs:
 
 ### Single-File Format (Recommended for Most Use Cases)
 
@@ -162,7 +116,7 @@ A single executable `.js` file containing your entire server with all dependenci
 
 **Example:**
 ```bash
-npx simplymcp bundle server.ts -f single-file -o my-server.js
+npx simplymcp bundle examples/interface-minimal.ts -f single-file -o my-server.js
 ```
 
 **Limitations:**
@@ -189,7 +143,7 @@ A folder containing your bundled server plus a minimal `node_modules` directory 
 **Example:**
 ```bash
 # Bundle server with native modules
-npx simplymcp bundle server.ts -f standalone -o my-server-standalone
+npx simplymcp bundle examples/interface-minimal.ts -f standalone -o my-server-standalone
 
 # Run from standalone directory
 npx ./my-server-standalone/server.js
@@ -219,7 +173,7 @@ Standard ECMAScript Module output for library distribution or import into other 
 
 **Example:**
 ```bash
-npx simplymcp bundle server.ts -f esm -o dist/server.mjs
+npx simplymcp bundle examples/interface-minimal.ts -f esm -o dist/server.mjs
 ```
 
 ### CJS Format (Legacy Compatibility)
@@ -234,7 +188,7 @@ CommonJS module output for older Node.js environments or require-based projects.
 
 **Example:**
 ```bash
-npx simplymcp bundle server.ts -f cjs -o dist/server.cjs
+npx simplymcp bundle examples/interface-minimal.ts -f cjs -o dist/server.cjs
 ```
 
 ## Command Reference
@@ -255,10 +209,10 @@ Output format: `single-file`, `standalone`, `esm`, `cjs`
 
 ```bash
 # Create single-file bundle
-npx simplymcp bundle server.ts -f single-file
+npx simplymcp bundle examples/interface-minimal.ts -f single-file
 
 # Create standalone distribution
-npx simplymcp bundle server.ts -f standalone
+npx simplymcp bundle examples/interface-minimal.ts -f standalone
 ```
 
 #### `-o, --output <path>`
@@ -269,10 +223,10 @@ Output file or directory path
 
 ```bash
 # Specify output file
-npx simplymcp bundle server.ts -o my-server.js
+npx simplymcp bundle examples/interface-minimal.ts -o my-server.js
 
 # Specify output directory (for standalone)
-npx simplymcp bundle server.ts -f standalone -o ./dist/my-server
+npx simplymcp bundle examples/interface-minimal.ts -f standalone -o ./dist/my-server
 ```
 
 #### `-m, --minify` / `--no-minify`
@@ -283,10 +237,10 @@ Enable or disable minification
 
 ```bash
 # Disable minification for debugging
-npx simplymcp bundle server.ts --no-minify
+npx simplymcp bundle examples/interface-minimal.ts --no-minify
 
 # Explicitly enable (default)
-npx simplymcp bundle server.ts --minify
+npx simplymcp bundle examples/interface-minimal.ts --minify
 ```
 
 #### `-s, --sourcemap`
@@ -299,11 +253,11 @@ Generate external source maps (.map files)
 
 ```bash
 # Generate source map
-npx simplymcp bundle server.ts -s
+npx simplymcp bundle examples/interface-minimal.ts -s
 # Creates: bundle.js and bundle.js.map
 
 # Or using long form
-npx simplymcp bundle server.ts --sourcemap
+npx simplymcp bundle examples/interface-minimal.ts --sourcemap
 ```
 
 > **Note:** The `-s` flag generates external source maps (.map files).
@@ -317,10 +271,10 @@ External packages (comma-separated, won't be bundled)
 
 ```bash
 # Keep axios external
-npx simplymcp bundle server.ts -e axios
+npx simplymcp bundle examples/interface-minimal.ts -e axios
 
 # Multiple external packages
-npx simplymcp bundle server.ts -e axios,lodash,zod
+npx simplymcp bundle examples/interface-minimal.ts -e axios,lodash,zod
 ```
 
 #### `-p, --platform <platform>`
@@ -330,7 +284,7 @@ Target platform: `node`, `neutral`
 **Default:** `node`
 
 ```bash
-npx simplymcp bundle server.ts -p node
+npx simplymcp bundle examples/interface-minimal.ts -p node
 ```
 
 #### `-t, --target <target>`
@@ -343,10 +297,10 @@ Target Node.js version or ECMAScript standard
 
 ```bash
 # Target Node.js 18
-npx simplymcp bundle server.ts -t node18
+npx simplymcp bundle examples/interface-minimal.ts -t node18
 
 # Target latest features
-npx simplymcp bundle server.ts -t esnext
+npx simplymcp bundle examples/interface-minimal.ts -t esnext
 ```
 
 #### `--tree-shake` / `--no-tree-shake`
@@ -357,7 +311,7 @@ Enable or disable tree-shaking (dead code elimination)
 
 ```bash
 # Disable tree-shaking
-npx simplymcp bundle server.ts --no-tree-shake
+npx simplymcp bundle examples/interface-minimal.ts --no-tree-shake
 ```
 
 #### `-c, --config <path>`
@@ -373,7 +327,7 @@ npx simplymcp bundle -c simplymcp.config.js
 Watch mode - rebuild on file changes
 
 ```bash
-npx simplymcp bundle server.ts -w
+npx simplymcp bundle examples/interface-minimal.ts -w
 ```
 
 #### `--watch-restart`
@@ -381,7 +335,7 @@ npx simplymcp bundle server.ts -w
 Auto-restart server after rebuild in watch mode
 
 ```bash
-npx simplymcp bundle server.ts -w --watch-restart
+npx simplymcp bundle examples/interface-minimal.ts -w --watch-restart
 ```
 
 #### `--assets <files>`
@@ -390,10 +344,10 @@ Include assets in bundle (comma-separated file paths)
 
 ```bash
 # Include asset files
-npx simplymcp bundle server.ts --assets config.json,data.csv
+npx simplymcp bundle examples/interface-minimal.ts --assets config.json,data.csv
 
 # Include with glob pattern
-npx simplymcp bundle server.ts --assets "assets/**/*.json"
+npx simplymcp bundle examples/interface-minimal.ts --assets "assets/**/*.json"
 ```
 
 #### `--verbose`
@@ -401,7 +355,7 @@ npx simplymcp bundle server.ts --assets "assets/**/*.json"
 Verbose output with detailed progress
 
 ```bash
-npx simplymcp bundle server.ts --verbose
+npx simplymcp bundle examples/interface-minimal.ts --verbose
 ```
 
 #### `--auto-install`
@@ -409,7 +363,7 @@ npx simplymcp bundle server.ts --verbose
 Auto-install missing dependencies before bundling
 
 ```bash
-npx simplymcp bundle server.ts --auto-install
+npx simplymcp bundle examples/interface-minimal.ts --auto-install
 ```
 
 ## Distribution Guide
@@ -420,7 +374,7 @@ npx simplymcp bundle server.ts --auto-install
 
 **1. Bundle the server:**
 ```bash
-npx simplymcp bundle server.ts -f single-file -o my-server.js
+npx simplymcp bundle examples/calculator-bundle/src/server.ts -f single-file -o my-server.js
 ```
 
 **2. Create tarball:**
@@ -443,7 +397,7 @@ node ./my-server.js
 
 **1. Bundle with standalone format:**
 ```bash
-npx simplymcp bundle server.ts -f standalone -o my-server --assets config.json
+npx simplymcp bundle examples/weather-bundle/src/server.ts -f standalone -o my-server --assets config.json
 ```
 
 **2. Create tarball:**
@@ -473,7 +427,7 @@ git init
 
 **2. Bundle server:**
 ```bash
-npx simplymcp bundle ../server.ts -f single-file -o server.js
+npx simplymcp bundle ../examples/interface-minimal.ts -f single-file -o server.js
 ```
 
 **3. Add README:**
@@ -527,7 +481,7 @@ node ./server.js
 
 **2. Bundle:**
 ```bash
-npx simplymcp bundle server.ts -f single-file -o server.js
+npx simplymcp bundle examples/interface-minimal.ts -f single-file -o server.js
 ```
 
 **3. Publish:**
@@ -565,7 +519,7 @@ Create `simplymcp.config.js`:
 
 ```javascript
 export default {
-  entry: './server.ts',
+  entry: './examples/interface-minimal.ts',
   output: {
     dir: 'dist',
     filename: 'server.js',
@@ -592,25 +546,25 @@ Rebuild automatically on file changes:
 
 ```bash
 # Basic watch mode
-npx simplymcp bundle server.ts -w
+npx simplymcp bundle examples/interface-minimal.ts -w
 
 # Watch with auto-restart
-npx simplymcp bundle server.ts -w --watch-restart
+npx simplymcp bundle examples/interface-minimal.ts -w --watch-restart
 
 # Watch with verbose output
-npx simplymcp bundle server.ts -w --verbose
+npx simplymcp bundle examples/interface-minimal.ts -w --verbose
 ```
 
 ### Including Assets
 
 **Single files:**
 ```bash
-npx simplymcp bundle server.ts --assets config.json,schema.json
+npx simplymcp bundle examples/interface-minimal.ts --assets config.json,schema.json
 ```
 
 **Multiple files:**
 ```bash
-npx simplymcp bundle server.ts --assets "data/*.json,assets/*.png"
+npx simplymcp bundle examples/interface-minimal.ts --assets "data/*.json,assets/*.png"
 ```
 
 **In standalone format:**
@@ -620,17 +574,17 @@ Assets are copied to `assets/` directory in the bundle.
 
 **1. Use external packages for large dependencies:**
 ```bash
-npx simplymcp bundle server.ts -e lodash,moment
+npx simplymcp bundle examples/interface-minimal.ts -e lodash,moment
 ```
 
 **2. Enable tree-shaking:**
 ```bash
-npx simplymcp bundle server.ts --tree-shake
+npx simplymcp bundle examples/interface-minimal.ts --tree-shake
 ```
 
 **3. Enable minification:**
 ```bash
-npx simplymcp bundle server.ts --minify
+npx simplymcp bundle examples/interface-minimal.ts --minify
 ```
 
 **4. Use single-file format (when possible):**
@@ -640,12 +594,12 @@ Single-file bundles are typically smaller than standalone for pure JavaScript se
 
 **Generate source maps:**
 ```bash
-npx simplymcp bundle server.ts -s --no-minify
+npx simplymcp bundle examples/interface-minimal.ts -s --no-minify
 ```
 
 **Verbose output:**
 ```bash
-npx simplymcp bundle server.ts --verbose
+npx simplymcp bundle examples/interface-minimal.ts --verbose
 ```
 
 **Run with Node.js debugger:**
@@ -655,13 +609,41 @@ node --inspect ./bundle.js
 
 ## Troubleshooting
 
+### Error: "No ITool interfaces found"
+
+**Problem:** Your server file doesn't define any tool interfaces extending `ITool`.
+
+**Solution:** Add at least one tool interface to your server:
+```typescript
+import type { IServer, ITool } from 'simply-mcp';
+
+interface MyTool extends ITool {
+  name: 'my_tool';
+  params: { input: string };
+  result: { output: string };
+}
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+export default class implements MyServer {
+  my_tool: MyTool = async ({ input }) => {
+    return { output: `Result: ${input}` };
+  };
+}
+```
+
+**Why:** The bundle command requires servers built with the interface-driven API, which must include at least one tool interface.
+
 ### Error: "Cannot create single-file bundle: native modules detected"
 
 **Problem:** You're trying to create a single-file bundle, but your server uses native modules like `fsevents`, `sharp`, `sqlite3`, etc.
 
 **Solution:** Use standalone format instead:
 ```bash
-npx simplymcp bundle server.ts -f standalone -o my-server
+npx simplymcp bundle examples/interface-minimal.ts -f standalone -o my-server
 ```
 
 **Why:** Native modules are compiled binaries that can't be bundled into a single JavaScript file. Standalone format includes them in `node_modules/`.
@@ -689,7 +671,7 @@ node ./my-server.js  # Works without chmod
 1. **Check if dependency is marked external:**
 ```bash
 # Don't mark required dependencies as external
-npx simplymcp bundle server.ts  # Let bundler include it
+npx simplymcp bundle examples/interface-minimal.ts  # Let bundler include it
 ```
 
 2. **Install missing dependencies:**
@@ -699,7 +681,7 @@ npm install missing-package
 
 3. **Use auto-install:**
 ```bash
-npx simplymcp bundle server.ts --auto-install
+npx simplymcp bundle examples/interface-minimal.ts --auto-install
 ```
 
 ### Bundle Size Larger Than Expected
@@ -718,22 +700,22 @@ npx simplymcp bundle server.ts --auto-install
 
 1. **Enable minification:**
 ```bash
-npx simplymcp bundle server.ts --minify
+npx simplymcp bundle examples/interface-minimal.ts --minify
 ```
 
 2. **Enable tree-shaking:**
 ```bash
-npx simplymcp bundle server.ts --tree-shake
+npx simplymcp bundle examples/interface-minimal.ts --tree-shake
 ```
 
 3. **Mark large dependencies as external:**
 ```bash
-npx simplymcp bundle server.ts -e large-package
+npx simplymcp bundle examples/interface-minimal.ts -e large-package
 ```
 
 4. **Check what's included:**
 ```bash
-npx simplymcp bundle server.ts --verbose
+npx simplymcp bundle examples/interface-minimal.ts --verbose
 ```
 
 ### "SyntaxError: Unexpected token"
@@ -743,10 +725,10 @@ npx simplymcp bundle server.ts --verbose
 **Solution:** Target an appropriate Node.js version:
 ```bash
 # For Node.js 18
-npx simplymcp bundle server.ts -t node18
+npx simplymcp bundle examples/interface-minimal.ts -t node18
 
 # For Node.js 20
-npx simplymcp bundle server.ts -t node20
+npx simplymcp bundle examples/interface-minimal.ts -t node20
 ```
 
 ### Standalone Bundle Missing Dependencies
@@ -767,7 +749,7 @@ npm install
 
 3. **Rebuild bundle:**
 ```bash
-npx simplymcp bundle server.ts -f standalone -o my-server
+npx simplymcp bundle examples/interface-minimal.ts -f standalone -o my-server
 ```
 
 ## Best Practices
@@ -782,7 +764,7 @@ npx simplymcp bundle server.ts -f standalone -o my-server
 
 Include version in filename:
 ```bash
-npx simplymcp bundle server.ts -o my-server-v1.0.0.js
+npx simplymcp bundle examples/interface-minimal.ts -o my-server-v1.0.0.js
 ```
 
 ### 3. Test Bundles Before Distribution
@@ -812,7 +794,7 @@ Provide clear README with:
 
 Smaller bundles = faster downloads:
 ```bash
-npx simplymcp bundle server.ts --minify
+npx simplymcp bundle examples/interface-minimal.ts --minify
 ```
 
 ### 6. Keep Bundles Up to Date
@@ -833,7 +815,7 @@ Rebuild bundles when you update:
 
 Speed up development:
 ```bash
-npx simplymcp bundle server.ts -w --no-minify -s
+npx simplymcp bundle examples/interface-minimal.ts -w --no-minify -s
 ```
 
 ### 9. Optimize for Your Use Case
@@ -867,162 +849,33 @@ If your bundle requires external packages, document them:
 
 ## Examples
 
-### Example 1: Simple Tool Server
+Complete bundling examples available in the repository:
 
-```typescript
-// calculator.ts
-import { BuildMCPServer } from 'simply-mcp';
-import { z } from 'zod';
+**Basic Examples:**
+- **Calculator**: [examples/calculator-bundle/](../../examples/calculator-bundle/) - Simple arithmetic server
+- **Weather**: [examples/weather-bundle/](../../examples/weather-bundle/) - Weather forecast server
+- **Minimal**: [examples/interface-minimal.ts](../../examples/interface-minimal.ts) - Basic interface-driven server
+- **Bundle Test**: [examples/bundle-test-server.ts](../../examples/bundle-test-server.ts) - Integration test server
 
-const server = new BuildMCPServer({
-  name: 'calculator',
-  version: '1.0.0',
-});
+**UI Examples:**
+- **File-based UI**: [examples/interface-file-based-ui.ts](../../examples/interface-file-based-ui.ts)
+- **React Compilation**: [examples/react-compiler-demo.ts](../../examples/react-compiler-demo.ts)
+- **Component Library**: [examples/interface-component-library.ts](../../examples/interface-component-library.ts)
 
-server.addTool({
-  name: 'add',
-  description: 'Add two numbers',
-  parameters: z.object({
-    a: z.number(),
-    b: z.number(),
-  }),
-  execute: async ({ a, b }) => ({ result: a + b }),
-});
-
-server.start({ transport: 'stdio' });
-```
-
-**Bundle:**
+**Try bundling an example:**
 ```bash
-npx simplymcp bundle calculator.ts -f single-file -o calculator.js
-```
+# Bundle the calculator example
+npx simplymcp bundle examples/calculator-bundle/src/server.ts -f single-file -o calculator.js
 
-**Run:**
-```bash
-node ./calculator.js
-```
-
-### Example 2: Server with Prompts and Resources
-
-```typescript
-// knowledge-base.ts
-import { BuildMCPServer } from 'simply-mcp';
-import { z } from 'zod';
-
-const server = new BuildMCPServer({
-  name: 'knowledge-base',
-  version: '1.0.0',
-});
-
-server.addPrompt({
-  name: 'explain-topic',
-  description: 'Explain a technical topic',
-  arguments: [
-    { name: 'topic', description: 'Topic to explain', required: true },
-    { name: 'level', description: 'Expertise level', required: false },
-  ],
-  template: `Explain {{topic}} at a {{level}} level.`,
-});
-
-server.addResource({
-  uri: 'docs://readme',
-  name: 'Documentation',
-  mimeType: 'text/plain',
-  content: 'Knowledge base documentation...',
-});
-
-server.start({ transport: 'stdio' });
-```
-
-**Bundle:**
-```bash
-npx simplymcp bundle knowledge-base.ts -f single-file -o knowledge-base.js
-```
-
-### Example 3: Server with Native Modules
-
-```typescript
-// image-processor.ts
-/// dependencies
-/// sharp@^0.33.0
-///
-import { BuildMCPServer } from 'simply-mcp';
-import { z } from 'zod';
-import sharp from 'sharp';
-
-const server = new BuildMCPServer({
-  name: 'image-processor',
-  version: '1.0.0',
-});
-
-server.addTool({
-  name: 'resize_image',
-  description: 'Resize an image',
-  parameters: z.object({
-    input: z.string(),
-    width: z.number(),
-    height: z.number(),
-  }),
-  execute: async ({ input, width, height }) => {
-    await sharp(input)
-      .resize(width, height)
-      .toFile('output.jpg');
-    return { success: true };
-  },
-});
-
-server.start({ transport: 'stdio' });
-```
-
-**Bundle (must use standalone):**
-```bash
-npx simplymcp bundle image-processor.ts -f standalone -o image-processor
-```
-
-**Run:**
-```bash
-npx ./image-processor/server.js
-```
-
-### Example 4: Distribution Package
-
-```bash
-# 1. Bundle
-npx simplymcp bundle server.ts -f single-file -o weather-server.js
-
-# 2. Create README
-cat > README.md << 'EOF'
-# Weather MCP Server
-
-Get current weather information via MCP.
-
-## Quick Start
-
-```bash
-node ./weather-server.js
-```
-
-## Requirements
-
-- Node.js 20+
-
-## License
-
-MIT
-EOF
-
-# 3. Create tarball
-tar -czf weather-server-v1.0.0.tar.gz weather-server.js README.md LICENSE
-
-# 4. Share
-# Upload to GitHub releases, website, etc.
+# Run the bundle
+node calculator.js
 ```
 
 ---
 
 ## Summary
 
-The SimplyMCP bundler makes it easy to create portable, self-contained MCP servers:
+The Simply MCP bundler makes it easy to create portable, self-contained MCP servers:
 
 - **Single-file bundles** for maximum portability (~5-12 MB unminified, ~5 MB minified)
 - **Standalone bundles** for native modules (~12 MB bundled code)
@@ -1030,13 +883,18 @@ The SimplyMCP bundler makes it easy to create portable, self-contained MCP serve
 - **Multiple formats** - ESM, CJS, single-file, standalone
 - **Developer-friendly** - watch mode, source maps, verbose output
 
+**Requirements:**
+- Server built with interface-driven API
+- At least one tool interface extending `ITool`
+- Server interface extending `IServer`
+
 Get started now:
 ```bash
-npx simplymcp bundle server.ts -f single-file -o my-server.js
+npx simplymcp bundle examples/interface-minimal.ts -f single-file -o my-server.js
 node ./my-server.js
 ```
 
 For more information, see:
-- [CLI Reference](../development/CLI_REFERENCE.md)
-- [Configuration Guide](../development/CONFIGURATION.md)
+- [Quick Start Guide](./QUICK_START.md)
+- [Configuration Guide](./CONFIGURATION.md)
 - [Deployment Guide](./DEPLOYMENT_GUIDE.md)

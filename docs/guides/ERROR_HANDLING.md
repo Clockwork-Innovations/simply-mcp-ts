@@ -2,7 +2,9 @@
 
 Robust error handling patterns for Simply MCP servers.
 
-**See working example:** [examples/auto-install-error-handling.ts](../../examples/auto-install-error-handling.ts)
+**See working examples:**
+- Basic: [examples/interface-minimal.ts](../../examples/interface-minimal.ts)
+- Advanced: [examples/interface-advanced.ts](../../examples/interface-advanced.ts)
 
 ---
 
@@ -19,10 +21,22 @@ Robust error handling patterns for Simply MCP servers.
 ## Basic Pattern
 
 ```typescript
-{
-  name: 'my-tool',
-  description: 'Does something',
-  execute: async (args) => {
+import type { ITool, IServer } from 'simply-mcp';
+
+interface MyTool extends ITool {
+  name: 'my_tool';
+  description: 'Does something';
+  params: { required_param: string };
+  result: any;
+}
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+export default class MyServer implements MyServer {
+  myTool: MyTool = async (args) => {
     try {
       // Validate input
       if (!args.required_param) {
@@ -40,7 +54,7 @@ Robust error handling patterns for Simply MCP servers.
       // Re-throw with user-friendly message
       throw new Error(`Failed: ${error.message}`);
     }
-  }
+  };
 }
 ```
 
@@ -51,75 +65,119 @@ Robust error handling patterns for Simply MCP servers.
 ### Validation Errors
 
 ```typescript
-execute: async (args) => {
-  // Check required fields
-  if (!args.email || !args.email.includes('@')) {
-    throw new Error('Invalid email format');
-  }
+import type { ITool } from 'simply-mcp';
 
-  // Check constraints
-  if (args.count < 0 || args.count > 100) {
-    throw new Error('Count must be between 0 and 100');
-  }
+interface ValidateTool extends ITool {
+  name: 'validate_email';
+  description: 'Validate and process email';
+  params: { email: string; count: number };
+  result: any;
+}
 
-  // Process
-  return processEmail(args.email);
+export default class MyServer implements IServer {
+  validateEmail: ValidateTool = async (args) => {
+    // Check required fields
+    if (!args.email || !args.email.includes('@')) {
+      throw new Error('Invalid email format');
+    }
+
+    // Check constraints
+    if (args.count < 0 || args.count > 100) {
+      throw new Error('Count must be between 0 and 100');
+    }
+
+    // Process
+    return processEmail(args.email);
+  };
 }
 ```
 
 ### Network Errors
 
 ```typescript
-execute: async (args) => {
-  try {
-    const response = await fetch(args.url);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+import type { ITool } from 'simply-mcp';
+
+interface FetchTool extends ITool {
+  name: 'fetch_url';
+  description: 'Fetch data from URL';
+  params: { url: string };
+  result: string;
+}
+
+export default class MyServer implements IServer {
+  fetchUrl: FetchTool = async (args) => {
+    try {
+      const response = await fetch(args.url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.text();
+    } catch (error) {
+      if (error instanceof TypeError) {
+        throw new Error(`Network error: Check URL and connection`);
+      }
+      throw error;
     }
-    return response.text();
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error(`Network error: Check URL and connection`);
-    }
-    throw error;
-  }
+  };
 }
 ```
 
 ### Timeout Errors
 
 ```typescript
-execute: async (args) => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+import type { ITool } from 'simply-mcp';
 
-  try {
-    const result = await fetch(args.url, { signal: controller.signal });
-    return result.text();
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout (5s)');
+interface FetchWithTimeoutTool extends ITool {
+  name: 'fetch_with_timeout';
+  description: 'Fetch with timeout';
+  params: { url: string };
+  result: string;
+}
+
+export default class MyServer implements IServer {
+  fetchWithTimeout: FetchWithTimeoutTool = async (args) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const result = await fetch(args.url, { signal: controller.signal });
+      return result.text();
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout (5s)');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  };
 }
 ```
 
 ### Dependency Errors
 
 ```typescript
-execute: async (args) => {
-  try {
-    const module = require('optional-module');
-    return module.process(args);
-  } catch (error) {
-    if (error.code === 'MODULE_NOT_FOUND') {
-      throw new Error('Required module not installed: npm install optional-module');
+import type { ITool } from 'simply-mcp';
+
+interface ProcessTool extends ITool {
+  name: 'process_data';
+  description: 'Process data with module';
+  params: any;
+  result: any;
+}
+
+export default class MyServer implements IServer {
+  processData: ProcessTool = async (args) => {
+    try {
+      const module = require('optional-module');
+      return module.process(args);
+    } catch (error) {
+      if (error.code === 'MODULE_NOT_FOUND') {
+        throw new Error('Required module not installed: npm install optional-module');
+      }
+      throw error;
     }
-    throw error;
-  }
+  };
 }
 ```
 
@@ -128,32 +186,41 @@ execute: async (args) => {
 ## Async Operation Safety
 
 ```typescript
-execute: async (args) => {
-  const operations = [];
+import type { ITool } from 'simply-mcp';
 
-  try {
-    // Run multiple async operations safely
-    const results = await Promise.allSettled([
-      asyncOp1(args),
-      asyncOp2(args),
-      asyncOp3(args)
-    ]);
+interface BatchTool extends ITool {
+  name: 'batch_operations';
+  description: 'Run batch operations';
+  params: any;
+  result: any[];
+}
 
-    // Check each result
-    const errors = results
-      .filter(r => r.status === 'rejected')
-      .map(r => r.reason.message);
+export default class MyServer implements IServer {
+  batchOperations: BatchTool = async (args) => {
+    try {
+      // Run multiple async operations safely
+      const results = await Promise.allSettled([
+        asyncOp1(args),
+        asyncOp2(args),
+        asyncOp3(args)
+      ]);
 
-    if (errors.length > 0) {
-      throw new Error(`Some operations failed: ${errors.join(', ')}`);
+      // Check each result
+      const errors = results
+        .filter(r => r.status === 'rejected')
+        .map(r => r.reason.message);
+
+      if (errors.length > 0) {
+        throw new Error(`Some operations failed: ${errors.join(', ')}`);
+      }
+
+      return results.map(r => r.value);
+
+    } catch (error) {
+      console.error('Operation failed:', error);
+      throw error;
     }
-
-    return results.map(r => r.value);
-
-  } catch (error) {
-    console.error('Operation failed:', error);
-    throw error;
-  }
+  };
 }
 ```
 
@@ -183,24 +250,35 @@ const dbUrl = process.env.DATABASE_URL;
 ## Logging Best Practices
 
 ```typescript
-execute: async (args) => {
-  console.log('Starting tool with args:', args);
+import type { ITool } from 'simply-mcp';
 
-  try {
-    const result = await processData(args);
-    console.log('Tool succeeded:', result);
-    return result;
+interface ProcessTool extends ITool {
+  name: 'process_data';
+  description: 'Process data with logging';
+  params: any;
+  result: any;
+}
 
-  } catch (error) {
-    // Log with context
-    console.error('Tool failed:', {
-      error: error.message,
-      args: args,
-      stack: error.stack
-    });
+export default class MyServer implements IServer {
+  processData: ProcessTool = async (args) => {
+    console.log('Starting tool with args:', args);
 
-    throw new Error(`Processing failed: ${error.message}`);
-  }
+    try {
+      const result = await processData(args);
+      console.log('Tool succeeded:', result);
+      return result;
+
+    } catch (error) {
+      // Log with context
+      console.error('Tool failed:', {
+        error: error.message,
+        args: args,
+        stack: error.stack
+      });
+
+      throw new Error(`Processing failed: ${error.message}`);
+    }
+  };
 }
 ```
 
@@ -236,31 +314,48 @@ async function retryableOperation(fn, maxRetries = 3) {
 }
 
 // Usage
-execute: async (args) => {
-  return retryableOperation(() => fetch(args.url));
+export default class MyServer implements IServer {
+  fetchWithRetry: FetchTool = async (args) => {
+    return retryableOperation(() => fetch(args.url));
+  };
 }
 ```
 
 ---
 
-## Input Validation with Zod
+## Input Validation with IParam
 
 ```typescript
-import { z } from 'zod';
+import type { ITool, IParam } from 'simply-mcp';
 
-const inputSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  count: z.number().int().min(0).max(100),
-  tags: z.array(z.string()).optional()
-});
+interface EmailParam extends IParam<'email', string> {
+  format: 'email';
+}
 
-execute: async (args) => {
-  try {
-    const validated = inputSchema.parse(args);
-    return processValidated(validated);
-  } catch (error) {
-    throw new Error(`Validation failed: ${error.message}`);
-  }
+interface CountParam extends IParam<'count', number> {
+  minimum: 0;
+  maximum: 100;
+}
+
+interface ValidateTool extends ITool {
+  name: 'validate_input';
+  description: 'Validate input with IParam';
+  params: {
+    email: EmailParam;
+    count: CountParam;
+  };
+  result: any;
+}
+
+export default class MyServer implements IServer {
+  validateInput: ValidateTool = async (args) => {
+    try {
+      // IParam provides automatic validation
+      return processValidated(args);
+    } catch (error) {
+      throw new Error(`Validation failed: ${error.message}`);
+    }
+  };
 }
 ```
 
@@ -270,25 +365,30 @@ execute: async (args) => {
 
 ```typescript
 // Wrap entire server with error handling
-import { defineMCP } from 'simply-mcp';
+import type { ITool, IServer } from 'simply-mcp';
 
-export default defineMCP({
-  name: 'my-server',
-  version: '1.0.0',
-  tools: [
-    {
-      name: 'my-tool',
-      execute: async (args) => {
-        try {
-          return await myLogic(args);
-        } catch (error) {
-          console.error('[my-tool]', error);
-          throw error;
-        }
-      }
+interface MyTool extends ITool {
+  name: 'my_tool';
+  description: 'My tool with error handling';
+  params: any;
+  result: any;
+}
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+export default class MyServer implements MyServer {
+  myTool: MyTool = async (args) => {
+    try {
+      return await myLogic(args);
+    } catch (error) {
+      console.error('[my-tool]', error);
+      throw error;
     }
-  ]
-});
+  };
+}
 ```
 
 ---
@@ -322,7 +422,7 @@ async function testErrorHandling() {
 ❌ **Swallowing errors silently**
 ```typescript
 // Bad
-execute: async (args) => {
+myTool: MyTool = async (args) => {
   try {
     return await risky();
   } catch (e) {
@@ -331,7 +431,7 @@ execute: async (args) => {
 }
 
 // Good
-execute: async (args) => {
+myTool: MyTool = async (args) => {
   try {
     return await risky();
   } catch (e) {
@@ -352,10 +452,10 @@ throw new Error('Database connection failed: ECONNREFUSED localhost:5432');
 ❌ **Not validating inputs**
 ```typescript
 // Bad - crashes on undefined
-execute: async (args) => args.name.toUpperCase();
+myTool: MyTool = async (args) => args.name.toUpperCase();
 
 // Good - validates first
-execute: async (args) => {
+myTool: MyTool = async (args) => {
   if (!args.name) throw new Error('name required');
   return args.name.toUpperCase();
 }
@@ -390,6 +490,7 @@ execute: async (args) => {
 ## See Also
 
 - [TOOLS.md](./TOOLS.md) - More tool examples
-- [examples/auto-install-error-handling.ts](../../examples/auto-install-error-handling.ts) - Working example
+- [examples/interface-minimal.ts](../../examples/interface-minimal.ts) - Basic error handling patterns
+- [examples/interface-advanced.ts](../../examples/interface-advanced.ts) - Advanced error handling
 - [DEBUGGING.md](./DEBUGGING.md) - Debugging techniques
 - [docs/README.md](../README.md) - Full documentation index

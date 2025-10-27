@@ -14,7 +14,43 @@ description: Create a next-step document when work is complete, near token limit
 
 ## Create Handoff Document
 
-Create `next-task.md` with these required sections:
+Create a descriptively named handoff document in `/tmp/handoff/` with these required sections:
+
+**File naming**: Use format `YYYY-MM-DD-HH-MM-<descriptive-name>.md`
+- Example: `2025-10-26-14-30-ui-feature-layer-complete.md`
+- Example: `2025-10-26-15-45-auth-security-implementation.md`
+
+**Location**: All handoff documents go in `/tmp/handoff/`
+
+**Read-Only Notice**: Include this header at the top:
+```markdown
+> **⚠️ READ-ONLY HANDOFF DOCUMENT**
+> This document is a snapshot created at handoff time.
+> Do NOT modify this file - it serves as a historical record.
+> Create a new handoff document when you complete your work.
+```
+
+**Receiver Instructions**: Include clear instructions for the next developer:
+```markdown
+## 📋 Instructions for Receiver
+
+**Before starting work, you MUST:**
+
+1. **Review the Orchestrator Framework**
+   - Read: `/mnt/Shared/cs-projects/prompt-library/ORCHESTRATOR_PROMPT.md` (v2.1)
+   - Understand the layered development approach (Foundation → Feature → Polish)
+   - Understand validation gates and test validity requirements
+
+2. **Plan Your Work**
+   - Use the TodoWrite tool to create a task list based on the "Next Steps" section below
+   - Break down tasks following the orchestrator methodology
+   - Mark ONE task as `in_progress` before you begin
+
+3. **Maintain Context**
+   - Follow the patterns referenced in this document
+   - Maintain the same test quality standards
+   - Run validation gates before marking layers complete
+```
 
 ### 1. Status Overview
 ```
@@ -56,7 +92,9 @@ For detailed guidance, see [REFERENCE.md](reference.md) and use [the template](t
 ✓ npm run build succeeds (no TypeScript errors)
 ✓ Zero regressions
 ✓ One complete layer (Foundation OR Feature OR Polish)
-✓ next-task.md created with all sections
+✓ Handoff document created in /tmp/handoff/ with descriptive name
+✓ Read-only notice included at top of document
+✓ Receiver instructions included (review ORCHESTRATOR_PROMPT.md, use TodoWrite)
 ✓ Orchestrator framework explicitly referenced
 ✓ Line numbers included for file changes
 ✓ Next steps ordered by dependency
@@ -75,4 +113,4 @@ For detailed guidance, see [REFERENCE.md](reference.md) and use [the template](t
 
 - See [REFERENCE.md](reference.md) for detailed orchestrator methodology
 - Use [the template](templates/handoff-template.md) for structure
-- Example: `next-task.md` in the project root
+- View previous handoff documents in `/tmp/handoff/` for examples

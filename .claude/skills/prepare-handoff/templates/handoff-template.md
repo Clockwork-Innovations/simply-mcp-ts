@@ -1,6 +1,40 @@
 # Handoff: [Feature/Component Name]
 
-Copy this template to create your own handoff document. Replace sections in `[brackets]` with your specific details.
+> **⚠️ READ-ONLY HANDOFF DOCUMENT**
+> This document is a snapshot created at handoff time.
+> Do NOT modify this file - it serves as a historical record.
+> Create a new handoff document when you complete your work.
+
+---
+
+## 📋 Instructions for Receiver
+
+**Before starting work, you MUST:**
+
+1. **Review the Orchestrator Framework**
+   - Read: `/mnt/Shared/cs-projects/prompt-library/ORCHESTRATOR_PROMPT.md` (v2.1)
+   - Understand the layered development approach (Foundation → Feature → Polish)
+   - Understand validation gates and test validity requirements
+
+2. **Plan Your Work**
+   - Use the TodoWrite tool to create a task list based on the "Next Steps" section below
+   - Break down tasks following the orchestrator methodology
+   - Mark ONE task as `in_progress` before you begin
+
+3. **Maintain Context**
+   - Follow the patterns referenced in this document
+   - Maintain the same test quality standards
+   - Run validation gates before marking layers complete
+
+---
+
+## Template Instructions (for document creator)
+
+Copy this template to create your handoff document in `/tmp/handoff/` with a descriptive name:
+- Format: `YYYY-MM-DD-HH-MM-<descriptive-name>.md`
+- Example: `2025-10-26-14-30-ui-feature-layer-complete.md`
+
+Replace sections in `[brackets]` with your specific details.
 
 ---
 

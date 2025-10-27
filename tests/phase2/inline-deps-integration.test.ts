@@ -5,7 +5,7 @@
  * These tests actually call the implementation (no mocking!)
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -13,13 +13,13 @@ import { SimplyMCP } from '../../SimplyMCP.js';
 import {
   parseInlineDependencies,
   extractDependencyBlock,
-} from '../../core/dependency-parser.js';
+} from '../../features/dependencies/dependency-parser.js';
 import {
   validateDependencies,
   validatePackageName,
   validateSemverRange,
   detectConflicts,
-} from '../../core/dependency-validator.js';
+} from '../../features/dependencies/dependency-validator.js';
 import {
   generatePackageJson,
   mergeDependencies,
@@ -27,7 +27,7 @@ import {
   getDependencyStats,
   filterDependencies,
   sortDependencies,
-} from '../../core/dependency-utils.js';
+} from '../../features/dependencies/dependency-utils.js';
 
 const FIXTURES_DIR = join(__dirname, 'fixtures', 'inline-deps');
 const TEMP_DIR = '/tmp/mcp-test-inline-deps';

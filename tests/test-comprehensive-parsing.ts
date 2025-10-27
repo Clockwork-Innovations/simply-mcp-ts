@@ -5,7 +5,7 @@
  * metadata and types from the comprehensive example.
  */
 
-import { parseInterfaceFile } from '../src/api/interface/parser.js';
+import { parseInterfaceFile } from '../src/parser.js';
 import { resolve } from 'path';
 
 const filePath = resolve('examples/interface-comprehensive.ts');
@@ -119,7 +119,7 @@ console.log('\n🎉 Parser test complete!\n');
 console.log('🧪 Testing Zod Schema Generation\n');
 console.log('=' .repeat(80) + '\n');
 
-import { typeNodeToZodSchema } from '../src/api/interface/schema-generator.js';
+import { typeNodeToZodSchema } from '../src/core/schema-generator.js';
 import ts from 'typescript';
 import { readFileSync } from 'fs';
 

@@ -1,7 +1,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, test } from '@jest/globals';
-import { loadInterfaceServer } from '../../../src/api/interface/index.js';
+import { loadInterfaceServer } from '../../../src/adapter.js';
 
 describe('Interface API static resources', () => {
   const __filename = fileURLToPath(import.meta.url);

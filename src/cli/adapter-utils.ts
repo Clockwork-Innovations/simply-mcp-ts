@@ -3,14 +3,13 @@
  * Common functionality used across different adapter implementations
  */
 
-import type { BuildMCPServer } from '../api/programmatic/BuildMCPServer.js';
-import type { InterfaceServer } from '../api/interface/InterfaceServer.js';
+import type { InterfaceServer } from '../server/interface-server.js';
 
 /**
  * Union type for all MCP server implementations
- * Supports BuildMCPServer and InterfaceServer (used by interface API)
+ * Only supports InterfaceServer (the sole supported API)
  */
-type SimplyMCPInstance = BuildMCPServer | InterfaceServer;
+type SimplyMCPInstance = InterfaceServer;
 
 /**
  * Adapter options parsed from command line arguments
@@ -99,9 +98,15 @@ export async function startServer(
   server: SimplyMCPInstance,
   options: StartOptions
 ): Promise<void> {
-  const useHttp = options.http ?? options.useHttp ?? false;
-  const port = options.port ?? 3000;
-  const stateful = options.stateful ?? true;
+  // Get runtime config from server (file-based config)
+  const runtimeConfig = server.getRuntimeConfig?.();
+
+  // Merge config with priority: CLI flags > file config > defaults
+  // Convert transport to boolean for backward compatibility
+  const fileConfigUseHttp = runtimeConfig?.transport === 'http';
+  const useHttp = options.http ?? options.useHttp ?? fileConfigUseHttp ?? false;
+  const port = options.port ?? runtimeConfig?.port ?? 3000;
+  const stateful = options.stateful ?? runtimeConfig?.stateful ?? true;
 
   // Set up signal handlers for graceful shutdown
   const handleShutdown = async (signal: string) => {

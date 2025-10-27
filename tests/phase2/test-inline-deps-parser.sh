@@ -53,7 +53,7 @@ import {
   parseInlineDependencies,
   extractDependencyBlock,
   parseDependencyLine,
-} from '../../core/dependency-parser.js';
+} from '../../features/dependencies/dependency-parser.js';
 
 const args = process.argv.slice(2);
 const testName = args[0];

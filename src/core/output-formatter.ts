@@ -5,8 +5,8 @@
 
 import { writeFile, mkdir, chmod, copyFile } from 'fs/promises';
 import { dirname, basename, join } from 'path';
-import { BundleOptions, ResolvedDependencies } from './bundle-types.js';
-import * as esbuild from 'esbuild';
+import { BundleOptions, ResolvedDependencies } from '../features/dependencies/bundle-types';
+import type * as esbuild from 'esbuild';
 
 /**
  * Format output based on bundle format

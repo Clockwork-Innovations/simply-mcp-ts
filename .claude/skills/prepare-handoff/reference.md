@@ -92,6 +92,13 @@ npm test
 
 ## Handoff Documentation
 
+**Location**: All handoff documents are stored in `/tmp/handoff/`
+
+**Naming**: Use format `YYYY-MM-DD-HH-MM-<descriptive-name>.md`
+- Example: `2025-10-26-14-30-ui-feature-layer-complete.md`
+
+**Read-Only**: Handoff documents are snapshots - do NOT modify after creation
+
 A good handoff clearly documents:
 
 1. **Which layer is complete** (Foundation, Feature, or Polish)

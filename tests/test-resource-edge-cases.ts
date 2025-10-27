@@ -11,7 +11,7 @@
  * - Edge cases and error handling
  */
 
-import { parseInterfaceFile, ParsedResource } from '../dist/src/api/interface/parser.js';
+import { parseInterfaceFile, ParsedResource } from '../dist/src/parser.js';
 import { writeFileSync, unlinkSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -63,7 +63,7 @@ console.log(`${colors.BLUE}${'='.repeat(60)}${colors.NC}\n`);
 // Create a temporary test file with edge cases
 const testFilePath = resolve(__dirname, 'temp-resource-edge-cases.ts');
 const testFileContent = `
-import type { IResource, IServer } from '../src/api/interface/types.js';
+import type { IResource, IServer } from '../src/interface-types.js';
 
 // Edge Case 1: Nested object with multiple levels
 interface NestedConfig extends IResource {

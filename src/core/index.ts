@@ -2,7 +2,7 @@
  * Core exports for the Handler Execution Framework
  */
 
-export * from './types.js';
+export * from '../types/handler.js';
 export * from './errors.js';
 export * from './logger.js';
 export * from './HandlerManager.js';
@@ -22,31 +22,31 @@ export type {
 } from './content-helpers.js';
 
 // Inline dependency management (Phase 2, Feature 2)
-export * from './dependency-types.js';
-export * from './dependency-parser.js';
-export * from './dependency-validator.js';
+export * from '../features/dependencies/dependency-types.js';
+export * from '../features/dependencies/dependency-parser.js';
+export * from '../features/dependencies/dependency-validator.js';
 
 // Export dependency-utils, avoiding conflicts with dependency-resolver
 export {
   mergeDependencies,
   filterDependencies,
-} from './dependency-utils.js';
+} from '../features/dependencies/dependency-utils.js';
 
 // Auto-installation (Phase 2, Feature 3)
-export * from './installation-types.js';
-export * from './dependency-installer.js';
-export * from './dependency-checker.js';
-export * from './package-manager-detector.js';
+export * from '../features/dependencies/installation-types.js';
+export * from '../features/dependencies/dependency-installer.js';
+export * from '../features/dependencies/dependency-checker.js';
+export * from '../features/dependencies/package-manager-detector.js';
 
 // Bundling (Phase 2, Feature 4)
-export * from './bundle-types.js';
+export * from '../features/dependencies/bundle-types.js';
 export * from './bundler.js';
 export * from './entry-detector.js';
 
 // Export dependency-resolver exports except the conflicting ones
 export {
   resolveDependencies,
-} from './dependency-resolver.js';
+} from '../features/dependencies/dependency-resolver.js';
 
 export * from './output-formatter.js';
 
@@ -54,4 +54,40 @@ export * from './output-formatter.js';
 export {
   createInlineHTMLResource,
   isUIResource,
-} from './ui-resource.js';
+} from '../features/ui/ui-resource.js';
+
+// UI React compiler (MCP-UI Feature Layer)
+export {
+  compileReactComponent,
+  validateComponentCode,
+  invalidateReactCache,
+  clearReactCache,
+  getReactCacheStats,
+} from '../features/ui/ui-react-compiler.js';
+export type {
+  CompiledReactComponent,
+  ReactCompilerOptions,
+} from '../features/ui/ui-react-compiler.js';
+
+// UI file resolver (MCP-UI Foundation Layer)
+export {
+  resolveUIFile,
+  invalidateFileCache,
+  clearFileCache,
+  getFileCacheStats,
+} from '../features/ui/ui-file-resolver.js';
+export type {
+  ResolvedFile,
+  FileResolverOptions,
+} from '../features/ui/ui-file-resolver.js';
+
+// UI watch manager (MCP-UI Feature Layer - Hot Reload)
+export {
+  UIWatchManager,
+  createWatchManager,
+} from '../features/ui/ui-watch-manager.js';
+export type {
+  WatchModeConfig,
+  FileChangeEvent,
+  UIWatchManagerEvents,
+} from '../features/ui/ui-watch-manager.js';

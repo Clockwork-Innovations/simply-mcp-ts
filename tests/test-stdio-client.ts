@@ -35,7 +35,7 @@ async function runTests() {
   // Create client transport
   const transport = new StdioClientTransport({
     command: 'npx',
-    args: ['tsx', 'src/servers/stdioServer.ts', 'src/config-test.json'],
+    args: ['tsx', 'tests/fixtures/servers/stdioServer.ts', 'tests/fixtures/config/config-test.json'],
   });
 
   const client = new Client(

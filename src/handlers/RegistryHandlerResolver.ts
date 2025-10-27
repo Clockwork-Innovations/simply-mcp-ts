@@ -7,7 +7,7 @@ import {
   HandlerConfig,
   RegistryHandlerConfig,
   ToolHandler,
-} from '../core/types.js';
+} from '../types/handler.js';
 import { HandlerNotFoundError, HandlerConfigError } from '../core/errors.js';
 
 /**

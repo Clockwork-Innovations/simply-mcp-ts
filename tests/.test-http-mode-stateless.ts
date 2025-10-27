@@ -1,4 +1,4 @@
-import { BuildMCPServer } from '../dist/src/api/programmatic/BuildMCPServer.js';
+import { BuildMCPServer } from '../dist/src/server/builder-server.js';
 import { z } from 'zod';
 
 async function main() {

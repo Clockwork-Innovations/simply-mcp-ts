@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { loadInterfaceServer, InterfaceServer } from '../../src/api/interface/index.js';
+import { loadInterfaceServer, InterfaceServer } from '../../src/adapter.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

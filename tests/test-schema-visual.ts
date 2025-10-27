@@ -4,8 +4,8 @@
  * Shows the generated Zod schemas in a readable format to verify correctness
  */
 
-import { parseInterfaceFile } from '../src/api/interface/parser.js';
-import { typeNodeToZodSchema } from '../src/api/interface/schema-generator.js';
+import { parseInterfaceFile } from '../src/parser.js';
+import { typeNodeToZodSchema } from '../src/core/schema-generator.js';
 import ts from 'typescript';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';

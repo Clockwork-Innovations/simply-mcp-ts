@@ -80,7 +80,7 @@ async function main() {
   const content = await readFile(serverPath, 'utf-8');
 
   // Parse inline dependencies
-  const { parseInlineDependencies } = await import('$MCP_ROOT/dist/src/core/dependency-parser.js');
+  const { parseInlineDependencies } = await import('$MCP_ROOT/dist/src/features/dependencies/dependency-parser.js');
   const parseResult = parseInlineDependencies(content);
 
   console.log(JSON.stringify({
@@ -202,7 +202,7 @@ setup_test
 touch "$TEST_TEMP_DIR/package-lock.json"
 
 cat > "$TEST_TEMP_DIR/detect-pm.ts" <<EOFDETECT
-import { detectPackageManager } from '$MCP_ROOT/dist/src/core/package-manager-detector.js';
+import { detectPackageManager } from '$MCP_ROOT/dist/src/features/dependencies/package-manager-detector.js';
 
 async function main() {
   const pm = await detectPackageManager(process.cwd());
@@ -236,7 +236,7 @@ cat > "$TEST_TEMP_DIR/node_modules/axios/package.json" <<'EOF'
 EOF
 
 cat > "$TEST_TEMP_DIR/verify-version.ts" <<EOFVERIFY
-import { checkDependencies } from '$MCP_ROOT/dist/src/core/dependency-checker.js';
+import { checkDependencies } from '$MCP_ROOT/dist/src/features/dependencies/dependency-checker.js';
 
 async function main() {
   const result = await checkDependencies(
@@ -416,7 +416,7 @@ cat > "$TEST_TEMP_DIR/node_modules/@types/node/package.json" <<'EOF'
 EOF
 
 cat > "$TEST_TEMP_DIR/scoped.ts" <<EOFSCOPED
-import { checkDependencies } from '$MCP_ROOT/dist/src/core/dependency-checker.js';
+import { checkDependencies } from '$MCP_ROOT/dist/src/features/dependencies/dependency-checker.js';
 
 async function main() {
   const result = await checkDependencies(

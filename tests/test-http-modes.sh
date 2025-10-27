@@ -80,7 +80,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Create stateful mode server using cat with EOF to avoid variable expansion issues
 cat > "$PROJECT_ROOT/tests/.test-http-mode-stateful.ts" <<'EOFSTATEFUL'
-import { BuildMCPServer } from '../dist/src/api/programmatic/BuildMCPServer.js';
+import { BuildMCPServer } from '../dist/src/server/builder-server.js';
 import { z } from 'zod';
 
 async function main() {
@@ -124,7 +124,7 @@ EOFSTATEFUL
 
 # Create stateless mode server
 cat > "$PROJECT_ROOT/tests/.test-http-mode-stateless.ts" <<'EOFSTATELESS'
-import { BuildMCPServer } from '../dist/src/api/programmatic/BuildMCPServer.js';
+import { BuildMCPServer } from '../dist/src/server/builder-server.js';
 import { z } from 'zod';
 
 async function main() {

@@ -46,7 +46,7 @@ import {
   validatePackageName,
   validateSemverRange,
   detectConflicts,
-} from '../../core/dependency-validator.js';
+} from '../../features/dependencies/dependency-validator.js';
 
 const args = process.argv.slice(2);
 const testName = args[0];

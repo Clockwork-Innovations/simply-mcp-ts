@@ -272,18 +272,32 @@ simplymcp run my-server.ts --watch --watch-poll --watch-interval 500
 
 ## Examples
 
-### Decorator API with Watch Mode
+**Working Examples:**
+- Watch mode integration: [examples/interface-watch-mode.ts](../../examples/interface-watch-mode.ts)
+- File-based UI: [examples/interface-file-based-ui.ts](../../examples/interface-file-based-ui.ts)
+
+### Interface API with Watch Mode
 
 ```typescript
 // my-server.ts
-// Unified import pattern (v2.5.0+)
-import { MCPServer } from 'simply-mcp';
+import type { ITool, IServer } from 'simply-mcp';
 
-@MCPServer({ name: 'my-server', version: '1.0.0' })
-export default class MyServer {
-  greet(name: string): string {
+interface GreetTool extends ITool {
+  name: 'greet';
+  description: 'Greet a person';
+  params: { name: string };
+  result: string;
+}
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+export default class MyServer implements MyServer {
+  greet: GreetTool = async ({ name }) => {
     return `Hello, ${name}!`;
-  }
+  };
 }
 ```
 
@@ -295,24 +309,29 @@ simplymcp run my-server.ts --watch
 # Server automatically restarts
 ```
 
-### Functional API with Watch Mode
+### Interface API with HTTP and Watch Mode
 
 ```typescript
 // server.ts
-import { defineMCP } from 'simply-mcp';
+import type { ITool, IServer } from 'simply-mcp';
 
-export default defineMCP({
-  name: 'my-server',
-  version: '1.0.0',
-  tools: [
-    {
-      name: 'greet',
-      description: 'Greet a person',
-      parameters: { name: 'string' },
-      execute: async ({ name }) => `Hello, ${name}!`,
-    },
-  ],
-});
+interface GreetTool extends ITool {
+  name: 'greet';
+  description: 'Greet a person';
+  params: { name: string };
+  result: string;
+}
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+export default class MyServer implements MyServer {
+  greet: GreetTool = async ({ name }) => {
+    return `Hello, ${name}!`;
+  };
+}
 ```
 
 ```bash

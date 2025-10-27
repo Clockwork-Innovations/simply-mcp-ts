@@ -2,7 +2,7 @@
  * Manual test for interface-advanced.ts example
  */
 
-import { loadInterfaceServer } from '../dist/src/api/interface/index.js';
+import { loadInterfaceServer } from '../dist/src/adapter.js';
 
 async function testInterfaceAdvanced() {
   console.log('\n=== Testing interface-advanced.ts ===\n');

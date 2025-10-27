@@ -1,5 +1,15 @@
 # Reference Materials
 
+## Handoff Document Format
+
+**Location**: All handoff documents are stored in `/tmp/handoff/`
+
+**Naming Convention**: `YYYY-MM-DD-HH-MM-<descriptive-name>.md`
+- Example: `2025-10-26-14-30-ui-feature-layer-complete.md`
+- Example: `2025-10-26-15-45-auth-security-implementation.md`
+
+**Read-Only**: Handoff documents are snapshots at handoff time. They should NOT be modified after creation - they serve as historical records. When completing your work, create a NEW handoff document rather than modifying an existing one.
+
 ## Core Framework
 
 **Agentic Coding Loop: Orchestrator Guide**
@@ -50,15 +60,26 @@ Use TodoWrite tool to maintain explicit task state:
 
 ## How Handoffs Integrate with Orchestration
 
-Your `next-task.md` handoff document should capture:
+Your handoff document (saved in `/tmp/handoff/` with a descriptive timestamped name) should capture:
 
-1. **Current orchestration state**: Which layer(s) completed, which is next
-2. **Task checkpoint**: All tasks with current state (pending/in_progress/completed)
-3. **Validation proof**: Documentation that all gates passed for completed layers
-4. **Structured continuity**: Next subtask unambiguous (ordered by dependency)
-5. **Reference materials**: Active documentation used during this session
+1. **Receiver instructions**: Explicit steps for the next developer to follow
+   - Review ORCHESTRATOR_PROMPT.md before starting
+   - Use TodoWrite tool to plan work
+   - Maintain context and patterns
+
+2. **Current orchestration state**: Which layer(s) completed, which is next
+
+3. **Task checkpoint**: All tasks with current state (pending/in_progress/completed)
+
+4. **Validation proof**: Documentation that all gates passed for completed layers
+
+5. **Structured continuity**: Next subtask unambiguous (ordered by dependency)
+
+6. **Reference materials**: Active documentation used during this session
 
 This enables the next developer to:
+- **Start properly**: Review orchestrator framework before jumping into code
+- **Plan work**: Use TodoWrite to break down tasks systematically
 - Understand exactly what layer of work was completed
 - See all validation gates that passed
 - Know the exact state of all tasks

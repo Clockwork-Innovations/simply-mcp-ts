@@ -1,15 +1,17 @@
 /**
  * Bundling Feature 4.2 - Advanced Formats Integration Tests
- * Tests integration between standalone formatter, executable builder,
- * source map handler, and watch manager
+ * Tests integration between standalone formatter, source map handler, and watch manager
  * CRITICAL: All tests MUST call real implementation
+ *
+ * NOTE: Executable builder tests are skipped as the feature was deprecated in v3.2.0
+ * due to security concerns (CVE-2024-24828) and unsuitable binary sizes (~120 MB)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createStandaloneBundle } from '../../core/formatters/standalone-formatter.js';
-import { createExecutable, validateExecutable } from '../../core/formatters/executable-builder.js';
-import { handleSourceMap, inlineSourceMap } from '../../core/formatters/sourcemap-handler.js';
-import { bundle } from '../../core/bundler.js';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { createStandaloneBundle } from '../../src/core/formatters/standalone-formatter.js';
+import { validateExecutable } from '../../src/core/formatters/executable-builder.js';
+import { handleSourceMap, inlineSourceMap } from '../../src/core/formatters/sourcemap-handler.js';
+import { bundle } from '../../src/core/bundler.js';
 import { writeFile, mkdir, rm, readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -31,8 +33,14 @@ describe('Feature 4.2 - Advanced Formats Integration', () => {
       const bundlePath = join(TEMP_DIR, 'bundle.js');
       await writeFile(
         bundlePath,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+export default class implements TestServer {}`
       );
 
       const result = await createStandaloneBundle({
@@ -121,7 +129,8 @@ describe('Feature 4.2 - Advanced Formats Integration', () => {
   });
 
   // Group 2: Executable Builder Integration (5 tests)
-  describe('Executable Builder', () => {
+  // DEPRECATED: Executable builder was removed in v3.2.0 due to security and size concerns
+  describe.skip('Executable Builder (DEPRECATED)', () => {
     it('validates existing executable', async () => {
       const execPath = join(TEMP_DIR, 'test-exec');
       await writeFile(execPath, '#!/usr/bin/env node\nconsole.log("test");');
@@ -274,8 +283,14 @@ describe('Feature 4.2 - Advanced Formats Integration', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+export default class implements TestServer {}`
       );
 
       const result = await bundle({
@@ -295,8 +310,14 @@ describe('Feature 4.2 - Advanced Formats Integration', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+export default class implements TestServer {}`
       );
 
       const result = await bundle({
@@ -316,8 +337,14 @@ describe('Feature 4.2 - Advanced Formats Integration', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+export default class implements TestServer {}`
       );
 
       const result = await bundle({
@@ -338,10 +365,16 @@ describe('Feature 4.2 - Advanced Formats Integration', () => {
       await writeFile(
         serverFile,
         `// /// dependencies
-         // better-sqlite3@^9.0.0
-         // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+// better-sqlite3@^9.0.0
+// ///
+import type { IServer } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+export default class implements TestServer {}`
       );
 
       const result = await bundle({
@@ -362,8 +395,14 @@ describe('Feature 4.2 - Advanced Formats Integration', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+export default class implements TestServer {}`
       );
 
       const singleResult = await bundle({

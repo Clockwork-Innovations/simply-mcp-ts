@@ -7,8 +7,8 @@
  * @module types/core
  */
 
-import { SecurityConfig } from '../security/types.js';
-import { HandlerConfig } from '../core/types.js';
+import { SecurityConfig } from '../features/auth/security/types.js';
+import { HandlerConfig } from '../types/handler.js';
 
 /**
  * Tool configuration interface

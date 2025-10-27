@@ -53,7 +53,7 @@ run_detector_test() {
   local test_script="$2"
 
   cat > "$TEST_TEMP_DIR/test-runner.ts" <<EOFTEST
-import { detectPackageManager, isPackageManagerAvailable, getPackageManagerVersion, getLockFileName } from '$MCP_ROOT/core/package-manager-detector.js';
+import { detectPackageManager, isPackageManagerAvailable, getPackageManagerVersion, getLockFileName } from '\$MCP_ROOT/features/dependencies/package-manager-detector.js';
 
 async function runTest() {
   try {

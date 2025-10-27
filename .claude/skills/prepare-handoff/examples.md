@@ -2,9 +2,11 @@
 
 This page shows good examples of handoff documents and explains what makes them effective.
 
+**Important**: All handoff documents are stored in `/tmp/handoff/` with descriptive timestamped names (format: `YYYY-MM-DD-HH-MM-<descriptive-name>.md`). These are read-only snapshots - do NOT modify after creation.
+
 ## Example 1: Complete Handoff (Foundation + Feature)
 
-**Location**: `../../../next-task.md` (project root)
+**Location**: Check `/tmp/handoff/` for recent examples
 
 **What to look for**:
 - ✓ Clear status overview with checkmarks
@@ -20,7 +22,38 @@ This page shows good examples of handoff documents and explains what makes them 
 - Includes specific code references
 - Patterns documented for next developer
 
-## Example 2: Structure of a Good Status Section
+## Example 2: Receiver Instructions Section
+
+Every handoff document MUST include instructions for the receiver at the top:
+
+```markdown
+## 📋 Instructions for Receiver
+
+**Before starting work, you MUST:**
+
+1. **Review the Orchestrator Framework**
+   - Read: `/mnt/Shared/cs-projects/prompt-library/ORCHESTRATOR_PROMPT.md` (v2.1)
+   - Understand the layered development approach (Foundation → Feature → Polish)
+   - Understand validation gates and test validity requirements
+
+2. **Plan Your Work**
+   - Use the TodoWrite tool to create a task list based on the "Next Steps" section below
+   - Break down tasks following the orchestrator methodology
+   - Mark ONE task as `in_progress` before you begin
+
+3. **Maintain Context**
+   - Follow the patterns referenced in this document
+   - Maintain the same test quality standards
+   - Run validation gates before marking layers complete
+```
+
+**Why this matters**:
+- Ensures receiver reviews the orchestrator framework before starting
+- Requires explicit task planning with TodoWrite tool
+- Prevents receiver from jumping in without proper context
+- Maintains consistency with orchestrator methodology
+
+## Example 3: Structure of a Good Status Section
 
 ```
 ✓ What's Done     | Decorator API Foundation + Feature (40 tests, 100% pass rate)
@@ -36,7 +69,7 @@ This page shows good examples of handoff documents and explains what makes them 
 - Clear next step
 - Explains the decision to stop
 
-## Example 3: Completed Work Section
+## Example 4: Completed Work Section
 
 ```markdown
 ### Files Modified
@@ -63,7 +96,7 @@ This page shows good examples of handoff documents and explains what makes them 
 - Total test count clear
 - Quality metrics explicit
 
-## Example 4: Next Steps That Enable Handoff
+## Example 5: Next Steps That Enable Handoff
 
 ```markdown
 ## Next Steps
@@ -99,7 +132,7 @@ Can complete in one session: Yes
 - Total time calculated
 - Feasibility stated
 
-## Example 5: What NOT to Do
+## Example 6: What NOT to Do
 
 ### ❌ Vague Handoff
 
@@ -146,6 +179,16 @@ This is 50% done with the Feature layer. I got the router support working but va
 
 A good handoff has these characteristics:
 
+### 0. Proper File Naming and Location
+```
+File: /tmp/handoff/2025-10-26-14-30-ui-feature-layer-complete.md
+```
+- Stored in `/tmp/handoff/` directory
+- Timestamped with descriptive name
+- Includes read-only warning at top of document
+- Includes receiver instructions (review ORCHESTRATOR_PROMPT.md, use TodoWrite)
+- Never modified after creation
+
 ### 1. Crystal Clear Status
 ```
 ✓ What's Done     | [Specific layers with test counts]
@@ -189,23 +232,34 @@ Helps maintain consistency
 
 ## Common Mistakes
 
-### ❌ Mistake 1: Unclear Layer
+### ❌ Mistake 1: Missing Receiver Instructions
+**Wrong**: [No receiver instructions section]
+**Right**: Include explicit instructions at top:
+```markdown
+## 📋 Instructions for Receiver
+**Before starting work, you MUST:**
+1. Review the Orchestrator Framework (ORCHESTRATOR_PROMPT.md)
+2. Plan Your Work (use TodoWrite tool)
+3. Maintain Context (follow patterns)
+```
+
+### ❌ Mistake 2: Unclear Layer
 **Wrong**: "Completed work on decorators"
 **Right**: "Completed Decorator API Foundation layer (15 tests, 100% pass)"
 
-### ❌ Mistake 2: Generic File References
+### ❌ Mistake 3: Generic File References
 **Wrong**: `src/api/decorator/decorators.ts`
 **Right**: `src/api/decorator/decorators.ts:1-150`
 
-### ❌ Mistake 3: Missing Test Context
+### ❌ Mistake 4: Missing Test Context
 **Wrong**: "15 tests passing"
 **Right**: "Foundation layer: 15 tests (100% pass); Feature layer: 25 new tests (100% pass); Total: 40 tests, zero regressions"
 
-### ❌ Mistake 4: Vague Next Steps
+### ❌ Mistake 5: Vague Next Steps
 **Wrong**: "Do error handling"
 **Right**: "Implement comprehensive error handling (1-2 hours): Add try-catch to decorator application, validate arguments, return meaningful messages"
 
-### ❌ Mistake 5: Missing Gotchas
+### ❌ Mistake 6: Missing Gotchas
 **Wrong**: [No section for known issues]
 **Right**:
 ```
@@ -218,6 +272,9 @@ Gotchas:
 
 When reviewing a handoff, verify:
 
+- ✓ File stored in `/tmp/handoff/` with timestamped descriptive name
+- ✓ Read-only warning at top
+- ✓ Receiver instructions included (review ORCHESTRATOR_PROMPT.md, use TodoWrite)
 - ✓ Status section has all 4 items (Done, Not, Next, Why)
 - ✓ At least one complete layer documented
 - ✓ File paths include line numbers

@@ -77,7 +77,7 @@ extract_session_id() {
 
 # Start server in background
 echo "Starting MCP stateful HTTP server..."
-npx tsx src/configurableServer.ts src/config-test-stateful.json > /tmp/mcp-stateful-server.log 2>&1 &
+npx tsx src/cli/servers/configurable-server.ts tests/fixtures/config/config-test-stateful.json > /tmp/mcp-stateful-server.log 2>&1 &
 SERVER_PID=$!
 echo "Server PID: $SERVER_PID"
 echo ""
@@ -117,7 +117,7 @@ if [ $WAIT_COUNT -eq $MAX_WAIT ]; then
   echo "Server log:"
   cat /tmp/mcp-stateful-server.log
   # Try to find and kill any server processes
-  pkill -f "tsx src/configurableServer.ts src/config-test-stateful.json" 2>/dev/null || true
+  pkill -f "tsx src/cli/servers/configurable-server.ts tests/fixtures/config/config-test-stateful.json" 2>/dev/null || true
   exit 1
 fi
 echo ""
@@ -513,7 +513,7 @@ DURATION=$((END_TIME - START_TIME))
 
 echo "========================================="
 echo "Stopping server..."
-pkill -f "tsx src/configurableServer.ts src/config-test-stateful.json" 2>/dev/null || true
+pkill -f "tsx src/cli/servers/configurable-server.ts tests/fixtures/config/config-test-stateful.json" 2>/dev/null || true
 sleep 1
 echo "Server stopped"
 echo ""

@@ -4,10 +4,10 @@
  * CRITICAL: All tests MUST call real implementation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { bundle } from '../../src/core/bundler.js';
 import { detectEntryPoint } from '../../src/core/entry-detector.js';
-import { resolveDependencies } from '../../src/core/dependency-resolver.js';
+import { resolveDependencies } from '../../src/features/dependencies/dependency-resolver.js';
 import { loadConfig, mergeConfig } from '../../src/core/config-loader.js';
 import { formatOutput } from '../../src/core/output-formatter.js';
 import { writeFile, mkdir, rm, readFile } from 'fs/promises';
@@ -30,8 +30,22 @@ describe('Bundling - Integration Tests', () => {
     it('detects server.ts by convention', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const entry = await detectEntryPoint(undefined, TEMP_DIR);
@@ -46,8 +60,22 @@ describe('Bundling - Integration Tests', () => {
       await mkdir(join(TEMP_DIR, 'src'), { recursive: true });
       await writeFile(
         join(TEMP_DIR, 'src/index.ts'),
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const entry = await detectEntryPoint(undefined, TEMP_DIR);
@@ -57,35 +85,77 @@ describe('Bundling - Integration Tests', () => {
     it('prefers explicit entry over convention', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'convention', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface ConventionServer extends IServer {
+  name: 'convention';
+  version: '1.0.0';
+}
+
+interface ConventionTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements ConventionServer {
+  test: ConventionTool = async () => 'success';
+}`
       );
       await writeFile(
         join(TEMP_DIR, 'explicit.ts'),
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'explicit', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface ExplicitServer extends IServer {
+  name: 'explicit';
+  version: '1.0.0';
+}
+
+interface ExplicitTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements ExplicitServer {
+  test: ExplicitTool = async () => 'success';
+}`
       );
 
       const entry = await detectEntryPoint('explicit.ts', TEMP_DIR);
       expect(entry).toContain('explicit.ts');
     });
 
-    it('validates SimplyMCP import in detected entry', async () => {
+    it('validates interface-driven server in detected entry', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `import { SimplyMCP } from 'simply-mcp';
-         const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
-         export default server;`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+const server = class implements TestServer {
+  test: TestTool = async () => 'success';
+};
+export default server;`
       );
 
       const entry = await detectEntryPoint(undefined, TEMP_DIR);
       expect(entry).toBeTruthy();
     });
 
-    it('rejects files without SimplyMCP', async () => {
+    it('rejects files without interface-driven server', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `console.log('Not a SimplyMCP server');`
+        `console.log('Not an interface-driven server');`
       );
 
       await expect(async () => {
@@ -97,8 +167,22 @@ describe('Bundling - Integration Tests', () => {
       await mkdir(join(TEMP_DIR, 'src/servers'), { recursive: true });
       await writeFile(
         join(TEMP_DIR, 'src/servers/main.ts'),
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const entry = await detectEntryPoint('src/servers/main.ts', TEMP_DIR);
@@ -108,8 +192,22 @@ describe('Bundling - Integration Tests', () => {
     it('resolves relative paths correctly', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.ts'),
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const entry = await detectEntryPoint('./server.ts', TEMP_DIR);
@@ -120,8 +218,22 @@ describe('Bundling - Integration Tests', () => {
     it('handles TypeScript and JavaScript files', async () => {
       await writeFile(
         join(TEMP_DIR, 'server.js'),
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const entry = await detectEntryPoint('server.js', TEMP_DIR);
@@ -138,8 +250,22 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // axios@^1.6.0
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const deps = await resolveDependencies({ entryPoint: serverFile });
@@ -159,8 +285,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const deps = await resolveDependencies({
@@ -185,8 +325,22 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // axios@^1.6.0
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const deps = await resolveDependencies({
@@ -204,8 +358,22 @@ describe('Bundling - Integration Tests', () => {
          // fsevents@^2.3.0
          // axios@^1.6.0
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const deps = await resolveDependencies({ entryPoint: serverFile });
@@ -225,8 +393,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const deps = await resolveDependencies({
@@ -243,8 +425,22 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // INVALID-UPPERCASE
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const deps = await resolveDependencies({ entryPoint: serverFile });
@@ -255,8 +451,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const deps = await resolveDependencies({ entryPoint: serverFile, basePath: TEMP_DIR });
@@ -283,8 +493,22 @@ describe('Bundling - Integration Tests', () => {
          // axios@^1.6.0
          // zod@^3.22.0
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const deps = await resolveDependencies({
@@ -399,15 +623,23 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
-         server.addTool({
-           name: 'test',
-           description: 'Test tool',
-           parameters: {},
-           execute: async () => ({ result: 'ok' })
-         });
-         export default server;`
+        `import type { ITool, IServer } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  description: 'Test tool';
+  params: {};
+  result: { result: string };
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => ({ result: 'ok' });
+}`
       );
 
       const result = await bundle({
@@ -426,8 +658,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -445,8 +691,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -463,8 +723,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -496,8 +770,22 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // invalid@syntax
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -515,8 +803,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -537,18 +839,26 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // axios@^1.6.0
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         const server = new SimplyMCP({ name: 'test', version: '1.0.0' });
-         server.addTool({
-           name: 'fetch',
-           description: 'Fetch data',
-           parameters: { url: { type: 'string' } },
-           execute: async ({ url }) => {
-             // Simulate using axios
-             return { data: 'fetched' };
-           }
-         });
-         export default server;`
+import type { ITool, IServer } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface FetchTool extends ITool {
+  name: 'fetch';
+  description: 'Fetch data';
+  params: { url: string };
+  result: { data: string };
+}
+
+export default class implements TestServer {
+  fetch: FetchTool = async ({ url }) => {
+    // Simulate using axios
+    return { data: 'fetched' };
+  };
+}`
       );
 
       const result = await bundle({
@@ -569,8 +879,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -590,8 +914,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -610,8 +948,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -630,8 +982,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const unminified = await bundle({
@@ -658,8 +1024,22 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // axios@^1.6.0
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -680,13 +1060,28 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // fsevents@^2.3.0
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
         entry: serverFile,
         output: join(TEMP_DIR, 'bundle.js'),
+        format: 'esm', // ESM format supports native modules as external
         minify: false,
         external: ['simply-mcp'],
       });
@@ -714,9 +1109,21 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         const server = new SimplyMCP({ name: 'test' version: '1.0.0' }); // Missing comma
-         export default server;`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test' version: '1.0.0'; // Missing semicolon
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -733,9 +1140,21 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         const server = new SimplyMCP({ name: 'test' version: '1.0.0' });
-         export default server;`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test' version: '1.0.0'; // Missing semicolon
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -754,8 +1173,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       // Try to write to root (should fail on Unix systems)
@@ -796,8 +1229,22 @@ describe('Bundling - Integration Tests', () => {
         `// /// dependencies
          // invalid-dep-syntax
          // ///
-         import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       const result = await bundle({
@@ -819,8 +1266,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       await bundle({
@@ -839,8 +1300,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       await bundle({
@@ -862,8 +1337,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       await bundle({
@@ -885,8 +1374,22 @@ describe('Bundling - Integration Tests', () => {
       const serverFile = join(TEMP_DIR, 'server.ts');
       await writeFile(
         serverFile,
-        `import { SimplyMCP } from 'simply-mcp';
-         export default new SimplyMCP({ name: 'test', version: '1.0.0' });`
+        `import type { IServer, ITool } from 'simply-mcp';
+
+interface TestServer extends IServer {
+  name: 'test';
+  version: '1.0.0';
+}
+
+interface TestTool extends ITool {
+  name: 'test';
+  params: {};
+  result: string;
+}
+
+export default class implements TestServer {
+  test: TestTool = async () => 'success';
+}`
       );
 
       await bundle({

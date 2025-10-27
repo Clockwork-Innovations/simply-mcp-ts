@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Catalog</title>
+</head>
+<body>
+  <!-- Main Container -->
+  <div class="catalog-container">
+    <!-- Header -->
+    <header class="catalog-header">
+      <h1>Product Catalog</h1>
+      <p class="subtitle">Browse and filter our selection of products</p>
+      <div class="cart-info">
+        <span class="cart-icon">🛒</span>
+        <span id="cart-count" class="cart-count">0</span>
+      </div>
+    </header>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+      <div class="search-box">
+        <input
+          type="text"
+          id="search-input"
+          class="search-input"
+          placeholder="Search products..."
+          autocomplete="off"
+        />
+        <button id="search-btn" class="btn btn-primary">Search</button>
+        <button id="clear-search-btn" class="btn btn-secondary">Clear</button>
+      </div>
+
+      <div class="filter-box">
+        <label for="category-filter">Category:</label>
+        <select id="category-filter" class="category-select">
+          <option value="">All Categories</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Clothing">Clothing</option>
+          <option value="Home">Home</option>
+          <option value="Fitness">Fitness</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="status-message" class="status-message"></div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>Loading products...</p>
+    </div>
+
+    <!-- Product Grid -->
+    <div id="product-grid" class="product-grid">
+      <!-- Products will be dynamically inserted here -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+      <div class="empty-icon">📦</div>
+      <h2>No products found</h2>
+      <p>Try adjusting your search or filter criteria</p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="catalog-footer">
+      <p>
+        <strong>Features Demonstrated:</strong>
+        External HTML file loading • Multiple stylesheets • Multiple scripts • Tool integration
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

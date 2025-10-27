@@ -40,10 +40,9 @@ test-*.sh
 
 # Config files (test configs should not be published)
 config/
-src/config-test*.json
-src/config-validation-examples.json
-src/my-first-config.json
-src/simplemcp.config.example.js
+tests/fixtures/config/
+examples/getting-started.json
+simplemcp.config.example.js
 
 # Test framework files
 src/test-framework.sh
@@ -69,8 +68,7 @@ src/handlers/examples/
 
 # Server implementations (optional - these are specialized)
 src/servers/
-src/configurableServer.ts
-src/simpleStreamableHttp.ts
+src/cli/servers/
 
 # Adapters (deprecated)
 src/adapter.ts

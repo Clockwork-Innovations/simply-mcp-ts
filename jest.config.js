@@ -19,27 +19,12 @@ export default {
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
-    '/tests/phase2/',
-    '/tests/integration/',
     '/config/',
-    '/src/api/mcp/wizard/__tests__/',
-    '/tests/unit/interface-api/basic.test.ts',
-    '/tests/unit/interface-api/schema.test.ts',
-    '/tests/unit/decorator-params.test.ts',
-    '/tests/unit/interface-auto-detect.test.ts',
-    '/tests/unit/interface-api.test.ts',
-    '/tests/unit/interface-api/static-resource.test.ts',  // Tests unimplemented static resource feature
+    '/src/api/mcp/wizard/__tests__/',  // Wizard feature tests (experimental)
+    '/tests/unit/interface-api/schema.test.ts',  // typeNodeToZodSchema() not fully implemented (returns empty array)
+    '/tests/unit/interface-api.test.ts',  // Broken imports, superseded by tests/unit/interface-api/*.test.ts
+    '/tests/unit/interface-api/static-resource.test.ts',  // Broken imports (adapter.js moved)
     '/examples/nextjs-mcp-ui/',  // Incomplete experimental UI feature
-    '/tests/phase3-layer3.test.ts',  // Tests unimplemented lifecycle hooks
-    '/tests/context.test.ts',  // Tests files that don't exist (Context, ContextBuilder, SessionImpl)
-    '/tests/sampling-context.test.ts',  // Tests missing Context/SessionImpl files
-    '/tests/request-id.test.ts',  // Tests missing request ID feature
-    '/tests/phase2-layer1.test.ts',  // Tests missing SessionImpl/ContextBuilder
-    '/tests/phase2-layer1-simple.test.ts',  // Tests missing SessionImpl
-    '/tests/phase2-layer2.test.ts',  // Tests missing context.mcp property
-    '/tests/phase2-layer3.test.ts',  // Tests missing context.mcp features
-    '/tests/phase3-layers1-2.test.ts',  // Tests missing ContextBuilder
-    '/tests/functional-router-foundation.test.ts',  // Has remaining issues
     '\\.manual\\.ts$'  // Custom-runner tests (not Jest-compatible)
   ],
   collectCoverageFrom: [

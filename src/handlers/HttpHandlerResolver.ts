@@ -10,7 +10,7 @@ import {
   ToolHandler,
   HandlerContext,
   HandlerResult,
-} from '../core/types.js';
+} from '../types/handler.js';
 import {
   HandlerNetworkError,
   HandlerConfigError,

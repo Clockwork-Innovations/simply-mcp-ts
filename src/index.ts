@@ -1,26 +1,9 @@
 /**
  * SimplyMCP - Model Context Protocol Server Framework
  *
- * A comprehensive MCP server framework with support for multiple API styles:
- * - Programmatic API
- * - Interface-driven API (v3.0.0+)
+ * A comprehensive MCP server framework using the Interface-driven API.
  *
- * @example Programmatic API (BuildMCPServer)
- * ```typescript
- * import { BuildMCPServer } from 'simply-mcp';
- * import { z } from 'zod';
- *
- * const server = new BuildMCPServer({ name: 'my-server', version: '1.0.0' });
- * server.addTool({
- *   name: 'greet',
- *   description: 'Greet a user',
- *   parameters: z.object({ name: z.string() }),
- *   execute: async (args) => `Hello, ${args.name}!`
- * });
- * await server.start();
- * ```
- *
- * @example Interface-Driven API (v3.0.0+)
+ * @example Interface-Driven API
  * ```typescript
  * import type { ITool, IServer } from 'simply-mcp';
  *
@@ -43,20 +26,12 @@
  */
 
 // ============================================================================
-// Programmatic API
-// ============================================================================
-// BuildMCPServer - Programmatic API for building MCP servers
-export { BuildMCPServer } from './api/programmatic/BuildMCPServer.js';
-export { BuildMCPServer as SimplyMCP } from './api/programmatic/BuildMCPServer.js';
-export type { BuildMCPServerOptions } from './api/programmatic/types.js';
-
-// ============================================================================
 // Schema Builder
 // ============================================================================
 export {
   schemaToZod,
   type Schema as SchemaType,
-} from './schema-builder.js';
+} from './core/schema-builder.js';
 
 // ============================================================================
 // Interface-Driven API (v3.0.0 - In Development)
@@ -67,40 +42,53 @@ export type {
   IPrompt,
   IResource,
   IServer,
+  IUI,
+  IAuth,
+  IApiKeyAuth,
+  IApiKeyConfig,
+  ISampling,
+  ISamplingMessage,
+  ISamplingOptions,
+  IElicit,
+  IRoots,
+  ICompletion,
+  ISubscription,
   ToolParams,
   ToolResult,
   PromptArgs,
   ResourceData,
-} from './api/interface/index.js';
+  UIResourceDefinition,
+  IUIResourceProvider,
+  RouterToolDefinition,
+} from './server/interface-types.js';
+
+export {
+  loadInterfaceServer,
+  isInterfaceFile,
+  type InterfaceAdapterOptions,
+} from './server/adapter.js';
+
+export {
+  InterfaceServer,
+  type RuntimeConfig,
+} from './server/interface-server.js';
 
 export {
   parseInterfaceFile,
   snakeToCamel,
-  loadInterfaceServer,
-  isInterfaceFile,
   type ParsedTool,
   type ParsedPrompt,
   type ParsedResource,
   type ParsedServer,
+  type ParsedUI,
   type ParseResult,
-  type InterfaceAdapterOptions,
-} from './api/interface/index.js';
+} from './server/parser.js';
+
+export { authConfigFromParsed } from './features/auth/adapter.js';
 
 // ============================================================================
 // Core Types
 // ============================================================================
-
-// Export MCP definition types (BUG-002 FIX)
-export type {
-  ToolDefinition,
-  PromptDefinition,
-  ResourceDefinition,
-  ExecuteFunction,
-  RouterToolDefinition,
-} from './api/programmatic/types.js';
-
-// Alias for backward compatibility
-export type { BuildMCPServerOptions as SimplyMCPOptions } from './api/programmatic/types.js';
 
 // Export handler types
 export type {
@@ -117,7 +105,7 @@ export type {
   Logger,
   Permissions,
   HandlerError,
-} from './core/types.js';
+} from './types/handler.js';
 
 // ============================================================================
 // Error Classes
@@ -140,19 +128,6 @@ export {
  * Types for automatic dependency installation.
  * These types are useful for advanced users who want to customize
  * auto-installation behavior with progress tracking and error handling.
- *
- * @example
- * ```typescript
- * import { BuildMCPServer, InstallProgressEvent } from 'simply-mcp';
- *
- * const server = await BuildMCPServer.fromFile('server.ts', {
- *   autoInstall: {
- *     onProgress: (event: InstallProgressEvent) => {
- *       console.log(event.message);
- *     }
- *   }
- * });
- * ```
  */
 export type {
   PackageManager,
@@ -162,7 +137,7 @@ export type {
   InstallError,
   DependencyStatus,
   PackageManagerInfo,
-} from './core/installation-types.js';
+} from './features/dependencies/installation-types.js';
 
 // ============================================================================
 // Configuration Types (re-exported for convenience)
@@ -190,6 +165,102 @@ export type {
   BundleConfig,
   APIStyle,
   TransportType,
-} from './config.js';
+} from './core/config.js';
 
-export { defineConfig } from './config.js';
+export { defineConfig } from './core/config.js';
+
+// ============================================================================
+// MCP-UI Support (Foundation & Feature Layers)
+// ============================================================================
+/**
+ * UI resource helpers and React compiler for building interactive UI components.
+ *
+ * Foundation Layer:
+ * - createInlineHTMLResource: Create inline HTML UI resources
+ * - isUIResource: Type guard for UI resources
+ *
+ * Feature Layer:
+ * - compileReactComponent: Babel-based React/JSX compiler
+ * - validateComponentCode: Validate React component structure
+ *
+ * @example Foundation Layer - Inline HTML
+ * ```typescript
+ * import { createInlineHTMLResource } from 'simply-mcp';
+ *
+ * const uiResource = createInlineHTMLResource(
+ *   'ui://calculator/v1',
+ *   '<div><h2>Calculator</h2><button>Calculate</button></div>'
+ * );
+ * ```
+ *
+ * @example Feature Layer - React Components
+ * ```typescript
+ * import { compileReactComponent } from 'simply-mcp';
+ *
+ * const result = await compileReactComponent({
+ *   componentPath: './Counter.tsx',
+ *   componentCode: `
+ *     export default function Counter() {
+ *       return <div>Count: 0</div>;
+ *     }
+ *   `,
+ *   sourceMaps: true,
+ * });
+ * ```
+ */
+
+// Foundation Layer - UI resource helpers
+export {
+  createInlineHTMLResource,
+  isUIResource,
+} from './features/ui/ui-resource.js';
+
+export type {
+  UIContentType,
+  UIResourcePayload,
+  UIResource,
+  UIResourceOptions,
+} from './types/ui.js';
+
+// Feature Layer - React compiler
+export {
+  compileReactComponent,
+  validateComponentCode,
+} from './features/ui/ui-react-compiler.js';
+
+export type {
+  CompiledReactComponent,
+  ReactCompilerOptions,
+} from './features/ui/ui-react-compiler.js';
+
+// Component Library Support
+export {
+  PackageResolver,
+  resolver,
+} from './features/ui/package-resolver.js';
+
+export type {
+  PackageResolution,
+  ResolverOptions,
+} from './features/ui/package-resolver.js';
+
+export {
+  ComponentRegistry,
+  registry,
+} from './features/ui/component-registry.js';
+
+export type {
+  ComponentMetadata,
+} from './features/ui/component-registry.js';
+
+// Theme System Support
+export {
+  ThemeManager,
+  themeManager,
+  type Theme,
+} from './features/ui/theme-manager.js';
+
+export {
+  LIGHT_THEME,
+  DARK_THEME,
+} from './core/themes/prebuilt.js';

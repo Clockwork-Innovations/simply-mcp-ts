@@ -1,91 +1,198 @@
 # Tools Guide
 
-Learn how to add capabilities (tools) to your MCP server.
+Learn how to add capabilities (tools) to your MCP server using the Interface API.
 
 **What are tools?** Functions that your server can perform - what the LLM can ask it to do.
 
-**See working examples:** [examples/single-file-advanced.ts](../../examples/single-file-advanced.ts), [examples/class-advanced.ts](../../examples/class-advanced.ts)
+**Implementation requirement:** ✅ **ALL TOOLS REQUIRE IMPLEMENTATION**
+
+Every tool you define must have a corresponding implementation method in your server class. Unlike prompts and resources (which can be static), tools always execute custom logic.
+
+**See working examples:** [examples/interface-advanced.ts](../../examples/interface-advanced.ts), [examples/interface-protocol-comprehensive.ts](../../examples/interface-protocol-comprehensive.ts)
 
 ---
 
 ## Basic Tool
 
-A tool needs:
-- **name** - Unique identifier
-- **description** - What the tool does
-- **parameters** - Input schema (what arguments it takes)
-- **execute** - The function to run
+A tool is defined using a TypeScript interface that extends `ITool` and requires:
+- **name** - Unique identifier (camelCase or snake_case - auto-normalized to snake_case)
+- **description** - What the tool does (used by LLM to decide when to call)
+- **params** - Input parameter types
+- **result** - Return type
 
 ```typescript
-{
-  name: 'greet',
-  description: 'Say hello to someone',
-  parameters: {
-    type: 'object',
-    properties: {
-      name: { type: 'string', description: 'Person to greet' }
-    },
-    required: ['name']
-  },
-  execute: async (args) => {
-    return `Hello, ${args.name}!`;
-  }
+import type { ITool, IServer } from 'simply-mcp';
+
+interface GreetTool extends ITool {
+  name: 'greet';
+  description: 'Say hello to someone';
+  params: {
+    /** Person to greet */
+    name: string;
+  };
+  result: {
+    greeting: string;
+  };
 }
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+export default class MyServer implements MyServer {
+  greet: GreetTool = async (params) => {
+    return {
+      greeting: `Hello, ${params.name}!`
+    };
+  };
+}
+```
+
+**Key Benefits:**
+- Full type safety - IntelliSense on `params` and return values
+- Auto-generated Zod schemas from TypeScript types
+- Compile-time validation of implementation
+- No schema boilerplate
+
+---
+
+## Method Naming Conventions
+
+When you define a tool interface, the implementation method must match the tool name with proper camelCase conversion.
+
+### Snake Case to Camel Case
+
+Interface names are converted from **snake_case** to **camelCase**:
+
+| Interface Name | Implementation Method |
+|----------------|----------------------|
+| `get_weather` | `getWeather` |
+| `search_documents` | `searchDocuments` |
+| `validate_email` | `validateEmail` |
+| `sendEmail` | `sendEmail` (already camelCase) |
+| `greet` | `greet` (no conversion needed) |
+
+### Example
+
+```typescript
+interface GetWeatherTool extends ITool {
+  name: 'get_weather';  // snake_case
+  description: 'Get current weather';
+  params: { location: string };
+  result: { temperature: number };
+}
+
+// Implementation method MUST be named 'getWeather' (camelCase)
+export default class MyServer implements IServer {
+  getWeather: GetWeatherTool = async (params) => {
+    return { temperature: 22 };
+  };
+}
+```
+
+### Why CamelCase?
+
+TypeScript/JavaScript convention is camelCase for method names. The framework automatically converts snake_case tool names to camelCase method names for consistency with language conventions.
+
+### Validation
+
+If you use the wrong method name, you'll see a warning when running the server:
+
+```
+Warning: Tool 'get_weather' requires implementation as method 'getWeather'
+```
+
+To catch errors early, use dry-run mode during development:
+
+```bash
+npx simply-mcp run server.ts --dry-run
 ```
 
 ---
 
 ## Parameter Validation
 
-### Using Zod (Recommended)
+### Using Plain TypeScript Types
 
 ```typescript
-import { z } from 'zod';
+interface CalculateTool extends ITool {
+  name: 'calculate';
+  description: 'Do math operations';
+  params: {
+    /** Type of operation */
+    operation: 'add' | 'subtract' | 'multiply';
+    /** First number */
+    a: number;
+    /** Second number */
+    b: number;
+  };
+  result: number;
+}
 
-{
-  name: 'calculate',
-  description: 'Do math',
-  parameters: z.object({
-    operation: z.enum(['add', 'subtract', 'multiply']),
-    a: z.number().describe('First number'),
-    b: z.number().describe('Second number')
-  }),
-  execute: async (args) => {
-    switch (args.operation) {
-      case 'add': return args.a + args.b;
-      case 'subtract': return args.a - args.b;
-      case 'multiply': return args.a * args.b;
+export default class MathServer implements IServer {
+  name: 'math-server';
+  version: '1.0.0';
+
+  calculate: CalculateTool = async (params) => {
+    switch (params.operation) {
+      case 'add': return params.a + params.b;
+      case 'subtract': return params.a - params.b;
+      case 'multiply': return params.a * params.b;
     }
-  }
+  };
 }
 ```
 
-### Using JSON Schema
+### Using IParam for Enhanced Validation
+
+`IParam` provides structured parameter definitions with explicit types, descriptions, and validation constraints. This **improves LLM accuracy** by providing richer metadata in the generated JSON Schema.
 
 ```typescript
-{
-  name: 'email',
-  description: 'Send email',
-  parameters: {
-    type: 'object',
-    properties: {
-      to: {
-        type: 'string',
-        format: 'email',
-        description: 'Recipient email'
-      },
-      subject: {
-        type: 'string',
-        description: 'Email subject'
-      }
-    },
-    required: ['to', 'subject']
-  },
-  execute: async (args) => {
-    return `Email sent to ${args.to}`;
-  }
+import type { ITool, IParam, IServer } from 'simply-mcp';
+
+interface EmailParam extends IParam {
+  type: 'string';
+  description: 'Recipient email address';
+  format: 'email';
+}
+
+interface SubjectParam extends IParam {
+  type: 'string';
+  description: 'Email subject line';
+  minLength: 1;
+  maxLength: 200;
+}
+
+interface SendEmailTool extends ITool {
+  name: 'sendEmail';
+  description: 'Send an email message';
+  params: {
+    to: EmailParam;
+    subject: SubjectParam;
+    /** Email body (plain text) */
+    body: string;
+  };
+  result: {
+    status: string;
+    messageId: string;
+  };
+}
+
+export default class EmailServer implements IServer {
+  name: 'email-server';
+  version: '1.0.0';
+
+  sendEmail: SendEmailTool = async (params) => {
+    return {
+      status: 'sent',
+      messageId: `msg-${Date.now()}`
+    };
+  };
 }
 ```
+
+For comprehensive parameter validation examples and all available constraint properties, see [API Features - IParam](./API_FEATURES.md#iparam-enhanced-parameters).
 
 ---
 
@@ -94,71 +201,138 @@ import { z } from 'zod';
 ### Simple Values
 
 ```typescript
-execute: async (args) => {
-  return 42;              // Number
-  return 'success';       // String
-  return true;            // Boolean
+interface GetCountTool extends ITool {
+  name: 'getCount';
+  description: 'Get current count';
+  params: {};
+  result: number;
 }
+
+// Implementation
+getCount: GetCountTool = async (params) => {
+  return 42;
+};
 ```
 
 ### Complex Objects
 
 ```typescript
-execute: async (args) => {
-  return {
-    status: 'ok',
-    data: { id: 1, name: 'Item' },
-    timestamp: new Date().toISOString()
+interface GetUserTool extends ITool {
+  name: 'getUser';
+  description: 'Get user by ID';
+  params: {
+    userId: string;
+  };
+  result: {
+    id: string;
+    name: string;
+    email: string;
+    createdAt: string;
   };
 }
+
+// Implementation
+getUser: GetUserTool = async (params) => {
+  return {
+    id: params.userId,
+    name: 'John Doe',
+    email: 'john@example.com',
+    createdAt: new Date().toISOString()
+  };
+};
 ```
 
 ### Arrays
 
 ```typescript
-execute: async (args) => {
+interface ListItemsTool extends ITool {
+  name: 'listItems';
+  description: 'List all items';
+  params: {};
+  result: Array<{
+    id: number;
+    name: string;
+  }>;
+}
+
+// Implementation
+listItems: ListItemsTool = async (params) => {
   return [
     { id: 1, name: 'Item 1' },
     { id: 2, name: 'Item 2' }
   ];
+};
+```
+
+### Optional Result Fields
+
+```typescript
+interface GetWeatherTool extends ITool {
+  name: 'getWeather';
+  description: 'Get weather for a location';
+  params: {
+    location: string;
+    includeHourly?: boolean;
+  };
+  result: {
+    location: string;
+    temperature: number;
+    conditions: string;
+    hourly?: Array<{ hour: number; temp: number }>;
+  };
 }
+
+// Implementation
+getWeather: GetWeatherTool = async (params) => {
+  return {
+    location: params.location,
+    temperature: 22,
+    conditions: 'Partly cloudy',
+    // Only include if requested
+    hourly: params.includeHourly ? [
+      { hour: 1, temp: 23 },
+      { hour: 2, temp: 24 }
+    ] : undefined
+  };
+};
 ```
 
 ---
 
 ## Async Tools
 
-All tools can be async:
+All tool implementations can be async and work with external APIs, databases, or file systems:
 
 ```typescript
-execute: async (args) => {
-  // Fetch data
-  const response = await fetch(`https://api.example.com/data?q=${args.query}`);
-  const data = await response.json();
-  return data;
+interface FetchDataTool extends ITool {
+  name: 'fetchData';
+  description: 'Fetch data from external API';
+  params: {
+    query: string;
+  };
+  result: {
+    data: any;
+    timestamp: string;
+  };
 }
+
+// Implementation
+fetchData: FetchDataTool = async (params) => {
+  const response = await fetch(`https://api.example.com/data?q=${params.query}`);
+  const data = await response.json();
+
+  return {
+    data,
+    timestamp: new Date().toISOString()
+  };
+};
 ```
 
 ---
 
 ## Error Handling
 
-Throw errors for failures:
-
-```typescript
-execute: async (args) => {
-  if (!args.email || !args.email.includes('@')) {
-    throw new Error('Invalid email format');
-  }
-
-  try {
-    const result = await sendEmail(args);
-    return result;
-  } catch (error) {
-    throw new Error(`Failed to send email: ${error.message}`);
-  }
-}
-```
+> **Error Handling:** See [Error Handling Guide](./ERROR_HANDLING.md) for comprehensive error patterns and best practices.
 
 ---
 
@@ -167,190 +341,297 @@ execute: async (args) => {
 ### API Integration
 
 ```typescript
-{
-  name: 'fetch-weather',
-  description: 'Get weather for a city',
-  parameters: z.object({
-    city: z.string().describe('City name')
-  }),
-  execute: async (args) => {
-    const response = await fetch(
-      `https://api.weather.example.com?city=${encodeURIComponent(args.city)}`,
-      { headers: { 'Authorization': `Bearer ${process.env.WEATHER_API_KEY}` } }
-    );
-    if (!response.ok) throw new Error('API error');
-    return response.json();
-  }
+interface FetchWeatherTool extends ITool {
+  name: 'fetchWeather';
+  description: 'Get weather for a city from external API';
+  params: {
+    city: string;
+  };
+  result: {
+    city: string;
+    temperature: number;
+    conditions: string;
+  };
 }
+
+// Implementation
+fetchWeather: FetchWeatherTool = async (params) => {
+  const response = await fetch(
+    `https://api.weather.example.com?city=${encodeURIComponent(params.city)}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${process.env.WEATHER_API_KEY}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.statusText}`);
+  }
+
+  return response.json();
+};
 ```
 
 ### Database Query
 
 ```typescript
-{
-  name: 'find-user',
-  description: 'Find user by email',
-  parameters: z.object({
-    email: z.string().email()
-  }),
-  execute: async (args) => {
-    const user = await db.users.findOne({ email: args.email });
-    if (!user) throw new Error('User not found');
-    return user;
-  }
+interface FindUserTool extends ITool {
+  name: 'findUser';
+  description: 'Find user by email';
+  params: {
+    email: string;
+  };
+  result: {
+    id: string;
+    email: string;
+    name: string;
+  };
 }
+
+// Implementation
+findUser: FindUserTool = async (params) => {
+  const user = await db.users.findOne({ email: params.email });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name
+  };
+};
 ```
 
 ### File Processing
 
 ```typescript
-{
-  name: 'read-config',
-  description: 'Read configuration file',
-  parameters: z.object({
-    filename: z.string()
-  }),
-  execute: async (args) => {
-    const fs = await import('fs/promises');
-    const content = await fs.readFile(args.filename, 'utf-8');
-    return JSON.parse(content);
-  }
+interface ReadConfigTool extends ITool {
+  name: 'readConfig';
+  description: 'Read configuration file';
+  params: {
+    filename: string;
+  };
+  result: {
+    config: Record<string, any>;
+  };
 }
+
+// Implementation
+readConfig: ReadConfigTool = async (params) => {
+  const fs = await import('fs/promises');
+
+  try {
+    const content = await fs.readFile(params.filename, 'utf-8');
+    return {
+      config: JSON.parse(content)
+    };
+  } catch (error) {
+    throw new Error(`Failed to read config: ${error.message}`);
+  }
+};
 ```
 
 ### Data Transformation
 
 ```typescript
-{
-  name: 'format-data',
-  description: 'Format CSV to JSON',
-  parameters: z.object({
-    csv: z.string().describe('CSV data')
-  }),
-  execute: async (args) => {
-    const lines = args.csv.trim().split('\n');
-    const headers = lines[0].split(',');
-    return lines.slice(1).map(line => {
-      const values = line.split(',');
-      return Object.fromEntries(headers.map((h, i) => [h, values[i]]));
-    });
-  }
+interface FormatCsvTool extends ITool {
+  name: 'formatCsv';
+  description: 'Format CSV data to JSON';
+  params: {
+    csv: string;
+  };
+  result: Array<Record<string, string>>;
 }
+
+// Implementation
+formatCsv: FormatCsvTool = async (params) => {
+  const lines = params.csv.trim().split('\n');
+  const headers = lines[0].split(',');
+
+  return lines.slice(1).map(line => {
+    const values = line.split(',');
+    return Object.fromEntries(
+      headers.map((h, i) => [h, values[i]])
+    );
+  });
+};
 ```
 
 ---
 
 ## Multiple Tools
 
-### Functional API
+A server can implement multiple tools - just define multiple tool interfaces:
 
 ```typescript
-export default defineMCP({
-  name: 'multi-tool-server',
-  version: '1.0.0',
-  tools: [
-    {
-      name: 'tool-1',
-      description: 'First tool',
-      parameters: z.object({ input: z.string() }),
-      execute: async (args) => `Tool 1: ${args.input}`
-    },
-    {
-      name: 'tool-2',
-      description: 'Second tool',
-      parameters: z.object({ input: z.string() }),
-      execute: async (args) => `Tool 2: ${args.input}`
-    }
-  ]
-});
-```
+import type { ITool, IServer } from 'simply-mcp';
 
-### Decorator API
-
-```typescript
-@MCPServer({ name: 'multi-tool-server', version: '1.0.0' })
-class MyServer {
-  @tool('First tool')
-  tool1(input: string): string {
-    return `Tool 1: ${input}`;
-  }
-
-  @tool('Second tool')
-  tool2(input: string): string {
-    return `Tool 2: ${input}`;
-  }
+interface AddTool extends ITool {
+  name: 'add';
+  description: 'Add two numbers';
+  params: {
+    a: number;
+    b: number;
+  };
+  result: number;
 }
-```
 
-### MCPBuilder
+interface SubtractTool extends ITool {
+  name: 'subtract';
+  description: 'Subtract two numbers';
+  params: {
+    a: number;
+    b: number;
+  };
+  result: number;
+}
 
-```typescript
-MCPBuilder.create({ name: 'multi-tool-server', version: '1.0.0' })
-  .withTool({
-    name: 'tool-1',
-    description: 'First tool',
-    parameters: z.object({ input: z.string() }),
-    execute: async (args) => `Tool 1: ${args.input}`
-  })
-  .withTool({
-    name: 'tool-2',
-    description: 'Second tool',
-    parameters: z.object({ input: z.string() }),
-    execute: async (args) => `Tool 2: ${args.input}`
-  })
-  .build();
+interface MultiplyTool extends ITool {
+  name: 'multiply';
+  description: 'Multiply two numbers';
+  params: {
+    a: number;
+    b: number;
+  };
+  result: number;
+}
+
+interface MathServer extends IServer {
+  name: 'math-server';
+  version: '1.0.0';
+  description: 'Basic math operations';
+}
+
+export default class MathServer implements MathServer {
+  add: AddTool = async (params) => params.a + params.b;
+
+  subtract: SubtractTool = async (params) => params.a - params.b;
+
+  multiply: MultiplyTool = async (params) => params.a * params.b;
+}
 ```
 
 ---
 
 ## Best Practices
 
-✅ **DO:**
-- Write clear descriptions (LLM uses these to decide when to call)
-- Validate input parameters
-- Throw meaningful errors
-- Test tools locally first
-- Document what the tool does
+**DO:**
+- Write clear, descriptive tool descriptions (LLM uses these to decide when to call)
+- Use IParam for complex validation requirements
+- Add JSDoc comments to parameter types for better documentation
+- Validate input parameters and throw meaningful errors
+- Return structured, consistent data types
+- Test tools locally before deploying
+- Use TypeScript's type system to its fullest
 
-❌ **DON'T:**
-- Make tools too broad (one responsibility each)
+**DON'T:**
+- Make tools too broad - each should have one clear responsibility
 - Skip error handling
-- Silently fail
-- Return unclear data structures
-- Create tools for everything (keep list focused)
+- Silently fail - always throw errors for failures
+- Return unclear or inconsistent data structures
+- Create tools for every possible action - keep the list focused
 
 ---
 
 ## Advanced Features
 
-### Input Constraints
-
-```typescript
-parameters: z.object({
-  count: z.number().min(0).max(100).describe('Items to fetch'),
-  tags: z.array(z.string()).describe('Filter tags'),
-  language: z.enum(['en', 'es', 'fr']).describe('Language code')
-})
-```
-
 ### Complex Nested Parameters
 
 ```typescript
-parameters: z.object({
-  config: z.object({
-    timeout: z.number().optional(),
-    retries: z.number().default(3)
-  }),
-  items: z.array(z.object({
-    id: z.string(),
-    metadata: z.record(z.string(), z.any()).optional()
-  }))
-})
+import type { ITool, IParam } from 'simply-mcp';
+
+interface TimeoutParam extends IParam {
+  type: 'integer';
+  description: 'Request timeout in milliseconds';
+  min: 100;
+  max: 30000;
+}
+
+interface RetriesParam extends IParam {
+  type: 'integer';
+  description: 'Number of retry attempts';
+  min: 0;
+  max: 5;
+}
+
+interface ApiRequestTool extends ITool {
+  name: 'apiRequest';
+  description: 'Make API request with configuration';
+  params: {
+    url: string;
+    config?: {
+      timeout?: TimeoutParam;
+      retries?: RetriesParam;
+    };
+    headers?: Record<string, string>;
+  };
+  result: {
+    status: number;
+    data: any;
+  };
+}
 ```
 
-### Binary Data
+### Enum Parameters
 
-See [examples/binary-content-demo.ts](../../examples/binary-content-demo.ts)
+```typescript
+interface LogLevel extends IParam {
+  type: 'string';
+  description: 'Log level';
+  enum: ['debug', 'info', 'warn', 'error'];
+}
+
+interface LogMessageTool extends ITool {
+  name: 'logMessage';
+  description: 'Log a message';
+  params: {
+    message: string;
+    level: LogLevel;
+  };
+  result: {
+    logged: boolean;
+    timestamp: string;
+  };
+}
+```
+
+### Optional Parameters
+
+```typescript
+interface SearchTool extends ITool {
+  name: 'search';
+  description: 'Search items with optional filters';
+  params: {
+    /** Search query (required) */
+    query: string;
+    /** Maximum results to return (optional) */
+    limit?: number;
+    /** Tags to filter by (optional) */
+    tags?: string[];
+    /** Sort order (optional) */
+    sort?: 'asc' | 'desc';
+  };
+  result: {
+    items: Array<{ id: string; name: string }>;
+    total: number;
+  };
+}
+
+// Implementation
+search: SearchTool = async (params) => {
+  // Use defaults for optional params
+  const limit = params.limit ?? 10;
+  const sort = params.sort ?? 'asc';
+
+  return {
+    items: [],
+    total: 0
+  };
+};
+```
 
 ---
 
@@ -372,85 +653,30 @@ npx simply-mcp run server.ts --dry-run
 npx simply-mcp run server.ts --watch
 ```
 
+### Type Checking
+
+```bash
+# Verify TypeScript compilation
+npx tsc --noEmit server.ts
+```
+
 ---
 
 ## Examples
 
 **See working examples:**
-- Simple tools: [examples/single-file-basic.ts](../../examples/single-file-basic.ts)
-- Multiple tools: [examples/single-file-advanced.ts](../../examples/single-file-advanced.ts)
-- With error handling: [examples/auto-install-error-handling.ts](../../examples/auto-install-error-handling.ts)
-- Binary content: [examples/binary-content-demo.ts](../../examples/binary-content-demo.ts)
-
----
-
-## Router Tools and Sub-Tools
-
-Router tools organize related operations under a single discovery endpoint. Instead of exposing many individual tools, you can group them under routers.
-
-### When to Use Router Tools
-
-Use routers when you have:
-- 5+ related tools in a domain (weather, database, API, etc.)
-- Tools that are often used together
-- A need to reduce tool count in the main list
-
-### Quick Example
-
-```typescript
-import { BuildMCPServer } from 'simply-mcp';
-import { z } from 'zod';
-
-const server = new BuildMCPServer({
-  name: 'my-server',
-  version: '1.0.0'
-});
-
-// Define tools
-server.addTool({
-  name: 'get_weather',
-  description: 'Get current weather',
-  parameters: z.object({ location: z.string() }),
-  execute: async (args) => `Weather: ${args.location}`
-});
-
-server.addTool({
-  name: 'get_forecast',
-  description: 'Get forecast',
-  parameters: z.object({ location: z.string() }),
-  execute: async (args) => `Forecast: ${args.location}`
-});
-
-// Group under router
-server.addRouterTool({
-  name: 'weather_router',
-  description: 'Weather tools',
-  tools: ['get_weather', 'get_forecast']
-});
-```
-
-### How It Works
-
-1. Call the router to discover tools: `weather_router()`
-2. Call tools via namespace: `weather_router__get_weather`
-3. Or call directly (if `flattenRouters=true`): `get_weather`
-
-### Benefits
-
-- **Organization** - Group related tools by domain
-- **Scalability** - 20 tools become 3-4 routers
-- **Discovery** - Progressive disclosure of functionality
-- **Flexibility** - One tool can belong to multiple routers
-
-For complete documentation, see [Router Tools Guide](./ROUTER_TOOLS.md).
+- Basic tools: [examples/interface-minimal.ts](../../examples/interface-minimal.ts)
+- Advanced tools: [examples/interface-advanced.ts](../../examples/interface-advanced.ts)
+- Comprehensive: [examples/interface-protocol-comprehensive.ts](../../examples/interface-protocol-comprehensive.ts)
+- File-based prompts: [examples/interface-file-prompts.ts](../../examples/interface-file-prompts.ts)
 
 ---
 
 ## Next Steps
 
-- **Organize tools?** See [ROUTER_TOOLS.md](./ROUTER_TOOLS.md)
 - **Add prompts?** See [PROMPTS.md](./PROMPTS.md)
 - **Add resources?** See [RESOURCES.md](./RESOURCES.md)
+- **Learn more about Interface API?** See [API_FEATURES.md](./API_FEATURES.md)
 - **Deploy tools?** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
 
 ---

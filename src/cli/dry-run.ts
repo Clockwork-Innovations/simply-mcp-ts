@@ -123,230 +123,6 @@ function validateToolNames(tools: Array<{ name: string; description?: string }>,
 }
 
 /**
- * Perform dry-run for decorator API style
- */
-async function dryRunDecorator(filePath: string, useHttp: boolean, port: number): Promise<DryRunResult> {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const tools: Array<{ name: string; description?: string }> = [];
-  const prompts: Array<{ name: string; description?: string }> = [];
-  const resources: Array<{ name: string; description?: string }> = [];
-
-  let serverConfig = {
-    name: '',
-    version: '',
-    port: undefined as number | undefined,
-  };
-
-  try {
-    // Import decorator dependencies
-    const { default: reflectMetadata } = await import('reflect-metadata');
-    const { dirname } = await import('node:path');
-    const { fileURLToPath } = await import('node:url');
-
-    // Import runtime from compiled dist
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const distPath = resolve(__dirname, '..');
-
-    const {
-      getServerConfig,
-      getTools,
-      getPrompts,
-      getResources,
-      extractJSDoc,
-    } = await import(pathToFileURL(resolve(distPath, 'decorators.js')).href);
-
-    const { parseTypeScriptFileWithCache } = await import(
-      pathToFileURL(resolve(distPath, 'type-parser.js')).href
-    );
-
-    // Load the class
-    const absolutePath = resolve(process.cwd(), filePath);
-    const module = await loadTypeScriptFile(absolutePath);
-
-    const ServerClass =
-      module.default ||
-      Object.values(module).find((exp: any) => typeof exp === 'function' && exp.prototype);
-
-    if (!ServerClass) {
-      // Check if there's a decorated class that wasn't exported
-      const { readFile } = await import('node:fs/promises');
-      const source = await readFile(absolutePath, 'utf-8');
-      const hasDecoratedClass = /@MCPServer(\s*\(\s*\))?/.test(source) && /class\s+\w+/.test(source);
-
-      if (hasDecoratedClass) {
-        errors.push('Found @MCPServer decorated class but it is not exported');
-        errors.push('Fix: Add "export default" before your class declaration');
-        errors.push('Why? Classes must be exported for the module system to make them available');
-      } else {
-        errors.push('No class found in module');
-        errors.push('Make sure your file exports a class decorated with @MCPServer()');
-      }
-      return {
-        success: false,
-        detectedStyle: 'decorator',
-        serverConfig,
-        tools,
-        prompts,
-        resources,
-        transport: useHttp ? 'http' : 'stdio',
-        portConfig: port,
-        warnings,
-        errors,
-      };
-    }
-
-    const config = getServerConfig(ServerClass);
-    if (!config) {
-      errors.push('Class must be decorated with @MCPServer');
-      return {
-        success: false,
-        detectedStyle: 'decorator',
-        serverConfig,
-        tools,
-        prompts,
-        resources,
-        transport: useHttp ? 'http' : 'stdio',
-        portConfig: port,
-        warnings,
-        errors,
-      };
-    }
-
-    // Extract server config
-    serverConfig = {
-      name: config.name || '',
-      version: config.version || '',
-      port: config.port,
-    };
-
-    // Validate server config
-    validateServerConfig(serverConfig.name, serverConfig.version, errors, warnings);
-
-    // Parse the source file to extract types
-    const parsedClass = parseTypeScriptFileWithCache(filePath);
-    const instance = new ServerClass();
-
-    // Helper function to convert method name to kebab-case
-    const toKebabCase = (str: string): string =>
-      str.replace(/([a-z])([A-Z])/g, '$1-$2').replace(/[\s_]+/g, '-').toLowerCase();
-
-    // Helper function to get public methods
-    const getPublicMethods = (instance: any): string[] => {
-      const methods: string[] = [];
-      const proto = Object.getPrototypeOf(instance);
-      Object.getOwnPropertyNames(proto).forEach((name) => {
-        if (name === 'constructor' || name.startsWith('_')) return;
-        if (typeof proto[name] === 'function') {
-          methods.push(name);
-        }
-      });
-      return methods;
-    };
-
-    // Get explicitly decorated items
-    const decoratedTools = new Set(getTools(ServerClass).map((t: any) => t.methodName));
-    const decoratedPrompts = new Set(getPrompts(ServerClass).map((p: any) => p.methodName));
-    const decoratedResources = new Set(getResources(ServerClass).map((r: any) => r.methodName));
-
-    const publicMethods = getPublicMethods(instance);
-
-    // Extract explicitly decorated tools
-    const toolsMetadata = getTools(ServerClass);
-    for (const tool of toolsMetadata) {
-      const method = instance[tool.methodName];
-      if (!method) {
-        warnings.push(`Tool method '${tool.methodName}' not found on instance`);
-        continue;
-      }
-
-      const jsdoc = tool.jsdoc || extractJSDoc(method);
-      const toolName = toKebabCase(tool.methodName);
-
-      tools.push({
-        name: toolName,
-        description: tool.description || jsdoc?.description || `Execute ${tool.methodName}`,
-      });
-    }
-
-    // Auto-register public methods that aren't decorated
-    for (const methodName of publicMethods) {
-      if (
-        decoratedTools.has(methodName) ||
-        decoratedPrompts.has(methodName) ||
-        decoratedResources.has(methodName)
-      ) {
-        continue;
-      }
-
-      const method = instance[methodName];
-      if (!method) continue;
-
-      const jsdoc = extractJSDoc(method);
-      const toolName = toKebabCase(methodName);
-
-      tools.push({
-        name: toolName,
-        description: jsdoc?.description || `Execute ${methodName}`,
-      });
-    }
-
-    // Extract prompts
-    const promptsMetadata = getPrompts(ServerClass);
-    for (const promptMeta of promptsMetadata) {
-      prompts.push({
-        name: promptMeta.methodName,
-        description: promptMeta.description || `Generate ${promptMeta.methodName} prompt`,
-      });
-    }
-
-    // Extract resources
-    const resourcesMetadata = getResources(ServerClass);
-    for (const resourceMeta of resourcesMetadata) {
-      resources.push({
-        name: resourceMeta.name,
-        description: resourceMeta.description || `Resource ${resourceMeta.name}`,
-      });
-    }
-
-    // Validate tools
-    validateToolNames(tools, errors, warnings);
-
-    // Validate port if HTTP is used
-    if (useHttp) {
-      validatePort(port, errors);
-    }
-
-    return {
-      success: errors.length === 0,
-      detectedStyle: 'decorator',
-      serverConfig,
-      tools,
-      prompts,
-      resources,
-      transport: useHttp ? 'http' : 'stdio',
-      portConfig: port,
-      warnings,
-      errors,
-    };
-  } catch (error) {
-    errors.push(`Failed to load decorator server: ${error instanceof Error ? error.message : String(error)}`);
-    return {
-      success: false,
-      detectedStyle: 'decorator',
-      serverConfig,
-      tools,
-      prompts,
-      resources,
-      transport: useHttp ? 'http' : 'stdio',
-      portConfig: port,
-      warnings,
-      errors,
-    };
-  }
-}
-
-/**
  * Perform dry-run for interface API style
  */
 async function dryRunInterface(filePath: string, useHttp: boolean, port: number): Promise<DryRunResult> {
@@ -371,24 +147,39 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
     const distPath = resolve(__dirname, '..');
 
     const { parseInterfaceFile } = await import(
-      pathToFileURL(resolve(distPath, 'api/interface/parser.js')).href
+      pathToFileURL(resolve(distPath, 'parser.js')).href
     );
 
     // Parse the interface file directly to get metadata
     const absolutePath = resolve(process.cwd(), filePath);
     const parsed = parseInterfaceFile(absolutePath);
 
-    // Extract server config
+    // Extract server config (including transport/port/stateful from IServer)
+    let fileTransport: 'stdio' | 'http' | undefined;
+    let filePort: number | undefined;
+
     if (parsed.server) {
       serverConfig = {
         name: parsed.server.name || '',
         version: parsed.server.version || '',
-        port: undefined,
+        port: parsed.server.port,
       };
+      fileTransport = parsed.server.transport;
+      filePort = parsed.server.port;
     }
 
     // Validate server config
     validateServerConfig(serverConfig.name, serverConfig.version, errors, warnings);
+
+    // Determine final transport (CLI flag overrides file config)
+    const finalTransport = useHttp ? 'http' : (fileTransport || 'stdio');
+    // Port priority: CLI --port > file port > default 3000
+    const finalPort = port !== 3000 ? port : (filePort || 3000);
+
+    // If file specifies HTTP transport, note it in warnings (informational)
+    if (fileTransport === 'http' && !useHttp) {
+      warnings.push(`Server configured for HTTP transport (port ${filePort || 3000}) in IServer interface. Will use HTTP unless --stdio flag is provided.`);
+    }
 
     // Extract tool metadata with actual names and descriptions
     for (const tool of parsed.tools) {
@@ -464,8 +255,8 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
     }
 
     // Validate port if HTTP is used
-    if (useHttp) {
-      validatePort(port, errors);
+    if (finalTransport === 'http') {
+      validatePort(finalPort, errors);
     }
 
     return {
@@ -475,8 +266,8 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
       tools,
       prompts,
       resources,
-      transport: useHttp ? 'http' : 'stdio',
-      portConfig: port,
+      transport: finalTransport,
+      portConfig: finalPort,
       warnings,
       errors,
     };
@@ -495,33 +286,6 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
       errors,
     };
   }
-}
-
-/**
- * Perform dry-run for programmatic API style
- */
-async function dryRunProgrammatic(filePath: string, useHttp: boolean, port: number): Promise<DryRunResult> {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  warnings.push('Programmatic servers cannot be validated in dry-run mode');
-  warnings.push('Programmatic servers manage their own configuration and lifecycle');
-
-  return {
-    success: true,
-    detectedStyle: 'programmatic',
-    serverConfig: {
-      name: 'programmatic-server',
-      version: 'unknown',
-    },
-    tools: [],
-    prompts: [],
-    resources: [],
-    transport: useHttp ? 'http' : 'stdio',
-    portConfig: port,
-    warnings,
-    errors,
-  };
 }
 
 /**
@@ -626,28 +390,8 @@ export async function runDryRun(
 ): Promise<void> {
   let result: DryRunResult;
 
-  // Perform dry-run based on API style
-  switch (style) {
-    case 'interface':
-      result = await dryRunInterface(filePath, useHttp, port);
-      break;
-    case 'programmatic':
-      result = await dryRunProgrammatic(filePath, useHttp, port);
-      break;
-    default:
-      result = {
-        success: false,
-        detectedStyle: style,
-        serverConfig: { name: '', version: '' },
-        tools: [],
-        prompts: [],
-        resources: [],
-        transport: useHttp ? 'http' : 'stdio',
-        portConfig: port,
-        warnings: [],
-        errors: [`Unknown API style: ${style}`],
-      };
-  }
+  // Perform dry-run for interface API
+  result = await dryRunInterface(filePath, useHttp, port);
 
   // Output results
   if (jsonOutput) {
@@ -660,11 +404,3 @@ export async function runDryRun(
   process.exit(result.errors.length > 0 ? 1 : 0);
 }
 
-// Legacy adapter functions for backward compatibility
-export async function dryRunDecoratorAdapter(filePath: string, useHttp: boolean, port: number): Promise<void> {
-  await runDryRun(filePath, 'decorator', useHttp, port, false);
-}
-
-export async function dryRunProgrammaticAdapter(filePath: string, useHttp: boolean, port: number): Promise<void> {
-  await runDryRun(filePath, 'programmatic', useHttp, port, false);
-}

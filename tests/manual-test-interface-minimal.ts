@@ -2,7 +2,7 @@
  * Manual test for interface-minimal.ts example
  */
 
-import { loadInterfaceServer } from '../dist/src/api/interface/index.js';
+import { loadInterfaceServer } from '../dist/src/adapter.js';
 
 async function testInterfaceMinimal() {
   console.log('\n=== Testing interface-minimal.ts ===\n');

@@ -1,0 +1,107 @@
+{
+  "name": "mcp-test-server",
+  "version": "1.0.0",
+  "port": 3002,
+  "tools": [
+    {
+      "name": "greet",
+      "description": "A simple greeting tool (file handler)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name to greet"
+          }
+        },
+        "required": ["name"]
+      },
+      "handler": {
+        "type": "file",
+        "path": "./examples/handlers/greetHandler.ts"
+      }
+    },
+    {
+      "name": "calculate",
+      "description": "Performs basic calculations (file handler)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation to perform",
+            "enum": ["add", "subtract", "multiply", "divide"]
+          },
+          "a": {
+            "type": "number",
+            "description": "First number"
+          },
+          "b": {
+            "type": "number",
+            "description": "Second number"
+          }
+        },
+        "required": ["operation", "a", "b"]
+      },
+      "handler": {
+        "type": "file",
+        "path": "./examples/handlers/calculateHandler.ts"
+      }
+    },
+    {
+      "name": "echo",
+      "description": "Echoes back the input (inline handler)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Message to echo"
+          }
+        },
+        "required": ["message"]
+      },
+      "handler": {
+        "type": "inline",
+        "code": "async (args) => ({ content: [{ type: 'text', text: `Echo: ${args.message}` }] })"
+      }
+    },
+    {
+      "name": "fetch-joke",
+      "description": "Fetches a random joke from an API (HTTP handler)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "handler": {
+        "type": "http",
+        "url": "https://official-joke-api.appspot.com/random_joke",
+        "method": "GET",
+        "timeout": 5000
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "test-greeting",
+      "description": "A test greeting prompt",
+      "arguments": [
+        {
+          "name": "name",
+          "description": "Name to greet",
+          "required": true
+        }
+      ],
+      "template": "Hello {{name}}, this is a test prompt!"
+    }
+  ],
+  "resources": [
+    {
+      "uri": "test://resource/info",
+      "name": "Test Resource",
+      "description": "A simple test resource",
+      "mimeType": "text/plain",
+      "content": "This is a test resource for the MCP framework."
+    }
+  ]
+}

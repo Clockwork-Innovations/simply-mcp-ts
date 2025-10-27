@@ -53,7 +53,7 @@ run_checker_test() {
   local test_script="$2"
 
   cat > "$TEST_TEMP_DIR/test-runner.ts" <<EOFTEST
-import { checkDependencies, isPackageInstalled, getInstalledVersion, verifyVersion } from '$MCP_ROOT/core/dependency-checker.js';
+import { checkDependencies, isPackageInstalled, getInstalledVersion, verifyVersion } from '\$MCP_ROOT/features/dependencies/dependency-checker.js';
 
 async function runTest() {
   try {

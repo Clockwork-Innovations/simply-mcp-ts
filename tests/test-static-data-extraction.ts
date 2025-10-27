@@ -2,12 +2,12 @@
  * Test static data extraction from interface types
  */
 
-import { parseInterfaceFile } from '../dist/src/api/interface/parser.js';
+import { parseInterfaceFile } from '../dist/src/server/parser.js';
 import { writeFileSync, unlinkSync } from 'fs';
 import { resolve } from 'path';
 
 const TEST_CODE = `
-import type { IResource, IServer } from '../src/api/interface/types.js';
+import type { IResource, IServer } from '../src/interface-types.js';
 
 // Test 1: Simple string literal
 interface SimpleResource extends IResource {

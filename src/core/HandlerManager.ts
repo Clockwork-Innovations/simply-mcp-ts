@@ -10,7 +10,7 @@ import {
   HandlerResult,
   HandlerExecutionOptions,
   Logger,
-} from './types.js';
+} from '../types/handler.js';
 import {
   HandlerExecutionError,
   HandlerConfigError,

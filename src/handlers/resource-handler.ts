@@ -5,8 +5,8 @@
  * Supports both static resources (pure data in interface) and dynamic resources (requiring implementation).
  */
 
-import type { ParsedResource } from './parser.js';
-import type { BuildMCPServer } from '../programmatic/BuildMCPServer.js';
+import type { ParsedResource } from '../server/parser.js';
+import type { BuildMCPServer } from '../server/builder-server.js';
 
 /**
  * Register a static resource with the MCP server

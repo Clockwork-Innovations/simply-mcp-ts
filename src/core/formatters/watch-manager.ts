@@ -3,9 +3,9 @@
  * Feature 4.2: Watch Mode
  */
 
-import * as chokidar from 'chokidar';
+import type * as chokidar from 'chokidar';
 import { bundle } from '../bundler.js';
-import { BundleOptions, BundleResult } from '../bundle-types.js';
+import { BundleOptions, BundleResult } from '../../features/dependencies/bundle-types.js';
 import { ChildProcess, spawn } from 'child_process';
 
 /**
@@ -75,6 +75,18 @@ let serverProcess: ChildProcess | null = null;
  */
 export async function startWatch(options: WatchOptions): Promise<void> {
   const { bundleOptions, poll, interval, ignored, restart, onRebuild } = options;
+
+  // Import chokidar with error handling
+  let chokidar: typeof import('chokidar');
+  try {
+    chokidar = await import('chokidar');
+  } catch (error) {
+    throw new Error(
+      'Watch mode requires chokidar.\n' +
+      'Install it with: npm install chokidar\n\n' +
+      'Or run without --watch flag.'
+    );
+  }
 
   console.log('[watch] Build started...');
 

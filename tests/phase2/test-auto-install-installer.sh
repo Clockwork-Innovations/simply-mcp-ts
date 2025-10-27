@@ -54,7 +54,7 @@ run_installer_test() {
   local test_script="$2"
 
   cat > "$TEST_TEMP_DIR/test-runner.ts" <<EOFTEST
-import { installDependencies } from '$MCP_ROOT/core/dependency-installer.js';
+import { installDependencies } from '\$MCP_ROOT/features/dependencies/dependency-installer.js';
 
 async function runTest() {
   try {

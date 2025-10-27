@@ -7,7 +7,7 @@ import type { CommandModule, ArgumentsCamelCase } from 'yargs';
 import { bundle } from '../core/bundler.js';
 import { loadConfig, mergeConfig, validateBundleOptions } from '../core/config-loader.js';
 import { loadCLIConfig } from './cli-config-loader.js';
-import { BundleFormat, SourceMapType } from '../core/bundle-types.js';
+import { BundleFormat, SourceMapType } from '../features/dependencies/bundle-types.js';
 import { detectEntryPoint } from '../core/entry-detector.js';
 
 interface BundleArgs {

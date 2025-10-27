@@ -49,7 +49,7 @@ run_test() {
 
 # Start server in background
 echo "Starting MCP stateless HTTP server..."
-npx tsx src/servers/statelessServer.ts src/config-test.json > /tmp/mcp-stateless-server.log 2>&1 &
+npx tsx tests/fixtures/servers/statelessServer.ts tests/fixtures/config/config-test.json > /tmp/mcp-stateless-server.log 2>&1 &
 SERVER_PID=$!
 echo "Server PID: $SERVER_PID"
 echo ""
@@ -88,7 +88,7 @@ if [ $WAIT_COUNT -eq $MAX_WAIT ]; then
   echo "Server log:"
   cat /tmp/mcp-stateless-server.log
   # Try to find and kill any server processes
-  pkill -f "tsx src/servers/statelessServer.ts src/config-test.json" 2>/dev/null || true
+  pkill -f "tsx tests/fixtures/servers/statelessServer.ts tests/fixtures/config/config-test.json" 2>/dev/null || true
   exit 1
 fi
 echo ""

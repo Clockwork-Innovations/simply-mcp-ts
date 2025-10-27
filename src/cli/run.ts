@@ -23,7 +23,7 @@ import {
 /**
  * API style types
  */
-export type APIStyle = 'interface' | 'programmatic';
+export type APIStyle = 'interface';
 
 /**
  * Dynamically load TypeScript file
@@ -68,14 +68,14 @@ export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
   try {
     const content = await readFile(filePath, 'utf-8');
 
-    // Check for interface API (highest priority)
+    // Check for interface API
     // Look for ITool, IPrompt, IResource, or IServer interface extensions or implementations
     if (/(extends|implements)\s+(ITool|IPrompt|IResource|IServer)/.test(content)) {
       return 'interface';
     }
 
-    // Default to programmatic API (fallback)
-    return 'programmatic';
+    // Default to interface API
+    return 'interface';
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
       console.error(`Error: Server file not found: ${filePath}`);
@@ -93,10 +93,11 @@ async function runInterfaceAdapter(
   useHttp: boolean,
   useHttpStateless: boolean,
   port: number,
-  verbose: boolean = false
+  verbose: boolean = false,
+  uiWatch: boolean = false
 ): Promise<void> {
   // Import interface adapter
-  const { loadInterfaceServer } = await import('../api/interface/index.js');
+  const { loadInterfaceServer } = await import('../server/adapter.js');
   const { startServer, displayServerInfo } = await import('./adapter-utils.js');
 
   // Load the interface server
@@ -110,6 +111,7 @@ async function runInterfaceAdapter(
     const server = await loadInterfaceServer({
       filePath: absolutePath,
       verbose: verbose || false,
+      uiWatch: uiWatch ? { enabled: true, verbose } : undefined,
     });
 
     displayServerInfo(server);
@@ -119,69 +121,6 @@ async function runInterfaceAdapter(
     if (error instanceof Error && error.stack && verbose) {
       console.error('[RunCommand] Stack:', error.stack);
     }
-    process.exit(2);
-  }
-}
-
-/**
- * Check if a value is a BuildMCPServer server instance
- */
-function isSimplyMCPInstance(value: any): boolean {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  // Check for required BuildMCPServer instance methods
-  return (
-    typeof value.addTool === 'function' &&
-    typeof value.addPrompt === 'function' &&
-    typeof value.addResource === 'function' &&
-    typeof value.start === 'function' &&
-    typeof value.getInfo === 'function' &&
-    typeof value.getStats === 'function'
-  );
-}
-
-/**
- * Run a server file with the programmatic API (direct execution)
- */
-async function runProgrammaticAdapter(
-  filePath: string,
-  useHttp: boolean,
-  useHttpStateless: boolean,
-  port: number,
-  verbose: boolean = false
-): Promise<void> {
-  const absolutePath = resolve(process.cwd(), filePath);
-
-  try {
-    // Import the module
-    const module = await loadTypeScriptFile(absolutePath);
-
-    // Check if module exports a BuildMCPServer instance
-    const serverInstance = module.default || module.server;
-
-    if (serverInstance && isSimplyMCPInstance(serverInstance)) {
-      // Start exported instance with CLI flags
-      if (verbose) {
-        console.error('[RunCommand] Detected exported BuildMCPServer instance');
-        console.error(`[RunCommand] Transport: ${useHttp ? 'HTTP' : 'STDIO'}`);
-        if (useHttp) {
-          console.error(`[RunCommand] Port: ${port}`);
-        }
-      }
-
-      const { startServer, displayServerInfo } = await import('./adapter-utils.js');
-      displayServerInfo(serverInstance);
-      await startServer(serverInstance, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
-    } else {
-      // Preserve current behavior for self-managing servers
-      console.error(
-        '[RunCommand] Note: Programmatic servers manage their own transport configuration'
-      );
-    }
-  } catch (error) {
-    console.error('[RunCommand] Failed to run server:', error);
     process.exit(2);
   }
 }
@@ -366,6 +305,7 @@ async function spawnWithInspector(
   if (argv.watch) scriptArgs.push('--watch');
   if (argv['watch-poll']) scriptArgs.push('--watch-poll');
   if (argv['watch-interval']) scriptArgs.push('--watch-interval', String(argv['watch-interval']));
+  if (argv['ui-watch']) scriptArgs.push('--ui-watch');
 
   console.error('[Debug] Starting server with Node.js inspector...');
   console.error(`[Debug] Inspector will listen on port ${inspectPort}`);
@@ -455,7 +395,7 @@ export const runCommand: CommandModule = {
       })
       .option('style', {
         describe: 'Force specific API style',
-        choices: ['interface', 'programmatic'] as const,
+        choices: ['interface'] as const,
         type: 'string',
       })
       .option('verbose', {
@@ -498,6 +438,11 @@ export const runCommand: CommandModule = {
       .option('watch-interval', {
         describe: 'Polling interval in milliseconds',
         type: 'number',
+      })
+      .option('ui-watch', {
+        describe: 'Enable UI file watching and hot reload for UI resources',
+        type: 'boolean',
+        default: false,
       })
       .option('auto-install', {
         describe: 'Auto-install dependencies for package bundles (default: true)',
@@ -562,6 +507,7 @@ export const runCommand: CommandModule = {
       if (argv.watch) scriptArgs.push('--watch');
       if (argv['watch-poll']) scriptArgs.push('--watch-poll');
       if (argv['watch-interval']) scriptArgs.push('--watch-interval', String(argv['watch-interval']));
+      if (argv['ui-watch']) scriptArgs.push('--ui-watch');
       if (argv.inspect) scriptArgs.push('--inspect');
       if (argv['inspect-brk']) scriptArgs.push('--inspect-brk');
       if (argv['inspect-port']) scriptArgs.push('--inspect-port', String(argv['inspect-port']));
@@ -671,6 +617,7 @@ export const runCommand: CommandModule = {
       const watch = mergedOptions.watch ?? false;
       const watchPoll = mergedOptions.watchPoll ?? false;
       const watchInterval = mergedOptions.watchInterval ?? 100;
+      const uiWatch = argv['ui-watch'] as boolean ?? false;
       const dryRun = argv['dry-run'] as boolean;
       const inspect = argv.inspect as boolean;
       const inspectBrk = argv['inspect-brk'] as boolean;
@@ -735,12 +682,12 @@ export const runCommand: CommandModule = {
       const isBundle = await isPackageBundle(filePath);
 
       if (isBundle) {
-        // Run as package bundle
+        // Run as package bundle (always interface style)
         await runPackageBundle(filePath, {
           http: useHttp,
           httpStateless: useHttpStateless,
           port,
-          style: forceStyle,
+          style: 'interface',
           verbose,
           autoInstall: argv['auto-install'] ?? true,
           packageManager: argv['package-manager'] as any,
@@ -749,8 +696,8 @@ export const runCommand: CommandModule = {
         return;
       }
 
-      // Detect or use forced style
-      const style = forceStyle || (await detectAPIStyle(filePath));
+      // Detect or use forced style (always interface now)
+      const style: APIStyle = 'interface';
 
       if (verbose) {
         console.error(`[RunCommand] Detected API style: ${style}`);
@@ -759,17 +706,8 @@ export const runCommand: CommandModule = {
         }
         // Output loading message early so it appears even if respawn happens
         const absolutePath = resolve(process.cwd(), filePath);
-        switch (style) {
-          case 'interface':
-            console.error('[Adapter] Loading interface server from:', filePath);
-            break;
-          case 'programmatic':
-            console.error('[Adapter] Loading server from:', filePath);
-            break;
-        }
+        console.error('[Adapter] Loading interface server from:', filePath);
         // Also output transport info early
-        // Note: For programmatic adapters, the server file manages its own transport,
-        // but we still report what was requested via CLI flags
         console.error(`[Adapter] Transport: ${useHttp ? 'HTTP' : 'STDIO'}`);
         if (useHttp) {
           console.error(`[Adapter] Port: ${port}`);
@@ -781,7 +719,7 @@ export const runCommand: CommandModule = {
         const { startWatchMode } = await import('./watch-mode.js');
         await startWatchMode({
           file: filePath,
-          style,
+          style: 'interface',
           http: useHttp,
           httpStateless: useHttpStateless,
           port,
@@ -796,7 +734,7 @@ export const runCommand: CommandModule = {
       if (dryRun) {
         const jsonOutput = argv.json as boolean;
         const { runDryRun } = await import('./dry-run.js');
-        await runDryRun(filePath, style, useHttp, port, jsonOutput);
+        await runDryRun(filePath, 'interface', useHttp, port, jsonOutput);
         return;
       }
 
@@ -807,15 +745,8 @@ export const runCommand: CommandModule = {
         return; // Never reached, spawnWithInspector exits the process
       }
 
-      // Run appropriate adapter
-      switch (style) {
-        case 'interface':
-          await runInterfaceAdapter(filePath, useHttp, useHttpStateless, port, verbose);
-          break;
-        case 'programmatic':
-          await runProgrammaticAdapter(filePath, useHttp, useHttpStateless, port, verbose);
-          break;
-      }
+      // Run interface adapter
+      await runInterfaceAdapter(filePath, useHttp, useHttpStateless, port, verbose, uiWatch);
     } catch (error) {
       console.error('[RunCommand] Error:', error);
       process.exit(2);

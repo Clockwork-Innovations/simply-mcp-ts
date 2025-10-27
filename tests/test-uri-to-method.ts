@@ -2,7 +2,7 @@
  * Test URI to method name conversion
  */
 
-import { snakeToCamel } from '../dist/src/api/interface/parser.js';
+import { snakeToCamel } from '../dist/src/server/parser.js';
 
 function uriToMethodName(uri: string): string {
   return snakeToCamel(

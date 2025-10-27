@@ -16,7 +16,7 @@
  * Usage: npx tsx tests/integration/test-interface-api.ts
  */
 
-import { loadInterfaceServer } from '../../dist/src/api/interface/index.js';
+import { loadInterfaceServer } from '../../dist/src/adapter.js';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 

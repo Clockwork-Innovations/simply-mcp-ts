@@ -133,15 +133,18 @@ docs(README): update installation instructions
 ## 🏗️ Project Structure
 
 ```
-simple-mcp/
-├── mcp/
+simply-mcp-ts/
+├── src/
+│   ├── api/
+│   │   ├── interface/     # Interface API
+│   │   ├── decorator/     # Decorator API
+│   │   └── programmatic/  # Programmatic API
 │   ├── core/              # Core framework code
-│   ├── decorators.ts      # Decorator API
-│   ├── single-file-types.ts # Functional API
-│   ├── SimplyMCP.ts       # Programmatic API
-│   ├── examples/          # Example implementations
-│   ├── tests/             # Test suite
-│   └── docs/              # Documentation
+│   ├── transports/        # Transport implementations
+│   └── types/             # Shared types
+├── examples/              # Example implementations
+├── tests/                 # Test suite
+├── docs/                  # Documentation
 ├── dist/                  # Compiled output (git-ignored)
 ├── package.json
 ├── tsconfig.json

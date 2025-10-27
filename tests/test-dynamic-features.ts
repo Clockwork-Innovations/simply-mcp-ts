@@ -5,7 +5,7 @@
  * when MCP requests (prompts/get, resources/read) are received.
  */
 
-import { loadInterfaceServer } from '../src/api/interface/adapter.js';
+import { loadInterfaceServer } from '../src/adapter.js';
 import { resolve } from 'path';
 
 const filePath = resolve('examples/interface-comprehensive.ts');

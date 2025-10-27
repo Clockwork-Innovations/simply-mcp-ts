@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { UIWatchManager } from '../../src/core/ui-watch-manager.js';
-import { invalidateReactCache, clearReactCache, getReactCacheStats } from '../../src/core/ui-react-compiler.js';
-import { invalidateFileCache, clearFileCache, getFileCacheStats } from '../../src/core/ui-file-resolver.js';
+import { UIWatchManager } from '../../src/features/ui/ui-watch-manager.js';
+import { invalidateReactCache, clearReactCache, getReactCacheStats } from '../../src/features/ui/ui-react-compiler.js';
+import { invalidateFileCache, clearFileCache, getFileCacheStats } from '../../src/features/ui/ui-file-resolver.js';
 import { join } from 'path';
 
 describe('UIWatchManager', () => {
@@ -257,7 +257,7 @@ describe('createWatchManager', () => {
   it('should create and start manager', async () => {
     // This test requires chokidar to be installed
     // We'll just import to verify the function exists
-    const { createWatchManager } = await import('../../src/core/ui-watch-manager.js');
+    const { createWatchManager } = await import('../../src/features/ui/ui-watch-manager.js');
     expect(typeof createWatchManager).toBe('function');
   });
 });

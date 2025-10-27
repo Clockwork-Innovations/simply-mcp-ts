@@ -4,11 +4,11 @@
  * CRITICAL: All tests MUST call real implementation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { SimplyMCP } from '../../SimplyMCP.js';
-import { checkDependencies, isPackageInstalled, getInstalledVersion } from '../../core/dependency-checker.js';
-import { detectPackageManager } from '../../core/package-manager-detector.js';
-import { installDependencies } from '../../core/dependency-installer.js';
+import { checkDependencies, isPackageInstalled, getInstalledVersion } from '../../features/dependencies/dependency-checker.js';
+import { detectPackageManager } from '../../features/dependencies/package-manager-detector.js';
+import { installDependencies } from '../../features/dependencies/dependency-installer.js';
 import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 

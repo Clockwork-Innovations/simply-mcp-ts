@@ -2,6 +2,11 @@
 
 Complete step-by-step instructions for deploying SimplyMCP to GitHub and npm.
 
+**Production-Ready Examples:**
+- Production optimized: [examples/interface-production-optimized.ts](../../examples/interface-production-optimized.ts)
+- HTTP with auth: [examples/interface-http-auth.ts](../../examples/interface-http-auth.ts)
+- Stateless HTTP: [examples/interface-http-stateless.ts](../../examples/interface-http-stateless.ts)
+
 ## Prerequisites
 
 Before deploying, ensure you have:
@@ -17,17 +22,17 @@ Before deploying, ensure you have:
 ### 1. Verify Build
 
 ```bash
-cd /mnt/Shared/cs-projects/simply-mcp
+cd /mnt/Shared/cs-projects/simply-mcp-ts
 
 # Install dependencies
-npm install --legacy-peer-deps
+npm install
 
 # Clean and rebuild
 npm run clean
 npm run build
 
 # Verify dist/ was created
-ls -la dist/mcp/
+ls -la dist/
 ```
 
 **Expected output**: You should see `index.js`, `index.d.ts`, and other compiled files.
@@ -38,13 +43,9 @@ ls -la dist/mcp/
 # Run all tests
 npm test
 
-# Run specific tests
-npm run test:stdio
-npm run test:http
-
-# Test examples
-npm run dev
-npm run dev:class
+# Test Interface API examples
+npx tsx examples/interface-minimal.ts
+npx tsx examples/interface-protocol-comprehensive.ts
 ```
 
 ### 3. Test as Module (Optional but Recommended)
@@ -58,16 +59,16 @@ cd /tmp/test-simply-mcp
 npm init -y
 
 # Install from local directory
-npm install /mnt/Shared/cs-projects/simply-mcp
+npm install /mnt/Shared/cs-projects/simply-mcp-ts
 
-# Create test file
-cat > test.js << 'EOF'
-import { BuildMCPServer } from 'simply-mcp';
+# Create test file using Interface API
+cat > test.ts << 'EOF'
+import { MCPInterface } from 'simply-mcp';
 console.log('SimplyMCP imported successfully!');
 EOF
 
 # Run test
-node test.js
+npx tsx test.ts
 ```
 
 ## 🚀 GitHub Deployment
@@ -78,8 +79,8 @@ node test.js
    - Or create under your personal account if you don't have org access yet
 
 2. **Repository Settings**:
-   - Name: `simply-mcp`
-   - Description: "A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript"
+   - Name: `simply-mcp-ts`
+   - Description: "A modern, type-safe Model Context Protocol (MCP) server framework for TypeScript with Interface API"
    - Visibility: **Public**
    - ❌ Do NOT initialize with README (we have one)
 
@@ -88,7 +89,7 @@ node test.js
 ### Step 2: Prepare Git Repository
 
 ```bash
-cd /mnt/Shared/cs-projects/simply-mcp
+cd /mnt/Shared/cs-projects/simply-mcp-ts
 
 # Check current status
 git status
@@ -100,14 +101,13 @@ git add .
 git status
 
 # Create initial commit
-git commit -m "Initial commit: SimplyMCP v1.0.0
+git commit -m "Initial commit: SimplyMCP v3.x.x
 
-- Multiple API styles (Decorator, Functional, Programmatic)
-- Multiple transports (stdio, HTTP, SSE)
+- Interface API for declarative MCP server definitions
 - Full TypeScript support with Zod validation
 - Binary content support
 - LLM sampling and progress reporting
-- Comprehensive documentation and tests"
+- Comprehensive documentation and examples"
 ```
 
 ### Step 3: Push to GitHub
@@ -129,7 +129,7 @@ git push -u origin main
 
 ```bash
 # Replace 'yourusername' with your GitHub username
-git remote add origin https://github.com/yourusername/simply-mcp.git
+git remote add origin https://github.com/yourusername/simply-mcp-ts.git
 git branch -M main
 git push -u origin main
 ```
@@ -143,26 +143,25 @@ git push -u origin main
 
 ```bash
 # Create annotated tag
-git tag -a v1.0.0 -m "Release v1.0.0
+git tag -a v3.x.x -m "Release v3.x.x
 
 SimplyMCP - A modern MCP server framework for TypeScript
 
 Features:
-- Multiple API styles
-- Multiple transports
-- Full type safety
+- Interface API for declarative server definitions
+- Full type safety with TypeScript and Zod
 - Binary content support
-- Enhanced protocol features"
+- Enhanced protocol features (sampling, progress reporting)"
 
 # Push tag to GitHub
-git push origin v1.0.0
+git push origin v3.x.x
 ```
 
 ### Step 5: Create GitHub Release
 
 1. Go to: `https://github.com/clockwork-innovations/simply-mcp-ts/releases/new`
-2. Choose tag: `v1.0.0`
-3. Release title: `SimplyMCP v1.0.0`
+2. Choose tag: `v3.x.x`
+3. Release title: `SimplyMCP v3.x.x`
 4. Description: Copy from `CHANGELOG.md`
 5. Click: "Publish release"
 
@@ -213,11 +212,12 @@ npm pack --dry-run
 npm pack
 
 # Extract and inspect
-tar -tzf simply-mcp-1.0.0.tgz
+tar -tzf simply-mcp-3.x.x.tgz
 
 # Should include:
 # - dist/
-# - mcp/ (source)
+# - src/ (source)
+# - examples/ (Interface API examples)
 # - README.md
 # - LICENSE
 # - package.json
@@ -237,7 +237,7 @@ npm publish --access public
 
 **Expected output:**
 ```
-+ simply-mcp@1.0.0
++ simply-mcp@3.x.x
 ```
 
 ### Step 5: Verify Publication
@@ -250,6 +250,14 @@ npm view simply-mcp
 cd /tmp/test-publish
 npm init -y
 npm install simply-mcp
+
+# Test Interface API import
+cat > test.ts << 'EOF'
+import { MCPInterface } from 'simply-mcp';
+console.log('Import successful!');
+EOF
+
+npx tsx test.ts
 ```
 
 ## 🔍 Post-Deployment Verification
@@ -259,8 +267,8 @@ npm install simply-mcp
 - [ ] Repository is public
 - [ ] README displays correctly
 - [ ] License file is present
-- [ ] Release v1.0.0 is published
-- [ ] Repository topics/tags are set (mcp, typescript, ai, llm)
+- [ ] Release v3.x.x is published
+- [ ] Repository topics/tags are set (mcp, model-context-protocol, typescript, ai, llm, interface-api)
 - [ ] Description is set
 - [ ] Issues are enabled
 - [ ] Discussions enabled (optional)
@@ -269,8 +277,8 @@ npm install simply-mcp
 
 - [ ] Package appears on npm: `https://www.npmjs.com/package/simply-mcp`
 - [ ] Documentation tab shows README
-- [ ] Version is 1.0.0
-- [ ] All files are present
+- [ ] Version is 3.x.x
+- [ ] All files are present (dist/, examples/, src/)
 - [ ] Can be installed: `npm install simply-mcp`
 
 ### Functional Tests
@@ -282,49 +290,57 @@ cd /tmp/test-deployment
 npm init -y
 
 # Install published package
-npm install simply-mcp
+npm install simply-mcp zod
 
-# Test Decorator API
-cat > test-decorator.ts << 'EOF'
-import { MCPServer } from 'simply-mcp';
-
-@MCPServer({ name: 'test', version: '1.0.0' })
-class TestServer {
-  hello(name: string): string {
-    return `Hello, ${name}!`;
-  }
-}
-EOF
-
-# Test Functional API
-cat > test-functional.ts << 'EOF'
-import { defineMCP } from 'simply-mcp';
+# Test Interface API - Basic
+cat > test-interface-minimal.ts << 'EOF'
+import { MCPInterface } from 'simply-mcp';
 import { z } from 'zod';
 
-export default defineMCP({
-  name: 'test',
+const server: MCPInterface = {
+  name: 'test-server',
   version: '1.0.0',
-  tools: [{
-    name: 'greet',
-    description: 'Greet user',
-    parameters: z.object({ name: z.string() }),
-    execute: async (args) => `Hello, ${args.name}!`
-  }]
-});
+  tools: {
+    greet: {
+      description: 'Greet a user',
+      parameters: z.object({
+        name: z.string().describe('User name')
+      }),
+      execute: async ({ name }) => ({
+        content: [{ type: 'text', text: `Hello, ${name}!` }]
+      })
+    }
+  }
+};
+
+export default server;
 EOF
 
-# Test Programmatic API
-cat > test-programmatic.ts << 'EOF'
-import { BuildMCPServer } from 'simply-mcp';
+# Test Interface API - With Resources
+cat > test-interface-resources.ts << 'EOF'
+import { MCPInterface } from 'simply-mcp';
 import { z } from 'zod';
 
-const server = new BuildMCPServer({ name: 'test', version: '1.0.0' });
-server.addTool({
-  name: 'echo',
-  description: 'Echo input',
-  parameters: z.object({ msg: z.string() }),
-  execute: async (args) => args.msg
-});
+const server: MCPInterface = {
+  name: 'resource-server',
+  version: '1.0.0',
+  resources: {
+    'config://settings': {
+      name: 'App Settings',
+      description: 'Configuration settings',
+      mimeType: 'application/json',
+      get: async () => ({
+        contents: [{
+          uri: 'config://settings',
+          mimeType: 'application/json',
+          text: JSON.stringify({ theme: 'dark' })
+        }]
+      })
+    }
+  }
+};
+
+export default server;
 EOF
 
 # Run type check
@@ -338,7 +354,7 @@ After successful deployment:
 ### Update Repository
 
 1. **Add topics** on GitHub:
-   - mcp, model-context-protocol, typescript, ai, llm, claude, anthropic
+   - mcp, model-context-protocol, typescript, ai, llm, claude, anthropic, interface-api
 
 2. **Configure repository**:
    - Enable issues
@@ -351,13 +367,13 @@ After successful deployment:
 **Social Media Posts:**
 
 ```
-🚀 Introducing SimplyMCP v1.0.0!
+🚀 SimplyMCP v3.x.x - Interface API Release!
 
 A modern, type-safe Model Context Protocol server framework for TypeScript.
 
-✨ 3 API styles (Decorator, Functional, Programmatic)
-🔌 Multiple transports (stdio, HTTP, SSE)
-💪 Full TypeScript + Zod validation
+✨ Declarative Interface API for clean server definitions
+🔌 Full MCP protocol support (tools, resources, prompts)
+💪 TypeScript + Zod validation
 📦 npm install simply-mcp
 
 #MCP #TypeScript #AI #Claude
@@ -375,10 +391,10 @@ https://github.com/clockwork-innovations/simply-mcp-ts
 - [ ] Anthropic Discord/Community
 
 **Blog Post** (optional):
-- Write detailed introduction
-- Comparison with alternatives
-- Tutorial with examples
-- Use cases
+- Write detailed introduction on Interface API
+- Tutorial with Interface API examples
+- Migration guide for existing users
+- Use cases and best practices
 
 ## 🔧 Troubleshooting
 
@@ -400,13 +416,15 @@ https://github.com/clockwork-innovations/simply-mcp-ts
 - Contact npm support if you own the namespace
 
 **4. TypeScript errors in published package**
-- Users may need `--legacy-peer-deps` for zod version conflict
-- Document in README installation section
+- Ensure proper TypeScript configuration
+- Verify Zod peer dependencies are installed
+- Check Interface API type definitions are exported
 
 **5. Module not found errors**
 - Verify `main`, `module`, `types` fields in package.json
 - Check `exports` field configuration
 - Ensure dist/ was included in published package
+- Confirm Interface API exports are accessible
 
 ## 📞 Support
 
@@ -421,17 +439,17 @@ If you encounter issues:
 ## ✅ Final Checklist
 
 - [ ] Code pushed to GitHub
-- [ ] Release v1.0.0 created
+- [ ] Release v3.x.x created
 - [ ] Package published to npm
-- [ ] Installation tested
-- [ ] Documentation verified
+- [ ] Installation tested with Interface API examples
+- [ ] Interface API documentation verified
 - [ ] Social media announcement
 - [ ] Repository configured (topics, description)
 - [ ] Issues/Discussions enabled
-- [ ] Celebrated! 🎉
+- [ ] Interface API examples working in published package
 
 ---
 
 **Author**: Nicholas Marinkovich, MD
 **Organization**: Clockwork Innovations, LLC
-**Date**: 2025-10-02
+**Last Updated**: 2025-10-23

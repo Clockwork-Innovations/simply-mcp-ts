@@ -4,8 +4,9 @@
  * Tests TypeScript type -> Zod schema conversion with various types
  */
 
+import { describe, it, expect } from '@jest/globals';
 import ts from 'typescript';
-import { typeNodeToZodSchema } from '../../../src/api/interface/schema-generator.js';
+import { typeNodeToZodSchema } from '../../../src/core/schema-generator.js';
 import { z } from 'zod';
 
 // Helper to create TypeScript AST for testing
@@ -31,44 +32,69 @@ function createTypeNode(code: string): { typeNode: ts.TypeNode; sourceFile: ts.S
   return { typeNode, sourceFile };
 }
 
-console.log('\nSchema Generation Tests\n');
+describe('Schema Generation Tests', () => {
+  describe('Primitive Types', () => {
+    it('should convert string type to z.string()', () => {
+      const { typeNode, sourceFile } = createTypeNode('string');
+      const schema = typeNodeToZodSchema(typeNode, sourceFile);
+      expect(schema).toBeDefined();
+      expect(schema).toContain('z.string()');
+    });
 
-// Test 1: Primitive types
-console.log('Test 1: Primitive Types');
-const { typeNode: stringType, sourceFile: strSf } = createTypeNode('string');
-const stringSchema = typeNodeToZodSchema(stringType, strSf);
-console.log('✓ string -> z.string()');
+    it('should convert number type to z.number()', () => {
+      const { typeNode, sourceFile } = createTypeNode('number');
+      const schema = typeNodeToZodSchema(typeNode, sourceFile);
+      expect(schema).toBeDefined();
+      expect(schema).toContain('z.number()');
+    });
 
-const { typeNode: numberType, sourceFile: numSf } = createTypeNode('number');
-const numberSchema = typeNodeToZodSchema(numberType, numSf);
-console.log('✓ number -> z.number()');
+    it('should convert boolean type to z.boolean()', () => {
+      const { typeNode, sourceFile } = createTypeNode('boolean');
+      const schema = typeNodeToZodSchema(typeNode, sourceFile);
+      expect(schema).toBeDefined();
+      expect(schema).toContain('z.boolean()');
+    });
+  });
 
-const { typeNode: boolType, sourceFile: boolSf } = createTypeNode('boolean');
-const boolSchema = typeNodeToZodSchema(boolType, boolSf);
-console.log('✓ boolean -> z.boolean()');
+  describe('Optional Types', () => {
+    it('should convert string | undefined to z.string().optional()', () => {
+      const { typeNode, sourceFile } = createTypeNode('string | undefined');
+      const schema = typeNodeToZodSchema(typeNode, sourceFile);
+      expect(schema).toBeDefined();
+      expect(schema).toContain('z.string()');
+      expect(schema).toContain('optional()');
+    });
+  });
 
-// Test 2: Optional types
-console.log('\nTest 2: Optional Types');
-const { typeNode: optType, sourceFile: optSf } = createTypeNode('string | undefined');
-const optSchema = typeNodeToZodSchema(optType, optSf);
-console.log('✓ string | undefined -> z.string().optional()');
+  describe('Object Types', () => {
+    it('should convert object literal to z.object()', () => {
+      const { typeNode, sourceFile } = createTypeNode('{ name: string; age: number }');
+      const schema = typeNodeToZodSchema(typeNode, sourceFile);
+      expect(schema).toBeDefined();
+      expect(schema).toContain('z.object(');
+      expect(schema).toContain('name');
+      expect(schema).toContain('age');
+    });
+  });
 
-// Test 3: Object types
-console.log('\nTest 3: Object Types');
-const { typeNode: objType, sourceFile: objSf } = createTypeNode('{ name: string; age: number }');
-const objSchema = typeNodeToZodSchema(objType, objSf);
-console.log('✓ { name: string; age: number } -> z.object({ ... })');
+  describe('Array Types', () => {
+    it('should convert string[] to z.array(z.string())', () => {
+      const { typeNode, sourceFile } = createTypeNode('string[]');
+      const schema = typeNodeToZodSchema(typeNode, sourceFile);
+      expect(schema).toBeDefined();
+      expect(schema).toContain('z.array(');
+      expect(schema).toContain('z.string()');
+    });
+  });
 
-// Test 4: Array types
-console.log('\nTest 4: Array Types');
-const { typeNode: arrType, sourceFile: arrSf } = createTypeNode('string[]');
-const arrSchema = typeNodeToZodSchema(arrType, arrSf);
-console.log('✓ string[] -> z.array(z.string())');
-
-// Test 5: Enum types (union of literals)
-console.log('\nTest 5: Enum Types');
-const { typeNode: enumType, sourceFile: enumSf } = createTypeNode("'celsius' | 'fahrenheit'");
-const enumSchema = typeNodeToZodSchema(enumType, enumSf);
-console.log("✓ 'celsius' | 'fahrenheit' -> z.enum(['celsius', 'fahrenheit'])");
-
-console.log('\n✅ All schema generation tests passed!\n');
+  describe('Enum Types', () => {
+    it('should convert union literals to z.enum()', () => {
+      const { typeNode, sourceFile } = createTypeNode("'celsius' | 'fahrenheit'");
+      const schema = typeNodeToZodSchema(typeNode, sourceFile);
+      expect(schema).toBeDefined();
+      expect(schema).toContain('z.enum(');
+      expect(schema).toContain('celsius');
+      expect(schema).toContain('fahrenheit');
+    });
+  });
+});

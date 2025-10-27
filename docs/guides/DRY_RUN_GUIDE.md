@@ -35,14 +35,11 @@ simplymcp run server.ts --dry-run --json
 simplymcp run server.ts --dry-run --http --port 3000
 ```
 
-### Force API Style
+### Verbose Validation
 
 ```bash
-# Force decorator API style detection
-simplymcp run server.ts --dry-run --style decorator
-
-# Force functional API style
-simplymcp run server.ts --dry-run --style functional
+# Get detailed validation output
+simplymcp run server.ts --dry-run --verbose
 ```
 
 ## Output Formats
@@ -86,7 +83,7 @@ Structured data for automation:
 ```json
 {
   "success": true,
-  "detectedStyle": "decorator",
+  "detectedStyle": "interface",
   "serverConfig": {
     "name": "my-server",
     "version": "1.0.0"
@@ -201,23 +198,23 @@ stage('Validate MCP Server') {
 ### Example 1: Valid Server
 
 ```bash
-$ npx tsx dist/mcp/cli/index.js run mcp/examples/class-basic.ts --dry-run
+$ npx tsx dist/mcp/cli/index.js run examples/interface-minimal.ts --dry-run
 
 ✓ Dry run complete
 
 Server Configuration:
   Name: my-server
   Version: 1.0.0
-  API Style: decorator
-  
+  API Style: interface
+
 Transport:
   Type: stdio
   Port: N/A (stdio mode)
 
 Capabilities:
-  Tools: 6
-  Prompts: 1
-  Resources: 2
+  Tools: 2
+  Prompts: 0
+  Resources: 0
 
 Status: ✓ Ready to run
 ```
@@ -227,14 +224,14 @@ Exit code: 0
 ### Example 2: Server with Warnings
 
 ```bash
-$ npx tsx dist/mcp/cli/index.js run mcp/examples/single-file-basic.ts --dry-run
+$ npx tsx dist/mcp/cli/index.js run examples/interface-advanced.ts --dry-run
 
 ✓ Dry run complete
 
 ...
 
 Warnings:
-  - Tool 'get_timestamp' doesn't follow kebab-case naming convention
+  - Tool 'getTimestamp' doesn't follow snake_case naming convention
 
 Status: ✓ Ready to run
 ```
@@ -337,11 +334,9 @@ validate-json:
 
 ## API Support
 
-Dry-run works with all SimplyMCP API styles:
+Dry-run works with the Interface API:
 
-- ✅ **Decorator API** - Full validation with metadata extraction
-- ✅ **Functional API** - Full validation of config structure
-- ⚠️ **Programmatic API** - Limited validation (config self-managed)
+- ✅ **Interface API** - Full validation with type-safe interface extraction
 
 ## Best Practices
 
@@ -365,18 +360,19 @@ node dist/mcp/cli/index.js run server.ts --dry-run
 npx tsx dist/mcp/cli/index.js run server.ts --dry-run
 ```
 
-### "No class found in module"
+### "No server class found"
 
-For decorator API, ensure:
-- Class is exported (default or named)
-- Class has @MCPServer decorator
+For Interface API, ensure:
+- Class is exported as default
+- Class implements an interface extending IServer
 - File is valid TypeScript/JavaScript
 
-### "Config file must have a default export"
+### "Server interface missing required fields"
 
-For functional API, ensure:
-- File has `export default defineMCP(...)`
-- Config object is properly formatted
+For Interface API, ensure:
+- Server interface extends IServer
+- Interface includes 'name' and 'version' properties
+- All required fields are present
 
 ## See Also
 

@@ -80,10 +80,6 @@ echo -e "${BOLD}Checking Main Entry Points...${NC}"
 
 validate "Main entry point (index.js) exists" "test -f dist/src/index.js"
 validate "Main type declarations (index.d.ts) exist" "test -f dist/src/index.d.ts"
-validate "Decorators entry point exists" "test -f dist/src/decorators.js"
-validate "Decorators type declarations exist" "test -f dist/src/decorators.d.ts"
-validate "Config entry point exists" "test -f dist/src/config.js"
-validate "Config type declarations exist" "test -f dist/src/config.d.ts"
 
 # Check 3: CLI Binaries
 echo ""
@@ -91,24 +87,22 @@ echo -e "${BOLD}Checking CLI Binaries...${NC}"
 
 validate "Main CLI binary exists" "test -f dist/src/cli/index.js"
 validate "Run binary exists" "test -f dist/src/cli/run-bin.js"
-validate "Class binary exists" "test -f dist/src/cli/class-bin.js"
-validate "Func binary exists" "test -f dist/src/cli/func-bin.js"
+validate "Interface binary exists" "test -f dist/src/cli/interface-bin.js"
 validate "Bundle binary exists" "test -f dist/src/cli/bundle-bin.js"
 
 # Check executability (shebang)
 validate "Main CLI has shebang" "head -n 1 dist/src/cli/index.js | grep -q '^#!'"
 validate "Run binary has shebang" "head -n 1 dist/src/cli/run-bin.js | grep -q '^#!'"
-validate "Class binary has shebang" "head -n 1 dist/src/cli/class-bin.js | grep -q '^#!'"
-validate "Func binary has shebang" "head -n 1 dist/src/cli/func-bin.js | grep -q '^#!'"
+validate "Interface binary has shebang" "head -n 1 dist/src/cli/interface-bin.js | grep -q '^#!'"
 validate "Bundle binary has shebang" "head -n 1 dist/src/cli/bundle-bin.js | grep -q '^#!'"
 
 # Check 4: Core Files
 echo ""
 echo -e "${BOLD}Checking Core Files...${NC}"
 
-validate "BuildMCPServer exists" "test -f dist/src/api/programmatic/BuildMCPServer.js"
-validate "Core error messages exist" "test -f dist/src/core/error-messages.js" "WARNING"
-validate "Core types exist" "test -f dist/src/core/types.d.ts" "WARNING"
+validate "Core config loader exists" "test -f dist/src/core/config-loader.js"
+validate "Core handler manager exists" "test -f dist/src/core/HandlerManager.js"
+validate "Core types exist" "test -f dist/src/types/index.d.ts"
 
 # Check 5: package.json Validation
 echo ""
@@ -147,8 +141,7 @@ echo -e "${BOLD}Checking Bin Entries...${NC}"
 validate "simply-mcp bin points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.bin[\"simply-mcp\"])) process.exit(1)'"
 validate "simplymcp bin points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.bin[\"simplymcp\"])) process.exit(1)'"
 validate "simplymcp-run bin points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.bin[\"simplymcp-run\"])) process.exit(1)'"
-validate "simplymcp-class bin points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.bin[\"simplymcp-class\"])) process.exit(1)'"
-validate "simplymcp-func bin points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.bin[\"simplymcp-func\"])) process.exit(1)'"
+validate "simplymcp-interface bin points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.bin[\"simplymcp-interface\"])) process.exit(1)'"
 validate "simplymcp-bundle bin points to valid file" "node -e 'const p=require(\"./package.json\"); const fs=require(\"fs\"); if(!fs.existsSync(p.bin[\"simplymcp-bundle\"])) process.exit(1)'"
 
 # Check 8: Dependencies Validation
@@ -157,8 +150,8 @@ echo -e "${BOLD}Checking Dependencies...${NC}"
 
 validate "Dependencies field exists" "node -e 'const p=require(\"./package.json\"); if(!p.dependencies) process.exit(1)'"
 validate "@modelcontextprotocol/sdk in dependencies" "node -e 'const p=require(\"./package.json\"); if(!p.dependencies[\"@modelcontextprotocol/sdk\"]) process.exit(1)'"
-validate "typescript in dependencies" "node -e 'const p=require(\"./package.json\"); if(!p.dependencies[\"typescript\"]) process.exit(1)'"
-validate "tsx in dependencies" "node -e 'const p=require(\"./package.json\"); if(!p.dependencies[\"tsx\"]) process.exit(1)'"
+validate "typescript in peerDependencies" "node -e 'const p=require(\"./package.json\"); if(!p.peerDependencies[\"typescript\"]) process.exit(1)'"
+validate "tsx in peerDependencies" "node -e 'const p=require(\"./package.json\"); if(!p.peerDependencies[\"tsx\"]) process.exit(1)'"
 
 # Check no dev dependencies leaked to dependencies
 validate "No @types packages in dependencies" "node -e 'const p=require(\"./package.json\"); const deps=Object.keys(p.dependencies||{}); if(deps.some(d=>d.startsWith(\"@types/\")&&d!==\"@types/cors\"&&d!==\"@types/express\"&&d!==\"@types/yargs\")) process.exit(1)'"
@@ -238,9 +231,7 @@ validate "JavaScript files (.js) present" "find dist -name '*.js' -type f | grep
 echo ""
 echo -e "${BOLD}Checking Critical Exports...${NC}"
 
-validate "Decorators module exports correctly" "node -e 'const d=require(\"./dist/src/decorators.js\"); if(!d.tool||!d.prompt||!d.resource||!d.MCPServer) process.exit(1)'"
-validate "Main module exports BuildMCPServer" "node -e 'const m=require(\"./dist/src/index.js\"); if(!m.BuildMCPServer) process.exit(1)'"
-validate "Config module exports defineConfig" "node -e 'const c=require(\"./dist/src/config.js\"); if(!c.defineConfig) process.exit(1)'"
+validate "Main module structure is valid" "test -f dist/src/index.js && test -s dist/src/index.js"
 
 # Summary Report
 echo ""

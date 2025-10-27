@@ -20,7 +20,7 @@
 
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { BuildMCPServer } from '../../src/api/programmatic/index.js';
-import { createInlineHTMLResource } from '../../src/core/ui-resource.js';
+import { createInlineHTMLResource } from '../../src/features/ui/ui-resource.js';
 import {
   isUIResource as clientIsUIResource,
   getHTMLContent,

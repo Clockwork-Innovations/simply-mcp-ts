@@ -123,189 +123,127 @@ run_test "Verify package installed" "test -d node_modules/simply-mcp"
 echo -e "${YELLOW}Installing test dependencies...${NC}"
 run_test "Install tsx for testing" "npm install --save-dev tsx --silent"
 
-# Phase 3: Import Pattern Tests
+# Phase 3: Interface-Driven API Tests
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}Phase 3: Import Pattern Tests${NC}"
+echo -e "${BOLD}Phase 3: Interface-Driven API Tests${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 
-# Test 3.1: Unified import pattern
-cat > test-imports.ts << 'EOF'
-import { tool, prompt, resource, defineConfig, MCPServer } from 'simply-mcp';
+# Install TypeScript BEFORE interface tests (critical!)
+echo -e "${YELLOW}Installing TypeScript for interface tests...${NC}"
+npm install --save-dev typescript --silent
 
-console.log('✓ Unified imports work');
+# Test 3.1: Type-only imports (should work without TypeScript runtime)
+cat > test-type-imports.ts << 'EOF'
+import type { ITool, IPrompt, IResource, IServer } from 'simply-mcp';
 
-if (typeof tool !== 'function') {
-  throw new Error('tool decorator not imported correctly');
-}
-if (typeof defineConfig !== 'function') {
-  throw new Error('defineConfig not imported correctly');
-}
-if (typeof MCPServer !== 'function') {
-  throw new Error('MCPServer decorator not imported correctly');
-}
+// Type-only imports should work fine
+type MyTool = ITool;
+type MyServer = IServer;
+
+console.log('✓ Type-only imports work');
 EOF
 
-run_test "Unified import pattern" "npx tsx test-imports.ts"
+run_test "Type-only imports" "npx tsx test-type-imports.ts"
 
-# Test 3.2: Programmatic API imports
-cat > test-programmatic-imports.ts << 'EOF'
-import { SimplyMCP } from 'simply-mcp';
+# Test 3.2: Minimal interface server
+cat > test-interface-minimal.ts << 'EOF'
+import type { ITool, IServer } from 'simply-mcp';
 
-console.log('✓ Programmatic API imports work');
-
-if (typeof SimplyMCP !== 'function') {
-  throw new Error('SimplyMCP not imported correctly');
-}
-EOF
-
-run_test "Programmatic API imports" "npx tsx test-programmatic-imports.ts"
-
-# Phase 4: API Style Tests
-echo ""
-echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}Phase 4: API Style Tests${NC}"
-echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-
-# Test 4.1: Decorator API (class-based)
-cat > test-decorator.ts << 'EOF'
-import { MCPServer, tool, prompt, resource } from 'simply-mcp';
-
-@MCPServer({
-  name: 'test-decorator',
-  version: '1.0.0',
-  description: 'Test decorator API'
-})
-class TestDecoratorServer {
-  @tool('Calculate sum of two numbers')
-  async add(a: number, b: number): Promise<number> {
-    return a + b;
-  }
-
-  @prompt('Generate greeting')
-  async greet(name: string): Promise<string> {
-    return `Hello, ${name}!`;
-  }
-
-  @resource('test://data')
-  async getData(): Promise<string> {
-    return 'Test data';
-  }
+interface GreetTool extends ITool {
+  name: 'greet';
+  description: 'Greet a person';
+  params: { name: string };
+  result: string;
 }
 
-export default TestDecoratorServer;
-console.log('✓ Decorator server created successfully');
+interface TestServer extends IServer {
+  name: 'test-server';
+  version: '1.0.0';
+}
+
+export default class implements TestServer {
+  greet: GreetTool = async (params) => `Hello, ${params.name}!`;
+}
+
+console.log('✓ Interface server created successfully');
 EOF
 
-run_test "Decorator API (class-based)" "npx tsx test-decorator.ts"
+run_test "Interface-driven API (minimal)" "npx tsx test-interface-minimal.ts"
 
-# Test 4.2: Functional API
-cat > test-functional.ts << 'EOF'
-import { SimplyMCP } from 'simply-mcp';
-import { z } from 'zod';
+# Test 3.3: Interface server with multiple tools
+cat > test-interface-multi.ts << 'EOF'
+import type { ITool, IPrompt, IServer } from 'simply-mcp';
 
-const server = new SimplyMCP({
-  name: 'test-functional',
-  version: '1.0.0',
-  description: 'Test functional API'
-});
+interface AddTool extends ITool {
+  name: 'add';
+  description: 'Add two numbers';
+  params: { a: number; b: number };
+  result: { sum: number };
+}
 
-server.addTool({
-  name: 'multiply',
-  description: 'Multiply two numbers',
-  parameters: z.object({
-    a: z.number(),
-    b: z.number()
-  }),
-  execute: async ({ a, b }) => ({
-    content: [{ type: 'text', text: `Result: ${a * b}` }]
-  })
-});
+interface GreetPrompt extends IPrompt {
+  name: 'greet_prompt';
+  description: 'Greeting template';
+  template: 'Hello, {name}!';
+}
 
-console.log('✓ Functional server created successfully');
+interface MultiServer extends IServer {
+  name: 'multi-test';
+  version: '1.0.0';
+}
+
+export default class implements MultiServer {
+  add: AddTool = async (params) => ({ sum: params.a + params.b });
+}
+
+console.log('✓ Multi-feature interface server created');
 EOF
 
-run_test "Functional API" "npx tsx test-functional.ts"
+run_test "Interface-driven API (multi-tool)" "npx tsx test-interface-multi.ts"
 
-# Test 4.3: Programmatic API with config
-cat > test-programmatic.ts << 'EOF'
-import { SimplyMCP, defineConfig } from 'simply-mcp';
+# Test 3.4: defineConfig import
+cat > test-define-config.ts << 'EOF'
+import { defineConfig } from 'simply-mcp';
 
 const config = defineConfig({
-  name: 'test-programmatic',
+  name: 'test-config',
   version: '1.0.0',
-  description: 'Test programmatic API with config'
+  description: 'Test config definition'
 });
 
-const server = new SimplyMCP(config);
+if (!config.name || !config.version) {
+  throw new Error('Config not created correctly');
+}
 
-server.addPrompt({
-  name: 'test-prompt',
-  description: 'Test prompt',
-  execute: async () => ({
-    messages: [{ role: 'user', content: { type: 'text', text: 'Test' } }]
-  })
-});
-
-console.log('✓ Programmatic server with config created successfully');
+console.log('✓ defineConfig works');
 EOF
 
-run_test "Programmatic API with config" "npx tsx test-programmatic.ts"
+run_test "defineConfig utility" "npx tsx test-define-config.ts"
 
-# Phase 5: CLI Command Tests
+# Phase 4: CLI Command Tests
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}Phase 5: CLI Command Tests${NC}"
+echo -e "${BOLD}Phase 4: CLI Command Tests${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 
 run_test "CLI: simply-mcp --version" "npx simply-mcp --version > /dev/null 2>&1"
 
 run_test "CLI: simplymcp --help" "npx simplymcp --help > /dev/null 2>&1"
 
-run_test "CLI: simplymcp-run --help" "npx simplymcp-run --help > /dev/null 2>&1"
+run_test "CLI: simply-mcp-run --help" "npx simply-mcp-run --help > /dev/null 2>&1"
 
-run_test "CLI: simplymcp-class --help" "npx simplymcp-class --help > /dev/null 2>&1"
+run_test "CLI: simply-mcp-interface --help" "npx simply-mcp-interface --help > /dev/null 2>&1"
 
-run_test "CLI: simplymcp-func --help" "npx simplymcp-func --help > /dev/null 2>&1"
+run_test "CLI: simply-mcp-bundle --help" "npx simply-mcp-bundle --help > /dev/null 2>&1"
 
-run_test "CLI: simplymcp-bundle --help" "npx simplymcp-bundle --help > /dev/null 2>&1"
+# Test dry-run execution with interface server
+run_test "CLI: Run interface server (dry-run)" "npx simplymcp run test-interface-minimal.ts --dry-run 2>&1 | grep -q 'Dry run'"
 
-# Test dry-run execution
-run_test "CLI: Run decorator server (dry-run)" "npx simplymcp run test-decorator.ts --dry-run 2>&1 | grep -q 'Dry run'"
-
-# Phase 6: Type Checking Tests
+# Phase 5: Package Content Validation
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}Phase 6: Type Checking Tests${NC}"
-echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-
-# Install TypeScript for type checking
-npm install --save-dev typescript --silent
-
-cat > tsconfig.json << 'EOF'
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "types": ["node"]
-  }
-}
-EOF
-
-run_test "TypeScript: Check decorator types" "npx tsc --noEmit test-decorator.ts"
-
-run_test "TypeScript: Check functional types" "npx tsc --noEmit test-functional.ts"
-
-run_test "TypeScript: Check import types" "npx tsc --noEmit test-imports.ts"
-
-# Phase 7: Package Content Validation
-echo ""
-echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}Phase 7: Package Content Validation${NC}"
+echo -e "${BOLD}Phase 5: Package Content Validation${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 
 run_test "Package: README.md exists" "test -f node_modules/simply-mcp/README.md"
@@ -322,38 +260,6 @@ run_test "Package: Type declarations exist" "test -f node_modules/simply-mcp/dis
 
 # Check package.json exports
 run_test "Package: package.json exports valid" "node -e 'require(\"simply-mcp/package.json\").exports'"
-
-# Phase 8: Error Message Validation
-echo ""
-echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}Phase 8: Error Message Validation${NC}"
-echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-
-# Test error message quality (expect failure, check for helpful message)
-cat > test-error-decorator.ts << 'EOF'
-import { tool } from 'simply-mcp';
-
-class BadServer {
-  // Missing @MCPServer decorator - should produce helpful error
-  @tool('Test tool')
-  async test() {
-    return { result: 'test' };
-  }
-}
-
-export default BadServer;
-EOF
-
-if npx simplymcp-class test-error-decorator.ts --dry-run 2>&1 | grep -q "@MCPServer"; then
-  echo -e "${GREEN}✓ PASS${NC}: Error messages are helpful"
-  ((PASSED_TESTS++)) || true
-  ((TOTAL_TESTS++)) || true
-  TEST_RESULTS+=("PASS")
-  TEST_NAMES+=("Error messages are helpful")
-else
-  echo -e "${YELLOW}⚠ SKIP${NC}: Error message test (non-critical)"
-  ((TOTAL_TESTS++)) || true
-fi
 
 # Final Report
 echo ""

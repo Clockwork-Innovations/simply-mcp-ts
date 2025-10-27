@@ -97,6 +97,8 @@ Standard input/output communication:
 - Desktop applications (Claude Desktop)
 - CLI integrations
 
+**Example:** [examples/interface-minimal.ts](../../examples/interface-minimal.ts)
+
 #### HTTP Transport
 
 HTTP server with multiple client support:
@@ -116,6 +118,10 @@ HTTP server with multiple client support:
 - Multiple clients need to connect
 - Web application integration
 - Load-balanced services
+
+**Examples:**
+- With auth: [examples/interface-http-auth.ts](../../examples/interface-http-auth.ts)
+- Stateless: [examples/interface-http-stateless.ts](../../examples/interface-http-stateless.ts)
 
 #### HTTP Stateless Transport
 
@@ -403,45 +409,69 @@ export LOG_LEVEL="debug"
 npx simply-mcp run server.ts
 ```
 
-### In Your Code
+### In Your Code (Interface API)
 
 ```typescript
-// At startup, validate required env vars
+import type { ITool, IServer } from 'simply-mcp';
+
+// Validate required env vars at module level
 const apiKey = process.env.API_KEY;
 if (!apiKey) {
   throw new Error('API_KEY environment variable required');
 }
 
-// Use throughout server
-export default defineMCP({
-  name: 'my-server',
-  version: '1.0.0',
-  tools: [
-    {
-      name: 'call-api',
-      execute: async (args) => {
-        const response = await fetch('...', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        return response.json();
-      }
-    }
-  ]
-});
+interface CallApiTool extends ITool {
+  name: 'call_api';
+  description: 'Call external API';
+  params: { endpoint: string };
+  result: any;
+}
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+export default class MyServer implements MyServer {
+  callApi: CallApiTool = async (args) => {
+    const response = await fetch(args.endpoint, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    return response.json();
+  };
+}
 ```
 
 ---
 
-## Server Options
+## Server Options (Interface API)
+
+**Examples:**
+- Basic config: [examples/interface-minimal.ts](../../examples/interface-minimal.ts)
+- TypeScript strict mode: [examples/interface-strict-mode.ts](../../examples/interface-strict-mode.ts)
+- HTTP with auth: [examples/interface-http-auth.ts](../../examples/interface-http-auth.ts)
 
 ### Basic Configuration
 
 ```typescript
-export default defineMCP({
-  name: 'my-server',
-  version: '1.0.0',
-  description: 'What this server does'
-});
+import type { IServer, ITool } from 'simply-mcp';
+
+interface GreetTool extends ITool {
+  name: 'greet';
+  description: 'Greet a user';
+  params: { name: string };
+  result: string;
+}
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+  description: 'What this server does';
+}
+
+export default class MyServer implements MyServer {
+  greet: GreetTool = async ({ name }) => `Hello, ${name}!`;
+}
 ```
 
 ### With Transports
@@ -470,9 +500,6 @@ npx simply-mcp run server.ts --verbose
 
 # Dry-run (validate without executing)
 npx simply-mcp run server.ts --dry-run
-
-# Specify API style
-npx simply-mcp run server.ts --style functional
 
 # Force auto-install dependencies
 npx simply-mcp run server.ts --force-install
@@ -591,12 +618,25 @@ npx simply-mcp run server.ts --http --port 3000
 ### For Low Latency
 
 ```typescript
-// Cache results
+import type { ITool, IServer } from 'simply-mcp';
+
+// Cache results at module level
 const cache = new Map();
 
-{
-  name: 'fetch-data',
-  execute: async (args) => {
+interface FetchDataTool extends ITool {
+  name: 'fetch_data';
+  description: 'Fetch data with caching';
+  params: any;
+  result: any;
+}
+
+interface MyServer extends IServer {
+  name: 'my-server';
+  version: '1.0.0';
+}
+
+export default class MyServer implements MyServer {
+  fetchData: FetchDataTool = async (args) => {
     const cacheKey = JSON.stringify(args);
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey);
@@ -604,7 +644,7 @@ const cache = new Map();
     const result = await expensiveOperation(args);
     cache.set(cacheKey, result);
     return result;
-  }
+  };
 }
 ```
 
@@ -707,60 +747,11 @@ Control how router-assigned tools appear in the tools list.
 
 ### Example
 
-```typescript
-import { BuildMCPServer } from 'simply-mcp';
-
-// Production (default) - hide router-assigned tools
-const server = new BuildMCPServer({
-  name: 'my-server',
-  version: '1.0.0',
-  flattenRouters: false  // or omit (this is the default)
-});
-
-// Testing mode - show all tools
-const server = new BuildMCPServer({
-  name: 'my-server',
-  version: '1.0.0',
-  flattenRouters: true
-});
-
-// Environment-based configuration
-const server = new BuildMCPServer({
-  name: 'my-server',
-  version: '1.0.0',
-  flattenRouters: process.env.NODE_ENV === 'development'
-});
-```
+Router configuration is an advanced feature. For most use cases, the Interface API handles routing automatically. See [Router Tools Guide](./ROUTER_TOOLS.md) for advanced router configuration.
 
 ### What's Visible?
 
-**Production (flattenRouters=false):**
-```typescript
-server.addTool({ name: 'tool1', ... });  // Assigned to router
-server.addTool({ name: 'tool2', ... });  // Assigned to router
-server.addTool({ name: 'tool3', ... });  // Not assigned
-
-server.addRouterTool({
-  name: 'my_router',
-  tools: ['tool1', 'tool2']
-});
-
-// tools/list shows:
-// - my_router (router)
-// - tool3 (unassigned tool)
-// Hidden: tool1, tool2
-```
-
-**Testing (flattenRouters=true):**
-```typescript
-// Same setup as above
-
-// tools/list shows:
-// - my_router (router)
-// - tool1 (visible)
-// - tool2 (visible)
-// - tool3 (unassigned tool)
-```
+See [Router Tools Guide](./ROUTER_TOOLS.md) for detailed router configuration examples.
 
 ### Notes
 
@@ -783,40 +774,13 @@ server.addRouterTool({
 - Exploring available tools
 - You want direct access to all tools
 
-### Environment Variables
-
-Configure based on environment:
-
-```typescript
-// Option 1: NODE_ENV
-const server = new BuildMCPServer({
-  name: 'my-server',
-  version: '1.0.0',
-  flattenRouters: process.env.NODE_ENV !== 'production'
-});
-
-// Option 2: Custom variable
-const server = new BuildMCPServer({
-  name: 'my-server',
-  version: '1.0.0',
-  flattenRouters: process.env.FLATTEN_ROUTERS === 'true'
-});
-
-// Option 3: Debug mode
-const server = new BuildMCPServer({
-  name: 'my-server',
-  version: '1.0.0',
-  flattenRouters: process.env.DEBUG === 'true'
-});
-```
-
-For complete router documentation, see [Router Tools Guide](./ROUTER_TOOLS.md).
+For complete router documentation and environment-based configuration, see [Router Tools Guide](./ROUTER_TOOLS.md).
 
 ---
 
 ## Next Steps
 
-- **Need more CLI options?** See [CLI_REFERENCE.md](./CLI_REFERENCE.md)
+- **Need more CLI options?** See [CLI_BASICS.md](./CLI_BASICS.md)
 - **Organize tools?** See [ROUTER_TOOLS.md](./ROUTER_TOOLS.md)
 - **Deploy?** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
 - **Bundle?** See [BUNDLING.md](./BUNDLING.md)

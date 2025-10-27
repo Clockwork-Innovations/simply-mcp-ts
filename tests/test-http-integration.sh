@@ -84,7 +84,7 @@ mcp_request() {
 # Start server in background
 print_section "Starting MCP HTTP Server"
 echo "Starting server on port 3003..."
-npx tsx src/configurableServer.ts src/config-test-stateful.json > /tmp/mcp-http-integration.log 2>&1 &
+npx tsx src/cli/servers/configurable-server.ts tests/fixtures/config/config-test-stateful.json > /tmp/mcp-http-integration.log 2>&1 &
 SERVER_PID=$!
 echo "Server PID: $SERVER_PID"
 echo ""
@@ -118,7 +118,7 @@ if [ $WAIT_COUNT -eq $MAX_WAIT ]; then
   echo -e "${RED}ERROR: Server failed to start within ${MAX_WAIT} seconds${NC}"
   echo "Server log:"
   cat /tmp/mcp-http-integration.log
-  pkill -f "tsx src/configurableServer.ts src/config-test-stateful.json" 2>/dev/null || true
+  pkill -f "tsx src/cli/servers/configurable-server.ts tests/fixtures/config/config-test-stateful.json" 2>/dev/null || true
   exit 1
 fi
 echo ""
@@ -936,7 +936,7 @@ curl -s -X DELETE http://localhost:3003/mcp \
   -H "Mcp-Session-Id: $SESSION_ID" > /dev/null 2>&1
 
 echo "Stopping server..."
-pkill -f "tsx src/configurableServer.ts src/config-test-stateful.json" 2>/dev/null || true
+pkill -f "tsx src/cli/servers/configurable-server.ts tests/fixtures/config/config-test-stateful.json" 2>/dev/null || true
 sleep 1
 echo "Server stopped"
 echo ""
