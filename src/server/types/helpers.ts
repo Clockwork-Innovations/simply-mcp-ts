@@ -60,8 +60,8 @@ export type InferParamType<T> =
   // Object: map properties
   T extends { type: 'object'; properties: infer P } ?
     { [K in keyof P]: InferParamType<P[K]> } :
-  // Enum: extract literal union
-  T extends { enum: readonly (infer U)[] } ? U :
+  // Enum: extract literal union (works with or without readonly)
+  T extends { enum: ReadonlyArray<infer U> | Array<infer U> } ? U :
   // Fallback
   any;
 
@@ -185,13 +185,13 @@ export type ToolHelper<T extends { params: any; result: any }> =
  */
 export type InferPromptArgs<T extends { args: any }> = {
   [K in keyof T['args'] as T['args'][K] extends { required: false } ? never : K]:
-    T['args'][K] extends { enum: readonly (infer U)[] } ? U :
+    T['args'][K] extends { enum: ReadonlyArray<infer U> | Array<infer U> } ? U :
     T['args'][K] extends { type: 'number' } ? number :
     T['args'][K] extends { type: 'boolean' } ? boolean :
     string
 } & {
   [K in keyof T['args'] as T['args'][K] extends { required: false } ? K : never]?:
-    T['args'][K] extends { enum: readonly (infer U)[] } ? U :
+    T['args'][K] extends { enum: ReadonlyArray<infer U> | Array<infer U> } ? U :
     T['args'][K] extends { type: 'number' } ? number :
     T['args'][K] extends { type: 'boolean' } ? boolean :
     string

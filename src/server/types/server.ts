@@ -3,10 +3,10 @@
  */
 
 /**
- * Base Server interface
+ * Base Server interface - pure metadata definition
  *
- * Defines server metadata and configuration. The implementation class discovers
- * and registers all tools/prompts/resources automatically via AST parsing.
+ * Defines server metadata and configuration. Server definitions use const-based pattern
+ * where the server object contains only metadata.
  *
  * Transport Configuration:
  * - 'stdio': Standard input/output (default, for use with Claude Desktop, etc.)
@@ -14,56 +14,52 @@
  *
  * @example Basic Server (stdio)
  * ```typescript
- * interface WeatherServer extends IServer {
- *   name: 'weather-service';
- *   version: '1.0.0';
- *   description: 'Weather information service';
- * }
- *
- * export default class WeatherService implements WeatherServer {
- *   // Tools, prompts, and resources auto-discovered
- * }
+ * const server: IServer = {
+ *   name: 'weather-service',
+ *   version: '1.0.0',
+ *   description: 'Weather information service'
+ * };
  * ```
  *
  * @example HTTP Server
  * ```typescript
- * interface HttpWeatherServer extends IServer {
- *   name: 'weather-service';
- *   version: '1.0.0';
- *   description: 'Weather information service';
- *   transport: 'http';
- *   port: 3000;
- * }
+ * const server: IServer = {
+ *   name: 'weather-service',
+ *   version: '1.0.0',
+ *   description: 'Weather information service',
+ *   transport: 'http',
+ *   port: 3000
+ * };
  * ```
  *
  * @example HTTP Server with Authentication
  * ```typescript
- * interface ApiKeyAuth extends IApiKeyAuth {
- *   type: 'apiKey';
- *   keys: [
- *     { name: 'admin', key: 'sk-admin-123', permissions: ['*'] },
- *     { name: 'readonly', key: 'sk-read-456', permissions: ['read:*'] }
- *   ];
- * }
- *
- * interface SecureServer extends IServer {
- *   name: 'secure-service';
- *   version: '1.0.0';
- *   transport: 'http';
- *   port: 3000;
- *   auth: ApiKeyAuth;
- * }
+ * const server: IServer = {
+ *   name: 'secure-service',
+ *   version: '1.0.0',
+ *   description: 'Secure service with API key auth',
+ *   transport: 'http',
+ *   port: 3000,
+ *   auth: {
+ *     type: 'apiKey',
+ *     keys: [
+ *       { name: 'admin', key: 'sk-admin-123', permissions: ['*'] },
+ *       { name: 'readonly', key: 'sk-read-456', permissions: ['read:*'] }
+ *     ]
+ *   }
+ * };
  * ```
  *
  * @example HTTP Server with Stateful Sessions
  * ```typescript
- * interface StatefulServer extends IServer {
- *   name: 'session-service';
- *   version: '1.0.0';
- *   transport: 'http';
- *   port: 3000;
- *   stateful: true; // Enables session-based state management
- * }
+ * const server: IServer = {
+ *   name: 'session-service',
+ *   version: '1.0.0',
+ *   description: 'Service with session support',
+ *   transport: 'http',
+ *   port: 3000,
+ *   stateful: true  // Enables session-based state management
+ * };
  * ```
  */
 export interface IServer {

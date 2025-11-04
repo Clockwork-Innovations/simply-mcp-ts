@@ -18,13 +18,17 @@
  * interface GetUserTool extends ITool {
  *   name: 'get_user';
  *   description: 'Retrieve user information';
- *   params: { userId: string };
+ *   params: { userId: { type: 'string'; description: 'User ID' } };
  *   result: User;
  *   annotations: {
  *     readOnlyHint: true;
  *     category: 'data';
  *   };
  * }
+ *
+ * const getUser: ToolHelper<GetUserTool> = async (params) => {
+ *   return await fetchUser(params.userId);
+ * };
  * ```
  *
  * @example Destructive Tool
@@ -32,7 +36,7 @@
  * interface DeleteUserTool extends ITool {
  *   name: 'delete_user';
  *   description: 'Permanently delete a user account';
- *   params: { userId: string };
+ *   params: { userId: { type: 'string'; description: 'User ID' } };
  *   result: boolean;
  *   annotations: {
  *     destructiveHint: true;
@@ -40,6 +44,10 @@
  *     category: 'system';
  *   };
  * }
+ *
+ * const deleteUser: ToolHelper<DeleteUserTool> = async (params) => {
+ *   return await removeUser(params.userId);
+ * };
  * ```
  */
 export interface IToolAnnotations {
@@ -102,61 +110,72 @@ export interface IToolAnnotations {
 }
 
 /**
- * Base Tool interface
+ * Base Tool interface - pure metadata definition
  *
- * Tools require implementation as class methods because they contain dynamic logic.
- * Extend this interface to define a tool with full type safety.
+ * Tools are implemented using the ToolHelper type with const-based pattern.
+ * The interface defines metadata only - name, description, parameters, result type, and annotations.
  *
- * The interface must include:
- * - `name`: Tool name (snake_case, will map to camelCase method)
- * - `description`: Human-readable description
- * - `params`: Parameter types (TypeScript types, converted to Zod schema)
- * - `result`: Return type
- *
- * Parameters can be:
- * - Simple TypeScript types (string, number, boolean, etc.)
- * - IParam interfaces for richer validation and documentation
- * - Complex nested objects
+ * Parameters use IParam interfaces for rich validation and documentation.
  *
  * @template TParams - Parameter object type
  * @template TResult - Return value type
  *
- * @example Simple Parameters
+ * @example Simple Tool
+ * ```typescript
+ * interface AddTool extends ITool {
+ *   name: 'add';
+ *   description: 'Add two numbers';
+ *   params: {
+ *     a: { type: 'number'; description: 'First number' };
+ *     b: { type: 'number'; description: 'Second number' };
+ *   };
+ *   result: { sum: number };
+ * }
+ *
+ * // Implementation using ToolHelper
+ * const add: ToolHelper<AddTool> = async (params) => ({
+ *   sum: params.a + params.b
+ * });
+ * ```
+ *
+ * @example Tool with Optional Parameters
  * ```typescript
  * interface GreetTool extends ITool {
  *   name: 'greet_user';
  *   description: 'Greet a user by name';
- *   params: { name: string; formal?: boolean };
+ *   params: {
+ *     name: { type: 'string'; description: 'User name' };
+ *     formal: { type: 'boolean'; description: 'Use formal greeting'; required: false };
+ *   };
  *   result: string;
  * }
+ *
+ * // Implementation
+ * const greetUser: ToolHelper<GreetTool> = async (params) => {
+ *   const greeting = params.formal ? 'Good day' : 'Hello';
+ *   return `${greeting}, ${params.name}!`;
+ * };
  * ```
  *
- * @example IParam Parameters
+ * @example Tool with Context (Progress Reporting)
  * ```typescript
- * interface NameParam extends IParam {
- *   type: 'string';
- *   description: 'User full name';
- *   minLength: 1;
- *   maxLength: 100;
+ * interface ProcessFilesTool extends ITool {
+ *   name: 'process_files';
+ *   description: 'Process multiple files';
+ *   params: {
+ *     files: { type: 'array'; items: { type: 'string' }; description: 'File paths' };
+ *   };
+ *   result: { success: boolean };
  * }
  *
- * interface GreetTool extends ITool {
- *   name: 'greet_user';
- *   description: 'Greet a user by name';
- *   params: { name: NameParam };
- *   result: string;
- * }
- * ```
- *
- * @example Implementation
- * ```typescript
- * class MyServer implements IServer {
- *   // Method name is camelCase version of tool name
- *   greetUser: GreetTool = async (params) => {
- *     const greeting = params.formal ? 'Good day' : 'Hello';
- *     return `${greeting}, ${params.name}!`;
+ * // Implementation with progress reporting
+ * const processFiles: ToolHelper<ProcessFilesTool> = async (params, context) => {
+ *   for (let i = 0; i < params.files.length; i++) {
+ *     await context?.reportProgress?.(i + 1, params.files.length, `Processing file ${i + 1}`);
+ *     // ... process file
  *   }
- * }
+ *   return { success: true };
+ * };
  * ```
  */
 export interface ITool<TParams = any, TResult = any> {
@@ -197,46 +216,6 @@ export interface ITool<TParams = any, TResult = any> {
    * @since v4.1.0
    */
   annotations?: IToolAnnotations;
-
-  /**
-   * Callable signature - the actual implementation
-   *
-   * @param params - Validated and type-coerced parameters from the MCP request
-   * @param context - Optional handler context with MCP capabilities (sample, reportProgress, etc.)
-   * @returns The tool result or a Promise resolving to the result
-   *
-   * @example Without context
-   * ```typescript
-   * add: AddTool = async (params) => {
-   *   return { sum: params.a + params.b };
-   * };
-   * ```
-   *
-   * @example With context for progress reporting
-   * ```typescript
-   * processFiles: ProcessFilesTool = async (params, context) => {
-   *   for (let i = 0; i < params.files.length; i++) {
-   *     await context?.reportProgress(i + 1, params.files.length, `Processing file ${i + 1}`);
-   *     // ... process file
-   *   }
-   *   return { success: true };
-   * };
-   * ```
-   *
-   * @example With context for sampling (AI assistance)
-   * ```typescript
-   * analyzeCode: AnalyzeTool = async (params, context) => {
-   *   if (!context?.sample) {
-   *     return { analysis: 'Sampling not available' };
-   *   }
-   *   const result = await context.sample([
-   *     { role: 'user', content: { type: 'text', text: `Analyze: ${params.code}` } }
-   *   ]);
-   *   return { analysis: result.content.text };
-   * };
-   * ```
-   */
-  (params: TParams, context?: import('../../types/handler.js').HandlerContext): TResult | Promise<TResult>;
 }
 
 /**

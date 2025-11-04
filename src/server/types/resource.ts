@@ -119,13 +119,17 @@ export interface IDatabase {
  * @example Basic Usage (Type Inferred Automatically)
  * ```typescript
  * interface UsersResource extends IResource {
+ *   uri: 'db://users';
+ *   name: 'User Database';
+ *   description: 'All users';
+ *   mimeType: 'application/json';
  *   database: { uri: 'file:./users.db' };
  *   returns: { users: User[] };
  * }
  *
- * // ✅ TypeScript infers context type from UsersResource automatically
- * 'db://users': UsersResource = async (context) => {
- *   const db = context?.db;  // TypeScript knows this is ResourceContext
+ * // Implementation using ResourceHelper (type inferred automatically)
+ * const dbUsers: ResourceHelper<UsersResource> = async (context) => {
+ *   const db = context?.db;
  *   if (!db) throw new Error('Database not configured');
  *
  *   const users = db.prepare('SELECT * FROM users').all();
@@ -137,7 +141,7 @@ export interface IDatabase {
  * ```typescript
  * import Database from 'better-sqlite3';
  *
- * 'db://users': UsersResource = async (context) => {
+ * const dbUsers: ResourceHelper<UsersResource> = async (context) => {
  *   // Cast db to specific driver type for better autocomplete
  *   const db = context?.db as Database.Database;
  *   const users = db.prepare('SELECT * FROM users').all() as User[];
@@ -174,47 +178,65 @@ export interface ResourceContext {
 }
 
 /**
- * Resource interface for v4.0
+ * Resource interface for v4.0 - pure metadata definition
  *
- * Resources can be either static or dynamic:
+ * Resources are implemented using ResourceHelper type with const-based pattern.
+ * Resources can be either static (with `value` field) or dynamic (with `returns` field).
  *
  * **Static Resources** - Use `value` field with literal data (no implementation needed):
  * @example
+ * ```typescript
  * interface ConfigResource extends IResource {
  *   uri: 'config://app';
  *   name: 'Config';
  *   description: 'Application configuration';
  *   mimeType: 'application/json';
- *   value: { version: '1.0.0', env: 'production' }; // ← Literal data
+ *   value: { version: '1.0.0', env: 'production' }; // ← Literal data (no implementation needed)
  * }
+ * ```
  *
- * **Dynamic Function Resources** - Use `returns` field with type definition (implementation required):
+ * **Dynamic Function Resources** - Use `returns` field with type definition:
  * @example
+ * ```typescript
  * interface StatsResource extends IResource {
  *   uri: 'stats://users';
  *   name: 'User Stats';
  *   description: 'Real-time user statistics';
  *   mimeType: 'application/json';
- *   returns: { count: number; active: number }; // ← Type definition
+ *   returns: { count: number; active: number };
  * }
- * // Implementation: 'stats://users' = async () => ({ count: 42, active: 10 })
  *
- * **Dynamic Object Resources** - Use `returns` field with type definition (object with data property):
+ * // Implementation using ResourceHelper
+ * const statsUsers: ResourceHelper<StatsResource> = async () => ({
+ *   count: await getUserCount(),
+ *   active: await getActiveUserCount()
+ * });
+ * ```
+ *
+ * **Dynamic Text Resources** - Use `returns` field with string type:
  * @example
+ * ```typescript
  * interface DocResource extends IResource {
  *   uri: 'doc://readme';
  *   name: 'README';
  *   description: 'Documentation';
  *   mimeType: 'text/markdown';
- *   returns: string; // ← Type definition
+ *   returns: string;
  * }
- * // Implementation: 'doc://readme' = { data: '# README...' }
+ *
+ * // Implementation
+ * const docReadme: ResourceHelper<DocResource> = async () => {
+ *   return await fs.readFile('./README.md', 'utf-8');
+ * };
+ * ```
  *
  * **Database Resources** - Use `database` field to access databases (v4.1):
  * @example
+ * ```typescript
  * interface UsersResource extends IResource {
  *   uri: 'db://users';
  *   name: 'User Database';
+ *   description: 'All users from database';
  *   mimeType: 'application/json';
  *   database: {
  *     uri: '${DATABASE_URL}';
@@ -222,11 +244,15 @@ export interface ResourceContext {
  *   };
  *   returns: { users: Array<{ id: number; username: string }> };
  * }
- * // Implementation: 'db://users' = async (context) => {
- * //   const db = context.db;
- * //   const users = db.prepare('SELECT * FROM users').all();
- * //   return { users };
- * // }
+ *
+ * // Implementation with database context
+ * const dbUsers: ResourceHelper<UsersResource> = async (context) => {
+ *   const db = context?.db;
+ *   if (!db) throw new Error('Database not configured');
+ *   const users = db.prepare('SELECT * FROM users').all();
+ *   return { users };
+ * };
+ * ```
  *
  * @template T - The type of data returned by the resource
  */
@@ -283,14 +309,6 @@ export interface IResource<T = any> {
    * ```
    */
   database?: IDatabase;
-
-  /**
-   * Callable signature - the actual implementation for dynamic resources
-   *
-   * @param context - Optional context containing database connection (if database field is set)
-   * @returns The resource data (can be async)
-   */
-  (context?: ResourceContext): T | Promise<T>;
 }
 
 /**

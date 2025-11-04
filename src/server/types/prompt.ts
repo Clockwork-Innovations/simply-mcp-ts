@@ -39,7 +39,7 @@ export interface IPromptArgument {
  * Priority: enum > type > default to string
  */
 export type InferArgType<T extends IPromptArgument> =
-  T extends { enum: readonly (infer U)[] } ? U :
+  T extends { enum: ReadonlyArray<infer U> | Array<infer U> } ? U :
   T extends { type: 'number' } ? number :
   T extends { type: 'boolean' } ? boolean :
   string;  // Default to string
@@ -57,12 +57,10 @@ export type InferArgs<TArguments extends Record<string, IPromptArgument>> = {
 };
 
 /**
- * Base Prompt interface
+ * Base Prompt interface - pure metadata definition
  *
- * All prompts require implementation as methods - there are no static prompts.
- * Prompts return dynamic content based on their arguments.
- *
- * @template TArguments - Argument metadata record (single source of truth)
+ * Prompts are implemented using the PromptHelper type with const-based pattern.
+ * The interface defines metadata only - name, description, and arguments.
  *
  * @example Pattern 1: Simple String Return
  * ```typescript
@@ -74,11 +72,10 @@ export type InferArgs<TArguments extends Record<string, IPromptArgument>> = {
  *   };
  * }
  *
- * class MyServer implements IServer {
- *   greeting: GreetingPrompt = (args) => {
- *     return `Hello ${args.name}! Welcome to MCP.`;
- *   }
- * }
+ * // Implementation using PromptHelper
+ * const greeting: PromptHelper<GreetingPrompt> = (args) => {
+ *   return `Hello ${args.name}! Welcome to MCP.`;
+ * };
  * // Returns: { role: 'user', content: { type: 'text', text: 'Hello ...' } }
  * ```
  *
@@ -88,18 +85,17 @@ export type InferArgs<TArguments extends Record<string, IPromptArgument>> = {
  *   name: 'tutorial';
  *   description: 'Interactive tutorial conversation';
  *   args: {
- *     topic: { description: 'Topic to teach' }  // type: 'string', required: true by default
+ *     topic: { description: 'Topic to teach' }
  *   };
  * }
  *
- * class MyServer implements IServer {
- *   tutorial: TutorialPrompt = (args): SimpleMessage[] => [
- *     { user: `Teach me about ${args.topic}` },
- *     { assistant: `Let me explain ${args.topic}...` },
- *     { user: 'Can you show an example?' },
- *     { assistant: 'Here is a practical example...' }
- *   ];
- * }
+ * // Implementation
+ * const tutorial: PromptHelper<TutorialPrompt> = (args): SimpleMessage[] => [
+ *   { user: `Teach me about ${args.topic}` },
+ *   { assistant: `Let me explain ${args.topic}...` },
+ *   { user: 'Can you show an example?' },
+ *   { assistant: 'Here is a practical example...' }
+ * ];
  * // Framework auto-converts to PromptMessage[] format
  * ```
  *
@@ -113,12 +109,11 @@ export type InferArgs<TArguments extends Record<string, IPromptArgument>> = {
  *   };
  * }
  *
- * class MyServer implements IServer {
- *   advanced: AdvancedPrompt = (args): PromptMessage[] => [
- *     { role: 'user', content: { type: 'text', text: args.query } },
- *     { role: 'assistant', content: { type: 'image', data: '...', mimeType: 'image/png' } }
- *   ];
- * }
+ * // Implementation
+ * const advanced: PromptHelper<AdvancedPrompt> = (args): PromptMessage[] => [
+ *   { role: 'user', content: { type: 'text', text: args.query } },
+ *   { role: 'assistant', content: { type: 'image', data: '...', mimeType: 'image/png' } }
+ * ];
  * // Use this pattern for images, audio, or advanced content types
  * ```
  *
@@ -133,12 +128,11 @@ export type InferArgs<TArguments extends Record<string, IPromptArgument>> = {
  *   };
  * }
  *
- * class MyServer implements IServer {
- *   weatherReport: WeatherPrompt = (args) => {
- *     const style = args.style || 'casual';
- *     return `Generate a ${style} weather report for ${args.location}.`;
- *   }
- * }
+ * // Implementation
+ * const weatherReport: PromptHelper<WeatherPrompt> = (args) => {
+ *   const style = args.style || 'casual';
+ *   return `Generate a ${style} weather report for ${args.location}.`;
+ * };
  * ```
  *
  * @example Type Inference with type field
@@ -149,18 +143,17 @@ export type InferArgs<TArguments extends Record<string, IPromptArgument>> = {
  *   args: {
  *     port: { description: 'Port number', type: 'number' },
  *     debug: { description: 'Debug mode', type: 'boolean', required: false },
- *     env: { description: 'Environment', enum: ['dev', 'prod'] }
+ *     env: { description: 'Environment', enum: ['dev', 'prod'] as const }
  *   };
  * }
  *
- * class MyServer implements IServer {
- *   config: ConfigPrompt = (args) => {
- *     // args.port is number (required)
- *     // args.debug is boolean | undefined (optional)
- *     // args.env is 'dev' | 'prod' (required, literal union)
- *     return `Configure port ${args.port} for ${args.env}`;
- *   }
- * }
+ * // Implementation with full type inference
+ * const config: PromptHelper<ConfigPrompt> = (args) => {
+ *   // args.port is number (required)
+ *   // args.debug is boolean | undefined (optional)
+ *   // args.env is 'dev' | 'prod' (required, literal union)
+ *   return `Configure port ${args.port} for ${args.env}`;
+ * };
  * ```
  */
 export interface IPrompt {
@@ -179,24 +172,6 @@ export interface IPrompt {
    * Use empty object {} for prompts with no arguments
    */
   args: Record<string, IPromptArgument>;
-
-  /**
-   * Callable signature with automatic type inference
-   *
-   * The type of `args` is automatically inferred from the `args` field
-   * defined in your interface extension. This means you get full type safety
-   * without having to specify generic parameters!
-   *
-   * Can return either:
-   * - string: Simple prompt (auto-wrapped as user message)
-   * - SimpleMessage[]: Easy multi-turn conversations (recommended)
-   * - PromptMessage[]: Advanced multi-message conversation (full control)
-   */
-  (args: InferArgs<this['args']>):
-    | string
-    | PromptMessage[]
-    | SimpleMessage[]
-    | Promise<string | PromptMessage[] | SimpleMessage[]>;
 }
 
 /**
