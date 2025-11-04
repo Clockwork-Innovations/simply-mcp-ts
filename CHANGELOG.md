@@ -5,11 +5,121 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+#### WebSocket Transport Support
+- ✨ **New WebSocket transport** for real-time, bidirectional communication
+- Full MCP SDK transport parity (stdio, HTTP, WebSocket)
+- Low-latency communication (~10-30ms vs ~50-100ms for SSE)
+- Built-in heartbeat mechanism with configurable ping/pong intervals
+- Automatic reconnection with exponential backoff
+- Support for multiple concurrent clients
+- Configurable message size limits (default: 10MB)
+- Complete client and server implementations
+- Example server: `examples/interface-websocket.ts`
+
+**Usage:**
+```typescript
+interface MyServer extends IServer {
+  transport: 'websocket';
+  websocket: {
+    port: 8080;
+    heartbeatInterval: 30000;
+    heartbeatTimeout: 60000;
+  };
+}
+```
+
 ## [4.0.0] - TBD
 
-### BREAKING CHANGES
+### 🚀 BREAKING CHANGES
 
-**Major API Consolidation**
+#### IUI v4.0: Ultra-Minimal Redesign
+
+**Reduced from 30+ fields to 6 fields!**
+
+The IUI (Interactive UI) interface has been radically simplified through intelligent auto-detection:
+
+**What Changed:**
+- ✨ **New unified `source` field** replaces 5 separate fields (`html`, `file`, `component`, `externalUrl`, `remoteDom`)
+- ✨ **Auto-detection** of 6 source types (URL, inline HTML, Remote DOM, HTML files, React components, folders)
+- ✨ **Auto-extraction** of dependencies from imports (no manual `dependencies` array needed)
+- ✨ **Zero-config** build system with smart defaults (optional `simply-mcp.config.ts` for customization)
+- ✨ **Config file** replaces inline build config (`bundle`, `minify`, `cdn`, `performance` fields)
+
+**Removed Fields (Auto-Inferred or Moved to Config):**
+- `dependencies` - Auto-extracted from component imports
+- `stylesheets` - Auto-extracted from component imports
+- `scripts` - Auto-extracted from component imports
+- `bundle` - Moved to `simply-mcp.config.ts` → `build.bundle`
+- `minify` - Moved to `simply-mcp.config.ts` → `build.minify`
+- `cdn` - Moved to `simply-mcp.config.ts` → `cdn.*`
+- `performance` - Moved to `simply-mcp.config.ts` → `performance.*`
+- `html`, `file`, `component`, `externalUrl`, `remoteDom` - Merged into `source`
+- `theme` - Use CSS imports in components instead
+- `dynamic`, `data` - Removed (TypeScript infers from callable signature)
+- `script` - Merged with `scripts` (auto-detected)
+- `imports` - Auto-extracted from code
+
+**New Features:**
+- Single `source` field with auto-type detection (confidence-based)
+- Callable signature support: `(): string | Promise<string>` for dynamic UIs
+- Watch mode tracks all relevant files automatically (components, dependencies, styles)
+- Build configuration via `simply-mcp.config.ts` with environment-based defaults
+
+**Migration Example:**
+
+Before (v3.x):
+```typescript
+interface DashboardUI extends IUI {
+  uri: 'ui://dashboard';
+  name: 'Dashboard';
+  description: 'Analytics dashboard';
+  component: './Dashboard.tsx';
+  dependencies: ['react', 'recharts', 'date-fns'];
+  bundle: { minify: true, sourcemap: false };
+  stylesheets: ['./Dashboard.css'];
+  size: { width: 1280, height: 800 };
+}
+```
+
+After (v4.0):
+```typescript
+interface DashboardUI extends IUI {
+  uri: 'ui://dashboard';
+  name: 'Dashboard';
+  description: 'Analytics dashboard';
+  source: './Dashboard.tsx';  // Everything else is automatic!
+  size: { width: 1280, height: 800 };
+}
+
+// Optional: Create simply-mcp.config.ts for custom build settings
+export default {
+  build: {
+    minify: true,
+    sourcemap: false,
+  }
+};
+```
+
+**New Examples:**
+- Replaced 34 outdated v3.x examples with 8 focused v4.0 examples
+- Examples showcase all 6 source types and auto-detection capabilities
+- See `/examples/v4/README.md` for complete guide
+
+**Files Modified:**
+- `/src/server/parser.ts` - Extracts `source` field, validates source XOR callable
+- `/src/adapters/ui-adapter.ts` - Source-based routing with type detection
+- `/src/features/ui/ui-react-compiler.ts` - Accepts extracted deps and build config
+- `/src/features/ui/source-detector.ts` - Detects 6 source types with confidence scoring
+- `/src/compiler/dependency-extractor.ts` - Auto-extracts NPM packages and local files
+- `/src/config/config-loader.ts` - Loads zero-config or custom build settings
+
+---
+
+### Major API Consolidation
 - **Removed APIs**: Decorator, Functional, Programmatic (public), and MCP Builder APIs have been removed
 - **Single API**: Interface API is now the only supported approach for building MCP servers
 - **Migration Required**: Users of removed APIs must migrate to the Interface API (see migration examples below)

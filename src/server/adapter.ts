@@ -20,6 +20,7 @@ import { typeNodeToZodSchema, generateSchemaFromTypeString } from '../core/schem
 import { registerPrompts } from '../handlers/prompt-handler.js';
 import { registerResources } from '../handlers/resource-handler.js';
 import { registerCompletions } from '../handlers/completion-handler.js';
+import { DatabaseManager } from '../core/database-manager.js';
 import type { UIWatchModeConfig } from '../types/config';
 import { z } from 'zod';
 
@@ -77,6 +78,14 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
   // Step 2: Load the module to get the implementation class
   const absolutePath = resolve(filePath);
   const fileUrl = pathToFileURL(absolutePath).href;
+
+  // DEBUG: Log file loading to detect unexpected .md execution
+  console.error('[DEBUG:ADAPTER] ========== LOADING MODULE ==========');
+  console.error('[DEBUG:ADAPTER] timestamp:', new Date().toISOString());
+  console.error('[DEBUG:ADAPTER] filePath:', filePath);
+  console.error('[DEBUG:ADAPTER] absolutePath:', absolutePath);
+  console.error('[DEBUG:ADAPTER] fileUrl:', fileUrl);
+  console.error('[DEBUG:ADAPTER] =======================================');
 
   // Add timestamp to avoid caching during development
   const moduleUrl = `${fileUrl}?t=${Date.now()}`;
@@ -140,10 +149,11 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
   // Step 4: Create BuildMCPServer instance with auto-detected capabilities
   const buildServer = new BuildMCPServer({
     name: serverName || parseResult.server?.name || 'interface-server',
-    version: serverVersion || parseResult.server?.version || '1.0.0',
-    description: parseResult.server?.description,
+    version: serverVersion || parseResult.server?.version || '1.0.0', // Parser defaults to '1.0.0'
+    description: parseResult.server?.description, // Required by parser
     silent: !verbose, // Suppress HandlerManager logging unless verbose mode enabled
     capabilities,
+    flattenRouters: parseResult.server?.flattenRouters, // Control router tool visibility
   });
 
   // Step 4.5: Inject BuildMCPServer reference into user's server instance
@@ -181,18 +191,32 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
   }
 
   // Register all tools (static or runtime)
+  // Note: BuildMCPServer handles flattenRouters filtering in listTools()
   for (const tool of toolsToRegister) {
     await registerTool(buildServer, serverInstance, tool, filePath, verbose);
   }
 
-  // Step 6: Register prompts
+  // Step 6: Register prompts (all prompts now require implementation)
   if (parseResult.prompts.length > 0) {
     registerPrompts(buildServer, serverInstance, parseResult.prompts, verbose);
   }
 
   // Step 7: Register resources
+  let dbManager: DatabaseManager | undefined;
   if (parseResult.resources.length > 0) {
-    registerResources(buildServer, serverInstance, parseResult.resources, verbose);
+    // Check if any resources have database configuration
+    const hasDatabase = parseResult.resources.some(r => r.database !== undefined);
+
+    if (hasDatabase) {
+      dbManager = new DatabaseManager();
+
+      if (verbose) {
+        const dbResources = parseResult.resources.filter(r => r.database).length;
+        console.log(`[Interface Adapter] Initializing DatabaseManager for ${dbResources} database resource(s)`);
+      }
+    }
+
+    registerResources(buildServer, serverInstance, parseResult.resources, verbose, dbManager);
   }
 
   // Step 7.1: Register UI resources (lazy-loaded)
@@ -385,6 +409,57 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     registerCompletions(buildServer, serverInstance, parseResult.completions, verbose);
   }
 
+  // Step 7.6: Register routers
+  if (parseResult.routers && parseResult.routers.length > 0) {
+    // Build map from interface names to tool names for resolution
+    const interfaceToToolName = new Map<string, string>();
+    for (const tool of parseResult.tools) {
+      interfaceToToolName.set(tool.interfaceName, tool.name || '');
+    }
+
+    for (const router of parseResult.routers) {
+      // Infer router name from property name if not specified
+      const routerName = router.name || router.propertyName.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
+
+      // Resolve interface names to actual tool names
+      const resolvedToolNames: string[] = [];
+      const unresolvedInterfaces: string[] = [];
+
+      for (const toolRef of router.tools) {
+        // Check if it's already a tool name (string literal) or an interface name
+        const actualToolName = interfaceToToolName.get(toolRef) || toolRef;
+
+        // Verify tool exists
+        if (toolsToRegister.some(t => t.name === actualToolName)) {
+          resolvedToolNames.push(actualToolName);
+        } else {
+          unresolvedInterfaces.push(toolRef);
+        }
+      }
+
+      if (unresolvedInterfaces.length > 0) {
+        const allToolNames = toolsToRegister.map(t => t.name);
+        const allInterfaceNames = Array.from(interfaceToToolName.keys());
+        console.warn(`[Interface Adapter] Router "${routerName}" references non-existent tools: ${unresolvedInterfaces.join(', ')}`);
+        console.warn(`[Interface Adapter] Available tool interfaces: ${allInterfaceNames.join(', ')}`);
+        console.warn(`[Interface Adapter] Available tool names: ${allToolNames.join(', ')}`);
+        continue; // Skip this router
+      }
+
+      // Register router with BuildMCPServer
+      buildServer.addRouterTool({
+        name: routerName,
+        description: router.description,
+        tools: resolvedToolNames,
+        metadata: router.metadata,
+      });
+
+      if (verbose) {
+        console.log(`[Interface Adapter] Registered router "${routerName}" with ${resolvedToolNames.length} tool(s): ${resolvedToolNames.join(', ')}`);
+      }
+    }
+  }
+
   // Step 8: Log detected protocol features (when not silent)
   if (verbose) {
     if (parseResult.samplings.length > 0) {
@@ -401,6 +476,9 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     }
     if (parseResult.completions.length > 0) {
       console.log(`[Interface Adapter] Detected ${parseResult.completions.length} completion interface(s)`);
+    }
+    if (parseResult.routers && parseResult.routers.length > 0) {
+      console.log(`[Interface Adapter] Detected ${parseResult.routers.length} router interface(s)`);
     }
   }
 
@@ -437,9 +515,25 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     transport,
     port,
     stateful,
+    websocket: parseResult.server?.websocket,
     auth: parseResult.server?.auth,
     capabilities, // Include auto-detected protocol capabilities
   });
+
+  // Step 11: Setup database cleanup on process exit
+  if (dbManager) {
+    const cleanup = () => {
+      if (verbose) {
+        console.log('[Interface Adapter] Disconnecting from all databases...');
+      }
+      dbManager.disconnectAll();
+    };
+
+    // Handle graceful shutdown
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
+    process.on('exit', cleanup);
+  }
 
   return interfaceServer;
 }
@@ -454,7 +548,21 @@ async function registerTool(
   filePath: string,
   verbose?: boolean
 ): Promise<void> {
-  const { name, methodName, description, paramsNode } = tool;
+  let { name, methodName, description, paramsNode, annotations } = tool;
+
+  // Phase 2.1: Tool name inference from method name
+  // If name is not provided, infer it from the method name
+  if (!name && !tool.isRuntimeTool && methodName) {
+    // Import camelToSnake from parser
+    const { camelToSnake } = await import('./parser.js');
+
+    // Infer tool name from method name: getWeather → 'get_weather'
+    name = camelToSnake(methodName);
+
+    if (verbose) {
+      console.log(`[Interface Adapter] Inferred tool name '${name}' from method '${methodName}'`);
+    }
+  }
 
   // Handle runtime tools (from serverInstance.tools array)
   if (tool.isRuntimeTool && tool.runtimeInstance) {
@@ -554,6 +662,7 @@ async function registerTool(
       // Call the method on the server instance
       return await method.call(serverInstance, args);
     },
+    ...(annotations && { annotations }), // Include annotations if present
   });
 }
 

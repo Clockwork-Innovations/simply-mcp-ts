@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simply MCP Test Harness</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading server information...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error-message" class="error-banner hidden">
+        <span id="error-text"></span>
+        <button id="error-close" class="error-close">&times;</button>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="header-title">Simply MCP Test Harness</h1>
+            <div class="server-info">
+                <div class="server-info-item">
+                    <span class="label">Server:</span>
+                    <span id="server-name" class="value">--</span>
+                </div>
+                <div class="server-info-item">
+                    <span class="label">Status:</span>
+                    <span id="server-status" class="value status-indicator">
+                        <span class="status-dot"></span>
+                        <span id="status-text">Unknown</span>
+                    </span>
+                </div>
+                <div class="server-info-item">
+                    <span class="label">MCP Port:</span>
+                    <span id="mcp-port" class="value">--</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Tab Navigation -->
+            <nav class="tab-navigation">
+                <button class="tab-button active" data-tab="tools">Tools</button>
+                <button class="tab-button" data-tab="resources">Resources</button>
+                <button class="tab-button" data-tab="prompts">Prompts</button>
+                <button class="tab-button" data-tab="ui-preview">UI Preview</button>
+                <button class="tab-button" data-tab="logs">Logs</button>
+                <button class="tab-button" data-tab="metrics">Metrics</button>
+                <button class="tab-button" data-tab="config">Config</button>
+            </nav>
+
+            <!-- Tab Content Areas -->
+            <div class="tab-content-container">
+                <!-- Tools Tab -->
+                <div id="tools-tab" class="tab-content active">
+                    <div class="placeholder">
+                        <h2>Tools</h2>
+                        <p>Tools will be listed here</p>
+                    </div>
+                </div>
+
+                <!-- Resources Tab -->
+                <div id="resources-tab" class="tab-content">
+                    <div class="placeholder">
+                        <h2>Resources</h2>
+                        <p>Resources will be listed here</p>
+                    </div>
+                </div>
+
+                <!-- Prompts Tab -->
+                <div id="prompts-tab" class="tab-content">
+                    <div class="placeholder">
+                        <h2>Prompts</h2>
+                        <p>Prompts will be listed here</p>
+                    </div>
+                </div>
+
+                <!-- UI Preview Tab -->
+                <div id="ui-preview-tab" class="tab-content">
+                    <div class="placeholder">
+                        <h2>UI Preview</h2>
+                        <p>UI resources will render here</p>
+                    </div>
+                </div>
+
+                <!-- Logs Tab -->
+                <div id="logs-tab" class="tab-content">
+                    <div class="placeholder">
+                        <h2>Logs</h2>
+                        <p>Real-time logs will appear here</p>
+                    </div>
+                </div>
+
+                <!-- Metrics Tab -->
+                <div id="metrics-tab" class="tab-content">
+                    <div class="placeholder">
+                        <h2>Metrics</h2>
+                        <p>Metrics will be displayed here</p>
+                    </div>
+                </div>
+
+                <!-- Config Tab -->
+                <div id="config-tab" class="tab-content">
+                    <div class="placeholder">
+                        <h2>Configuration</h2>
+                        <p>Configuration options will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

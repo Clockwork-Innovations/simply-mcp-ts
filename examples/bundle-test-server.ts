@@ -5,7 +5,7 @@
  * This file is used by scripts/integration-test.sh to verify bundling works correctly.
  */
 
-import type { IServer, ITool } from 'simply-mcp';
+import type { IServer, ITool, IParam } from 'simply-mcp';
 
 interface BundleTestServer extends IServer {
   name: 'bundle-test';
@@ -13,10 +13,15 @@ interface BundleTestServer extends IServer {
   description: 'Test server for bundle integration testing';
 }
 
+interface InputParam extends IParam {
+  type: 'string';
+  description: 'Input text to echo';
+}
+
 interface TestTool extends ITool {
   name: 'test';
   description: 'Test tool that echoes input';
-  params: { input: string };
+  params: { input: InputParam };
   result: { output: string };
 }
 

@@ -1,11 +1,12 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, test } from '@jest/globals';
-import { loadInterfaceServer } from '../../../src/adapter.js';
+import { loadInterfaceServer } from '../../../src/server/adapter.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('Interface API static resources', () => {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
   const fixturePath = path.resolve(__dirname, '../../fixtures/interface-static-resource.ts');
 
   test('inlines typed constants as static data', async () => {

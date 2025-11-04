@@ -16,6 +16,8 @@
  */
 
 import * as Babel from '@babel/standalone';
+import type { ExtractedDependencies } from '../../compiler/dependency-extractor.js';
+import type { BuildConfig } from '../../config/config-schema.js';
 
 /**
  * React compilation result
@@ -57,16 +59,16 @@ export interface ReactCompilerOptions {
   componentCode: string;
 
   /**
-   * External dependencies to load from CDN
-   * Example: ['recharts@2.5.0', 'lodash@4.17.21']
+   * Extracted dependencies from dependency-extractor
+   * Contains categorized npm packages, local files, and stylesheets
    */
-  dependencies?: string[];
+  extractedDeps: ExtractedDependencies;
 
   /**
-   * Generate source maps for debugging
-   * @default true
+   * Build configuration from config-loader
+   * Controls minification, sourcemaps, externals, and format
    */
-  sourceMaps?: boolean;
+  buildConfig: BuildConfig;
 
   /**
    * Enable verbose logging
@@ -98,7 +100,18 @@ export interface ReactCompilerOptions {
  *       return <div><button>Click me</button></div>;
  *     }
  *   `,
- *   sourceMaps: true,
+ *   extractedDeps: {
+ *     npmPackages: ['recharts'],
+ *     localFiles: [],
+ *     stylesheets: [],
+ *     scripts: [],
+ *     dynamicImports: []
+ *   },
+ *   buildConfig: {
+ *     minify: false,
+ *     sourcemap: true,
+ *     external: ['react', 'react-dom']
+ *   },
  *   verbose: false
  * });
  *
@@ -112,8 +125,8 @@ export async function compileReactComponent(
   const {
     componentPath,
     componentCode,
-    dependencies = [],
-    sourceMaps = true,
+    extractedDeps,
+    buildConfig,
     verbose = false,
   } = options;
 
@@ -121,17 +134,42 @@ export async function compileReactComponent(
     console.log(`[React Compiler] Compiling: ${componentPath}`);
   }
 
-  // Step 1: Validate component code before compilation
+  // Step 1: Apply build configuration settings
+  // Handle minify as boolean or object
+  const shouldMinify = typeof buildConfig.minify === 'boolean'
+    ? buildConfig.minify
+    : (buildConfig.minify?.js ?? false);
+  const shouldMinifyHTML = typeof buildConfig.minify === 'boolean'
+    ? buildConfig.minify
+    : (buildConfig.minify?.html ?? false);
+  const shouldGenerateSourcemaps = buildConfig.sourcemap ?? false;
+  const externalPackages = buildConfig.external ?? ['react', 'react-dom'];
+
+  // Step 2: Filter npm packages (exclude externals from CDN injection)
+  const npmPackages = extractedDeps.npmPackages.filter(
+    pkg => !externalPackages.includes(pkg)
+  );
+
+  if (verbose) {
+    console.log(`[React Compiler] Build config:`, {
+      minify: shouldMinify,
+      sourcemap: shouldGenerateSourcemaps,
+      externals: externalPackages,
+    });
+    console.log(`[React Compiler] NPM packages (non-external):`, npmPackages);
+  }
+
+  // Step 3: Validate component code before compilation
   validateComponentCode(componentCode, componentPath);
 
-  // Step 2: Extract component name from source code
+  // Step 4: Extract component name from source code
   const componentName = extractComponentName(componentCode);
 
   if (verbose) {
     console.log(`[React Compiler] Extracted component name: ${componentName}`);
   }
 
-  // Step 3: Compile with Babel
+  // Step 5: Compile with Babel
   const babelOptions: any = {
     filename: componentPath,
     presets: [
@@ -140,7 +178,9 @@ export async function compileReactComponent(
       // TypeScript preset - strip types, keep JSX
       ['typescript', { isTSX: true, allExtensions: true }],
     ],
-    sourceMaps: sourceMaps,
+    sourceMaps: shouldGenerateSourcemaps,
+    compact: shouldMinify,
+    minified: shouldMinify,
   };
 
   let compiledCode: string;
@@ -169,12 +209,13 @@ export async function compileReactComponent(
     );
   }
 
-  // Step 4: Generate HTML wrapper with React runtime
+  // Step 6: Generate HTML wrapper with React runtime
   const html = generateHTMLWrapper({
     componentName,
     compiledCode,
-    dependencies,
+    dependencies: npmPackages,
     sourceMap,
+    minify: shouldMinifyHTML,
   });
 
   return {
@@ -242,8 +283,9 @@ function generateHTMLWrapper(params: {
   compiledCode: string;
   dependencies: string[];
   sourceMap?: string;
+  minify?: boolean;
 }): string {
-  const { componentName, compiledCode, dependencies, sourceMap } = params;
+  const { componentName, compiledCode, dependencies, sourceMap, minify = false } = params;
 
   // React 18.x from CDN (unpkg)
   const reactVersion = '18.2.0';
@@ -260,6 +302,11 @@ function generateHTMLWrapper(params: {
       return `<script src="https://unpkg.com/${packageSpec}/dist/index.umd.js"></script>`;
     })
     .join('\n    ');
+
+  // Minified vs readable HTML
+  if (minify) {
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>React UI Component</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}#root{width:100%;height:100vh}</style></head><body><div id="root"></div><script crossorigin src="${reactURL}"></script><script crossorigin src="${reactDOMURL}"></script>${dependencyScripts}<script>${compiledCode};const container=document.getElementById('root');const root=ReactDOM.createRoot(container);root.render(React.createElement(${componentName}));</script>${sourceMap ? `<script type="application/json" id="source-map">${sourceMap}</script>` : ''}</body></html>`;
+  }
 
   return `<!DOCTYPE html>
 <html lang="en">

@@ -35,6 +35,18 @@ export interface UIResourcePayload {
   mimeType: string;
 
   /**
+   * Human-readable name for the resource
+   * Optional - used for display purposes
+   */
+  name?: string;
+
+  /**
+   * Description of what the resource does
+   * Optional - used for display purposes
+   */
+  description?: string;
+
+  /**
    * Text content (HTML or URL)
    */
   text?: string;

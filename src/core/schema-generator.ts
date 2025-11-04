@@ -771,7 +771,8 @@ export function typeNodeToZodSchema(
     }
 
     case ts.SyntaxKind.NumberKeyword: {
-      let numberSchema = z.number();
+      // Use z.coerce.number() to automatically convert string inputs from JSON-RPC to numbers
+      let numberSchema = z.coerce.number();
 
       if (tags.int) {
         numberSchema = numberSchema.int();
@@ -801,7 +802,8 @@ export function typeNodeToZodSchema(
     }
 
     case ts.SyntaxKind.BooleanKeyword:
-      return z.boolean();
+      // Use z.coerce.boolean() to automatically convert string inputs from JSON-RPC to booleans
+      return z.coerce.boolean();
 
     case ts.SyntaxKind.AnyKeyword:
       return z.any();

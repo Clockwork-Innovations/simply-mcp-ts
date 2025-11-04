@@ -131,8 +131,10 @@ async function runInterfaceAdapter(
  * Looks for .ts and .js files containing interface patterns
  */
 async function discoverServers(cwd: string = process.cwd()): Promise<string[]> {
+  console.error('[DEBUG:DISCOVER] Discovering servers in:', cwd);
   try {
     const files = await readdir(cwd);
+    console.error('[DEBUG:DISCOVER] Found files:', files.length, 'files');
     const potentialServers: string[] = [];
 
     for (const file of files) {
@@ -157,8 +159,10 @@ async function discoverServers(cwd: string = process.cwd()): Promise<string[]> {
       }
     }
 
+    console.error('[DEBUG:DISCOVER] Potential servers found:', JSON.stringify(potentialServers));
     return potentialServers;
-  } catch {
+  } catch (error) {
+    console.error('[DEBUG:DISCOVER] Error during discovery:', error);
     return [];
   }
 }
@@ -461,8 +465,44 @@ export const runCommand: CommandModule = {
       });
   },
   handler: async (argv: any) => {
+    // DEBUG: Log all invocations to detect unexpected file execution
+    console.error('[DEBUG:RUN] ========== RUN COMMAND INVOKED ==========');
+    console.error('[DEBUG:RUN] timestamp:', new Date().toISOString());
+    console.error('[DEBUG:RUN] process.argv:', JSON.stringify(process.argv));
+    console.error('[DEBUG:RUN] cwd:', process.cwd());
+    console.error('[DEBUG:RUN] argv.file:', JSON.stringify(argv.file));
+    console.error('[DEBUG:RUN] ==========================================');
+
     const files = argv.file ? (Array.isArray(argv.file) ? argv.file : [argv.file]) : [];
     const configPath = argv.config as string | undefined;
+
+    console.error('[DEBUG:RUN] Parsed files array:', JSON.stringify(files));
+
+    // Validate file extensions - reject non-code files
+    const invalidFiles = files.filter((f: string) => {
+      const ext = extname(f).toLowerCase();
+      return !['.ts', '.js', '.mts', '.mjs', '.cts', '.cjs'].includes(ext);
+    });
+
+    if (invalidFiles.length > 0) {
+      console.error('[RunCommand] Error: Invalid file type(s) provided');
+      console.error('');
+      console.error('Unsupported file(s):');
+      invalidFiles.forEach((f: string) => {
+        console.error(`  - ${f} (${extname(f)})`);
+      });
+      console.error('');
+      console.error('Simply MCP only supports TypeScript and JavaScript files:');
+      console.error('  - TypeScript: .ts, .mts, .cts');
+      console.error('  - JavaScript: .js, .mjs, .cjs');
+      console.error('');
+      console.error('If you\'re trying to run examples from documentation:');
+      console.error('  1. Extract the code from the markdown file');
+      console.error('  2. Save it as a .ts file');
+      console.error('  3. Run: simply-mcp run your-server.ts');
+      console.error('');
+      process.exit(1);
+    }
 
     // If no files provided, show server discovery help
     if (files.length === 0) {

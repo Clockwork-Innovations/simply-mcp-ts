@@ -22,27 +22,12 @@
 📦 **v4.0 Improvements**
 - **Slim Package**: 50-60% smaller with optional dependencies
 - **File-Based Configuration**: Declare transport and auth in your server interface
-- **Built-In Authentication**: API key auth out of the box
-- **Dynamic Loading**: Only load what you use
+- **Built-In Authentication**: API key and OAuth 2.1 authentication
 - **MCP Protocol Features**: Full support for server-to-client communication
 
 🚀 **Multiple Transport Support**
 - 📡 Stdio (standard input/output)
-- 🌐 HTTP with dual modes:
-  - **Stateful**: Session-based with SSE streaming (default)
-  - **Stateless**: Perfect for serverless/Lambda deployments
-
-⚡ **Developer Experience**
-- Type-safe with full TypeScript support
-- Built-in validation and error handling
-- Comprehensive CLI tools
-- Auto-detection and smart defaults
-
-🎯 **Advanced Features**
-- Router tools for organizing and scaling servers
-- Binary content support (images, PDFs, audio)
-- Session management for stateful transports
-- Security features (rate limiting, access control, audit logging)
+- 🌐 HTTP with dual modes: Stateful (sessions + SSE, aka Streamable HTTP) and Stateless (serverless)
 
 🔌 **MCP Protocol Features** (v4.0)
 - **Sampling**: Request LLM completions from clients
@@ -50,37 +35,96 @@
 - **Roots**: Discover client root directories
 - **Subscriptions**: Notify clients of resource updates
 - **Completions**: Provide autocomplete suggestions
+- **Progress Messages**: Provide human-readable status updates during long-running operations (v4.1.0)
+- **Tool Annotations**: Metadata hints about tool behavior (read-only, destructive, categories, performance)
+- **JSON-RPC 2.0 Batch Processing**: 5x throughput with parallel mode, minimal overhead (1.9%)
 
-🎨 **UI Resources** (v4.0)
-- **IUI Interface**: Define user interfaces with zero boilerplate
+🎨 **UI Resources** (v4.0 - Ultra-Minimal Redesign)
+- **IUI Interface**: Reduced from 30+ fields to just 6 fields!
+- **Auto-Detection**: 6 source types automatically detected (URL, HTML, React, Remote DOM, files, folders)
+- **Auto-Extraction**: Dependencies extracted from imports - no manual configuration
+- **Zero-Config**: Smart defaults based on NODE_ENV (optional config file for customization)
 - **React/JSX Support**: Write UIs in React with full TypeScript support
-- **File-Based UIs**: Reference external HTML/CSS/JS files
-- **Hot Reload**: Watch mode for instant UI updates
-- **Production Optimizations**: Bundling, minification, CDN, theming
-- **Performance Monitoring**: Track build times, bundle sizes, compression ratios
+- **Hot Reload**: Watch mode automatically tracks all relevant files
+- **Production Optimizations**: Bundling, minification, CDN via `simply-mcp.config.ts`
 
-## 🎉 v4.0.0: 100% MCP UI Protocol Compliance
+🎵 **Audio Resources** (v4.2)
+- **IAudioContent Interface**: Type-safe audio content with base64 encoding
+- **IAudioMetadata Interface**: Rich metadata (duration, sample rate, channels, bitrate, codec)
+- **createAudioContent() Helper**: Simplify loading audio from files or buffers
+- **Multi-Format Support**: MP3, WAV, OGG, FLAC, AAC, M4A, WebM with automatic MIME type detection
+- **Static & Dynamic Patterns**: Embedded or runtime-loaded audio resources
 
-Simply-MCP v4.0.0 achieves **100% compliance** with the official MCP UI specification:
+## 🎉 v4.0.0: 100% MCP UI Protocol Compliance (Community Extension)
 
-✅ **5/5 Action Types**
-- `tool` - Call server tools
-- `notify` - Show notifications
-- `prompt` - Submit to LLM (new)
-- `intent` - Trigger intents (new)
-- `link` - Navigate URLs (new)
+Simply-MCP v4.0.0 achieves **100% compliance** with the [MCP UI specification](https://github.com/idosal/mcp-ui), a community-maintained extension to the official MCP protocol.
 
-✅ **3/3 MIME Types**
-- `text/html` - HTML markup
-- `text/uri-list` - External URLs (new)
-- `application/vnd.mcp-ui.remote-dom` - Remote DOM (new)
+> **Note:** MCP-UI is a community extension by [@idosal](https://github.com/idosal), not part of the official Anthropic MCP specification. It extends the protocol to support interactive web UIs alongside traditional tools and resources.
 
-✅ **Official Protocol Format**
-- Nested `payload` structure
-- `messageId` correlation
-- Zero legacy types
+✅ **5/5 Action Types** | ✅ **2/2 Core MIME Types** | ✅ **Official Protocol Format** | ✅ **SDK API Compatibility**
 
-⚠️ **Breaking Changes in v4.0.0** - See [MIGRATION-v4.md](docs/MIGRATION-v4.md) for upgrade guide.
+### Resources
+
+- 📘 [MCP UI Protocol Reference](./docs/guides/MCP_UI_PROTOCOL.md)
+- 📘 [MCP UI Migration Guide](./docs/guides/MCP_UI_MIGRATION.md)
+- 📘 [Remote DOM Advanced Patterns](./docs/guides/REMOTE_DOM_ADVANCED.md)
+- 🔧 [Remote DOM Troubleshooting](./docs/guides/REMOTE_DOM_TROUBLESHOOTING.md)
+- 🔗 [Official MCP-UI Spec](https://github.com/idosal/mcp-ui)
+
+---
+
+## Architecture: Built on the Official MCP SDK
+
+Simply-MCP is a **developer experience layer** built on top of the official [Anthropic MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk). We don't reimplement the protocol - we make it easier to use.
+
+### What the MCP SDK Provides
+
+The official SDK implements the Model Context Protocol specification:
+- Protocol message handling (tools, resources, prompts, sampling)
+- Transport layers (stdio, HTTP/SSE)
+- OAuth 2.1 authentication primitives
+- Type definitions and validation
+
+### What Simply-MCP Adds
+
+Simply-MCP builds **on top of** the SDK to provide:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Simply-MCP (Developer Experience Layer)            │
+├─────────────────────────────────────────────────────┤
+│  • Interface-Driven API (zero boilerplate)          │
+│  • AST-based metadata extraction                    │
+│  • Tool routers & namespaces                        │
+│  • CLI tooling (run, bundle, watch)                 │
+│  • UI resource helpers (React/JSX compilation)      │
+│  • OAuth storage adapters (InMemoryStorage, Redis)  │
+│  • Batch processing context                         │
+├─────────────────────────────────────────────────────┤
+│  Official MCP SDK (Protocol Foundation)             │
+├─────────────────────────────────────────────────────┤
+│  • MCP protocol implementation                      │
+│  • Transport layers (stdio, HTTP/SSE)               │
+│  • OAuth 2.1 primitives                             │
+│  • Message schemas & validation                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**When to use Simply-MCP:**
+- ✅ You want interface-driven API (zero boilerplate)
+- ✅ You need tool routing/namespacing
+- ✅ You're building UI resources
+- ✅ You prefer TypeScript-first development
+
+**When to use the SDK directly:**
+- ✅ You need maximum control over the protocol
+- ✅ Minimal dependencies are critical
+- ✅ You're implementing a custom transport layer
+- ✅ You're working in a non-TypeScript environment
+
+See [SDK Documentation](https://github.com/modelcontextprotocol/typescript-sdk) for the official protocol reference.
+
+---
 
 ## Quick Start
 
@@ -90,57 +134,34 @@ Simply-MCP v4.0.0 achieves **100% compliance** with the official MCP UI specific
 npm install simply-mcp
 ```
 
-### Optional Dependencies
-
-SimplyMCP v4.0 uses optional dependencies for features you may not need, keeping the package slim:
-
-```bash
-# HTTP transport (only if using transport: 'http')
-npm install express cors
-
-# Watch mode (only if using --watch flag)
-npm install chokidar
-
-# Bundling (only if using bundle command)
-npm install esbuild
-
-# UI Resources (only if using IUI interfaces)
-npm install @babel/core @babel/preset-react @babel/preset-typescript  # React/JSX compilation
-npm install html-minifier-terser cssnano postcss terser              # Minification
-```
-
-The CLI will show helpful errors if you try to use a feature without its dependencies.
-
 ### Create Your First Server
-
-Simply MCP uses pure TypeScript interfaces - the cleanest way to define MCP servers:
 
 ```typescript
 // server.ts
-import type { ITool, IServer } from 'simply-mcp';
+import type { ITool, IParam, IServer } from 'simply-mcp';
 
-// 1. Configure your server (stdio by default)
+// 1. Configure your server
 interface MyServer extends IServer {
   name: 'my-server';
-  version: '1.0.0';
-  // Optional: Use HTTP transport
-  // transport: 'http';
-  // port: 3000;
+  description: 'A helpful MCP server';
 }
 
-// 2. Define your tool interface
+// 2. Define parameter interface
+interface NameParam extends IParam {
+  type: 'string';
+  description: 'Person name to greet';
+}
+
+// 3. Define your tool interface
 interface GreetTool extends ITool {
   name: 'greet';
   description: 'Greet someone';
-  params: { name: string };
+  params: { name: NameParam };
   result: string;
 }
 
-// 3. Implement the server
+// 4. Implement the server
 export default class Server implements MyServer {
-  name = 'my-server' as const;
-  version = '1.0.0' as const;
-
   greet: GreetTool = async ({ name }) => `Hello, ${name}!`;
 }
 ```
@@ -153,585 +174,329 @@ npx simply-mcp run server.ts
 
 That's it! Your MCP server is running with full type safety and zero boilerplate.
 
-### Add a User Interface
+**Next Steps:**
+- 📘 [Quick Start Guide](./docs/guides/QUICK_START.md) - Detailed tutorial
+- 📘 [Features Guide](./docs/guides/FEATURES.md) - Tools, prompts, resources
+- 📘 [API Reference](./docs/guides/API_REFERENCE.md) - Complete API documentation
 
-Adding UIs is just as simple - use the `IUI` interface:
+---
 
-```typescript
-import type { IUI, IServer } from 'simply-mcp';
+## Validation
 
-// Define a UI resource
-interface DashboardUI extends IUI {
-  name: 'dashboard';
-  uri: 'ui://dashboard';
+Simply MCP validates your interface definitions during dry-run:
 
-  html: '<div id="app"><h1>My Dashboard</h1></div>';
-  css: 'body { font-family: system-ui; padding: 20px; }';
-  minify: true;  // 37% avg size savings
-}
-
-export default class Server implements IServer {
-  name = 'my-server' as const;
-  version = '1.0.0' as const;
-
-  dashboard: DashboardUI = {
-    html: '<div id="app"><h1>My Dashboard</h1></div>',
-    css: 'body { font-family: system-ui; padding: 20px; }',
-  };
-}
-```
-
-Run with hot reload:
 ```bash
-npx simply-mcp run server.ts --ui-watch
+npx simply-mcp run server.ts --dry-run
 ```
 
-**Learn More:**
-- 📘 [UI Watch Mode Guide](./docs/guides/UI_WATCH_MODE.md) - Hot reload and file watching
-- 📁 **Examples**: `examples/interface-file-based-ui.ts`, `interface-react-dashboard.ts`, `interface-production-optimized.ts`
-- 🎨 **IUI Options**: Inline HTML/CSS/JS, external files, React/JSX, bundling, theming, minification
+**Key validation rules:**
+- Always use separate `IParam` interfaces (no inline types)
+- Automatic type coercion for number/boolean parameters
+- Dry-run catches configuration errors early
+
+**Learn More:** [Validation Guide](./docs/guides/VALIDATION.md)
 
 ---
 
-## Feature Implementation Requirements
+## Implementation Requirements
 
-This table shows which features require implementation and which are auto-handled by the framework:
+| Feature | Implementation Required? |
+|---------|-------------------------|
+| **Tools** | ✅ Always |
+| **Prompts** | ✅ Always |
+| **Static Resources** | ❌ No (framework handles) |
+| **Dynamic Resources** | ✅ Required |
 
-| Feature | Implementation Required? | Notes |
-|---------|-------------------------|-------|
-| **Tools** | ✅ Always | Every tool must have an implementation method |
-| **Static Prompts** | ❌ No | Framework auto-interpolates template string |
-| **Dynamic Prompts** | ✅ Required | Must implement when `dynamic: true` or no template |
-| **Static Resources** | ❌ No | Framework serves literal data directly |
-| **Dynamic Resources** | ✅ Required | Must implement when `data` uses type annotations |
-
-### Quick Reference
-
-**You MUST implement:**
-- ✅ All tools (every tool needs a method)
-- ✅ Dynamic prompts (when `dynamic: true` or no `template`)
-- ✅ Dynamic resources (when `data` contains types like `number`, `string`, etc.)
-
-**Framework handles automatically:**
-- ✅ Static prompts (when `template` field provided)
-- ✅ Static resources (when `data` contains literal values like `123`, `'text'`)
-
-### Implementation Checklist
-
-For each feature you define:
-
-1. **Is it a tool?**
-   - → ✅ **IMPLEMENT** as method (always required)
-
-2. **Is it a prompt?**
-   - Has `template` field? → ❌ **NO IMPLEMENTATION** needed
-   - Has `dynamic: true` or no template? → ✅ **IMPLEMENT** as method
-
-3. **Is it a resource?**
-   - All `data` values are literals (like `version: '1.0.0'`)? → ❌ **NO IMPLEMENTATION** needed
-   - `data` has type annotations (like `count: number`)? → ✅ **IMPLEMENT** as property
-
-### Examples
-
-**Tool (always needs implementation):**
-```typescript
-interface GreetTool extends ITool {
-  name: 'greet';
-  params: { name: string };
-  result: string;
-}
-
-// Must implement
-export default class MyServer implements IServer {
-  greet: GreetTool = async (params) => `Hello, ${params.name}!`;
-}
-```
-
-**Static Prompt (no implementation needed):**
-```typescript
-interface SummarizePrompt extends IPrompt {
-  name: 'summarize';
-  template: `Summarize this text: {text}`;
-  // No implementation needed - framework interpolates {text} automatically
-}
-```
-
-**Dynamic Resource (needs implementation):**
-```typescript
-interface StatsResource extends IResource {
-  uri: 'stats://requests';
-  data: { count: number }; // Type annotation - needs implementation
-}
-
-// Must implement
-export default class MyServer implements IServer {
-  'stats://requests': StatsResource = async () => ({ count: 42 });
-}
-```
+**Learn More:** [Features Guide](./docs/guides/FEATURES.md)
 
 ---
 
-### Transport Configuration
+## Transport & Authentication
 
-**Stdio (Default)**
+### HTTP Transport
+
 ```typescript
 interface MyServer extends IServer {
   name: 'my-server';
-  version: '1.0.0';
-  // transport defaults to 'stdio' - no config needed
-}
-```
-
-**HTTP Server**
-```typescript
-interface MyServer extends IServer {
-  name: 'my-server';
-  version: '1.0.0';
+  description: 'My MCP server';
   transport: 'http';
   port: 3000;
 }
 ```
 
-Run: `npx simply-mcp run server.ts` (uses config from file, no flags needed!)
-
 ### Authentication
 
-Secure your HTTP servers with API key authentication:
+Simply-MCP supports two authentication methods:
+
+#### API Key Authentication
+
+Simple key-based authentication for internal tools:
 
 ```typescript
-import type { IServer, IApiKeyAuth } from 'simply-mcp';
+import type { IApiKeyAuth } from 'simply-mcp';
 
 interface MyAuth extends IApiKeyAuth {
   type: 'apiKey';
   keys: [
-    { name: 'admin', key: 'sk-xxx', permissions: ['*'] },
-    { name: 'readonly', key: 'sk-yyy', permissions: ['read:*'] }
+    { name: 'admin', key: process.env.API_KEY!, permissions: ['*'] }
   ];
 }
 
 interface MyServer extends IServer {
   name: 'secure-server';
-  version: '1.0.0';
+  description: 'A secure MCP server';
   transport: 'http';
   port: 3000;
   auth: MyAuth;
 }
 ```
 
-Clients must include header: `x-api-key: sk-xxx`
+#### OAuth 2.1 Authentication
+
+Industry-standard OAuth for production use:
+
+```typescript
+import type { IOAuth2Auth } from 'simply-mcp';
+
+interface MyOAuth extends IOAuth2Auth {
+  type: 'oauth2';
+  issuerUrl: 'https://auth.example.com';
+  clients: [
+    {
+      clientId: 'web-app';
+      clientSecret: process.env.OAUTH_CLIENT_SECRET!;
+      redirectUris: ['https://app.example.com/callback'];
+      scopes: ['read', 'tools:execute'];
+      name: 'Web Application';
+    }
+  ];
+}
+
+interface MyServer extends IServer {
+  name: 'oauth-server';
+  description: 'OAuth-protected MCP server';
+  transport: 'http';
+  port: 3000;
+  stateful: true;  // Required for OAuth
+  auth: MyOAuth;
+}
+```
+
+**Features:**
+- Authorization Code + PKCE Flow
+- Scope-based access control
+- Token refresh and revocation
+- Audit logging
+- MCP SDK integration
+
+**Learn More:**
+- [OAuth 2.1 Guide](./docs/guides/OAUTH2.md) - Complete OAuth documentation
+- [OAuth Migration Guide](./docs/guides/OAUTH_MIGRATION.md) - Migrate from API keys
+- [Transport Guide](./docs/guides/TRANSPORT.md) - Stdio, HTTP stateful/stateless
+- [API Reference](./docs/guides/API_REFERENCE.md) - Authentication details
 
 ---
 
-## HTTP Server with Authentication
+## Tool Routers
 
-Combine HTTP transport and API key authentication for a production-ready secure server.
+Group related tools together and control their visibility in the tools list. Routers reduce context clutter by hiding tools until needed.
 
-### Complete Example
-
-**Step 1: Define Authentication**
+### Interface API Example
 
 ```typescript
-import type { IServer, IApiKeyAuth, ITool } from 'simply-mcp';
+import type { IServer, ITool, IToolRouter } from 'simply-mcp';
 
-interface ServerAuth extends IApiKeyAuth {
-  type: 'apiKey';
-  keys: [
-    { name: 'admin', key: 'sk-admin-key', permissions: ['*'] },
-    { name: 'readonly', key: 'sk-read-key', permissions: ['read:*'] }
-  ];
-}
-```
-
-**Step 2: Configure HTTP Server with Auth**
-
-```typescript
-interface SecureWeatherServer extends IServer {
-  name: 'secure-weather';
-  version: '1.0.0';
-  transport: 'http';
-  port: 3000;
-  auth: ServerAuth;  // Add authentication
-}
-```
-
-**Step 3: Implement Tools (Same as Always)**
-
-```typescript
-interface GetWeatherTool extends ITool {
-  name: 'get_weather';
-  description: 'Get weather (requires API key)';
-  params: { location: string };
-  result: { temperature: number; conditions: string };
-}
-
-export default class SecureWeatherServer implements SecureWeatherServer {
-  getWeather: GetWeatherTool = async (params) => {
-    return {
-      temperature: 22,
-      conditions: 'Sunny'
-    };
-  };
-}
-```
-
-### Running the Server
-
-```bash
-npx simply-mcp run server.ts
-# Server starts on http://localhost:3000/mcp
-# Clients must provide: x-api-key header
-```
-
-### Testing with curl
-
-**Initialize Session (Requires API Key)**
-
-```bash
-curl -H "x-api-key: sk-admin-key" \
-  -H "Content-Type: application/json" \
-  http://localhost:3000/mcp \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "initialize",
-    "params": {
-      "protocolVersion": "2024-11-05",
-      "capabilities": {},
-      "clientInfo": {"name": "test", "version": "1.0.0"}
-    },
-    "id": 1
-  }'
-```
-
-Response includes `mcp-session-id` - use it for subsequent requests.
-
-**Call Tool (Requires Session ID)**
-
-```bash
-curl -H "x-api-key: sk-admin-key" \
-  -H "mcp-session-id: <session-id-from-response>" \
-  -H "Content-Type: application/json" \
-  http://localhost:3000/mcp \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "get_weather",
-      "arguments": {"location": "San Francisco"}
-    },
-    "id": 2
-  }'
-```
-
-### Permission Levels
-
-Control access with permission arrays:
-
-```typescript
-interface ServerAuth extends IApiKeyAuth {
-  type: 'apiKey';
-  keys: [
-    // Full access to everything
-    { name: 'admin', key: 'sk-admin', permissions: ['*'] },
-
-    // Access to tools and resources only
-    { name: 'developer', key: 'sk-dev', permissions: ['tool:*', 'resource:*'] },
-
-    // Read-only access
-    { name: 'readonly', key: 'sk-read', permissions: ['read:*'] },
-
-    // Specific tool access
-    { name: 'weather-only', key: 'sk-weather', permissions: ['tool:get_weather'] }
-  ];
-}
-```
-
-**Permission Syntax:**
-- `['*']` - Full access
-- `['tool:*']` - All tools
-- `['tool:get_weather']` - Specific tool
-- `['resource:*']` - All resources
-- `['read:*']` - Read operations only
-
-### HTTP + Auth + Stateful
-
-For session-based state management:
-
-```typescript
-interface SecureStatefulServer extends IServer {
-  name: 'secure-stateful';
-  version: '1.0.0';
-  transport: 'http';
-  port: 3000;
-  stateful: true;  // Enable sessions
-  auth: ServerAuth;
-}
-```
-
-### Security Best Practices
-
-1. **Use strong API keys**: At least 32 characters, cryptographically random
-2. **HTTPS in production**: Use reverse proxy (nginx, Cloudflare) for TLS
-3. **Rotate keys regularly**: Update API keys periodically
-4. **Least privilege**: Give clients minimal required permissions
-5. **Monitor access**: Log authentication attempts and tool calls
-
-### Example: Read-Only API Key
-
-Client with read-only key can't call tools:
-
-```typescript
-// This will fail with sk-read-key:
-curl -H "x-api-key: sk-read-key" ... # Call tool → 403 Forbidden
-
-// This works with sk-read-key:
-curl -H "x-api-key: sk-read-key" ... # Read resource → 200 OK
-```
-
----
-
-> **📚 [Interface API Reference](https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md)** - Complete documentation with advanced features
-
-## Why Interface API?
-
-**Zero Boilerplate:**
-- No manual schema definitions
-- No decorator setup
-- Just TypeScript types!
-
-**Full Type Safety:**
-- Compile-time type checking
-- Complete IntelliSense support
-- Auto-generated schemas from TypeScript types
-
-**Clean Code:**
-- Pure interface definitions
-- No runtime overhead
-- Easy to read and maintain
-
-## Advanced Features
-
-### Tools, Prompts, and Resources
-
-The Interface API supports all MCP primitives:
-
-**Tools** - Functions AI agents can call:
-```typescript
+// Define your tools
 interface GetWeatherTool extends ITool {
   name: 'get_weather';
   description: 'Get current weather';
-  params: { location: string };
+  params: { location: LocationParam };
   result: { temperature: number; conditions: string };
 }
-```
 
-**Prompts** - Reusable templates:
-```typescript
-// Static prompt (template-based)
-interface WeatherPrompt extends IPrompt {
-  name: 'weather_report';
-  description: 'Generate weather report';
-  args: { location: string };
-  template: `Generate a weather report for {location}.`;
+interface GetForecastTool extends ITool {
+  name: 'get_forecast';
+  description: 'Get weather forecast';
+  params: { location: LocationParam; days: DaysParam };
+  result: { forecast: Array<DayForecast> };
 }
 
-// Dynamic prompt (implemented as method)
-interface DynamicPrompt extends IPrompt {
-  name: 'context_aware';
-  description: 'Context-aware prompt';
-  args: { location: string };
-  dynamic: true;
-}
-```
-
-**Resources** - Static or dynamic data:
-```typescript
-// Static resource
-interface ConfigResource extends IResource {
-  uri: 'config://server';
-  name: 'Server Configuration';
-  mimeType: 'application/json';
-  data: { version: '1.0.0' };
+// Create a router - NO implementation needed!
+interface WeatherRouter extends IToolRouter {
+  name: 'weather_router';  // Optional - inferred from property name
+  description: 'Weather information tools';
+  tools: [GetWeatherTool, GetForecastTool];  // Reference interfaces directly
 }
 
-// Dynamic resource (implemented as method)
-interface StatsResource extends IResource {
-  uri: 'stats://requests';
-  name: 'Request Statistics';
-  mimeType: 'application/json';
-  data: { count: number };
-}
-```
-
-### Router Tools
-
-Organize related tools into routers for better discoverability:
-
-```typescript
-interface WeatherRouterTool extends IRouterTool {
-  name: 'weather_router';
-  description: 'Weather information toolkit';
-  tools: ['get_weather', 'get_forecast', 'get_alerts'];
-}
-```
-
-See [Router Tools Guide](./docs/guides/ROUTER_TOOLS.md) for complete documentation.
-
-## CLI Usage
-
-### Basic Usage
-
-```bash
-# Run your server
-npx simply-mcp run server.ts
-
-# HTTP transport
-npx simply-mcp run server.ts --http --port 3000
-
-# Watch mode (auto-restart on file changes)
-npx simply-mcp run server.ts --watch
-
-# Debug mode
-npx simply-mcp run server.ts --inspect
-```
-
-### Advanced Options
-
-```bash
-# Validate without running
-npx simply-mcp run server.ts --dry-run
-
-# Verbose output
-npx simply-mcp run server.ts --verbose
-
-# Use configuration file
-npx simply-mcp run server.ts --config simplymcp.config.json
-```
-
-See [CLI Reference](./docs/guides/CLI_REFERENCE.md) for complete documentation.
-
-## Transport Configuration
-
-### Stdio (Default)
-
-No configuration needed - stdio is the default transport for desktop app integration:
-
-```typescript
+// Server configuration
 interface MyServer extends IServer {
   name: 'my-server';
-  version: '1.0.0';
-  // transport defaults to 'stdio' - no explicit config needed
+  description: 'Server with router';
+  flattenRouters: false;  // Hide router tools from main list (recommended)
+}
+
+// Implementation
+export default class MyServer implements MyServer {
+  // Implement the tools
+  getWeather: GetWeatherTool = async (params) => ({
+    temperature: 72,
+    conditions: 'Sunny'
+  });
+
+  getForecast: GetForecastTool = async (params) => ({
+    forecast: [/* forecast data */]
+  });
+
+  // Router requires NO implementation - just declare it!
+  weatherRouter!: WeatherRouter;
 }
 ```
 
-Use stdio when:
-- ✅ Integrating with Claude Desktop or similar apps
-- ✅ Local development and testing
-- ✅ Process-based communication
+### How It Works
 
-### HTTP - Simple Configuration
+**When `flattenRouters: false` (recommended):**
+1. Main `tools/list` shows ONLY `weather_router`, not the individual tools
+2. Call `weather_router` to get the list of weather tools with descriptions
+3. Call individual tools via namespace: `weather_router__get_weather`
 
-For basic HTTP server on custom port:
+**When `flattenRouters: true`:**
+- All tools appear in the main list (router + individual tools)
+- Useful for development/testing
+
+**Benefits:**
+- **Reduce context clutter:** Hide large tool sets until needed
+- **Logical grouping:** Organize related tools together
+- **Discovery:** Clients can explore tools by calling routers
+- **Zero implementation:** Just declare the router interface
+
+**Learn More:** [Router Tools Guide](./docs/guides/ROUTER_TOOLS.md)
+
+---
+
+## Batch Processing (Quick Example)
+
+Process multiple requests efficiently with JSON-RPC 2.0 batch support for 5x throughput improvement.
+
+### Configuration
 
 ```typescript
-interface MyServer extends IServer {
-  name: 'my-server';
-  version: '1.0.0';
-  transport: 'http';
-  port: 3000;
-  // stateful defaults to true
-}
+import { BuildMCPServer } from 'simply-mcp';
+import { z } from 'zod';
+
+const server = new BuildMCPServer({
+  name: 'batch-server',
+  version: '1.0.0',
+  batching: {
+    enabled: true,
+    parallel: true,      // 5x faster throughput (940 vs 192 req/sec)
+    maxBatchSize: 100    // DoS protection
+  }
+});
 ```
 
-Use simple HTTP when:
-- ✅ Web-based MCP clients
-- ✅ Standard server deployment
-- ✅ Default session management
-
-### HTTP - Advanced Configuration
-
-For fine-grained control over HTTP behavior:
+### Batch-Aware Tool
 
 ```typescript
-interface MyServer extends IServer {
-  name: 'my-server';
-  version: '1.0.0';
-  transport: {
-    type: 'http';
-    port: 3000;
-    stateful: true;    // Session-based (default)
-    // OR
-    // stateful: false; // Stateless for serverless/Lambda
-  };
-}
+server.addTool({
+  name: 'export_record',
+  description: 'Export a record with batch awareness',
+  parameters: z.object({
+    record_id: z.string()
+  }),
+  execute: async (params, context) => {
+    // Access batch context
+    if (context?.batch) {
+      const { index, size, parallel } = context.batch;
+      console.log(`Processing ${index + 1}/${size} (parallel: ${parallel})`);
+
+      // First request - initialize resources
+      if (index === 0) {
+        initializeResourcePool();
+      }
+
+      // Last request - cleanup
+      if (index === size - 1) {
+        cleanupResourcePool();
+      }
+    }
+
+    // Export logic here
+    return {
+      content: [{
+        type: 'text',
+        text: `Record ${params.record_id} exported`
+      }]
+    };
+  }
+});
 ```
 
-Use advanced HTTP when:
-- ✅ Need explicit stateful/stateless control
-- ✅ Serverless deployment (AWS Lambda, Google Cloud Functions)
-- ✅ Multiple transport configurations in same codebase
+### Client Usage
 
-### Stateful vs Stateless
+```javascript
+// Send batch request (JSON-RPC 2.0 format)
+const batchRequest = [
+  {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"export_record","arguments":{"record_id":"A"}}},
+  {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"export_record","arguments":{"record_id":"B"}}},
+  {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"export_record","arguments":{"record_id":"C"}}}
+];
 
-**Stateful (Default):**
-- Session tracking with `mcp-session-id`
-- SSE streaming support
-- Per-session state management
-- Best for: Web applications, persistent connections
-
-**Stateless:**
-- No session storage
-- Each request independent
-- No SSE streaming
-- Best for: Serverless functions, API gateways, high scalability
-
-**Example - Serverless (Stateless):**
-
-```typescript
-interface ServerlessWeather extends IServer {
-  name: 'serverless-weather';
-  version: '1.0.0';
-  transport: {
-    type: 'http';
-    port: 3000;
-    stateful: false;  // Stateless for Lambda
-  };
-}
+// Receive all responses together
+// Parallel mode: 5x faster than individual requests
+// Minimal overhead: 1.9%
 ```
 
-### Configuration Comparison
+### Performance
 
-| Config Type | When to Use | Example |
-|-------------|-------------|---------|
-| **No transport** | Desktop apps, CLI | `// No transport field` |
-| **Simple HTTP** | Web servers, default settings | `transport: 'http'; port: 3000;` |
-| **Advanced HTTP** | Serverless, custom config | `transport: { type: 'http'; stateful: false }` |
+**Throughput:**
+- Sequential mode: 192 requests/second
+- Parallel mode: 940 requests/second (5x improvement)
+
+**Batch vs Individual:**
+- 10 individual requests: ~513ms
+- 1 batch of 10 (parallel): ~53ms
+- Speedup: 9.68x with batching
+
+**Overhead:** 1.9% (minimal)
+
+**See Complete Example:** [examples/interface-batch-requests.ts](./examples/interface-batch-requests.ts)
+
+**Learn More:**
+- [API Reference - Batch Processing](./docs/guides/API_REFERENCE.md#batch-processing-configuration)
+- [Features Guide - Batch Processing](./docs/guides/FEATURES.md#batch-processing)
+- [Protocol Guide - JSON-RPC Batch](./docs/guides/PROTOCOL.md#json-rpc-20-batch-requests)
+
+---
+
+## Why Interface API?
+
+**Zero Boilerplate:** No manual schema definitions or decorator setup
+**Full Type Safety:** Compile-time type checking with complete IntelliSense
+**Clean Code:** Pure interface definitions with no runtime overhead
+
+---
 
 ## Documentation
 
 ### Getting Started
-- [Interface API Reference](https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md) - Complete Interface API documentation
 - [Quick Start](./docs/guides/QUICK_START.md) - Get started in 5 minutes
-- [CLI Reference](./docs/guides/CLI_REFERENCE.md) - All CLI commands and options
+- [Features Guide](./docs/guides/FEATURES.md) - Tools, prompts, resources
+- [API Reference](./docs/guides/API_REFERENCE.md) - Complete API documentation
+- [Validation Guide](./docs/guides/VALIDATION.md) - Parameter validation rules
 
 ### Advanced Topics
-- [UI Watch Mode Guide](./docs/guides/UI_WATCH_MODE.md) - UI hot reload and file watching
-- [Router Tools Guide](./docs/guides/ROUTER_TOOLS.md) - Organize tools with routers
-- [Transport Guide](./docs/guides/TRANSPORT_GUIDE.md) - Stdio and HTTP transport options
-- [Context System](./src/docs/guides/CONTEXT-SYSTEM.md) - Server metadata and session management
-- [Lifecycle Management](./src/docs/guides/LIFECYCLE-MANAGEMENT.md) - Initialization and cleanup hooks
-- [Security Features](./docs/guides/SECURITY.md) - Rate limiting, access control, audit logging
-
-### Deployment & Production
-- [Bundling Guide](./docs/guides/BUNDLING.md) - Production bundling
-- [Deployment Guide](./docs/guides/DEPLOYMENT_GUIDE.md) - Deploy to various platforms
-- [Performance Guide](./docs/guides/PERFORMANCE_GUIDE.md) - Optimization techniques
-- [Error Handling](./docs/guides/ERROR_HANDLING.md) - Comprehensive error handling
-- [Testing Guide](./docs/guides/TESTING.md) - Testing MCP servers
-
-### Additional Resources
+- [Protocol Features](./docs/guides/PROTOCOL.md) - Sampling, elicitation, roots, subscriptions, progress messages
+- [Transport Guide](./docs/guides/TRANSPORT.md) - Stdio, HTTP stateful/stateless
 - [Configuration Guide](./docs/guides/CONFIGURATION.md) - Environment and runtime options
-- [Watch Mode Guide](./docs/guides/WATCH_MODE_GUIDE.md) - Auto-reload during development
-- [Documentation Index](./docs/README.md) - Complete documentation map
+- [Bundling Guide](./docs/guides/BUNDLING.md) - Production bundling
+
+### UI Resources
+- [MCP UI Protocol](./docs/guides/MCP_UI_PROTOCOL.md) - UI protocol reference
+- [MCP UI Migration](./docs/guides/MCP_UI_MIGRATION.md) - Upgrade from legacy formats
+- [Remote DOM Advanced](./docs/guides/REMOTE_DOM_ADVANCED.md) - Performance & security
+- [Remote DOM Troubleshooting](./docs/guides/REMOTE_DOM_TROUBLESHOOTING.md) - Debug guide
+
+---
 
 ## Examples
 
@@ -740,19 +505,28 @@ Working examples using the Interface API:
 **Basic Examples:**
 - **[interface-minimal.ts](./examples/interface-minimal.ts)** - Minimal server with basic tools
 - **[interface-advanced.ts](./examples/interface-advanced.ts)** - Advanced features (prompts, resources, validation)
-- **[interface-comprehensive.ts](./examples/interface-comprehensive.ts)** - Complete example with all features
-- **[interface-file-prompts.ts](./examples/interface-file-prompts.ts)** - File-based prompt templates
+- **[interface-params.ts](./examples/interface-params.ts)** - Parameter validation examples
+- **[interface-audio-resource.ts](./examples/interface-audio-resource.ts)** - Audio resources with metadata (MP3, WAV, OGG, FLAC)
+
+**Protocol Features:**
+- **[interface-sampling.ts](./examples/interface-sampling.ts)** - LLM sampling integration
+- **[interface-elicitation.ts](./examples/interface-elicitation.ts)** - User input requests
+- **[interface-roots.ts](./examples/interface-roots.ts)** - Root directory discovery
+- **[interface-subscriptions.ts](./examples/interface-subscriptions.ts)** - Resource update notifications
+- **[interface-progress-messages.ts](./examples/interface-progress-messages.ts)** - Progress notifications with status messages
 
 **UI Examples:**
-- **[interface-file-based-ui.ts](./examples/interface-file-based-ui.ts)** - External HTML/CSS/JS files with tools
-- **[interface-react-dashboard.ts](./examples/interface-react-dashboard.ts)** - Full React dashboard with recharts/date-fns
-- **[interface-sampling-ui.ts](./examples/interface-sampling-ui.ts)** - Chat UI with MCP sampling integration
-- **[interface-production-optimized.ts](./examples/interface-production-optimized.ts)** - Production-ready with bundling, minification, CDN
+- **[interface-file-based-ui.ts](./examples/interface-file-based-ui.ts)** - External HTML/CSS/JS files
+- **[interface-react-dashboard.ts](./examples/interface-react-dashboard.ts)** - Full React dashboard
+- **[interface-production-optimized.ts](./examples/interface-production-optimized.ts)** - Production-ready
 
-**All examples are validated automatically:**
-- See [Examples Index](./examples/EXAMPLES_INDEX.md) for complete list
-- Run validation: `npm run test:examples`
-- View report: `examples-validation-report.md`
+**Transport & Auth:**
+- **[interface-http-auth.ts](./examples/interface-http-auth.ts)** - HTTP server with authentication
+- **[interface-http-stateless.ts](./examples/interface-http-stateless.ts)** - Serverless-ready HTTP
+
+**See:** [Examples Index](./examples/README.md) for complete list
+
+---
 
 ## Testing
 
@@ -763,9 +537,6 @@ npm test
 # Run unit tests
 npm run test:unit
 
-# Run example validation
-npm run test:examples
-
 # Run with coverage
 npm run test:unit:coverage
 ```
@@ -774,13 +545,11 @@ npm run test:unit:coverage
 - ✅ Unit tests + Examples validation: **Required** (blocks PRs on failure)
 - ⚠️ Integration tests: Informational (non-blocking)
 
-See [Testing Guide](./docs/guides/TESTING.md) for comprehensive testing documentation.
+---
 
 ## Development
 
 ### Getting Started with Development
-
-**Clone the repository** to start developing or running examples:
 
 ```bash
 # Clone the repo
@@ -795,7 +564,6 @@ npm run build
 
 # Run examples
 npx simply-mcp run examples/interface-minimal.ts
-npx simply-mcp run examples/interface-http-auth.ts --port 8080
 ```
 
 ### Development Workflow
@@ -805,33 +573,26 @@ npx simply-mcp run examples/interface-http-auth.ts --port 8080
 npm run dev
 
 # Test your changes
-npm run test:unit          # Run unit tests
-npm run test:examples      # Validate all examples
-npm run test:unit:watch    # Watch mode for tests
+npm run test:unit
+npm run test:examples
 
 # Run full test suite
 npm test
 ```
 
+---
+
 ## Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](./.github/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Contributions are welcome! Please read our [Contributing Guide](./.github/CONTRIBUTING.md) for details.
 
-### Development Setup
-
-1. Fork the repository on GitHub
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/simply-mcp-ts.git`
-3. Install dependencies: `npm install`
-4. Create a branch: `git checkout -b feature/amazing-feature`
-5. Make your changes and add tests
-6. Run the full test suite: `npm test`
-7. Commit your changes: `git commit -m 'Add amazing feature'`
-8. Push to your fork: `git push origin feature/amazing-feature`
-9. Open a Pull Request
+---
 
 ## License
 
 MIT © [Nicholas Marinkovich, MD](https://cwinnov.com)
+
+---
 
 ## Links
 
@@ -842,7 +603,7 @@ MIT © [Nicholas Marinkovich, MD](https://cwinnov.com)
 
 ## Support
 
-- 📖 [Documentation](./src/docs/INDEX.md)
+- 📖 [Documentation](./docs/guides/QUICK_START.md)
 - 💬 [Discussions](https://github.com/Clockwork-Innovations/simply-mcp-ts/discussions)
 - 🐛 [Issue Tracker](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues)
 

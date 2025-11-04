@@ -7,10 +7,12 @@
 
 import type { ParsedResource } from '../server/parser.js';
 import type { BuildMCPServer } from '../server/builder-server.js';
+import type { DatabaseManager } from '../core/database-manager.js';
+import type { ResourceContext } from '../server/interface-types.js';
 
 /**
  * Register a static resource with the MCP server
- * Static resources have data defined directly in the interface
+ * Static resources have literal data defined in the 'value' field of the interface
  */
 export function registerStaticResource(
   server: BuildMCPServer,
@@ -20,8 +22,8 @@ export function registerStaticResource(
 
   if (data === undefined) {
     throw new Error(
-      `Static resource "${uri}" is missing data property. ` +
-      `Add a 'data' property or set 'dynamic: true' and implement as a method.`
+      `Static resource "${uri}" is missing literal data. ` +
+      `Add a 'value' field with literal data to the interface definition.`
     );
   }
 
@@ -45,28 +47,73 @@ export function registerStaticResource(
 
 /**
  * Register a dynamic resource with the MCP server
- * Dynamic resources require a method implementation on the server class
+ * Dynamic resources use 'returns' field in interface and require a method implementation on the server class
+ *
+ * Supports two patterns:
+ * 1. Function-based: method is a function that returns data dynamically
+ * 2. Object-based: method is an object with inline 'data' property (static content)
+ *
+ * @param server - MCP server instance
+ * @param serverInstance - User's server class instance
+ * @param resource - Parsed resource metadata
+ * @param dbManager - Optional database manager for resources with database config
  */
 export function registerDynamicResource(
   server: BuildMCPServer,
   serverInstance: any,
-  resource: ParsedResource
+  resource: ParsedResource,
+  dbManager?: DatabaseManager
 ): void {
-  const { uri, name, description, mimeType, methodName } = resource;
+  const { uri, name, description, mimeType, methodName, database } = resource;
 
-  // Check if method exists on server instance
-  const method = serverInstance[methodName];
+  // Phase 2.2: Try semantic method name first, then fallback to URI
+  // This allows both patterns:
+  // 1. Semantic: userStats: Resource = async () => {...}
+  // 2. URI-based: 'stats://users': Resource = async () => {...}
+  let method = serverInstance[methodName];  // Try semantic name first
+  if (!method) {
+    method = serverInstance[uri];  // Fallback to URI as property name
+  }
 
   if (!method) {
     throw new Error(
-      `Dynamic resource "${uri}" requires method "${methodName}" but it was not found on server class.\n` +
-      `Expected: class implements { ${methodName}: ${resource.interfaceName} }`
+      `Dynamic resource "${uri}" (with 'returns' field) requires implementation but was not found on server class.\n` +
+      `Expected pattern (choose one):\n` +
+      `  1. Semantic name: ${methodName}: ${resource.interfaceName} = async () => {...}\n` +
+      `  2. URI property: '${uri}': ${resource.interfaceName} = async () => {...}\n` +
+      `Hint: Resources with 'returns' field need a runtime implementation.`
     );
   }
 
+  // Handle inline static resources (object with 'data' property)
+  if (typeof method === 'object' && method !== null && 'data' in method) {
+    // This is an inline static resource definition
+    const inlineData = method.data;
+    let content: string;
+
+    if (typeof inlineData === 'object') {
+      content = JSON.stringify(inlineData, null, 2);
+    } else {
+      content = String(inlineData);
+    }
+
+    server.addResource({
+      uri,
+      name: method.name || name || uri,
+      description: method.description || description || `Resource: ${uri}`,
+      mimeType: method.mimeType || mimeType || 'application/json',
+      content,
+    });
+    return;
+  }
+
+  // Handle function-based dynamic resources
   if (typeof method !== 'function') {
     throw new Error(
-      `Dynamic resource "${uri}" method "${methodName}" is not a function (found: ${typeof method})`
+      `Dynamic resource "${uri}" method "${methodName}" must be either:\n` +
+      `  1. A function that returns data, or\n` +
+      `  2. An object with a 'data' property for inline static content\n` +
+      `Found: ${typeof method}`
     );
   }
 
@@ -78,29 +125,52 @@ export function registerDynamicResource(
     description: description || `Resource: ${uri}`,
     mimeType: mimeType || 'application/json',
     content: () => {
-      // Call the method on the server instance
-      return method.call(serverInstance);
+      // Build context object
+      const context: ResourceContext = {};
+
+      // If resource has database config and database manager is provided, create connection
+      if (database && dbManager) {
+        try {
+          context.db = dbManager.connect(database);
+        } catch (error) {
+          console.error(`[Resource Handler] Failed to connect to database for resource "${uri}":`, error);
+          throw new Error(
+            `Database connection failed for resource "${uri}": ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+
+      // Call the method on the server instance with context
+      return method.call(serverInstance, context);
     },
   });
 }
 
 /**
  * Register all resources (static and dynamic) with the MCP server
+ *
+ * @param server - MCP server instance
+ * @param serverInstance - User's server class instance
+ * @param resources - Array of parsed resource metadata
+ * @param verbose - Enable verbose logging
+ * @param dbManager - Optional database manager for resources with database config
  */
 export function registerResources(
   server: BuildMCPServer,
   serverInstance: any,
   resources: ParsedResource[],
-  verbose?: boolean
+  verbose?: boolean,
+  dbManager?: DatabaseManager
 ): void {
   for (const resource of resources) {
     if (verbose) {
       const type = resource.dynamic ? 'dynamic' : 'static';
-      console.log(`[Interface Adapter] Registering ${type} resource: ${resource.uri}`);
+      const hasDb = resource.database ? ' (with database)' : '';
+      console.log(`[Interface Adapter] Registering ${type} resource: ${resource.uri}${hasDb}`);
     }
 
     if (resource.dynamic) {
-      registerDynamicResource(server, serverInstance, resource);
+      registerDynamicResource(server, serverInstance, resource, dbManager);
     } else {
       registerStaticResource(server, resource);
     }

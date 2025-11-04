@@ -18,6 +18,9 @@ import { parseInterfaceFile, type ParseResult } from '../../../src/server/parser
 import { writeFileSync, unlinkSync } from 'fs';
 import { resolve } from 'path';
 
+// Detect if running under Jest to avoid crashing Jest workers
+const isJest = typeof jest !== 'undefined' || process.env.JEST_WORKER_ID !== undefined;
+
 // Test fixture: Server with completions support
 const TEST_SERVER_CODE = `
 import type { IPrompt, IServer, ICompletion } from '../../../src/interface-types.js';
@@ -38,10 +41,9 @@ interface WeatherPrompt extends IPrompt {
   name: 'weather_report';
   description: 'Generate weather report';
   args: {
-    city: string;
-    style?: 'casual' | 'formal';
+    city: {};
+    style: { enum: ['casual', 'formal']; required: false };
   };
-  template: 'Generate a {style} weather report for {city}.';
 }
 
 /**
@@ -662,15 +664,23 @@ export default class TestServerImpl implements TestServer {}
     console.log(`  ${colors.green}✓${colors.reset} Complex ref types`);
     console.log(`  ${colors.green}✓${colors.reset} Empty completions array handling`);
     console.log(`\n${colors.cyan}Estimated Coverage: >80%${colors.reset}`);
-    process.exit(0);
+    if (!isJest) process.exit(0);
   } else {
     console.log(`${colors.bold}${colors.red}Some completions tests failed ✗${colors.reset}`);
-    process.exit(1);
+    if (!isJest) {
+      process.exit(1);
+    } else {
+      throw new Error('Some completions tests failed');
+    }
   }
 }
 
 // Run tests
 runTests().catch(error => {
   console.error(`${colors.red}Fatal error:${colors.reset}`, error);
-  process.exit(1);
+  if (!isJest) {
+    process.exit(1);
+  } else {
+    throw error;
+  }
 });

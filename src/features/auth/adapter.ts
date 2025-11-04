@@ -11,6 +11,7 @@
 
 import type { ParsedAuth } from '../../server/parser.js';
 import type { SecurityConfig, ApiKeyConfig } from './security/types.js';
+import { SimplyMCPOAuthProvider, type OAuthProviderConfig } from './oauth/index.js';
 
 /**
  * Convert ParsedAuth to SecurityConfig
@@ -48,9 +49,10 @@ export function authConfigFromParsed(parsedAuth: ParsedAuth | undefined): Securi
     case 'apiKey':
       return createApiKeySecurityConfig(parsedAuth);
     case 'oauth2':
+      return createOAuth2SecurityConfig(parsedAuth);
     case 'database':
     case 'custom':
-      throw new Error(`Auth type '${parsedAuth.type}' not yet implemented. Currently only 'apiKey' is supported.`);
+      throw new Error(`Auth type '${parsedAuth.type}' not yet implemented.`);
     default:
       throw new Error(`Unknown auth type: ${(parsedAuth as any).type}`);
   }
@@ -83,6 +85,7 @@ function createApiKeySecurityConfig(auth: ParsedAuth): SecurityConfig {
     enabled: true,
     authentication: {
       enabled: true,
+      type: 'apiKey',
       apiKeys,
       headerName: auth.headerName || 'x-api-key',
       allowAnonymous: auth.allowAnonymous ?? false,
@@ -100,6 +103,76 @@ function createApiKeySecurityConfig(auth: ParsedAuth): SecurityConfig {
     audit: {
       enabled: true,
       logFile: './logs/audit.log',
+      logToConsole: false,
+    },
+  };
+}
+
+/**
+ * Create SecurityConfig for OAuth 2.1 authentication
+ *
+ * Converts IOAuth2Auth configuration to the full SecurityConfig format with:
+ * - OAuth provider instance (handles authorization flow, token management)
+ * - Issuer URL (used in OAuth metadata and token claims)
+ * - Permission defaults (full access for authenticated users)
+ * - Rate limiting (sliding window, 100 req/min default)
+ * - Audit logging (file-based with console option)
+ *
+ * @param auth - Parsed OAuth 2.1 authentication configuration
+ * @returns Complete SecurityConfig with OAuth provider
+ *
+ * @internal
+ */
+function createOAuth2SecurityConfig(auth: ParsedAuth): SecurityConfig {
+  if (auth.type !== 'oauth2') {
+    throw new Error('createOAuth2SecurityConfig called with non-oauth2 auth type');
+  }
+
+  if (!auth.issuerUrl) {
+    throw new Error('OAuth2 auth requires issuerUrl');
+  }
+
+  if (!auth.clients || auth.clients.length === 0) {
+    throw new Error('OAuth2 auth requires at least one client');
+  }
+
+  // Convert ParsedAuth clients to OAuthProviderConfig format
+  const providerConfig: OAuthProviderConfig = {
+    clients: auth.clients.map(client => ({
+      clientId: client.clientId,
+      clientSecret: client.clientSecret,
+      redirectUris: client.redirectUris,
+      scopes: client.scopes,
+    })),
+    tokenExpiration: auth.tokenExpiration,
+    refreshTokenExpiration: auth.refreshTokenExpiration,
+    codeExpiration: auth.codeExpiration,
+  };
+
+  // Create OAuth provider instance
+  const provider = new SimplyMCPOAuthProvider(providerConfig);
+
+  return {
+    enabled: true,
+    authentication: {
+      enabled: true,
+      type: 'oauth2',
+      issuerUrl: auth.issuerUrl,
+      oauthProvider: provider,
+    },
+    permissions: {
+      authenticated: ['*'], // Default: full access when authenticated
+      anonymous: [], // OAuth doesn't support anonymous access
+    },
+    rateLimit: {
+      enabled: true,
+      strategy: 'sliding-window',
+      window: 60000, // 1 minute
+      maxRequests: 100,
+    },
+    audit: {
+      enabled: true,
+      logFile: './logs/oauth-audit.log',
       logToConsole: false,
     },
   };

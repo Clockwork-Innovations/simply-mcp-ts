@@ -18,7 +18,7 @@
  */
 
 import React, { useRef, useEffect, useState } from 'react';
-import type { UIResourceContent, UIActionResult } from './ui-types.js';
+import type { UIResourceContent, UIActionResult, UIAction } from './ui-types.js';
 import {
   getHTMLContent,
   buildSandboxAttribute,
@@ -36,9 +36,10 @@ export interface HTMLResourceRendererProps {
 
   /**
    * Callback for UI actions (Layer 2+)
-   * Called when iframe sends postMessage with action
+   * Called when iframe sends postMessage with action.
+   * Now accepts UIAction type to match official MCP-UI API.
    */
-  onUIAction?: (action: UIActionResult) => void | Promise<void>;
+  onUIAction?: (action: UIAction | UIActionResult) => void | Promise<void>;
 
   /**
    * Whether this is an external URL (vs inline HTML)
@@ -53,12 +54,33 @@ export interface HTMLResourceRendererProps {
   customSandboxPermissions?: string;
 
   /**
+   * HTML-specific rendering configuration (official MCP-UI API)
+   * Applied to iframe containers. Includes style, autoResize, and className.
+   */
+  htmlProps?: {
+    style?: React.CSSProperties;
+    autoResize?: boolean;
+    className?: string;
+    customCSP?: string;
+    sandbox?: string;
+    allowFullscreen?: boolean;
+    referrerPolicy?: React.HTMLAttributeReferrerPolicy;
+    loading?: 'lazy' | 'eager';
+    title?: string;
+    id?: string;
+    minHeight?: number;
+    maxHeight?: number;
+  };
+
+  /**
+   * @deprecated Use htmlProps.autoResize instead
    * Enable auto-resize based on iframe content (Layer 2+)
    * Not implemented in Foundation Layer
    */
   autoResize?: boolean;
 
   /**
+   * @deprecated Use htmlProps.style instead
    * Custom iframe styles
    * Merges with default styles
    */
@@ -111,12 +133,23 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
   onUIAction,
   isExternalUrl = false,
   customSandboxPermissions,
-  autoResize = true,
-  style,
+  htmlProps,
+  // Deprecated props (maintain backward compatibility)
+  autoResize: deprecatedAutoResize = true,
+  style: deprecatedStyle,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState<boolean>(isExternalUrl);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [iframeHeight, setIframeHeight] = useState<number>(
+    htmlProps?.minHeight ?? 500
+  );
+
+  // Merge htmlProps with deprecated props (htmlProps takes precedence)
+  const finalAutoResize = htmlProps?.autoResize ?? deprecatedAutoResize;
+  const finalStyle = htmlProps?.style ?? deprecatedStyle;
+  const finalClassName = htmlProps?.className;
 
   // Layer 5: Handle iframe load events for external URLs
   useEffect(() => {
@@ -199,14 +232,35 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
   // - `resizeDebounce` prop to control update frequency
   // - Origin validation in resize message handler
   //
+  // Implement auto-resize using postMessage
   useEffect(() => {
-    // Auto-resize placeholder
-    // When autoResize is enabled, we could implement the strategy above
-    if (autoResize && iframeRef.current) {
-      // For now, autoResize prop is acknowledged but not implemented
-      // Future enhancement: Implement ResizeObserver-based approach
-    }
-  }, [autoResize]);
+    if (!finalAutoResize) return;
+
+    const handleResizeMessage = (event: MessageEvent) => {
+      // Validate the message is from our iframe
+      if (event.source !== iframeRef.current?.contentWindow) {
+        return;
+      }
+
+      // Handle resize message
+      if (event.data?.type === 'ui-resize' && typeof event.data.height === 'number') {
+        let newHeight = event.data.height;
+
+        // Apply min/max constraints
+        if (htmlProps?.minHeight && newHeight < htmlProps.minHeight) {
+          newHeight = htmlProps.minHeight;
+        }
+        if (htmlProps?.maxHeight && newHeight > htmlProps.maxHeight) {
+          newHeight = htmlProps.maxHeight;
+        }
+
+        setIframeHeight(newHeight);
+      }
+    };
+
+    window.addEventListener('message', handleResizeMessage);
+    return () => window.removeEventListener('message', handleResizeMessage);
+  }, [finalAutoResize, htmlProps?.minHeight, htmlProps?.maxHeight]);
 
   // Set up postMessage listener for iframe communication (Layer 2 Enhanced)
   useEffect(() => {
@@ -244,14 +298,35 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
 
       console.log('[MCP-UI] Action received:', data);
 
+      // Extract messageId for response handling
+      const messageId = data.messageId;
+      const iframe = iframeRef.current;
+
+      // Send acknowledgment immediately (spec-compliant)
+      if (messageId && iframe?.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage(
+            {
+              type: 'ui-message-received',
+              messageId: messageId,
+            },
+            '*'
+          );
+        } catch (error) {
+          console.error('[MCP-UI] Error sending acknowledgment:', error);
+        }
+      }
+
       // Route action based on type
       if (onUIAction) {
         try {
           // Handle different action types
+          let actionResult: any;
+
           switch (data.type) {
             case 'tool':
               // Tool call action: should trigger MCP tool execution
-              onUIAction({
+              actionResult = onUIAction({
                 type: 'tool',
                 payload: data.payload || {},
               });
@@ -259,7 +334,7 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
 
             case 'notify':
               // Notification action: show user notification
-              onUIAction({
+              actionResult = onUIAction({
                 type: 'notify',
                 payload: data.payload || {},
               });
@@ -267,7 +342,7 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
 
             case 'link':
               // Link navigation action
-              onUIAction({
+              actionResult = onUIAction({
                 type: 'link',
                 payload: data.payload || {},
               });
@@ -275,7 +350,7 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
 
             case 'prompt':
               // Prompt action: trigger MCP prompt
-              onUIAction({
+              actionResult = onUIAction({
                 type: 'prompt',
                 payload: data.payload || {},
               });
@@ -283,7 +358,7 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
 
             case 'intent':
               // Intent action: platform-specific handling
-              onUIAction({
+              actionResult = onUIAction({
                 type: 'intent',
                 payload: data.payload || {},
               });
@@ -293,11 +368,57 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
               // Unknown action type - log warning but don't fail
               console.warn('[MCP-UI] Unknown action type:', data.type);
               // Still pass through in case client wants to handle it
-              onUIAction(data);
+              actionResult = onUIAction(data);
               break;
+          }
+
+          // Send response if messageId present and action returned a result
+          if (messageId && iframe?.contentWindow) {
+            // Handle both sync and async results
+            Promise.resolve(actionResult)
+              .then((result) => {
+                iframe.contentWindow!.postMessage(
+                  {
+                    type: 'ui-message-response',
+                    messageId: messageId,
+                    result: result,
+                  },
+                  '*'
+                );
+              })
+              .catch((error) => {
+                const errorMessage =
+                  error instanceof Error ? error.message : String(error);
+                iframe.contentWindow!.postMessage(
+                  {
+                    type: 'ui-message-response',
+                    messageId: messageId,
+                    error: errorMessage,
+                  },
+                  '*'
+                );
+              });
           }
         } catch (error) {
           console.error('[MCP-UI] Error handling UI action:', error);
+
+          // Send error response if messageId present
+          if (messageId && iframe?.contentWindow) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            try {
+              iframe.contentWindow.postMessage(
+                {
+                  type: 'ui-message-response',
+                  messageId: messageId,
+                  error: errorMessage,
+                },
+                '*'
+              );
+            } catch (postError) {
+              console.error('[MCP-UI] Error sending error response:', postError);
+            }
+          }
         }
       }
     };
@@ -314,17 +435,95 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
   // Build sandbox attribute based on content type
   const sandbox = buildSandboxAttribute(isExternalUrl, customSandboxPermissions);
 
+  // Helper function to inject auto-resize script into HTML
+  const injectAutoResizeScript = (html: string): string => {
+    const script = `
+      <script>
+        (function() {
+          let lastHeight = 0;
+
+          function reportHeight() {
+            const height = Math.max(
+              document.body.scrollHeight,
+              document.body.offsetHeight,
+              document.documentElement.clientHeight,
+              document.documentElement.scrollHeight,
+              document.documentElement.offsetHeight
+            );
+
+            // Only send message if height changed
+            if (height !== lastHeight) {
+              lastHeight = height;
+              window.parent.postMessage({ type: 'ui-resize', height }, '*');
+            }
+          }
+
+          // Report on load
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', reportHeight);
+          } else {
+            reportHeight();
+          }
+
+          // Use ResizeObserver if available
+          if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(reportHeight);
+            observer.observe(document.body);
+          } else {
+            // Fallback: MutationObserver + polling
+            const observer = new MutationObserver(reportHeight);
+            observer.observe(document.body, {
+              childList: true,
+              subtree: true,
+              attributes: true,
+            });
+
+            // Periodic check as additional fallback
+            setInterval(reportHeight, 500);
+          }
+
+          // Report on window resize
+          window.addEventListener('resize', reportHeight);
+        })();
+      </script>
+    `;
+
+    // Inject before closing body tag, or at end if no body tag
+    if (html.includes('</body>')) {
+      return html.replace('</body>', `${script}</body>`);
+    } else if (html.includes('</html>')) {
+      return html.replace('</html>', `${script}</html>`);
+    } else {
+      return html + script;
+    }
+  };
+
+  // Helper function to inject custom CSP
+  const injectCustomCSP = (html: string, csp: string): string => {
+    const cspMeta = `<meta http-equiv="Content-Security-Policy" content="${csp}">`;
+
+    // Try to inject in <head>
+    if (html.includes('</head>')) {
+      return html.replace('</head>', `${cspMeta}</head>`);
+    } else if (html.includes('<html>')) {
+      return html.replace('<html>', `<html><head>${cspMeta}</head>`);
+    } else {
+      // No proper HTML structure, prepend
+      return cspMeta + html;
+    }
+  };
+
   // Default iframe styles
   const defaultStyle: React.CSSProperties = {
     width: '100%',
-    height: '500px',
+    height: finalAutoResize ? `${iframeHeight}px` : '500px',
     border: 'none',
     borderRadius: '4px',
     backgroundColor: '#fff',
   };
 
-  // Merge custom styles
-  const finalStyle = { ...defaultStyle, ...style };
+  // Merge custom styles (htmlProps.style takes precedence over deprecated style prop)
+  const mergedStyle = { ...defaultStyle, ...finalStyle };
 
   // Layer 5: Show loading error if external URL failed
   if (loadError) {
@@ -351,7 +550,11 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
   // Render external URL iframe
   if (isExternalUrl && resource.text) {
     return (
-      <div style={{ position: 'relative' }}>
+      <div
+        ref={containerRef}
+        className={finalClassName}
+        style={{ position: 'relative' }}
+      >
         {/* Layer 5: Loading overlay for external URLs */}
         {isLoading && (
           <div
@@ -400,7 +603,7 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
           ref={iframeRef}
           src={resource.text}
           sandbox={sandbox as any}
-          style={finalStyle}
+          style={mergedStyle}
           title={resource.uri}
           aria-label={`UI Resource: ${resource.uri}`}
         />
@@ -409,7 +612,7 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
   }
 
   // Render inline HTML iframe
-  const htmlContent = getHTMLContent(resource);
+  let htmlContent = getHTMLContent(resource);
 
   // Handle empty content
   if (!htmlContent) {
@@ -429,15 +632,41 @@ export const HTMLResourceRenderer: React.FC<HTMLResourceRendererProps> = ({
     );
   }
 
+  // Process HTML content: inject auto-resize and custom CSP if needed
+  if (finalAutoResize) {
+    htmlContent = injectAutoResizeScript(htmlContent);
+  }
+
+  if (htmlProps?.customCSP) {
+    htmlContent = injectCustomCSP(htmlContent, htmlProps.customCSP);
+  }
+
+  // Use htmlProps for additional attributes if provided
+  const finalSandbox = htmlProps?.sandbox || customSandboxPermissions || sandbox;
+  const finalTitle = htmlProps?.title || resource.uri;
+  const finalId = htmlProps?.id;
+  const finalLoading = htmlProps?.loading ?? 'lazy';
+  const finalReferrerPolicy = htmlProps?.referrerPolicy ?? 'strict-origin-when-cross-origin';
+
   return (
-    <iframe
-      ref={iframeRef}
-      sandbox={sandbox as any}
-      srcDoc={htmlContent}
-      style={finalStyle}
-      title={resource.uri}
-      aria-label={`UI Resource: ${resource.uri}`}
-    />
+    <div
+      ref={containerRef}
+      className={finalClassName}
+      style={{ position: 'relative' }}
+    >
+      <iframe
+        ref={iframeRef}
+        sandbox={finalSandbox as any}
+        srcDoc={htmlContent}
+        style={mergedStyle}
+        title={finalTitle}
+        id={finalId}
+        loading={finalLoading}
+        referrerPolicy={finalReferrerPolicy}
+        allowFullScreen={htmlProps?.allowFullscreen}
+        aria-label={`UI Resource: ${resource.uri}`}
+      />
+    </div>
   );
 };
 

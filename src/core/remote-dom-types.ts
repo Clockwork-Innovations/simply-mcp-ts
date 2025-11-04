@@ -10,11 +10,13 @@ import type { UIResource, UIResourcePayload } from '../types/ui.js';
 /**
  * Framework type for Remote DOM script
  *
- * - javascript: Plain JavaScript that uses remoteDOM API
- * - react: React components (future)
- * - web-components: Web Components (future)
+ * Per MCP UI specification, Remote DOM MIME types must include a framework parameter.
+ * - react: React components
+ * - webcomponents: Web Components
+ *
+ * Note: The spec uses lowercase 'webcomponents' (no hyphen).
  */
-export type RemoteDOMFramework = 'javascript' | 'react' | 'web-components';
+export type RemoteDOMFramework = 'react' | 'webcomponents';
 
 /**
  * Remote DOM Resource Payload

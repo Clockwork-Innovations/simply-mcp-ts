@@ -32,7 +32,8 @@ const DEFAULT_ENTRY_POINTS = [
   'src/server.js',
   'src/index.ts',
   'src/index.js',
-  'server.ts',
+  // Note: Removed 'server.ts' from root-level defaults to prevent false discovery
+  // Bundle examples use 'src/server.ts' which is still checked first
   'server.js',
   'index.ts',
   'index.js',

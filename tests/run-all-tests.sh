@@ -2,6 +2,119 @@
 # Master Test Runner for MCP Framework
 # Runs all transport test suites and generates a comprehensive report
 
+# ============================================================================
+# SECURITY: RECURSION DEPTH DETECTION
+# ============================================================================
+# Track recursion depth to prevent infinite spawning
+export RUN_ALL_TESTS_DEPTH=${RUN_ALL_TESTS_DEPTH:-0}
+
+# CRITICAL: Log every single invocation to persistent file for investigation
+TRACE_FILE="/tmp/run-all-tests-trace.log"
+echo "===========================================" >> "$TRACE_FILE"
+echo "INVOCATION at $(date '+%Y-%m-%d %H:%M:%S.%N')" >> "$TRACE_FILE"
+echo "PID: $$ | PPID: $PPID | Depth: $RUN_ALL_TESTS_DEPTH" >> "$TRACE_FILE"
+echo "PWD: $(pwd)" >> "$TRACE_FILE"
+echo "Args: $# => $@" >> "$TRACE_FILE"
+echo "Call stack:" >> "$TRACE_FILE"
+ps -ef | grep $$ >> "$TRACE_FILE" 2>&1
+pstree -p $PPID >> "$TRACE_FILE" 2>&1 || true
+echo "===========================================" >> "$TRACE_FILE"
+
+# Function to log bash call stack
+log_call_stack() {
+  local i=0
+  local FRAMES=${#BASH_SOURCE[@]}
+  echo "========================================" >&2
+  echo "RECURSION DETECTED - Call Stack Analysis" >&2
+  echo "========================================" >&2
+  echo "Recursion Depth: $RUN_ALL_TESTS_DEPTH" >&2
+  echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S.%N')" >&2
+  echo "PID: $$" >&2
+  echo "PPID: $PPID" >&2
+  echo "" >&2
+  echo "Call Stack:" >&2
+  for ((i=0; i<$FRAMES; i++)); do
+    echo "  [$i] ${BASH_SOURCE[$i]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}" >&2
+  done
+  echo "" >&2
+  echo "Process Tree:" >&2
+  ps -ef | grep -E "(run-all-tests|simply-mcp|npm)" | grep -v grep >&2 || true
+  echo "" >&2
+  echo "Environment Variables:" >&2
+  env | grep -E "RUN_ALL_TESTS|TEST|MCP|BASH" | sort >&2 || true
+  echo "========================================" >&2
+}
+
+# Check recursion depth BEFORE doing anything else
+if [ "$RUN_ALL_TESTS_DEPTH" -ge 2 ]; then
+  echo "========================================"
+  echo "ERROR: Recursive spawning detected!"
+  echo "========================================"
+  echo "This script has been called recursively $RUN_ALL_TESTS_DEPTH times."
+  echo "This indicates a bug in the test infrastructure."
+  echo ""
+  log_call_stack
+  echo ""
+  echo "EMERGENCY: Killing all related processes..."
+  pkill -9 -f "run-all-tests.sh" || true
+  pkill -9 -f "simply-mcp run.*--watch" || true
+  echo ""
+  echo "Please investigate why this script is being spawned recursively."
+  echo "Check the handoff document for known issues."
+  exit 1
+fi
+
+# Increment depth counter
+export RUN_ALL_TESTS_DEPTH=$((RUN_ALL_TESTS_DEPTH + 1))
+
+# DEBUG: Log entry point
+echo "[DEBUG:run-all-tests.sh] ========================================" >&2
+echo "[DEBUG:run-all-tests.sh] Script Entry at depth $RUN_ALL_TESTS_DEPTH" >&2
+echo "[DEBUG:run-all-tests.sh] PID: $$, PPID: $PPID" >&2
+echo "[DEBUG:run-all-tests.sh] Timestamp: $(date '+%Y-%m-%d %H:%M:%S.%N')" >&2
+echo "[DEBUG:run-all-tests.sh] Arguments: $# args => $@" >&2
+echo "[DEBUG:run-all-tests.sh] Working dir: $(pwd)" >&2
+echo "[DEBUG:run-all-tests.sh] ========================================" >&2
+
+# Enable detailed bash tracing if DEBUG_TRACE is set
+if [ -n "$DEBUG_TRACE" ]; then
+  echo "[DEBUG:run-all-tests.sh] Enabling bash trace mode (-x)" >&2
+  set -x
+  # Enhanced PS4 prompt for better trace readability
+  export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+fi
+
+# ============================================================================
+# SECURITY: Prevent recursive invocation and argument injection
+# ============================================================================
+if [ $# -gt 0 ]; then
+  echo "ERROR: This script does not accept arguments" >&2
+  echo "Usage: bash tests/run-all-tests.sh" >&2
+  echo "" >&2
+  echo "If you want to run specific tests, use:" >&2
+  echo "  npm test                    # Run Jest unit tests" >&2
+  echo "  bash tests/test-stdio.sh    # Run specific transport test" >&2
+  exit 1
+fi
+
+# SECURITY: Prevent multiple instances from running simultaneously
+LOCKFILE="/tmp/simply-mcp-tests.lock"
+if [ -f "$LOCKFILE" ]; then
+  LOCK_PID=$(cat "$LOCKFILE" 2>/dev/null)
+  if [ -n "$LOCK_PID" ] && kill -0 "$LOCK_PID" 2>/dev/null; then
+    echo "ERROR: Test suite is already running (PID: $LOCK_PID)" >&2
+    echo "If this is incorrect, remove: $LOCKFILE" >&2
+    exit 1
+  else
+    # Stale lock file, remove it
+    rm -f "$LOCKFILE"
+  fi
+fi
+
+# Create lock file
+echo $$ > "$LOCKFILE"
+trap "rm -f '$LOCKFILE'" EXIT INT TERM
+
 echo "==========================================="
 echo "  MCP Framework - Master Test Runner"
 echo "==========================================="
@@ -79,7 +192,6 @@ echo "Timestamp: $TIMESTAMP"
 echo ""
 
 # Run all test suites
-# NOTE: Deprecated tests for old APIs have been archived to tests/deprecated/
 # Only Interface API tests are maintained going forward
 run_suite "Stdio Transport" "tests/test-stdio.sh"
 sleep 2  # Allow server cleanup
@@ -198,17 +310,9 @@ cat >> "$REPORT_FILE" << EOF
 - **Session:** Varies by mode
 - **Tests:** Mode-specific behavior, backwards compatibility
 
-## Deprecated Tests
-
-The following test suites have been archived to `tests/deprecated/`:
-- **Decorator API** - Removed in v4.0.0 (archived to `tests/deprecated/decorator-api/`)
-- **Functional API** - Removed in v4.0.0 (archived to `tests/deprecated/functional-api/`)
-- **Auto-detect** - Removed in v4.0.0 (archived to `tests/deprecated/auto-detect/`)
-- **Old Version Bug Fixes** - Archived to `tests/deprecated/old-versions/`
-
-All servers now use the **Interface API** exclusively. See `docs/guides/QUICK_START.md` for current usage.
-
 ## Notes
+
+All servers use the **Interface API** exclusively. See [QUICK_START.md](docs/guides/QUICK_START.md) for current usage.
 
 EOF
 

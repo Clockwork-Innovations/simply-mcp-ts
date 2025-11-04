@@ -1,0 +1,40 @@
+{
+  "name": "simply-mcp-test",
+  "version": "1.0.0",
+  "description": "Interactive test harness for Simply MCP servers",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "simply-mcp-test": "./dist/index.js",
+    "smcp-test": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "predev": "cd .. && npm run build",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "express": "^5.1.0",
+    "ws": "^8.18.0",
+    "cors": "^2.8.5",
+    "open": "^10.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/express": "^5.0.0",
+    "@types/ws": "^8.0.0",
+    "@types/cors": "^2.8.0",
+    "tsx": "^4.20.6"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "testing",
+    "test-harness",
+    "development-tools"
+  ],
+  "author": "",
+  "license": "MIT"
+}

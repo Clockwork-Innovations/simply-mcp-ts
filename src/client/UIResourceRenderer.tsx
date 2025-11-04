@@ -14,42 +14,11 @@
 import React from 'react';
 import HTMLResourceRenderer from './HTMLResourceRenderer.js';
 import RemoteDOMRenderer from './RemoteDOMRenderer.js';
-import type { UIResourceContent, UIActionResult } from './ui-types.js';
-import { getContentType, isUIResource } from './ui-utils.js';
+import type { UIResourceContent, UIActionResult, UIAction } from './ui-types.js';
+import { getContentType, getRemoteDOMFramework, isUIResource, type UIResourceRendererProps } from './ui-utils.js';
 
-/**
- * Props for UIResourceRenderer component
- */
-export interface UIResourceRendererProps {
-  /**
-   * UI resource to render
-   */
-  resource: UIResourceContent;
-
-  /**
-   * Callback for UI actions (Layer 2+)
-   * Called when UI triggers actions like tool calls, prompts, etc.
-   */
-  onUIAction?: (action: UIActionResult) => void | Promise<void>;
-
-  /**
-   * Custom sandbox permissions (advanced use cases)
-   * Overrides default sandbox attribute for the iframe
-   */
-  customSandboxPermissions?: string;
-
-  /**
-   * Enable auto-resize based on iframe content (Layer 2+)
-   * Not implemented in Foundation Layer
-   */
-  autoResize?: boolean;
-
-  /**
-   * Custom iframe styles
-   * Passed through to the renderer component
-   */
-  style?: React.CSSProperties;
-}
+// Re-export props type for convenience
+export type { UIResourceRendererProps } from './ui-utils.js';
 
 /**
  * Main UI Resource Renderer
@@ -104,13 +73,13 @@ export interface UIResourceRendererProps {
  * />
  * ```
  */
-export const UIResourceRenderer: React.FC<UIResourceRendererProps> = ({
-  resource,
-  onUIAction,
-  customSandboxPermissions,
-  autoResize = true,
-  style,
-}) => {
+export const UIResourceRenderer: React.FC<UIResourceRendererProps> = (props) => {
+  const {
+    resource,
+    onUIAction,
+    htmlProps,
+    remoteDomProps,
+  } = props;
   // Layer 5: Error boundary - wrap all rendering logic in try-catch
   try {
     // Validate resource structure
@@ -154,9 +123,7 @@ export const UIResourceRenderer: React.FC<UIResourceRendererProps> = ({
           resource={resource}
           onUIAction={onUIAction}
           isExternalUrl={false}
-          customSandboxPermissions={customSandboxPermissions}
-          autoResize={autoResize}
-          style={style}
+          htmlProps={htmlProps}
         />
       );
     }
@@ -168,19 +135,47 @@ export const UIResourceRenderer: React.FC<UIResourceRendererProps> = ({
           resource={resource}
           onUIAction={onUIAction}
           isExternalUrl={true}
-          customSandboxPermissions={customSandboxPermissions}
-          autoResize={autoResize}
-          style={style}
+          htmlProps={htmlProps}
         />
       );
     }
 
     // Layer 3: Remote DOM (application/vnd.mcp-ui.remote-dom+javascript)
     if (contentType === 'remoteDom') {
+      // Extract framework parameter from MIME type
+      const framework = getRemoteDOMFramework(resource.mimeType);
+
+      // If framework is invalid (null), show error
+      if (!framework) {
+        return (
+          <div
+            style={{
+              color: '#d32f2f',
+              padding: '16px',
+              backgroundColor: '#ffebee',
+              borderRadius: '4px',
+              border: '1px solid #ef5350',
+            }}
+            role="alert"
+            aria-live="assertive"
+          >
+            <strong>Invalid Remote DOM Framework</strong>
+            <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>
+              MIME type: <code>{resource.mimeType}</code>
+            </p>
+            <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>
+              The framework parameter must be either 'react' or 'webcomponents'.
+            </p>
+          </div>
+        );
+      }
+
       return (
         <RemoteDOMRenderer
           resource={resource}
           onUIAction={onUIAction}
+          framework={framework}
+          remoteDomProps={remoteDomProps}
         />
       );
     }

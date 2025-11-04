@@ -4,17 +4,18 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import { loadInterfaceServer } from '../../../src/adapter.js';
+import { loadInterfaceServer } from '../../../src/server/adapter.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const testDir = __dirname;
 
 describe('Named Export Support', () => {
   it('should load a server with named export (export class)', async () => {
     const server = await loadInterfaceServer({
-      filePath: path.join(__dirname, '../../fixtures/interface-named-export.ts'),
+      filePath: path.join(testDir, '../../fixtures/interface-named-export.ts'),
       verbose: false,
     });
 
@@ -29,7 +30,7 @@ describe('Named Export Support', () => {
 
   it('should execute tools on named-export server', async () => {
     const server = await loadInterfaceServer({
-      filePath: path.join(__dirname, '../../fixtures/interface-named-export.ts'),
+      filePath: path.join(testDir, '../../fixtures/interface-named-export.ts'),
       verbose: false,
     });
 
@@ -42,7 +43,7 @@ describe('Named Export Support', () => {
 
   it('should detect class name from naming pattern', async () => {
     const server = await loadInterfaceServer({
-      filePath: path.join(__dirname, '../../fixtures/interface-named-export.ts'),
+      filePath: path.join(testDir, '../../fixtures/interface-named-export.ts'),
       verbose: false,
     });
 
@@ -53,7 +54,7 @@ describe('Named Export Support', () => {
 
   it('should throw helpful error when no export found', async () => {
     // Create a minimal fixture file with invalid class name (won't match naming pattern)
-    const tempFile = path.join(__dirname, '../../fixtures/interface-no-export-temp.ts');
+    const tempFile = path.join(testDir, '../../fixtures/interface-no-export-temp.ts');
     const fs = await import('fs');
     fs.writeFileSync(tempFile, `
       import type { IServer, ITool } from '../../../src/index.js';

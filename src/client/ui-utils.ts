@@ -8,7 +8,11 @@
  * @module client/ui-utils
  */
 
-import type { UIResourceContent, UIContentType } from './ui-types.js';
+import type { UIResourceContent, UIContentType, UIAction } from './ui-types.js';
+import type { RemoteDOMFramework } from '../core/remote-dom-types.js';
+
+// Re-export UIAction for convenient access
+export type { UIAction } from './ui-types.js';
 
 /**
  * Determine content type from MIME type
@@ -32,6 +36,73 @@ export function getContentType(mimeType: string): UIContentType | null {
   if (mimeType === 'text/uri-list') return 'externalUrl';
   if (mimeType.startsWith('application/vnd.mcp-ui.remote-dom')) return 'remoteDom';
   return null;
+}
+
+/**
+ * Extract framework parameter from Remote DOM MIME type
+ *
+ * Parses the framework parameter from MIME types like:
+ * - `application/vnd.mcp-ui.remote-dom+javascript; framework=react`
+ * - `application/vnd.mcp-ui.remote-dom+javascript; framework=webcomponents`
+ *
+ * Per MCP UI specification, the framework parameter is required for Remote DOM resources.
+ * For backward compatibility, defaults to 'react' if the parameter is missing.
+ *
+ * @param mimeType - MIME type from resource
+ * @returns Framework type ('react' | 'webcomponents') or null if invalid
+ *
+ * @example
+ * ```typescript
+ * getRemoteDOMFramework('application/vnd.mcp-ui.remote-dom+javascript; framework=react')
+ * // 'react'
+ *
+ * getRemoteDOMFramework('application/vnd.mcp-ui.remote-dom+javascript; framework=webcomponents')
+ * // 'webcomponents'
+ *
+ * getRemoteDOMFramework('application/vnd.mcp-ui.remote-dom+javascript')
+ * // 'react' (default for backward compatibility)
+ *
+ * getRemoteDOMFramework('text/html')
+ * // null (not a Remote DOM MIME type)
+ *
+ * getRemoteDOMFramework('application/vnd.mcp-ui.remote-dom+javascript; framework=invalid')
+ * // null (invalid framework value)
+ * ```
+ */
+export function getRemoteDOMFramework(mimeType: string): RemoteDOMFramework | null {
+  // Only process Remote DOM MIME types
+  if (!mimeType.startsWith('application/vnd.mcp-ui.remote-dom')) {
+    return null;
+  }
+
+  // Parse MIME type parameters
+  // Format: application/vnd.mcp-ui.remote-dom+javascript; framework=react
+  const parts = mimeType.split(';');
+
+  if (parts.length === 1) {
+    // No parameters - default to 'react' for backward compatibility
+    return 'react';
+  }
+
+  // Extract framework parameter
+  for (let i = 1; i < parts.length; i++) {
+    const param = parts[i].trim();
+    const [key, value] = param.split('=').map(s => s.trim());
+
+    if (key === 'framework') {
+      // Validate framework value
+      if (value === 'react' || value === 'webcomponents') {
+        return value;
+      }
+
+      // Invalid framework value
+      console.warn(`Invalid Remote DOM framework: ${value}. Must be 'react' or 'webcomponents'.`);
+      return null;
+    }
+  }
+
+  // Parameter 'framework' not found - default to 'react' for backward compatibility
+  return 'react';
 }
 
 /**
@@ -178,6 +249,99 @@ export function validateOrigin(origin: string): boolean {
     // Invalid URL - reject
     return false;
   }
+}
+
+/**
+ * Props for UIResourceRenderer component
+ *
+ * Matches the official MCP-UI client API specification.
+ * Supports both direct callback handlers and HTML-specific configuration.
+ *
+ * @example
+ * ```typescript
+ * <UIResourceRenderer
+ *   resource={uiResource}
+ *   onUIAction={(action) => handleAction(action)}
+ *   htmlProps={{
+ *     style: { width: '100%', height: '600px' },
+ *     autoResize: true,
+ *     className: 'custom-ui-frame'
+ *   }}
+ * />
+ * ```
+ */
+export interface UIResourceRendererProps {
+  /**
+   * UI resource to render
+   */
+  resource: UIResourceContent;
+
+  /**
+   * Callback for UI actions
+   * Provides direct prop-based action handling to match official MCP-UI API.
+   * If not provided, falls back to context-based handling (backward compatible).
+   *
+   * @param action - UI action from iframe (tool call, notify, link, etc.)
+   * @returns Result to send back to iframe, or Promise of result
+   *
+   * @example
+   * ```typescript
+   * onUIAction={(action) => {
+   *   if (action.type === 'tool') {
+   *     return executeToolCall(action.payload.toolName, action.payload.params);
+   *   }
+   * }}
+   * ```
+   */
+  onUIAction?: (action: UIAction) => void | Promise<void>;
+
+  /**
+   * HTML-specific rendering configuration
+   * Applied to iframe containers for text/html and text/uri-list resources.
+   *
+   * @example
+   * ```typescript
+   * htmlProps={{
+   *   style: { width: '100%', height: '600px', border: '1px solid #ccc' },
+   *   autoResize: true,
+   *   className: 'ui-resource-iframe'
+   * }}
+   * ```
+   */
+  htmlProps?: {
+    /**
+     * Custom CSS styles for iframe container
+     * Merged with default styles (defaults can be overridden)
+     */
+    style?: React.CSSProperties;
+
+    /**
+     * Enable automatic iframe height adjustment based on content
+     * When true, uses ResizeObserver to detect content height changes.
+     * Default: false for security and performance
+     */
+    autoResize?: boolean;
+
+    /**
+     * CSS class name for iframe container
+     * Allows external styling via CSS
+     */
+    className?: string;
+  };
+
+  /**
+   * Remote DOM configuration (Layer 3+)
+   * Not yet implemented - reserved for future remote-dom support.
+   *
+   * Will support:
+   * - Component library mapping
+   * - Custom element definitions
+   * - Framework selection (React, Web Components)
+   */
+  remoteDomProps?: {
+    library?: any;
+    elementDefinitions?: Record<string, any>;
+  };
 }
 
 /**

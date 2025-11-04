@@ -16,7 +16,7 @@ import { resolve } from 'path';
 
 // Test fixture: minimal interface-driven server
 const TEST_SERVER_CODE = `
-import type { ITool, IServer } from '../../../src/interface-types.js';
+import type { ITool, IServer } from '../../../src/index.js';
 
 /**
  * Test server interface

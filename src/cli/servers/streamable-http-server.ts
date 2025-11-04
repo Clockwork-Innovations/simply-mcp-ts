@@ -167,6 +167,7 @@ const mcpPostHandler = async (req: Request, res: Response) => {
       // New initialization request
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
+        enableJsonResponse: true,
         onsessioninitialized: (sessionId) => {
           console.log(`Session initialized with ID: ${sessionId}`);
           transports[sessionId] = transport;

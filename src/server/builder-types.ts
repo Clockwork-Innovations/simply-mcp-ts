@@ -10,6 +10,8 @@ import type { HandlerContext, HandlerResult } from '../types/handler.js';
 import type { ParsedDependencies } from '../core/index';
 import type { InstallOptions } from '../features/dependencies/installation-types';
 import type { ImageInput, BinaryInput, AudioInput } from '../core/content-helpers';
+import type { PromptMessage } from '@modelcontextprotocol/sdk/types.js';
+import type { SimpleMessage } from './interface-types.js';
 
 /**
  * Execute function type for tools
@@ -33,6 +35,8 @@ export interface ToolDefinition<T = any> {
   description: string;
   parameters: ZodSchema<T>;
   execute: ExecuteFunction<T>;
+  /** Tool annotations (optional) @since v4.1.0 */
+  annotations?: import('./interface-types.js').IToolAnnotations;
 }
 
 /**
@@ -52,9 +56,15 @@ export interface PromptDefinition {
   /**
    * Template string or function that generates template dynamically
    * - string: Static template with {placeholder} syntax
-   * - function: Called at runtime with arguments, returns template string
+   * - function: Called at runtime with arguments and optional context, returns template string, SimpleMessage[], or PromptMessage[]
    */
-  template: string | ((args: Record<string, any>) => string | Promise<string>);
+  template:
+    | string
+    | ((args: Record<string, any>, context?: HandlerContext) =>
+        | string
+        | PromptMessage[]
+        | SimpleMessage[]
+        | Promise<string | PromptMessage[] | SimpleMessage[]>);
 }
 
 /**
@@ -119,6 +129,42 @@ export interface ResourceDefinition {
 }
 
 /**
+ * JSON-RPC 2.0 batch processing configuration.
+ * Foundation Layer: enabled, maxBatchSize
+ * Feature Layer: parallel, timeout
+ */
+export interface BatchingConfig {
+  /**
+   * Enable batch processing support.
+   * @default true
+   */
+  enabled?: boolean;
+
+  /**
+   * Maximum number of requests in a batch.
+   * Batches exceeding this limit are rejected.
+   * @default 100
+   */
+  maxBatchSize?: number;
+
+  /**
+   * Process batch requests in parallel.
+   * Foundation Layer: not implemented (always sequential)
+   * Feature Layer: implements this
+   * @default false (Foundation), true (Feature Layer)
+   */
+  parallel?: boolean;
+
+  /**
+   * Batch-level timeout in milliseconds.
+   * Foundation Layer: not implemented
+   * Feature Layer: implements this
+   * @default undefined
+   */
+  timeout?: number;
+}
+
+/**
  * BuildMCPServer Options
  * Consolidated configuration for creating an MCP server
  */
@@ -162,12 +208,17 @@ export interface BuildMCPServerOptions {
    * Useful for testing or debugging router configurations
    */
   flattenRouters?: boolean;
+
+  /**
+   * JSON-RPC 2.0 batch processing configuration.
+   */
+  batching?: BatchingConfig;
 }
 
 /**
  * Transport type
  */
-export type TransportType = 'stdio' | 'http';
+export type TransportType = 'stdio' | 'http' | 'websocket';
 
 /**
  * Start Options
@@ -176,8 +227,14 @@ export type TransportType = 'stdio' | 'http';
  */
 export interface StartOptions {
   transport?: TransportType;   // Override transport type
-  port?: number;               // Override port (HTTP only)
+  port?: number;               // Override port (HTTP/WebSocket)
   stateful?: boolean;          // Override stateful mode (HTTP only, default: true)
+  websocket?: {                // WebSocket configuration (WebSocket only)
+    port?: number;
+    heartbeatInterval?: number;
+    heartbeatTimeout?: number;
+    maxMessageSize?: number;
+  };
   securityConfig?: any;        // Security configuration (HTTP only) - uses 'any' to avoid circular import
 }
 

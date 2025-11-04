@@ -1,15 +1,15 @@
 # Router Tools Guide
 
-> **Note for v4.0.0**: Router tools are a legacy feature from previous API versions (BuildMCPServer, Decorator API, Functional API). The current Interface API does not currently support router tools. This guide is maintained for reference and potential future implementation.
+Router tools allow you to group related tools together and control their visibility in the tools list. This feature is fully supported in the Interface API (v4.0.0+) with zero-boilerplate, type-safe router definitions.
 
 ---
 
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Current Status](#current-status)
-3. [Router Tools Concept](#router-tools-concept)
-4. [Future Considerations](#future-considerations)
+2. [Interface API](#interface-api)
+3. [Builder API (Legacy)](#builder-api-legacy)
+4. [Advanced Patterns](#advanced-patterns)
 
 ---
 
@@ -37,91 +37,241 @@ Think of routers as **table of contents** for your tools. When a model calls a r
 
 ---
 
-## Current Status
+## Interface API
 
-**Router tools are not currently implemented in the Interface API (v4.0.0).**
+The Interface API provides a declarative, type-safe way to define routers using TypeScript interfaces.
 
-The Interface API focuses on type-safe, interface-driven tool definitions without the imperative registration methods (`addTool()`, `addRouterTool()`) used in previous versions.
-
-### Alternative Approaches
-
-If you need to organize many tools in v4.0.0, consider these alternatives:
-
-#### 1. Tool Naming Conventions
-
-Use prefixes to group related tools:
+### Basic Router
 
 ```typescript
-interface WeatherTools {
-  weather_get_current: IToolDefinition;
-  weather_get_forecast: IToolDefinition;
-  weather_get_alerts: IToolDefinition;
+import type { IServer, ITool, IToolRouter } from 'simply-mcp';
 
-  product_create: IToolDefinition;
-  product_update: IToolDefinition;
-  product_delete: IToolDefinition;
+// Define tool interfaces
+interface Tool1 extends ITool {
+  name: 'tool1';
+  description: 'First tool';
+  params: { /* ... */ };
+  result: { /* ... */ };
+}
+
+interface Tool2 extends ITool {
+  name: 'tool2';
+  description: 'Second tool';
+  params: { /* ... */ };
+  result: { /* ... */ };
+}
+
+// Define router interface
+interface MyRouter extends IToolRouter {
+  name: 'my_router';           // Optional - inferred from property name
+  description: 'My tools';      // Required
+  tools: [Tool1, Tool2];        // Reference tool interfaces
+}
+
+// Server interface
+interface MyServer extends IServer {
+  name: 'my-server';
+  flattenRouters: false;        // Hide router tools from main list
+}
+
+// Implementation
+export default class MyServer implements MyServer {
+  tool1: Tool1 = async (params) => ({ /* ... */ });
+  tool2: Tool2 = async (params) => ({ /* ... */ });
+
+  // Router - NO implementation needed!
+  myRouter!: MyRouter;
 }
 ```
 
-#### 2. Multiple Server Instances
+### Syntax Options
 
-Create separate MCP servers for different domains:
+**1. Interface References (Recommended)**
+```typescript
+interface MyRouter extends IToolRouter {
+  tools: [GetWeatherTool, GetForecastTool];
+}
+```
+
+**2. String Literals (Backward Compatible)**
+```typescript
+interface MyRouter extends IToolRouter {
+  tools: ['get_weather', 'get_forecast'];
+}
+```
+
+**3. Mixed Syntax**
+```typescript
+interface MyRouter extends IToolRouter {
+  tools: [GetWeatherTool, 'other_tool'];
+}
+```
+
+### Router Metadata
 
 ```typescript
-// weather-server.ts
-export default class WeatherServer implements IServer {
-  name = 'weather-server';
-  tools = {
-    get_current: { /* ... */ },
-    get_forecast: { /* ... */ },
-    get_alerts: { /* ... */ }
-  };
-}
-
-// product-server.ts
-export default class ProductServer implements IServer {
-  name = 'product-server';
-  tools = {
-    create: { /* ... */ },
-    update: { /* ... */ },
-    delete: { /* ... */ }
+interface MyRouter extends IToolRouter {
+  name: 'my_router';
+  description: 'My tools';
+  tools: [Tool1, Tool2];
+  metadata: {
+    category: 'api';
+    tags: ['external', 'data'];
+    order: 1;
+    version: '2.0';
   };
 }
 ```
 
-#### 3. Documentation-Based Organization
+### flattenRouters Behavior
 
-Use comprehensive tool descriptions to guide discovery:
+**Option 1: `flattenRouters: false` (Recommended)**
 
 ```typescript
-interface OrganizedServer extends IServer {
-  tools: {
-    // Weather Tools
-    get_weather: {
-      description: '[WEATHER] Get current weather conditions';
-      // ...
-    };
-    get_forecast: {
-      description: '[WEATHER] Get multi-day weather forecast';
-      // ...
-    };
-
-    // Product Tools
-    create_product: {
-      description: '[PRODUCTS] Create a new product';
-      // ...
-    };
-    update_product: {
-      description: '[PRODUCTS] Update existing product';
-      // ...
-    };
-  };
+interface MyServer extends IServer {
+  flattenRouters: false;  // Hide router-assigned tools
 }
 ```
+
+**Result:**
+- `tools/list` returns: `['my_router']`
+- Individual tools are hidden
+- Call router to discover tools: `my_router` → returns tool list
+- Call tools via namespace: `my_router__tool1`
+
+**Option 2: `flattenRouters: true` (Development)**
+
+```typescript
+interface MyServer extends IServer {
+  flattenRouters: true;  // Show all tools
+}
+```
+
+**Result:**
+- `tools/list` returns: `['my_router', 'tool1', 'tool2']`
+- All tools visible in main list
+- Useful for testing and development
+
+### Complete Example
+
+```typescript
+import type { IServer, ITool, IToolRouter, IParam } from 'simply-mcp';
+
+// Parameter interfaces
+interface LocationParam extends IParam {
+  type: 'string';
+  description: 'Location name';
+}
+
+interface DaysParam extends IParam {
+  type: 'number';
+  description: 'Number of days';
+  min: 1;
+  max: 7;
+}
+
+// Tool interfaces
+interface GetWeatherTool extends ITool {
+  name: 'get_weather';
+  description: 'Get current weather for a location';
+  params: { location: LocationParam };
+  result: { temperature: number; conditions: string };
+}
+
+interface GetForecastTool extends ITool {
+  name: 'get_forecast';
+  description: 'Get weather forecast';
+  params: { location: LocationParam; days: DaysParam };
+  result: { forecast: Array<{ day: string; temperature: number; conditions: string }> };
+}
+
+// Router interface
+interface WeatherRouter extends IToolRouter {
+  name: 'weather_router';
+  description: 'Weather information tools including current conditions and forecasts';
+  tools: [GetWeatherTool, GetForecastTool];
+  metadata: {
+    category: 'weather';
+    tags: ['forecast', 'conditions'];
+  };
+}
+
+// Server interface
+interface WeatherServer extends IServer {
+  name: 'weather-service';
+  version: '1.0.0';
+  description: 'Weather information service';
+  flattenRouters: false;
+}
+
+// Implementation
+export default class WeatherService implements WeatherServer {
+  // Tool implementations
+  getWeather: GetWeatherTool = async (params) => {
+    return {
+      temperature: 72,
+      conditions: 'Sunny'
+    };
+  };
+
+  getForecast: GetForecastTool = async (params) => {
+    const forecast = [];
+    for (let i = 0; i < params.days; i++) {
+      forecast.push({
+        day: `Day ${i + 1}`,
+        temperature: 70 + i,
+        conditions: i % 2 === 0 ? 'Sunny' : 'Cloudy'
+      });
+    }
+    return { forecast };
+  };
+
+  // Router - NO implementation needed!
+  weatherRouter!: WeatherRouter;
+}
+```
+
+### Multiple Routers
+
+Tools can be assigned to multiple routers:
+
+```typescript
+interface AdminRouter extends IToolRouter {
+  tools: [CreateUserTool, DeleteUserTool, AuditLogTool];
+}
+
+interface UserRouter extends IToolRouter {
+  tools: [AuditLogTool];  // Same tool in both routers
+}
+
+export default class Server implements MyServer {
+  createUser: CreateUserTool = async (params) => ({ /* ... */ });
+  deleteUser: DeleteUserTool = async (params) => ({ /* ... */ });
+  auditLog: AuditLogTool = async (params) => ({ /* ... */ });
+
+  adminRouter!: AdminRouter;
+  userRouter!: UserRouter;
+}
+```
+
+### TypeScript Compatibility
+
+The Interface API uses AST parsing, not TypeScript's type system. This means:
+
+1. **Validation:** Use `--dry-run` instead of `tsc --noEmit`
+   ```bash
+   npx simply-mcp run server.ts --dry-run
+   ```
+
+2. **Type Warnings:** TypeScript may show structural type warnings - these are expected and can be ignored
+
+3. **Testing:** Add `// @ts-nocheck` at the top of test files if needed
+
+See [Quick Start Guide](./QUICK_START.md#typescript-validation) for details.
 
 ---
 
-## Router Tools Concept
+## Builder API (Legacy)
 
 This section describes how router tools worked in previous API versions, for reference purposes.
 
@@ -259,8 +409,8 @@ For future implementation, consider:
 
 ## Related Documentation
 
-- [API Features Reference](./API_FEATURES.md) - Current primary API for v4.0.0
-- [Tools Guide](./TOOLS.md) - Tool creation and usage
+- [Features Guide](./FEATURES.md) - Current primary API for v4.0.0
+- [Features Guide - Tools](./FEATURES.md#tools) - Tool creation and usage
 - [Migration Guide](../MIGRATION-v4.md) - Migrating from previous versions
 
 ---

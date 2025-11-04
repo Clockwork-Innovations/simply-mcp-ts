@@ -6,7 +6,11 @@ import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { UIWatchManager } from '../../src/features/ui/ui-watch-manager.js';
 import { invalidateReactCache, clearReactCache, getReactCacheStats } from '../../src/features/ui/ui-react-compiler.js';
 import { invalidateFileCache, clearFileCache, getFileCacheStats } from '../../src/features/ui/ui-file-resolver.js';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('UIWatchManager', () => {
   let manager: UIWatchManager;

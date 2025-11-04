@@ -211,17 +211,54 @@ export function validateOperation(op: any): op is DOMOperation {
     return false;
   }
 
-  // Whitelist of allowed operations
+  // Whitelist of allowed operations and their required fields
   // SECURITY: Only these operations can be processed by the host
-  const allowedOps = [
-    'createElement',
-    'setAttribute',
-    'appendChild',
-    'removeChild',
-    'setTextContent',
-    'addEventListener',
-    'callHost',
-  ];
+  // Each operation type has specific required fields that must be present and have correct types
+  switch (op.type) {
+    case 'createElement':
+      // Required: id (string), tagName (string)
+      return typeof op.id === 'string' && typeof op.tagName === 'string';
 
-  return allowedOps.includes(op.type);
+    case 'setAttribute':
+      // Required: elementId (string), name (string), value (any serializable value including null)
+      // Value will be converted to string when applied to DOM
+      // null is explicitly allowed to support clearing attributes
+      return (
+        typeof op.elementId === 'string' &&
+        typeof op.name === 'string' &&
+        op.value !== undefined
+      );
+
+    case 'appendChild':
+      // Required: parentId (string), childId (string)
+      return typeof op.parentId === 'string' && typeof op.childId === 'string';
+
+    case 'removeChild':
+      // Required: parentId (string), childId (string)
+      return typeof op.parentId === 'string' && typeof op.childId === 'string';
+
+    case 'setTextContent':
+      // Required: elementId (string), text (string)
+      return typeof op.elementId === 'string' && typeof op.text === 'string';
+
+    case 'addEventListener':
+      // Required: elementId (string), event (string), handlerId (string)
+      return (
+        typeof op.elementId === 'string' &&
+        typeof op.event === 'string' &&
+        typeof op.handlerId === 'string'
+      );
+
+    case 'callHost':
+      // Required: action (string), payload (object)
+      return (
+        typeof op.action === 'string' &&
+        typeof op.payload === 'object' &&
+        op.payload !== null
+      );
+
+    default:
+      // Unknown operation type - reject
+      return false;
+  }
 }

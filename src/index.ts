@@ -39,13 +39,17 @@ export {
 export type {
   IParam,
   ITool,
+  IToolAnnotations,
   IPrompt,
+  IPromptArgument,
   IResource,
   IServer,
   IUI,
   IAuth,
   IApiKeyAuth,
   IApiKeyConfig,
+  IOAuth2Auth,
+  IOAuthClient,
   ISampling,
   ISamplingMessage,
   ISamplingOptions,
@@ -60,6 +64,12 @@ export type {
   UIResourceDefinition,
   IUIResourceProvider,
   RouterToolDefinition,
+  PromptMessage,
+  SimpleMessage,
+  InferArgType,
+  InferArgs,
+  IAudioContent,
+  IAudioMetadata,
 } from './server/interface-types.js';
 
 export {
@@ -87,6 +97,47 @@ export {
 export { authConfigFromParsed } from './features/auth/adapter.js';
 
 // ============================================================================
+// OAuth 2.1 Storage Adapters (Built on MCP SDK)
+// ============================================================================
+/**
+ * OAuth 2.1 storage adapters for token/client persistence.
+ *
+ * Works with any implementation of the MCP SDK's OAuthServerProvider interface.
+ * For a complete provider implementation, see examples/reference-oauth-provider.ts
+ *
+ * @example Storage Adapters
+ * ```typescript
+ * import { InMemoryStorage, RedisStorage } from 'simply-mcp';
+ *
+ * const storage = new InMemoryStorage();
+ * // or
+ * const storage = new RedisStorage({ url: 'redis://localhost:6379' });
+ * ```
+ *
+ * @see https://github.com/modelcontextprotocol/typescript-sdk/tree/main/src/server/auth
+ * @see examples/reference-oauth-provider.ts
+ */
+export {
+  InMemoryStorage,
+  RedisStorage,
+  createOAuthRouter,
+  createOAuthMiddleware,
+} from './features/auth/oauth/index.js';
+
+export type {
+  OAuthRouterConfig,
+  OAuthProviderConfig,
+  StoredToken,
+  StoredAuthorizationCode,
+  StoredClient,
+  RedisStorageConfig,
+  OAuthStorageProvider,
+  OAuthStorageConfig,
+  StorageStats,
+  HealthCheckResult,
+} from './features/auth/oauth/index.js';
+
+// ============================================================================
 // Core Types
 // ============================================================================
 
@@ -105,6 +156,7 @@ export type {
   Logger,
   Permissions,
   HandlerError,
+  BatchContext,
 } from './types/handler.js';
 
 // ============================================================================
@@ -170,6 +222,32 @@ export type {
 export { defineConfig } from './core/config.js';
 
 // ============================================================================
+// Programmatic Server API
+// ============================================================================
+/**
+ * Programmatic server builder for advanced use cases.
+ *
+ * Use this API when you need to:
+ * - Create MCP servers programmatically without CLI
+ * - Embed MCP servers in larger applications
+ * - Customize server behavior at runtime
+ *
+ * @example
+ * ```typescript
+ * import { BuildMCPServer } from 'simply-mcp';
+ *
+ * const server = new BuildMCPServer({
+ *   serverFilePath: './my-server.ts',
+ *   transport: 'stdio'
+ * });
+ *
+ * await server.start();
+ * ```
+ */
+export { BuildMCPServer } from './server/builder-server.js';
+export type { BuildMCPServerOptions, BatchingConfig } from './server/builder-types.js';
+
+// ============================================================================
 // MCP-UI Support (Foundation & Feature Layers)
 // ============================================================================
 /**
@@ -221,6 +299,21 @@ export type {
   UIResource,
   UIResourceOptions,
 } from './types/ui.js';
+
+// SDK-Compatible UI Resource Creation (Official MCP-UI API)
+export {
+  createUIResource,
+} from './features/ui/create-ui-resource.js';
+
+export type {
+  UIResourceOptions as CreateUIResourceOptions,
+  UIResourceContent,
+  UIResourceEncoding,
+  UIResourceMetadata,
+  RawHtmlContent,
+  ExternalUrlContent,
+  RemoteDomContent,
+} from './features/ui/create-ui-resource.js';
 
 // Feature Layer - React compiler
 export {

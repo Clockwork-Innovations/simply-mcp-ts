@@ -5,7 +5,7 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { authConfigFromParsed } from '../../src/auth-adapter.js';
+import { authConfigFromParsed } from '../../src/index.js';
 import type { ParsedAuth } from '../../src/server/parser.js';
 
 describe('authConfigFromParsed', () => {
@@ -182,15 +182,54 @@ describe('authConfigFromParsed', () => {
     expect(result?.permissions?.authenticated).toEqual(['*']);
   });
 
-  test('throws error for unimplemented oauth2 auth type', () => {
+  test('throws error for oauth2 auth type missing issuerUrl', () => {
     const parsedAuth: ParsedAuth = {
       type: 'oauth2',
       interfaceName: 'OAuth2Auth',
     };
 
     expect(() => authConfigFromParsed(parsedAuth)).toThrow(
-      "Auth type 'oauth2' not yet implemented. Currently only 'apiKey' is supported."
+      "OAuth2 auth requires issuerUrl"
     );
+  });
+
+  test('throws error for oauth2 auth type missing clients', () => {
+    const parsedAuth: ParsedAuth = {
+      type: 'oauth2',
+      interfaceName: 'OAuth2Auth',
+      issuerUrl: 'http://localhost:3000',
+    };
+
+    expect(() => authConfigFromParsed(parsedAuth)).toThrow(
+      "OAuth2 auth requires at least one client"
+    );
+  });
+
+  test('creates OAuth2 SecurityConfig when properly configured', () => {
+    const parsedAuth: ParsedAuth = {
+      type: 'oauth2',
+      interfaceName: 'OAuth2Auth',
+      issuerUrl: 'http://localhost:3000',
+      clients: [
+        {
+          clientId: 'test-client',
+          clientSecret: 'test-secret',
+          redirectUris: ['http://localhost:3000/callback'],
+          scopes: ['read', 'write'],
+        },
+      ],
+    };
+
+    const result = authConfigFromParsed(parsedAuth);
+
+    expect(result).toBeDefined();
+    expect(result?.enabled).toBe(true);
+    expect(result?.authentication.enabled).toBe(true);
+    expect(result?.authentication.type).toBe('oauth2');
+    expect(result?.authentication.issuerUrl).toBe('http://localhost:3000');
+    expect(result?.authentication.oauthProvider).toBeDefined();
+    expect(result?.permissions?.authenticated).toEqual(['*']);
+    expect(result?.permissions?.anonymous).toEqual([]);
   });
 
   test('throws error for unimplemented database auth type', () => {
@@ -200,7 +239,7 @@ describe('authConfigFromParsed', () => {
     };
 
     expect(() => authConfigFromParsed(parsedAuth)).toThrow(
-      "Auth type 'database' not yet implemented. Currently only 'apiKey' is supported."
+      "Auth type 'database' not yet implemented."
     );
   });
 
@@ -211,7 +250,7 @@ describe('authConfigFromParsed', () => {
     };
 
     expect(() => authConfigFromParsed(parsedAuth)).toThrow(
-      "Auth type 'custom' not yet implemented. Currently only 'apiKey' is supported."
+      "Auth type 'custom' not yet implemented."
     );
   });
 

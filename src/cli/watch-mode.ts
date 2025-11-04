@@ -120,6 +120,13 @@ function startServerProcess(options: WatchModeOptions, state: WatchState): void 
     console.error(`[Watch] Command: node ${cliPath} ${args.join(' ')}`);
   }
 
+  // DEBUG: Log spawn command
+  console.error('[DEBUG:WATCH] ========== SPAWNING SERVER ==========');
+  console.error('[DEBUG:WATCH] timestamp:', new Date().toISOString());
+  console.error('[DEBUG:WATCH] command: node', [cliPath, ...args].join(' '));
+  console.error('[DEBUG:WATCH] cwd:', process.cwd());
+  console.error('[DEBUG:WATCH] ======================================');
+
   // Spawn the child process
   const child = spawn('node', [cliPath, ...args], {
     stdio: 'inherit', // Forward stdio to parent
@@ -309,6 +316,9 @@ export async function startWatchMode(options: WatchModeOptions): Promise<void> {
       '**/.git/**',
       '**/.DS_Store',
       '**/coverage/**',
+      '**/*.md',              // Ignore markdown files
+      '**/docs/**',           // Ignore documentation directory
+      '**/*.json',            // Ignore JSON files (except package.json which is explicitly watched)
     ],
   };
 

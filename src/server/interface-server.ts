@@ -15,9 +15,15 @@ import type { SecurityConfig } from '../features/auth/security/types.js';
  * Populated by the adapter from parsed IServer interface
  */
 export interface RuntimeConfig {
-  transport?: 'stdio' | 'http';
+  transport?: 'stdio' | 'http' | 'websocket';
   port?: number;
   stateful?: boolean;
+  websocket?: {
+    port?: number;
+    heartbeatInterval?: number;
+    heartbeatTimeout?: number;
+    maxMessageSize?: number;
+  };
   auth?: any; // ParsedAuth type, but we avoid circular dependency
   capabilities?: {
     sampling?: boolean;
@@ -118,11 +124,21 @@ export class InterfaceServer {
     inputSchema: any;
   }> {
     const tools = this.buildServer.getTools();
-    return Array.from(tools.values()).map((tool) => ({
+    const toolsList = Array.from(tools.values()).map((tool) => ({
       name: tool.definition.name,
       description: tool.definition.description,
       inputSchema: tool.jsonSchema,
     }));
+
+    // Apply flattenRouters filtering (same logic as MCP tools/list handler)
+    const options = this.buildServer.getOptions();
+    if (!options.flattenRouters) {
+      // Hide tools that are assigned to routers
+      const toolToRouters = this.buildServer.getToolToRouters();
+      return toolsList.filter((tool) => !toolToRouters.has(tool.name));
+    }
+
+    return toolsList;
   }
 
   /**
@@ -557,6 +573,7 @@ export class InterfaceServer {
       transport: options?.transport ?? this.runtimeConfig?.transport,
       port: options?.port ?? this.runtimeConfig?.port,
       stateful: options?.stateful ?? this.runtimeConfig?.stateful,
+      websocket: options?.websocket ?? this.runtimeConfig?.websocket,
     };
 
     // Convert auth config if present and transport is HTTP

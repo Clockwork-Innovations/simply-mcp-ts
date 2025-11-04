@@ -18,6 +18,9 @@ import { parseInterfaceFile, type ParseResult } from '../../../src/server/parser
 import { writeFileSync, unlinkSync } from 'fs';
 import { resolve } from 'path';
 
+// Detect if running under Jest to avoid crashing Jest workers
+const isJest = typeof jest !== 'undefined' || process.env.JEST_WORKER_ID !== undefined;
+
 // Test fixture: Server with subscription support
 const TEST_SERVER_CODE = `
 import type { IResource, IServer, ISubscription } from '../../../src/interface-types.js';
@@ -601,15 +604,23 @@ export default class TestServerImpl implements TestServer {}
     console.log(`  ${colors.green}✓${colors.reset} URI schemes preserved (file://, http://, custom)`);
     console.log(`  ${colors.green}✓${colors.reset} Empty subscriptions array handling`);
     console.log(`\n${colors.cyan}Estimated Coverage: >80%${colors.reset}`);
-    process.exit(0);
+    if (!isJest) process.exit(0);
   } else {
     console.log(`${colors.bold}${colors.red}Some subscription tests failed ✗${colors.reset}`);
-    process.exit(1);
+    if (!isJest) {
+      process.exit(1);
+    } else {
+      throw new Error('Some subscription tests failed');
+    }
   }
 }
 
 // Run tests
 runTests().catch(error => {
   console.error(`${colors.red}Fatal error:${colors.reset}`, error);
-  process.exit(1);
+  if (!isJest) {
+    process.exit(1);
+  } else {
+    throw error;
+  }
 });

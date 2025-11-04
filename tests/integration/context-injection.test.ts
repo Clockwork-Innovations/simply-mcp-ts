@@ -8,9 +8,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { BuildMCPServer } from '../../src/api/programmatic/BuildMCPServer.js';
+import { BuildMCPServer } from '../../src/index.js';
 import { z } from 'zod';
-import type { HandlerContext } from '../../src/core/types/handlers.js';
+import type { HandlerContext } from '../../src/types/handler.js';
 
 describe('Context Injection - BuildMCPServer', () => {
   let server: BuildMCPServer;
@@ -39,10 +39,7 @@ describe('Context Injection - BuildMCPServer', () => {
         parameters: z.object({ input: z.string() }),
         execute: async (args, context) => {
           receivedContext = context;
-          return [{
-            type: 'text',
-            text: `Received: ${args.input}`
-          }];
+          return `Received: ${args.input}`;
         }
       });
 
@@ -72,10 +69,7 @@ describe('Context Injection - BuildMCPServer', () => {
           serverName = context?.mcp?.server.name;
           serverVersion = context?.mcp?.server.version;
           serverDescription = context?.mcp?.server.description;
-          return [{
-            type: 'text',
-            text: `Server: ${serverName} v${serverVersion}`
-          }];
+          return `Server: ${serverName} v${serverVersion}`;
         }
       });
 
@@ -98,10 +92,7 @@ describe('Context Injection - BuildMCPServer', () => {
           if (context?.mcp?.request_context.request_id) {
             requestIds.push(context.mcp.request_context.request_id);
           }
-          return [{
-            type: 'text',
-            text: 'ID captured'
-          }];
+          return 'ID captured';
         }
       });
 
@@ -133,11 +124,10 @@ describe('Context Injection - BuildMCPServer', () => {
         parameters: z.object({}),
         execute: async (args, context) => {
           sessionExists = !!context?.mcp?.session;
-          sessionHasMethods = typeof context?.mcp?.session.send_log_message === 'function';
-          return [{
-            type: 'text',
-            text: 'Session checked'
-          }];
+          // Check for actual Server methods (setRequestHandler, connect, close)
+          sessionHasMethods = typeof context?.mcp?.session?.setRequestHandler === 'function' ||
+                             typeof context?.mcp?.session?.connect === 'function';
+          return 'Session checked';
         }
       });
 
@@ -159,10 +149,7 @@ describe('Context Injection - BuildMCPServer', () => {
         parameters: z.object({ value: z.string() }),
         execute: async (args) => {  // No context parameter
           executed = true;
-          return [{
-            type: 'text',
-            text: `Processed: ${args.value}`
-          }];
+          return `Processed: ${args.value}`;
         }
       });
 
@@ -188,10 +175,7 @@ describe('Context Injection - BuildMCPServer', () => {
             context.logger.info('Test log message');
             loggerUsed = true;
           }
-          return [{
-            type: 'text',
-            text: 'Logger used'
-          }];
+          return 'Logger used';
         }
       });
 
@@ -211,7 +195,7 @@ describe('Context Injection - BuildMCPServer', () => {
         parameters: z.object({}),
         execute: async () => {
           results.push('old');
-          return [{ type: 'text', text: 'old' }];
+          return 'old';
         }
       });
 
@@ -222,7 +206,7 @@ describe('Context Injection - BuildMCPServer', () => {
         parameters: z.object({}),
         execute: async (args, context) => {
           results.push(context?.mcp?.server.name || 'no-context');
-          return [{ type: 'text', text: 'new' }];
+          return 'new';
         }
       });
 
@@ -245,7 +229,7 @@ describe('Context Injection - BuildMCPServer', () => {
         parameters: z.object({}),
         execute: async (args, context) => {
           hasRequestId = !!context?.mcp?.request_context.request_id;
-          return [{ type: 'text', text: 'checked' }];
+          return 'checked';
         }
       });
 
@@ -264,7 +248,7 @@ describe('Context Injection - BuildMCPServer', () => {
         parameters: z.object({}),
         execute: async (args, context) => {
           metaValue = context?.mcp?.request_context.meta;
-          return [{ type: 'text', text: 'checked' }];
+          return 'checked';
         }
       });
 
@@ -294,7 +278,7 @@ describe('Context Injection - BuildMCPServer', () => {
           // context.mcp.server.name = 'modified';
           // context.mcp.request_context.request_id = 'modified';
 
-          return [{ type: 'text', text: 'checked' }];
+          return 'checked';
         }
       });
 
@@ -315,7 +299,7 @@ describe('Context Injection - BuildMCPServer', () => {
         parameters: z.object({}),
         execute: async (args, context) => {
           sessions.push(context?.mcp?.session);
-          return [{ type: 'text', text: 'captured' }];
+          return 'captured';
         }
       });
 
@@ -344,7 +328,7 @@ describe('Context Injection - BuildMCPServer', () => {
           // Safe optional chaining
           const name = context?.mcp?.server?.name;
           checkPassed = name === 'test-context-server';
-          return [{ type: 'text', text: 'checked' }];
+          return 'checked';
         }
       });
 

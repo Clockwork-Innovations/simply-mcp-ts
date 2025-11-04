@@ -32,12 +32,22 @@ export interface ApiKeyConfig {
 export interface AuthenticationConfig {
   /** Whether authentication is enabled */
   enabled: boolean;
-  /** List of valid API keys */
-  apiKeys: ApiKeyConfig[];
+  /** Authentication type */
+  type?: 'apiKey' | 'oauth2';
+
+  // API Key fields
+  /** List of valid API keys (for apiKey type) */
+  apiKeys?: ApiKeyConfig[];
   /** Header name for API key (default: 'x-api-key') */
   headerName?: string;
   /** Whether to allow unauthenticated requests (default: false) */
   allowAnonymous?: boolean;
+
+  // OAuth2 fields
+  /** OAuth issuer URL (for oauth2 type) */
+  issuerUrl?: string;
+  /** OAuth provider instance (for oauth2 type) */
+  oauthProvider?: any; // Will be typed as SimplyMCPOAuthProvider when imported
 }
 
 /**
@@ -97,7 +107,15 @@ export type AuditEventType =
   | 'ratelimit.warning'
   | 'session.created'
   | 'session.terminated'
-  | 'security.violation';
+  | 'security.violation'
+  | 'oauth.authorization.requested'
+  | 'oauth.authorization.granted'
+  | 'oauth.authorization.denied'
+  | 'oauth.token.issued'
+  | 'oauth.token.refreshed'
+  | 'oauth.token.revoked'
+  | 'oauth.token.validation.success'
+  | 'oauth.token.validation.failed';
 
 /**
  * Audit log entry

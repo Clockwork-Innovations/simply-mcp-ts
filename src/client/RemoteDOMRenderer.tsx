@@ -20,11 +20,14 @@
  * @module client/RemoteDOMRenderer
  */
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { HostReceiver } from './remote-dom/host-receiver.js';
 import { validateOperation } from './remote-dom/protocol.js';
 import { createRemoteComponent, isAllowedComponent } from './remote-dom/component-library.js';
+import { ResourceLimits, ResourceLimitError } from './remote-dom/resource-limits.js';
+import { CSPValidator, CSPValidationError } from './remote-dom/csp-validator.js';
 import type { UIResourceContent, UIActionResult } from './ui-types.js';
+import type { RemoteDOMFramework } from '../core/remote-dom-types.js';
 
 /**
  * Props for RemoteDOMRenderer component
@@ -39,6 +42,23 @@ export interface RemoteDOMRendererProps {
    * Callback for UI actions (tool calls, navigation, etc.)
    */
   onUIAction?: (action: UIActionResult) => void | Promise<void>;
+
+  /**
+   * Remote DOM framework (react | webcomponents)
+   * Parsed from MIME type parameter: application/vnd.mcp-ui.remote-dom+javascript; framework=react
+   * Defaults to 'react' if not specified for backward compatibility.
+   */
+  framework?: RemoteDOMFramework;
+
+  /**
+   * Remote DOM configuration (Layer 3+)
+   * Component library and element definitions for custom rendering.
+   * Currently not fully implemented - reserved for future enhancement.
+   */
+  remoteDomProps?: {
+    library?: any;
+    elementDefinitions?: Record<string, any>;
+  };
 }
 
 /**
@@ -57,10 +77,13 @@ interface VirtualElement {
 }
 
 /**
- * Remote DOM Renderer Component
+ * Remote DOM Renderer Component (Internal)
  *
  * Main component for rendering Remote DOM resources.
  * Handles worker lifecycle, DOM operations, and React rendering.
+ *
+ * OPTIMIZATION (Polish Layer): Wrapped with React.memo to prevent
+ * unnecessary re-renders when props haven't changed.
  *
  * @example
  * ```typescript
@@ -76,22 +99,110 @@ interface VirtualElement {
  * />
  * ```
  */
-export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
+const RemoteDOMRendererComponent: React.FC<RemoteDOMRendererProps> = ({
   resource,
   onUIAction,
+  framework = 'react', // Default to 'react' for backward compatibility
+  remoteDomProps,
 }) => {
+  // Note: remoteDomProps is accepted but not yet fully utilized
+  // Future enhancement: Use library and elementDefinitions for custom rendering
   const workerRef = useRef<Worker | null>(null);
   const [root, setRoot] = useState<React.ReactElement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<'script' | 'worker' | 'validation' | 'render' | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [showErrorDetails, setShowErrorDetails] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingStage, setLoadingStage] = useState<string>('Initializing Web Worker...');
   const elementsRef = useRef<Map<string, VirtualElement>>(new Map());
   const hostReceiverRef = useRef<HostReceiver | null>(null);
 
+  // SECURITY (Polish Layer): Resource limits to prevent DoS attacks
+  const resourceLimitsRef = useRef<ResourceLimits>(new ResourceLimits());
+
+  // SECURITY (Polish Layer): CSP validator to prevent XSS attacks
+  const cspValidatorRef = useRef<CSPValidator>(new CSPValidator());
+
+  /**
+   * OPTIMIZATION (Polish Layer): Memoized callbacks for HostReceiver
+   * These callbacks are stable and don't change across renders,
+   * preventing unnecessary HostReceiver recreations.
+   */
+  const handleCreateElement = useCallback((id: string, tagName: string, props?: Record<string, any>) => {
+    // SECURITY: Validate component is allowed
+    if (!isAllowedComponent(tagName)) {
+      console.error(`Component not allowed: ${tagName}`);
+      return;
+    }
+
+    // SECURITY (Polish Layer): Register DOM node with resource limits
+    try {
+      resourceLimitsRef.current.registerDOMNode();
+    } catch (error) {
+      if (error instanceof ResourceLimitError) {
+        console.error(`Resource limit exceeded: ${error.message}`);
+        // Terminate worker to stop further operations
+        if (workerRef.current) {
+          workerRef.current.terminate();
+        }
+        return;
+      }
+      throw error;
+    }
+
+    elementsRef.current.set(id, {
+      id,
+      tagName,
+      props,
+      children: [],
+      eventHandlers: new Map(),
+    });
+  }, []);
+
+  const handleSetAttribute = useCallback((elementId: string, name: string, value: any) => {
+    const elem = elementsRef.current.get(elementId);
+    if (elem) {
+      elem.props = { ...elem.props, [name]: value };
+    }
+  }, []);
+
+  const handleAppendChild = useCallback((parentId: string, childId: string) => {
+    const parent = elementsRef.current.get(parentId);
+    if (parent && !parent.children.includes(childId)) {
+      parent.children.push(childId);
+    }
+  }, []);
+
+  const handleRemoveChild = useCallback((parentId: string, childId: string) => {
+    const parent = elementsRef.current.get(parentId);
+    if (parent) {
+      parent.children = parent.children.filter((id) => id !== childId);
+    }
+  }, []);
+
+  const handleSetTextContent = useCallback((elementId: string, text: string) => {
+    const elem = elementsRef.current.get(elementId);
+    if (elem) {
+      elem.text = text;
+    }
+  }, []);
+
+  const handleCallHost = useCallback((action: string, payload: any) => {
+    // Call parent's onUIAction callback
+    onUIAction?.({
+      type: action as any,
+      payload,
+    });
+  }, [onUIAction]);
+
   /**
    * Render virtual DOM to React elements
    *
    * Recursively converts virtual DOM tree to React components.
+   *
+   * OPTIMIZATION (Polish Layer): Memoized with useCallback to prevent
+   * unnecessary function recreations.
    */
   const renderDOM = useCallback(() => {
     try {
@@ -111,14 +222,20 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
       const rootElement = renderElement(rootId, elements);
       setRoot(rootElement);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const message = e instanceof Error ? e.message : String(e);
+      setError(`Failed to render UI: ${message}`);
+      setErrorType('render');
+      setErrorDetails(e instanceof Error ? e.stack || null : null);
     }
   }, []);
 
   /**
    * Render a single element and its children
+   *
+   * OPTIMIZATION (Polish Layer): Memoized to reduce re-render overhead.
+   * Only recreates when elements map changes (tracked by reference).
    */
-  const renderElement = (
+  const renderElement = useCallback((
     id: string,
     elements: Map<string, VirtualElement>
   ): React.ReactElement => {
@@ -143,10 +260,12 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
     }
 
     // Attach event handlers
+    // OPTIMIZATION: Memoize event handlers to prevent recreation
     const props = { ...elem.props };
     if (elem.eventHandlers && elem.eventHandlers.size > 0) {
       for (const [event, handlerId] of elem.eventHandlers.entries()) {
         const reactEvent = `on${event.charAt(0).toUpperCase() + event.slice(1)}`;
+        // Create stable event handler reference
         props[reactEvent] = (e: any) => {
           e.preventDefault();
           e.stopPropagation();
@@ -161,7 +280,7 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
       children.length > 0 ? children : undefined,
       React
     );
-  };
+  }, []); // Empty deps - renderElement doesn't depend on external state
 
   // Initialize worker on mount
   useEffect(() => {
@@ -169,6 +288,12 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
       // Layer 5: Enhanced loading states
       setIsLoading(true);
       setLoadingStage('Initializing Web Worker...');
+
+      // Log framework for debugging (Foundation Layer - just parse and log)
+      console.log(`[RemoteDOMRenderer] Initializing with framework: ${framework}`);
+      if (framework !== 'react' && framework !== 'webcomponents') {
+        console.warn(`[RemoteDOMRenderer] Unknown framework: ${framework}, defaulting to 'react'`);
+      }
 
       // Create Web Worker from inline code
       const workerCode = getWorkerCode();
@@ -178,52 +303,29 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
 
       workerRef.current = worker;
 
-      // Create host receiver with callbacks
+      // Create host receiver with memoized callbacks
+      // OPTIMIZATION: Using memoized callbacks prevents unnecessary recreations
       const hostReceiver = new HostReceiver({
-        onCreateElement: (id, tagName, props) => {
-          // SECURITY: Validate component is allowed
-          if (!isAllowedComponent(tagName)) {
-            console.error(`Component not allowed: ${tagName}`);
-            return;
-          }
-          elementsRef.current.set(id, {
-            id,
-            tagName,
-            props,
-            children: [],
-            eventHandlers: new Map(),
-          });
-        },
-
-        onSetAttribute: (elementId, name, value) => {
-          const elem = elementsRef.current.get(elementId);
-          if (elem) {
-            elem.props = { ...elem.props, [name]: value };
-          }
-        },
-
-        onAppendChild: (parentId, childId) => {
-          const parent = elementsRef.current.get(parentId);
-          if (parent && !parent.children.includes(childId)) {
-            parent.children.push(childId);
-          }
-        },
-
-        onRemoveChild: (parentId, childId) => {
-          const parent = elementsRef.current.get(parentId);
-          if (parent) {
-            parent.children = parent.children.filter((id) => id !== childId);
-          }
-        },
-
-        onSetTextContent: (elementId, text) => {
-          const elem = elementsRef.current.get(elementId);
-          if (elem) {
-            elem.text = text;
-          }
-        },
+        onCreateElement: handleCreateElement,
+        onSetAttribute: handleSetAttribute,
+        onAppendChild: handleAppendChild,
+        onRemoveChild: handleRemoveChild,
+        onSetTextContent: handleSetTextContent,
 
         onAddEventListener: (elementId, event, handlerId) => {
+          // SECURITY (Polish Layer): Register event listener with resource limits
+          try {
+            resourceLimitsRef.current.registerEventListener();
+          } catch (error) {
+            if (error instanceof ResourceLimitError) {
+              console.error(`Resource limit exceeded: ${error.message}`);
+              // Terminate worker to stop further operations
+              worker.terminate();
+              return;
+            }
+            throw error;
+          }
+
           const elem = elementsRef.current.get(elementId);
           if (elem) {
             if (!elem.eventHandlers) {
@@ -241,13 +343,7 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
           });
         },
 
-        onCallHost: (action, payload) => {
-          // Call parent's onUIAction callback
-          onUIAction?.({
-            type: action as any,
-            payload,
-          });
-        },
+        onCallHost: handleCallHost,
       });
 
       hostReceiverRef.current = hostReceiver;
@@ -264,16 +360,62 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
           const script = resource.text || (resource.blob ? atob(resource.blob) : '');
           if (!script) {
             setError('No script content found in resource');
+            setErrorType('validation');
+            setErrorDetails('The resource must contain either a text or blob field with Remote DOM script content.');
             setIsLoading(false);
             return;
           }
+
+          // SECURITY (Polish Layer): Validate script with CSP
+          try {
+            cspValidatorRef.current.validateScript(script);
+          } catch (error) {
+            if (error instanceof CSPValidationError) {
+              const violations = error.violations.map(v => `- ${v.blockedValue}: ${v.reason}`).join('\n');
+              setError(`CSP violation: Script contains unsafe code`);
+              setErrorType('validation');
+              setErrorDetails(`The script violates Content Security Policy:\n\n${violations}\n\nThese restrictions prevent XSS attacks and code injection.`);
+              setIsLoading(false);
+              worker.terminate();
+              return;
+            }
+            throw error;
+          }
+
+          // SECURITY (Polish Layer): Validate script size
+          try {
+            resourceLimitsRef.current.validateScriptSize(script);
+          } catch (error) {
+            if (error instanceof ResourceLimitError) {
+              setError(`Resource limit exceeded: ${error.message}`);
+              setErrorType('validation');
+              setErrorDetails('The script exceeds the maximum allowed size. This limit prevents DoS attacks from oversized scripts.');
+              setIsLoading(false);
+              worker.terminate();
+              return;
+            }
+            throw error;
+          }
+
+          // SECURITY (Polish Layer): Start execution timer
+          resourceLimitsRef.current.startExecutionTimer(() => {
+            setError('Script execution timeout: exceeded maximum execution time');
+            setErrorType('script');
+            setErrorDetails('The script took too long to execute. This limit prevents long-running scripts from blocking the UI.');
+            setIsLoading(false);
+            worker.terminate();
+          });
+
           worker.postMessage({
             type: 'executeScript',
             script,
           });
         } else if (data.type === 'error') {
           // Script execution error
-          setError(`Script error: ${data.message}`);
+          resourceLimitsRef.current.stopExecutionTimer();
+          setError(`Script execution failed: ${data.message}`);
+          setErrorType('script');
+          setErrorDetails(data.stack || 'No stack trace available. Check your Remote DOM script syntax and logic.');
           setIsLoading(false);
         } else {
           // SECURITY: Validate operation before processing
@@ -296,7 +438,10 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
       };
 
       worker.onerror = (error) => {
-        setError(`Worker error: ${error.message}`);
+        resourceLimitsRef.current.stopExecutionTimer();
+        setError(`Web Worker initialization failed: ${error.message}`);
+        setErrorType('worker');
+        setErrorDetails('The Remote DOM sandbox worker could not be initialized. This might be due to browser security restrictions or CSP policies.');
         setIsLoading(false);
         console.error('Worker error:', error);
       };
@@ -306,28 +451,188 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
         worker.terminate();
         URL.revokeObjectURL(workerUrl);
         hostReceiverRef.current?.clearHandlers();
+        // SECURITY (Polish Layer): Reset resource limits for next execution
+        resourceLimitsRef.current.reset();
       };
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const message = e instanceof Error ? e.message : String(e);
+      setError(`Remote DOM initialization failed: ${message}`);
+      setErrorType('worker');
+      setErrorDetails(e instanceof Error ? e.stack || null : 'An unexpected error occurred during initialization.');
       setIsLoading(false);
     }
   }, [resource, onUIAction, renderDOM]);
 
-  // Error state
+  // Enhanced error state with troubleshooting tips
   if (error) {
+    const errorTypeLabel = {
+      script: 'Script Execution Error',
+      worker: 'Worker Initialization Error',
+      validation: 'Validation Error',
+      render: 'Rendering Error',
+    }[errorType || 'render'];
+
+    const troubleshootingTips = {
+      script: [
+        'Check your Remote DOM script syntax for JavaScript errors',
+        'Ensure all required Remote DOM operations are valid',
+        'Verify that event handlers and state management are implemented correctly',
+        'Check the browser console for additional error details',
+      ],
+      worker: [
+        'Verify that Web Workers are supported in your browser',
+        'Check if Content Security Policy (CSP) allows worker-src',
+        'Ensure your browser security settings allow Web Workers',
+        'Try refreshing the page to reinitialize the worker',
+      ],
+      validation: [
+        'Ensure the resource has valid Remote DOM content (text or blob field)',
+        'Check that the MIME type is set correctly (application/vnd.mcp-ui.remote-dom+javascript)',
+        'Verify the framework parameter is either "react" or "webcomponents"',
+        'Check that the resource URI follows the ui:// scheme',
+      ],
+      render: [
+        'Check if all components used in the script are whitelisted',
+        'Verify that props are properly sanitized and valid',
+        'Ensure no circular references exist in the component tree',
+        'Check the browser console for React rendering warnings',
+      ],
+    }[errorType || 'render'];
+
     return (
       <div
         style={{
-          color: '#d32f2f',
-          padding: '16px',
+          color: '#b71c1c',
+          padding: '20px',
           backgroundColor: '#ffebee',
-          borderRadius: '4px',
-          border: '1px solid #ef5350',
+          borderRadius: '8px',
+          border: '2px solid #ef5350',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          maxWidth: '800px',
+          margin: '20px auto',
         }}
         role="alert"
         aria-live="assertive"
       >
-        <strong>Remote DOM Error:</strong> {error}
+        {/* Error Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <div
+            style={{
+              fontSize: '24px',
+              marginRight: '12px',
+              lineHeight: '1',
+            }}
+            aria-hidden="true"
+          >
+            ⚠️
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3
+              style={{
+                margin: '0 0 8px 0',
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#b71c1c',
+              }}
+            >
+              {errorTypeLabel}
+            </h3>
+            <p
+              style={{
+                margin: 0,
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: '#c62828',
+              }}
+            >
+              {error}
+            </p>
+          </div>
+        </div>
+
+        {/* Troubleshooting Tips */}
+        <div
+          style={{
+            backgroundColor: '#fff',
+            padding: '16px',
+            borderRadius: '6px',
+            marginBottom: errorDetails ? '12px' : 0,
+            border: '1px solid #ffcdd2',
+          }}
+        >
+          <h4
+            style={{
+              margin: '0 0 12px 0',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#c62828',
+            }}
+          >
+            💡 Troubleshooting Tips:
+          </h4>
+          <ul
+            style={{
+              margin: 0,
+              paddingLeft: '20px',
+              fontSize: '13px',
+              lineHeight: '1.6',
+              color: '#666',
+            }}
+          >
+            {troubleshootingTips.map((tip, index) => (
+              <li key={index} style={{ marginBottom: '6px' }}>
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Error Details (Expandable) */}
+        {errorDetails && (
+          <div>
+            <button
+              onClick={() => setShowErrorDetails(!showErrorDetails)}
+              style={{
+                backgroundColor: '#fff',
+                border: '1px solid #ef5350',
+                color: '#c62828',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                width: '100%',
+                justifyContent: 'space-between',
+              }}
+              aria-expanded={showErrorDetails}
+            >
+              <span>Technical Details</span>
+              <span style={{ fontSize: '10px' }}>{showErrorDetails ? '▲' : '▼'}</span>
+            </button>
+            {showErrorDetails && (
+              <pre
+                style={{
+                  backgroundColor: '#fff3e0',
+                  padding: '12px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  lineHeight: '1.5',
+                  overflow: 'auto',
+                  maxHeight: '200px',
+                  margin: '8px 0 0 0',
+                  color: '#e65100',
+                  border: '1px solid #ffcc80',
+                  fontFamily: 'monospace',
+                }}
+              >
+                {errorDetails}
+              </pre>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -378,6 +683,53 @@ export const RemoteDOMRenderer: React.FC<RemoteDOMRendererProps> = ({
   // Render virtual DOM as React
   return <div className="remote-dom-root">{root}</div>;
 };
+
+/**
+ * Remote DOM Renderer (Memoized Export)
+ *
+ * OPTIMIZATION (Polish Layer): Component wrapped with React.memo to prevent
+ * unnecessary re-renders when props haven't changed.
+ *
+ * Props comparison:
+ * - resource: Deep comparison (URI and content)
+ * - onUIAction: Reference comparison
+ * - framework: Primitive comparison
+ * - remoteDomProps: Shallow comparison
+ */
+export const RemoteDOMRenderer = React.memo(
+  RemoteDOMRendererComponent,
+  (prevProps, nextProps) => {
+    // Custom comparison function for better performance
+    // Returns true if props are equal (skip re-render)
+
+    // Resource comparison (most common change)
+    if (prevProps.resource.uri !== nextProps.resource.uri) return false;
+    if (prevProps.resource.text !== nextProps.resource.text) return false;
+    if (prevProps.resource.mimeType !== nextProps.resource.mimeType) return false;
+
+    // Callback comparison
+    if (prevProps.onUIAction !== nextProps.onUIAction) return false;
+
+    // Framework comparison (rarely changes)
+    if (prevProps.framework !== nextProps.framework) return false;
+
+    // RemoteDomProps comparison (deep check if present)
+    if (prevProps.remoteDomProps !== nextProps.remoteDomProps) {
+      // If one is undefined and other isn't, they're different
+      if (!prevProps.remoteDomProps || !nextProps.remoteDomProps) return false;
+
+      // Shallow comparison of remoteDomProps
+      if (prevProps.remoteDomProps.library !== nextProps.remoteDomProps.library) return false;
+      if (prevProps.remoteDomProps.elementDefinitions !== nextProps.remoteDomProps.elementDefinitions) return false;
+    }
+
+    // All props are equal - skip re-render
+    return true;
+  }
+);
+
+// Add display name for debugging
+RemoteDOMRenderer.displayName = 'RemoteDOMRenderer';
 
 /**
  * Get Web Worker source code

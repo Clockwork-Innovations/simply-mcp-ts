@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { registerUIResources, uriToMethodName } from '../../src/adapters/ui-adapter.js';
-import { BuildMCPServer } from '../../src/api/programmatic/BuildMCPServer.js';
+import { BuildMCPServer } from '../../src/index.js';
 import type { ParsedUI } from '../../src/server/parser.js';
 
 describe('UI Adapter', () => {

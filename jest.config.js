@@ -1,7 +1,8 @@
 export default {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
-  extensionsToTreatAsEsm: ['.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
@@ -10,22 +11,36 @@ export default {
       'ts-jest',
       {
         useESM: true,
+        tsconfig: './tsconfig.test.json', // Use test-specific tsconfig that supports import.meta
       },
     ],
   },
   testMatch: [
     '**/__tests__/**/*.test.ts',
-    '**/?(*.)+(spec|test).ts'
+    '**/__tests__/**/*.test.tsx',
+    '**/?(*.)+(spec|test).ts',
+    '**/?(*.)+(spec|test).tsx'
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
     '/config/',
+    '/trash/',  // Deprecated/archived tests (includes phase2 bundling tests)
+    '/__temp_test_deps__/',  // Temporary test files created by dependency-extractor.test.ts
     '/src/api/mcp/wizard/__tests__/',  // Wizard feature tests (experimental)
     '/tests/unit/interface-api/schema.test.ts',  // typeNodeToZodSchema() not fully implemented (returns empty array)
     '/tests/unit/interface-api.test.ts',  // Broken imports, superseded by tests/unit/interface-api/*.test.ts
-    '/tests/unit/interface-api/static-resource.test.ts',  // Broken imports (adapter.js moved)
+    '/tests/unit/interface-api/completions.test.ts',  // Custom runner (use tsx to run standalone)
+    '/tests/unit/interface-api/elicitation.test.ts',  // Custom runner (use tsx to run standalone)
+    '/tests/unit/interface-api/roots.test.ts',  // Custom runner (use tsx to run standalone)
+    '/tests/unit/interface-api/sampling.test.ts',  // Custom runner (use tsx to run standalone)
+    '/tests/unit/interface-api/subscriptions.test.ts',  // Custom runner (use tsx to run standalone)
+    '/tests/unit/interface-api/prompt-message-arrays.test.ts',  // Custom runner (use tsx to run standalone)
+    '/tests/unit/interface-api/prompt-simple-messages.test.ts',  // Custom runner (use tsx to run standalone)
+    '/tests/unit/type-coercion.test.ts',  // Uses loadInterfaceServer (requires import.meta.url workaround)
+    '/tests/unit/validation/inline-iparam.test.ts',  // Uses parseInterfaceFile (requires import.meta.url workaround)
     '/examples/nextjs-mcp-ui/',  // Incomplete experimental UI feature
-    '\\.manual\\.ts$'  // Custom-runner tests (not Jest-compatible)
+    '\\.manual\\.ts$',  // Custom-runner tests (not Jest-compatible)
+    '\\.md$'  // Exclude markdown files from test execution
   ],
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -37,4 +52,5 @@ export default {
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
   testTimeout: 10000,
+  maxWorkers: 2, // Limit parallel workers to prevent resource exhaustion
 };

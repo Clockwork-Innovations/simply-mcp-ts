@@ -52,6 +52,7 @@ const SERVER_WITHOUT_TOOLS = `import type { IServer } from 'simply-mcp';
 interface TestServer extends IServer {
   name: 'test-server';
   version: '1.0.0';
+  description: 'Test server';
 }
 
 export default class implements TestServer {
@@ -64,6 +65,7 @@ const INVALID_TYPESCRIPT = `import type { IServer, ITool } from 'simply-mcp';
 interface TestServer extends IServer {
   name: 'test-server';
   version: '1.0.0';
+  description: 'Test server';
 }
 
 // Missing closing brace - this will cause parse failure
@@ -111,6 +113,7 @@ const ESM_SERVER = `import type { IServer, ITool } from 'simply-mcp';
 export interface TestServer extends IServer {
   name: 'esm-server';
   version: '1.0.0';
+  description: 'ESM test server';
 }
 
 export interface TestTool extends ITool {

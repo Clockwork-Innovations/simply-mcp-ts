@@ -9,6 +9,11 @@ import type { ParsedUI } from '../server/parser.js';
 import type { BuildMCPServer } from '../server/builder-server.js';
 import type { Theme } from '../features/ui/theme-manager.js';
 import { registry } from '../index.js';
+import { detectSourceType } from '../features/ui/source-detector.js';
+import { extractDependencies } from '../compiler/dependency-extractor.js';
+import { loadConfig } from '../config/config-loader.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * File-to-URI mapping metadata
@@ -108,13 +113,207 @@ async function registerSingleUI(
   serverInstance: any,
   serverFilePath: string
 ): Promise<void> {
-  const { uri, name, description, html, css, tools, dynamic, methodName, file, component, script, stylesheets, scripts, imports, theme, externalUrl, remoteDom } = ui;
+  const { uri, name, description, source, html, css, tools, dynamic, methodName, file, component, script, stylesheets, scripts, imports, theme, externalUrl, remoteDom } = ui;
 
   // Process component imports (if any)
   // NOTE: We validate imports lazily (on first read) rather than eagerly (at registration)
   // to avoid timing issues where registry.register() calls in the user's module
   // may not have executed yet when this code runs during module loading.
   // The bundler will validate and resolve imports when the resource is actually read.
+
+  // ============================================================================
+  // NEW v4.0: Source-based Routing
+  // ============================================================================
+  if (source) {
+    // Detect source type
+    const detection = detectSourceType(source, {
+      basePath: path.dirname(serverFilePath),
+      checkFileSystem: true,
+      verbose: false,
+    });
+
+    if (detection.confidence < 0.5) {
+      throw new Error(
+        `Could not detect source type for UI "${uri}"\n` +
+        `Source: "${source}"\n` +
+        `Reason: ${detection.reason}\n` +
+        `\n` +
+        `Supported source types:\n` +
+        `- External URL: https://example.com/dashboard\n` +
+        `- Inline HTML: <div>Hello</div>\n` +
+        `- Remote DOM JSON: {"type":"div",...}\n` +
+        `- HTML file: ./pages/dashboard.html\n` +
+        `- React component: ./components/Dashboard.tsx\n` +
+        `- Folder: ./ui/dashboard/`
+      );
+    }
+
+    // Load build configuration
+    const config = await loadConfig({ basePath: path.dirname(serverFilePath) });
+
+    // Route based on detected type
+    switch (detection.type) {
+      case 'url':
+        // External URL - return as text/uri-list
+        server.addResource({
+          uri,
+          name: name || extractNameFromUri(uri),
+          description: description || `External UI: ${uri}`,
+          mimeType: 'text/uri-list',
+          content: source,
+          subscribable: ui.subscribable,
+        });
+        return;
+
+      case 'inline-html':
+        // Inline HTML - return as text/html
+        server.addResource({
+          uri,
+          name: name || extractNameFromUri(uri),
+          description: description || `UI: ${uri}`,
+          mimeType: 'text/html',
+          content: async () => {
+            let htmlContent = source;
+
+            // Apply CSS if provided
+            if (css) {
+              htmlContent = `<style>${css}</style>${htmlContent}`;
+            }
+
+            // Inject helpers
+            htmlContent = await injectHelpers(htmlContent, tools, undefined, theme);
+
+            return htmlContent;
+          },
+          subscribable: ui.subscribable,
+        });
+        return;
+
+      case 'inline-remote-dom':
+        // Remote DOM JSON - pass through
+        server.addResource({
+          uri,
+          name: name || extractNameFromUri(uri),
+          description: description || `Remote DOM UI: ${uri}`,
+          mimeType: 'application/vnd.mcp-ui.remote-dom+javascript; framework=react',
+          content: source,
+          subscribable: ui.subscribable,
+        });
+        return;
+
+      case 'file-html':
+        // HTML file - read and return
+        const htmlFilePath = detection.resolvedPath!;
+        server.addResource({
+          uri,
+          name: name || extractNameFromUri(uri),
+          description: description || `UI: ${uri}`,
+          mimeType: 'text/html',
+          content: async () => {
+            let htmlContent = fs.readFileSync(htmlFilePath, 'utf-8');
+
+            // Inject helpers
+            htmlContent = await injectHelpers(htmlContent, tools, css, theme);
+
+            return htmlContent;
+          },
+          subscribable: ui.subscribable,
+        });
+
+        // Track file for watch mode
+        addFileMapping(htmlFilePath, uri, ui.subscribable === true, 'file');
+        return;
+
+      case 'file-component':
+        // React component - extract deps, compile, return
+        const componentPath = detection.resolvedPath!;
+
+        // Extract dependencies from component
+        const extracted = extractDependencies({
+          filePath: componentPath,
+        });
+
+        // Compile component (will be updated in Task 1.4)
+        const { compileReactComponent } = await import('../features/ui/ui-react-compiler.js');
+
+        server.addResource({
+          uri,
+          name: name || extractNameFromUri(uri),
+          description: description || `UI: ${uri}`,
+          mimeType: 'text/html',
+          content: async () => {
+            const componentCode = fs.readFileSync(componentPath, 'utf-8');
+
+            // Compile with extracted dependencies and build config
+            const compiled = await compileReactComponent({
+              componentPath,
+              componentCode,
+              extractedDeps: extracted,
+              buildConfig: config.build,
+            });
+
+            return compiled.html;
+          },
+          subscribable: ui.subscribable,
+        });
+
+        // Track component file for watch mode
+        addFileMapping(componentPath, uri, ui.subscribable === true, 'component');
+
+        // Track dependency files for watch mode
+        if (extracted.localFiles.length > 0) {
+          const basePath = path.dirname(componentPath);
+          for (const localFile of extracted.localFiles) {
+            const depPath = path.resolve(basePath, localFile);
+            addFileMapping(depPath, uri, ui.subscribable === true, 'component');
+          }
+        }
+
+        return;
+
+      case 'folder':
+        // Folder - look for index.html
+        const folderPath = detection.resolvedPath!;
+        const indexPath = path.join(folderPath, 'index.html');
+
+        if (!fs.existsSync(indexPath)) {
+          throw new Error(
+            `UI resource "${uri}" points to folder "${source}" but no index.html found.\n` +
+            `Expected: ${indexPath}`
+          );
+        }
+
+        server.addResource({
+          uri,
+          name: name || extractNameFromUri(uri),
+          description: description || `UI: ${uri}`,
+          mimeType: 'text/html',
+          content: async () => {
+            let htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+            // Inject helpers
+            htmlContent = await injectHelpers(htmlContent, tools, css, theme);
+
+            return htmlContent;
+          },
+          subscribable: ui.subscribable,
+        });
+
+        // Track index.html for watch mode
+        addFileMapping(indexPath, uri, ui.subscribable === true, 'file');
+        return;
+
+      default:
+        throw new Error(
+          `Unsupported source type for UI "${uri}": ${detection.type}\n` +
+          `Source: "${source}"`
+        );
+    }
+  }
+
+  // ============================================================================
+  // OLD FIELD ROUTING (Legacy - will be removed in future versions)
+  // ============================================================================
 
   // Route 0: External URL (text/uri-list MIME type) - HIGHEST PRIORITY
   if (externalUrl) {
@@ -157,11 +356,14 @@ async function registerSingleUI(
       );
     }
 
+    // Per MCP UI specification, Remote DOM MIME types must include framework parameter
+    // Format: application/vnd.mcp-ui.remote-dom+javascript; framework={react | webcomponents}
+    // Default to 'react' as the current implementation uses React components
     server.addResource({
       uri,
       name: name || extractNameFromUri(uri),
       description: description || `Remote DOM UI: ${uri}`,
-      mimeType: 'application/vnd.mcp-ui.remote-dom',
+      mimeType: 'application/vnd.mcp-ui.remote-dom+javascript; framework=react',
       content: remoteDomContent,
       subscribable: ui.subscribable,
     });
@@ -346,13 +548,20 @@ async function registerSingleUI(
       // Validate component code
       validateComponentCode(componentFile.content, component);
 
+      // Extract dependencies from component (v4.0)
+      const extracted = extractDependencies({
+        filePath: component,
+      });
+
+      // Load build config (v4.0)
+      const config = await loadConfig({ basePath: path.dirname(serverFilePath) });
+
       // Compile component (Babel only, dependencies from CDN)
       const compiled = await compileReactComponent({
         componentPath: component,
         componentCode: componentFile.content,
-        dependencies: ui.dependencies || [],
-        sourceMaps: true,
-        verbose: false,
+        extractedDeps: extracted,
+        buildConfig: config.build,
       });
 
       htmlContent = compiled.html;
@@ -578,9 +787,15 @@ function generateToolHelperScript(tools: string[]): string {
 
   // Listen for responses from parent window
   window.addEventListener('message', function(event) {
-    if (event.data.type === 'tool-response') {
-      const { messageId, payload } = event.data;
-      const { result, error } = payload;
+    // Handle acknowledgment (spec-compliant)
+    if (event.data.type === 'ui-message-received') {
+      // Optional: Can track acknowledgments if needed
+      console.debug('Message acknowledged:', event.data.messageId);
+    }
+
+    // Handle result/response (spec-compliant)
+    if (event.data.type === 'ui-message-response') {
+      const { messageId, result, error } = event.data;
       const pending = pendingRequests.get(messageId);
 
       if (pending) {
@@ -763,9 +978,15 @@ function injectToolHelpersForReact(html: string, tools: string[]): string {
 
       // Listen for responses from parent window
       window.addEventListener('message', function(event) {
-        if (event.data.type === 'tool-response') {
-          const { messageId, payload } = event.data;
-          const { result, error } = payload;
+        // Handle acknowledgment (spec-compliant)
+        if (event.data.type === 'ui-message-received') {
+          // Optional: Can track acknowledgments if needed
+          console.debug('Message acknowledged:', event.data.messageId);
+        }
+
+        // Handle result/response (spec-compliant)
+        if (event.data.type === 'ui-message-response') {
+          const { messageId, result, error } = event.data;
           const pending = pendingRequests.get(messageId);
 
           if (pending) {

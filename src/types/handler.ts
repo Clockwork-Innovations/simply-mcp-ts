@@ -59,6 +59,77 @@ export type HandlerConfig =
   | RegistryHandlerConfig;
 
 /**
+ * Batch execution context provided to handlers when processing
+ * JSON-RPC 2.0 batch requests.
+ *
+ * @see https://www.jsonrpc.org/specification#batch
+ */
+export interface BatchContext {
+  /**
+   * Total number of requests in the batch.
+   * Always >= 1 (single requests have no batch context).
+   */
+  size: number;
+
+  /**
+   * Zero-based index of current request in batch.
+   * Range: [0, size-1]
+   */
+  index: number;
+
+  /**
+   * Whether batch is processed in parallel.
+   * Foundation Layer: always false (sequential)
+   * Feature Layer: configurable
+   */
+  parallel: boolean;
+
+  /**
+   * Optional batch-level timeout in milliseconds.
+   * Foundation Layer: undefined (Feature Layer adds this)
+   */
+  timeout?: number;
+
+  /**
+   * Unique batch ID for correlation/logging.
+   */
+  batchId: string;
+
+  /**
+   * Batch start time in milliseconds (Date.now()).
+   * Used for timeout enforcement.
+   * undefined when no timeout is configured.
+   */
+  startTime?: number;
+
+  /**
+   * Time elapsed since batch start in milliseconds.
+   * Calculated dynamically during batch processing.
+   * undefined when no timeout is configured.
+   */
+  elapsedMs?: number;
+}
+
+/**
+ * MCP-specific context information
+ */
+export interface MCPContext {
+  /** Server metadata */
+  server: {
+    name: string;
+    version: string;
+    description?: string;
+  };
+  /** Session object from MCP SDK */
+  session: any;
+  /** Request-specific context */
+  request_context: {
+    request_id: string;
+    meta?: Record<string, unknown>;
+  };
+}
+
+/**
  * Context provided to handlers during execution
  */
 export interface HandlerContext {
@@ -66,6 +137,15 @@ export interface HandlerContext {
   logger: Logger; // Logger instance for handler output
   permissions?: Permissions; // Permission settings for the handler
   metadata?: Record<string, unknown>; // Additional context metadata
+
+  /** MCP-specific context (server, session, request info) */
+  mcp?: MCPContext;
+
+  /**
+   * Batch context if current request is part of a batch.
+   * undefined for single requests.
+   */
+  batch?: BatchContext;
 
   // Enhanced Protocol Features (optional - may not be available in all contexts)
 

@@ -35,6 +35,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { completable } from '@modelcontextprotocol/sdk/server/completable.js';
+import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -53,11 +54,13 @@ import {
   ElicitRequest,
   ElicitResult,
   CompleteRequestSchema,
+  PromptMessage,
 } from '@modelcontextprotocol/sdk/types.js';
+import type { SimpleMessage } from './interface-types.js';
 import { z, ZodSchema, ZodError } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { HandlerManager } from '../core/HandlerManager.js';
-import { HandlerContext, HandlerResult, ToolHandler, SamplingMessage, SamplingOptions, ResourceContents, ElicitResult as CoreElicitResult } from '../types/handler.js';
+import { HandlerContext, HandlerResult, ToolHandler, SamplingMessage, SamplingOptions, ResourceContents, ElicitResult as CoreElicitResult, MCPContext, BatchContext } from '../types/handler.js';
 import { validateAndSanitize } from '../features/validation/index.js';
 import { parseInlineDependencies, ParsedDependencies, InlineDependencies } from '../core/index.js';
 import { createDefaultLogger, LogLevel, LogNotificationCallback } from '../core/logger.js';
@@ -78,6 +81,7 @@ import {
   isUint8Array,
 } from '../core/content-helpers.js';
 import { createSecurityMiddleware, type SecurityConfig } from '../features/auth/security/index.js';
+import { createOAuthRouter, createOAuthMiddleware } from '../features/auth/oauth/router.js';
 import type {
   ExecuteFunction,
   ToolDefinition,
@@ -88,7 +92,552 @@ import type {
   StartOptions,
   InternalTool,
   RouterToolDefinition,
+  BatchingConfig,
 } from './builder-types';
+
+/**
+ * Transport type - union of supported transport classes
+ */
+type Transport = StdioServerTransport | StreamableHTTPServerTransport;
+
+/**
+ * Global AsyncLocalStorage for batch context propagation.
+ * Allows handlers to access batch information without explicit parameter threading.
+ */
+const batchContextStorage = new AsyncLocalStorage<BatchContext>();
+
+// Export for testing
+export {
+  batchContextStorage,
+  generateBatchId,
+  validateNoDuplicateIds,
+  validateBatch,
+  detectBatch,
+  processMessageWithContext,
+  processBatch,
+  hasExceededTimeout,
+  createTimeoutError,
+  getElapsedMs
+};
+
+/**
+ * Generates a unique batch ID for correlation and logging.
+ */
+function generateBatchId(): string {
+  return `batch_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+/**
+ * Validates that batch has no duplicate request IDs.
+ * JSON-RPC 2.0 spec is ambiguous on duplicates - we reject them.
+ */
+function validateNoDuplicateIds(messages: JSONRPCMessage[]): void {
+  const ids = new Set<string | number>();
+
+  for (const message of messages) {
+    // Type guard: check if message is a request (has id field)
+    if ('id' in message && message.id !== null && message.id !== undefined) {
+      if (ids.has(message.id)) {
+        throw new Error(`Duplicate request ID in batch: ${message.id}`);
+      }
+      ids.add(message.id);
+    }
+  }
+}
+
+/**
+ * Validates batch structure and enforces size limits.
+ * Throws error for invalid batches (empty, oversized, duplicates).
+ */
+function validateBatch(messages: unknown, config: BatchingConfig): void {
+  // Must be array
+  if (!Array.isArray(messages)) {
+    throw new Error('Batch request must be an array');
+  }
+
+  // Empty batch (invalid per JSON-RPC 2.0)
+  if (messages.length === 0) {
+    throw new Error('Batch request cannot be empty');
+  }
+
+  // Size limit (DoS prevention)
+  const maxSize = config.maxBatchSize ?? 100;
+  if (messages.length > maxSize) {
+    throw new Error(
+      `Batch size ${messages.length} exceeds limit ${maxSize}`
+    );
+  }
+
+  // Duplicate IDs
+  validateNoDuplicateIds(messages);
+}
+
+/**
+ * Detects if message is a batch (array) and returns batch metadata.
+ * Returns null for single requests.
+ */
+function detectBatch(
+  message: unknown,
+  config: BatchingConfig
+): { size: number; batchId: string } | null {
+  if (!Array.isArray(message)) {
+    return null; // Single request
+  }
+
+  // Validate batch
+  validateBatch(message, config);
+
+  // Return batch metadata
+  return {
+    size: message.length,
+    batchId: generateBatchId()
+  };
+}
+
+/**
+ * Processes a single message with batch context.
+ * Runs the original handler within AsyncLocalStorage context.
+ */
+async function processMessageWithContext(
+  message: JSONRPCMessage,
+  batchContext: BatchContext,
+  originalHandler: (msg: JSONRPCMessage) => void | Promise<void>
+): Promise<void> {
+  return batchContextStorage.run(batchContext, async () => {
+    await originalHandler(message);
+  });
+}
+
+/**
+ * Creates a JSON-RPC 2.0 error response for timeout exceeded.
+ */
+function createTimeoutError(requestId: any, timeoutMs: number, elapsedMs: number): any {
+  return {
+    jsonrpc: '2.0',
+    id: requestId,
+    error: {
+      code: -32000,
+      message: 'Batch timeout exceeded',
+      data: { timeoutMs, elapsedMs }
+    }
+  };
+}
+
+/**
+ * Checks if the batch has exceeded its configured timeout.
+ * Returns false if no timeout is configured or not yet exceeded.
+ */
+function hasExceededTimeout(startTime: number | undefined, timeout: number | undefined): boolean {
+  if (startTime === undefined || timeout === undefined) return false;
+  return (Date.now() - startTime) >= timeout;
+}
+
+/**
+ * Calculates elapsed time since batch start.
+ * Returns undefined if no start time is available.
+ */
+function getElapsedMs(startTime: number | undefined): number | undefined {
+  return startTime !== undefined ? Date.now() - startTime : undefined;
+}
+
+/**
+ * Processes batch messages with context (sequential or parallel mode).
+ * Each message gets batch context injected via AsyncLocalStorage.
+ */
+async function processBatch(
+  messages: JSONRPCMessage[],
+  batchId: string,
+  originalHandler: (msg: JSONRPCMessage) => void | Promise<void>,
+  config: BatchingConfig,
+  transport: Transport
+): Promise<void> {
+  const parallel = config.parallel ?? false; // Default to sequential
+  const timeout = config.timeout;
+  const startTime = timeout !== undefined ? Date.now() : undefined;
+
+  if (parallel) {
+    // Parallel mode: Process all messages concurrently using Promise.allSettled
+    const messagePromises = messages.map((message, index) => {
+      const batchContext: BatchContext = {
+        size: messages.length,
+        index,
+        parallel: true,
+        timeout,
+        batchId,
+        startTime,
+        elapsedMs: getElapsedMs(startTime)
+      };
+
+      return processMessageWithContext(
+        message,
+        batchContext,
+        originalHandler
+      ).then(() => ({ success: true, index }))
+      .catch((error) => {
+        // Individual message errors are handled by MCP SDK
+        // They become error responses in the batch
+        // We just log for diagnostics
+        console.error(
+          `Batch ${batchId} message ${index} failed:`,
+          error instanceof Error ? error.message : String(error)
+        );
+        return { success: true, index }; // Still counts as handled (error response was sent)
+      });
+    });
+
+    // Add timeout enforcement with Promise.race if timeout is configured
+    if (timeout !== undefined) {
+      let timedOut = false;
+      const timeoutPromise = new Promise<'timeout'>((resolve) => {
+        setTimeout(() => {
+          timedOut = true;
+          console.warn(
+            `Batch ${batchId} timeout exceeded (${timeout}ms) - sending timeout errors for incomplete messages`
+          );
+          resolve('timeout');
+        }, timeout);
+      });
+
+      const result = await Promise.race([
+        Promise.allSettled(messagePromises).then(() => 'completed' as const),
+        timeoutPromise
+      ]);
+
+      // If timeout occurred, send timeout errors for messages that didn't complete
+      if (result === 'timeout') {
+        const elapsedMs = getElapsedMs(startTime);
+        const settledResults = await Promise.allSettled(
+          messagePromises.map(p =>
+            Promise.race([
+              p,
+              new Promise<{ success: false, index: number }>((resolve) =>
+                setTimeout(() => resolve({ success: false, index: -1 }), 0)
+              )
+            ])
+          )
+        );
+
+        // Send timeout errors for messages that didn't complete
+        for (let index = 0; index < messages.length; index++) {
+          const settled = settledResults[index];
+          const completed = settled.status === 'fulfilled' && settled.value.success;
+
+          if (!completed) {
+            const message = messages[index];
+            // Only send error responses for requests (messages with id field)
+            if ('id' in message && message.id !== null && message.id !== undefined) {
+              const timeoutError = createTimeoutError(
+                message.id,
+                timeout,
+                elapsedMs ?? timeout
+              );
+              try {
+                transport.send(timeoutError);
+              } catch (error) {
+                console.error(
+                  `Batch ${batchId} failed to send timeout error for message ${index}:`,
+                  error instanceof Error ? error.message : String(error)
+                );
+              }
+            }
+          }
+        }
+      }
+    } else {
+      await Promise.allSettled(messagePromises);
+    }
+  } else {
+    // Sequential mode: Process messages one-by-one in order
+    for (let index = 0; index < messages.length; index++) {
+      // Check timeout before processing each message
+      if (hasExceededTimeout(startTime, timeout)) {
+        console.warn(
+          `Batch ${batchId} timeout exceeded at message ${index}/${messages.length} - sending timeout errors for remaining messages`
+        );
+
+        // Generate timeout error responses for all remaining messages
+        const elapsedMs = getElapsedMs(startTime);
+        for (let remainingIndex = index; remainingIndex < messages.length; remainingIndex++) {
+          const message = messages[remainingIndex];
+          // Only send error responses for requests (messages with id field)
+          if ('id' in message && message.id !== null && message.id !== undefined) {
+            const timeoutError = createTimeoutError(
+              message.id,
+              timeout!,
+              elapsedMs ?? timeout!
+            );
+            try {
+              transport.send(timeoutError);
+            } catch (error) {
+              console.error(
+                `Batch ${batchId} failed to send timeout error for message ${remainingIndex}:`,
+                error instanceof Error ? error.message : String(error)
+              );
+            }
+          }
+        }
+        break; // Stop processing remaining messages
+      }
+
+      const batchContext: BatchContext = {
+        size: messages.length,
+        index,
+        parallel: false,
+        timeout,
+        batchId,
+        startTime,
+        elapsedMs: getElapsedMs(startTime)
+      };
+
+      try {
+        await processMessageWithContext(
+          messages[index],
+          batchContext,
+          originalHandler
+        );
+      } catch (error) {
+        // Individual message errors are handled by MCP SDK
+        // They become error responses in the batch
+        // We just log for diagnostics
+        console.error(
+          `Batch ${batchId} message ${index} failed:`,
+          error instanceof Error ? error.message : String(error)
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Wraps stdio transport to handle batch requests.
+ * Intercepts stdin data BEFORE SDK validation to detect and expand batch arrays.
+ * MUST be called BEFORE server.connect(transport).
+ */
+function wrapStdioTransportForBatch(
+  transport: any, // StdioServerTransport
+  config: BatchingConfig
+): void {
+  console.error('[wrapStdioTransportForBatch] Setting up batch handler for stdio transport');
+
+  // Get reference to the transport's stdin (usually process.stdin)
+  const stdin = transport._stdin || process.stdin;
+  const originalReadBuffer = transport._readBuffer;
+
+  // Store original readMessage function
+  const originalReadMessage = originalReadBuffer.readMessage.bind(originalReadBuffer);
+
+  // Batch response tracker: Maps batchId -> collection state
+  const batchResponses = new Map<string, {
+    responses: any[];
+    expectedCount: number;
+    messageIdToBatchIndex: Map<string | number, number>;
+    timer: NodeJS.Timeout;
+  }>();
+
+  // Map message ID to batch ID for correlation
+  const messageIdToBatchId = new Map<string | number, string>();
+
+  // Store original send function
+  const originalSend = transport.send.bind(transport);
+
+  // Wrap transport.send() to intercept and collect batch responses
+  transport.send = async (message: any) => {
+    // Check if this response is part of a batch
+    const messageId = message.id;
+    const batchId = messageIdToBatchId.get(messageId);
+
+    if (batchId && batchResponses.has(batchId)) {
+      const tracker = batchResponses.get(batchId)!;
+      const batchIndex = tracker.messageIdToBatchIndex.get(messageId);
+
+      if (batchIndex !== undefined) {
+        console.error(`[wrapStdioTransportForBatch] Collecting response for batch ${batchId}, index ${batchIndex}`);
+
+        // Store response at correct index
+        tracker.responses[batchIndex] = message;
+
+        // Check if all responses collected
+        const collectedCount = tracker.responses.filter(r => r !== undefined).length;
+        console.error(`[wrapStdioTransportForBatch] Collected ${collectedCount}/${tracker.expectedCount} responses`);
+
+        if (collectedCount === tracker.expectedCount) {
+          // All responses collected - send as batch array
+          console.error(`[wrapStdioTransportForBatch] All responses collected, sending batch array`);
+          clearTimeout(tracker.timer);
+
+          // Send batch array as single response
+          await originalSend(tracker.responses);
+
+          // Clean up
+          batchResponses.delete(batchId);
+          tracker.messageIdToBatchIndex.forEach((_, msgId) => {
+            messageIdToBatchId.delete(msgId);
+          });
+        }
+        // Otherwise, wait for more responses
+        return;
+      }
+    }
+
+    // Non-batch response, send normally
+    await originalSend(message);
+  };
+
+  // Replace readMessage to intercept and handle batch arrays
+  originalReadBuffer.readMessage = function() {
+    // First check if we have queued batch messages to return
+    if (transport._batchQueue && transport._batchQueue.length > 0) {
+      const batchItem = transport._batchQueue.shift()!;
+      console.error(`[wrapStdioTransportForBatch] Returning queued batch message ${batchItem.batchIndex + 1}/${batchItem.batchSize}`);
+      return batchItem.message;
+    }
+
+    if (!this._buffer) {
+      return null;
+    }
+
+    const index = this._buffer.indexOf('\n');
+    if (index === -1) {
+      return null;
+    }
+
+    const line = this._buffer.toString('utf8', 0, index).replace(/\r$/, '');
+    this._buffer = this._buffer.subarray(index + 1);
+
+    // Parse the JSON to check if it's a batch array
+    let parsed;
+    try {
+      parsed = JSON.parse(line);
+    } catch (e) {
+      // Invalid JSON - let SDK handle the error
+      console.error('[wrapStdioTransportForBatch] JSON parse error, passing to SDK');
+      // Re-parse with SDK's deserializeMessage which will throw proper error
+      return originalReadMessage.call(this);
+    }
+
+    // Check if it's a batch array
+    if (Array.isArray(parsed)) {
+      console.error('[wrapStdioTransportForBatch] Batch array detected, length:', parsed.length);
+
+      if (parsed.length === 0) {
+        throw new Error('Batch request cannot be empty');
+      }
+
+      // Store batch metadata in transport for later use
+      if (!transport._batchQueue) {
+        transport._batchQueue = [];
+      }
+
+      // Mark these messages as part of a batch
+      const batchId = generateBatchId();
+
+      // Initialize batch response tracker
+      const messageIdToBatchIndex = new Map<string | number, number>();
+      for (let i = 0; i < parsed.length; i++) {
+        const messageId = parsed[i].id;
+        messageIdToBatchIndex.set(messageId, i);
+        messageIdToBatchId.set(messageId, batchId);
+
+        const batchItem = {
+          message: parsed[i],
+          batchId,
+          batchIndex: i,
+          batchSize: parsed.length,
+          parallel: config.parallel !== false // Default to true
+        };
+
+        transport._batchQueue.push(batchItem);
+
+        // Store batch context for this message
+        const batchContext: BatchContext = {
+          size: parsed.length,
+          index: i,
+          parallel: config.parallel !== false,
+          timeout: config.timeout,
+          batchId,
+          startTime: Date.now(),
+          elapsedMs: 0
+        };
+        messageToBatchContext.set(messageId, batchContext);
+      }
+
+      // Create batch response tracker
+      // Note: Response collection timeout is separate from request execution timeout
+      // This timeout is just for collecting responses - if responses don't arrive within
+      // a reasonable time, we send what we have. Request execution timeouts are handled
+      // separately in the request handlers.
+      const collectionTimeout = 60000; // 60 seconds to collect all responses
+
+      batchResponses.set(batchId, {
+        responses: new Array(parsed.length),
+        expectedCount: parsed.length,
+        messageIdToBatchIndex,
+        timer: setTimeout(() => {
+          // Timeout: send partial responses if not all collected
+          if (batchResponses.has(batchId)) {
+            const partial = batchResponses.get(batchId)!;
+            console.error(`[wrapStdioTransportForBatch] Batch ${batchId} collection timeout, sending partial responses`);
+
+            // Filter out undefined responses (responses that never arrived)
+            const validResponses = partial.responses.filter(r => r !== undefined);
+            if (validResponses.length > 0) {
+              originalSend(validResponses).catch((err) => {
+                console.error(`[wrapStdioTransportForBatch] Error sending partial batch: ${err}`);
+              });
+            }
+
+            // Clean up
+            batchResponses.delete(batchId);
+            partial.messageIdToBatchIndex.forEach((_, msgId) => {
+              messageIdToBatchId.delete(msgId);
+            });
+          }
+        }, collectionTimeout)
+      });
+
+      console.error(`[wrapStdioTransportForBatch] Batch ${batchId} registered with ${parsed.length} messages`);
+
+      // Return first message from queue
+      const first = transport._batchQueue.shift()!;
+      console.error(`[wrapStdioTransportForBatch] Returning first batch message 1/${parsed.length}`);
+      return first.message;
+    }
+
+    // Single message - return as-is (validated by SDK)
+    return parsed;
+  };
+
+  // Store batch context for messages being processed
+  const messageToBatchContext = new Map<string | number, BatchContext>();
+
+  // Wrap onmessage to inject batch context
+  let originalOnMessageHandler: any = null;
+  Object.defineProperty(transport, 'onmessage', {
+    get() {
+      return originalOnMessageHandler;
+    },
+    set(handler) {
+      originalOnMessageHandler = function(message: any) {
+        const batchContext = messageToBatchContext.get(message.id);
+        if (batchContext) {
+          // This is a batch message - inject batch context
+          console.error(`[wrapStdioTransportForBatch] Processing batch message with context: ${batchContext.batchId} [${batchContext.index}/${batchContext.size}]`);
+          batchContextStorage.run(batchContext, () => {
+            handler.call(transport, message);
+          });
+          // Clean up after processing
+          messageToBatchContext.delete(message.id);
+        } else {
+          // Non-batch message
+          handler.call(transport, message);
+        }
+      };
+    },
+    configurable: true
+  });
+
+  console.error('[wrapStdioTransportForBatch] Batch handler installed');
+}
 
 /**
  * BuildMCPServer - A programmatic API for creating MCP servers
@@ -150,6 +699,7 @@ export class BuildMCPServer {
       dependencies: options.dependencies || undefined,
       autoInstall: options.autoInstall,
       flattenRouters: options.flattenRouters ?? false, // Default to false (hide router-assigned tools)
+      batching: options.batching, // FOUNDATION LAYER: Batch processing configuration
     } as Required<BuildMCPServerOptions>;
 
     this.handlerManager = new HandlerManager({
@@ -453,6 +1003,7 @@ export class BuildMCPServer {
           name: tool.definition.name,
           description: tool.definition.description,
           inputSchema: tool.jsonSchema,
+          ...(tool.definition.annotations && { annotations: tool.definition.annotations }),
         };
       })
       .filter(tool => tool !== null);
@@ -738,6 +1289,7 @@ export class BuildMCPServer {
     const transport = options.transport || this.options.transport.type;
     const port = options.port || this.options.transport.port;
     const stateful = options.stateful ?? this.options.transport.stateful;
+    const websocketConfig = options.websocket;
     const securityConfig = options.securityConfig as SecurityConfig | undefined;
 
     // Create the MCP server
@@ -771,6 +1323,8 @@ export class BuildMCPServer {
     // Start the appropriate transport
     if (transport === 'stdio') {
       await this.startStdio();
+    } else if (transport === 'websocket') {
+      await this.startWebSocket(port, websocketConfig);
     } else {
       await this.startHttp(port, stateful, securityConfig);
     }
@@ -845,6 +1399,7 @@ export class BuildMCPServer {
         name: tool.definition.name,
         description: tool.definition.description,
         inputSchema: tool.jsonSchema,
+        ...(tool.definition.annotations && { annotations: tool.definition.annotations }),
       }));
 
       // Layer 2: Filter based on flattenRouters option
@@ -944,6 +1499,9 @@ export class BuildMCPServer {
 
         const logger = createDefaultLogger(`[Tool:${toolName}]`, logNotificationCallback);
 
+        // Retrieve batch context from AsyncLocalStorage
+        const batch = batchContextStorage.getStore();
+
         // Create handler context with enhanced capabilities
         const context: HandlerContext = {
           logger,
@@ -960,6 +1518,21 @@ export class BuildMCPServer {
               namespacedCall: true,
             } : {}),
           },
+          // Add MCP-specific context
+          mcp: {
+            server: {
+              name: this.options.name,
+              version: this.options.version,
+              description: this.options.description,
+            },
+            session: this.server,
+            request_context: {
+              request_id: randomUUID(),
+              meta: (request.params as any)._meta,
+            },
+          },
+          // FOUNDATION LAYER: Add batch context if available
+          batch,
         };
 
         // Add sampling capability if enabled
@@ -1055,6 +1628,63 @@ export class BuildMCPServer {
   }
 
   /**
+   * Type guard to check if result is a PromptMessage array
+   */
+  private isPromptMessageArray(value: any): value is PromptMessage[] {
+    return (
+      Array.isArray(value) &&
+      value.length > 0 &&
+      typeof value[0] === 'object' &&
+      value[0] !== null &&
+      'role' in value[0] &&
+      'content' in value[0]
+    );
+  }
+
+  /**
+   * Type guard to check if result is a SimpleMessage array
+   */
+  private isSimpleMessageArray(value: any): value is SimpleMessage[] {
+    return (
+      Array.isArray(value) &&
+      value.length > 0 &&
+      typeof value[0] === 'object' &&
+      value[0] !== null &&
+      (('user' in value[0] && typeof value[0].user === 'string') ||
+       ('assistant' in value[0] && typeof value[0].assistant === 'string'))
+    );
+  }
+
+  /**
+   * Convert SimpleMessage array to PromptMessage array
+   *
+   * Transforms:
+   *   { user: 'text' } → { role: 'user', content: { type: 'text', text: 'text' } }
+   *   { assistant: 'text' } → { role: 'assistant', content: { type: 'text', text: 'text' } }
+   */
+  private convertSimpleMessages(messages: SimpleMessage[]): PromptMessage[] {
+    return messages.map(msg => {
+      if ('user' in msg) {
+        return {
+          role: 'user' as const,
+          content: {
+            type: 'text' as const,
+            text: msg.user
+          }
+        };
+      } else {
+        return {
+          role: 'assistant' as const,
+          content: {
+            type: 'text' as const,
+            text: msg.assistant
+          }
+        };
+      }
+    });
+  }
+
+  /**
    * Register prompt handlers with the MCP server
    */
   private registerPromptHandlers(): void {
@@ -1093,25 +1723,75 @@ export class BuildMCPServer {
         );
       }
 
-      const args = request.params.arguments || {};
+      // Extract arguments - MCP SDK uses 'arguments' in schema but 'args' in params
+      // Support both for compatibility
+      const args = (request.params as any).arguments || (request.params as any).args || {};
 
-      // Check if template is a function (dynamic prompt)
-      let renderedText: string;
-      if (typeof prompt.template === 'function') {
-        // Call the dynamic template function
-        renderedText = await Promise.resolve(prompt.template(args));
-      } else {
-        // Render static template with variables
-        renderedText = this.renderTemplate(prompt.template, args);
+      // All prompts now require implementation (template is always a function)
+      let result: string | PromptMessage[] | SimpleMessage[];
+      if (typeof prompt.template !== 'function') {
+        throw new Error(
+          `Prompt "${promptName}" is missing implementation.\n\n` +
+          `What went wrong:\n` +
+          `  All prompts now require a method implementation.\n\n` +
+          `To fix:\n` +
+          `  1. Implement the prompt as a method in your server class\n` +
+          `  2. The method should return either a string or an array of messages\n\n` +
+          `Example:\n` +
+          `  weatherForecast = async (args: { location: string }) => {\n` +
+          `    return \`Weather forecast for \${args.location}\`;\n` +
+          `  };`
+        );
       }
 
+      // Create context for prompt execution
+      const logger = createDefaultLogger(`[Prompt:${promptName}]`, () => {});
+
+      // Retrieve batch context from AsyncLocalStorage
+      const batch = batchContextStorage.getStore();
+
+      const context: HandlerContext = {
+        logger,
+        metadata: { promptName },
+        mcp: {
+          server: {
+            name: this.options.name,
+            version: this.options.version,
+            description: this.options.description,
+          },
+          session: this.server,
+          request_context: {
+            request_id: randomUUID(),
+            meta: (request.params as any)._meta,
+          },
+        },
+        // FOUNDATION LAYER: Add batch context if available
+        batch,
+      };
+
+      // Call the template function with context
+      result = await Promise.resolve(prompt.template(args, context));
+
+      // CRITICAL: Check SimpleMessage BEFORE PromptMessage
+      // (SimpleMessage is more specific and would be missed if PromptMessage check comes first)
+      if (this.isSimpleMessageArray(result)) {
+        return { messages: this.convertSimpleMessages(result) };
+      }
+
+      // Detect if result is already a message array
+      if (this.isPromptMessageArray(result)) {
+        // Return message array directly (MCP format)
+        return { messages: result };
+      }
+
+      // Backward compatibility: wrap string in message
       return {
         messages: [
           {
             role: 'user',
             content: {
               type: 'text',
-              text: renderedText,
+              text: String(result),
             },
           },
         ],
@@ -1536,6 +2216,13 @@ export class BuildMCPServer {
     );
 
     const transport = new StdioServerTransport();
+
+    // FOUNDATION LAYER: Add batch context wrapper BEFORE connecting
+    // CRITICAL: Intercept stdin to handle batch arrays before SDK validation
+    if (this.options.batching?.enabled !== false) {
+      wrapStdioTransportForBatch(transport, this.options.batching ?? {});
+    }
+
     await this.server.connect(transport);
 
     console.error('[BuildMCPServer] Connected and ready for requests');
@@ -1594,13 +2281,72 @@ export class BuildMCPServer {
       })
     );
 
-    // Apply authentication middleware if configured
-    if (securityConfig) {
+    // Mount OAuth router if OAuth is configured (must be before other middleware)
+    // OAuth endpoints are mounted at root level for /.well-known/* paths
+    if (securityConfig?.authentication?.type === 'oauth2' && securityConfig.authentication.oauthProvider) {
+      const issuerUrl = securityConfig.authentication.issuerUrl || `http://localhost:${port}`;
+
+      // Apply stricter rate limiting to OAuth token endpoint (prevent brute force)
+      // This is applied BEFORE the OAuth router to protect the token endpoint
+      const tokenRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+      app.use('/oauth/token', (req, res, next) => {
+        const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+        const now = Date.now();
+        const window = 60000; // 1 minute
+        const maxRequests = 10; // 10 requests per minute for token endpoint
+
+        let limitInfo = tokenRateLimitMap.get(clientIp);
+
+        // Reset if window has passed
+        if (!limitInfo || now > limitInfo.resetTime) {
+          limitInfo = { count: 0, resetTime: now + window };
+          tokenRateLimitMap.set(clientIp, limitInfo);
+        }
+
+        // Check limit
+        if (limitInfo.count >= maxRequests) {
+          const retryAfter = Math.ceil((limitInfo.resetTime - now) / 1000);
+          res.status(429).json({
+            error: 'too_many_requests',
+            error_description: 'Rate limit exceeded for token endpoint',
+            retry_after: retryAfter,
+          });
+          return;
+        }
+
+        // Increment counter
+        limitInfo.count++;
+
+        next();
+      });
+
+      const oauthRouter = createOAuthRouter({
+        provider: securityConfig.authentication.oauthProvider,
+        issuerUrl,
+      });
+
+      app.use(oauthRouter);
+
+      if (!this.options.silent) {
+        console.error('[BuildMCPServer] OAuth 2.1 authentication enabled');
+        console.error(`[BuildMCPServer] OAuth issuer URL: ${issuerUrl}`);
+        console.error('[BuildMCPServer] OAuth endpoints:');
+        console.error(`  - GET  /.well-known/oauth-authorization-server`);
+        console.error(`  - GET  /oauth/authorize`);
+        console.error(`  - POST /oauth/token (rate limited: 10 req/min)`);
+        console.error(`  - POST /oauth/register`);
+        console.error(`  - POST /oauth/revoke`);
+      }
+    }
+
+    // Apply API key authentication middleware if configured
+    // Note: API key and OAuth can coexist - API key is checked first, OAuth bearer second
+    if (securityConfig?.authentication?.type === 'apiKey') {
       const { middleware } = createSecurityMiddleware(securityConfig);
       middleware.forEach(mw => app.use(mw));
 
       if (!this.options.silent) {
-        console.error('[BuildMCPServer] Authentication enabled');
+        console.error('[BuildMCPServer] API Key authentication enabled');
       }
     }
 
@@ -1647,6 +2393,18 @@ export class BuildMCPServer {
       });
     });
 
+    // Apply OAuth bearer middleware to /mcp endpoints if OAuth is configured
+    if (securityConfig?.authentication?.type === 'oauth2' && securityConfig.authentication.oauthProvider) {
+      const bearerMiddleware = createOAuthMiddleware({
+        provider: securityConfig.authentication.oauthProvider
+      });
+      app.use('/mcp', bearerMiddleware);
+
+      if (!this.options.silent) {
+        console.error('[BuildMCPServer] Bearer token authentication enabled for /mcp endpoints');
+      }
+    }
+
     // Security: Origin header validation middleware (DNS rebinding protection)
     app.use('/mcp', (req, res, next) => {
       const origin = req.headers.origin || req.headers.referer;
@@ -1689,6 +2447,13 @@ export class BuildMCPServer {
         });
 
         try {
+          // FOUNDATION LAYER: Add batch context wrapper BEFORE connecting
+          // CRITICAL: Must wrap transport.onmessage BEFORE server.connect() sets it up
+          // TODO: Implement wrapTransportForBatchContext for HTTP transport
+          // if (this.options.batching?.enabled !== false) {
+          //   wrapTransportForBatchContext(transport, this.options.batching ?? {});
+          // }
+
           // Connect the server to the transport
           await this.server!.connect(transport);
 
@@ -1757,6 +2522,14 @@ export class BuildMCPServer {
             // Calling connect() a second time on the same server blocks indefinitely.
             // Solution: Create one Server per session, each with its own Transport.
             const sessionServer = this.createSessionServer();
+
+            // FOUNDATION LAYER: Add batch context wrapper BEFORE connecting
+            // CRITICAL: Must wrap transport.onmessage BEFORE server.connect() sets it up
+            // TODO: Implement wrapTransportForBatchContext for HTTP transport
+            // if (this.options.batching?.enabled !== false) {
+            //   wrapTransportForBatchContext(transport, this.options.batching ?? {});
+            // }
+
             await sessionServer.connect(transport);
 
             // Store the server so we can clean it up on session close
@@ -1883,12 +2656,68 @@ export class BuildMCPServer {
   }
 
   /**
-   * Render a template string with variables
+   * Start the server with WebSocket transport
    */
-  private renderTemplate(template: string, variables: Record<string, any>): string {
-    return template
-      .replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] ?? `{{${key}}}`)  // {{var}}
-      .replace(/\{(\w+)\}/g, (_, key) => variables[key] ?? `{${key}}`);        // {var}
+  private async startWebSocket(
+    port: number,
+    wsConfig?: { port?: number; heartbeatInterval?: number; heartbeatTimeout?: number; maxMessageSize?: number }
+  ): Promise<void> {
+    if (!this.server) {
+      throw new Error(
+        `Server not initialized\n\n` +
+        `What went wrong:\n` +
+        `  Internal error: Server instance was not created properly.\n\n` +
+        `This is likely a bug. Please report it with:\n` +
+        `  - Your server configuration\n` +
+        `  - Steps to reproduce\n\n` +
+        `GitHub: https://github.com/Clockwork-Innovations/simply-mcp-ts/issues`
+      );
+    }
+
+    console.error(
+      `[BuildMCPServer] Starting '${this.options.name}' v${this.options.version} (WebSocket transport)`
+    );
+    console.error(
+      `[BuildMCPServer] Registered: ${this.tools.size} tools, ${this.prompts.size} prompts, ${this.resources.size} resources`
+    );
+
+    // Dynamic import of WebSocket transport
+    let WebSocketServerTransport: any;
+
+    try {
+      const wsModule = await import('../transports/websocket-server.js');
+      WebSocketServerTransport = wsModule.WebSocketServerTransport;
+    } catch (error) {
+      throw new Error(
+        'WebSocket transport requires ws package.\n' +
+        'Install it with: npm install ws @types/ws\n\n' +
+        'Or use stdio transport (default) which works without it.'
+      );
+    }
+
+    // Use config from runtime config if provided, otherwise use defaults
+    const finalPort = wsConfig?.port ?? port ?? 8080;
+    const transport = new WebSocketServerTransport({
+      port: finalPort,
+      heartbeatInterval: wsConfig?.heartbeatInterval ?? 30000,
+      heartbeatTimeout: wsConfig?.heartbeatTimeout ?? 60000,
+      maxMessageSize: wsConfig?.maxMessageSize ?? 10 * 1024 * 1024, // 10MB
+    });
+
+    await transport.start();
+    await this.server.connect(transport);
+
+    console.error(`[BuildMCPServer] WebSocket server listening on port ${finalPort}`);
+    console.error('[BuildMCPServer] Connected and ready for requests');
+
+    // Store transport for cleanup
+    this.transports.set('websocket', transport);
+
+    // Handle graceful shutdown
+    process.on('SIGINT', async () => {
+      await this.stop();
+      process.exit(0);
+    });
   }
 
   /**
@@ -2445,6 +3274,7 @@ export class BuildMCPServer {
         progressToken,
         progress,
         total,
+        message,
       },
     };
 
@@ -2536,6 +3366,22 @@ export class BuildMCPServer {
     return this.resources;
   }
 
+  /**
+   * Get server options
+   * @returns Server configuration options
+   */
+  getOptions() {
+    return this.options;
+  }
+
+  /**
+   * Get tool-to-routers mapping
+   * @returns Map of tool names to sets of router names that contain them
+   */
+  getToolToRouters(): Map<string, Set<string>> {
+    return this.toolToRouters;
+  }
+
   // ===== Public Direct Execution Methods =====
 
   /**
@@ -2623,6 +3469,9 @@ export class BuildMCPServer {
 
     const logger = createDefaultLogger(`[Tool:${actualToolName}]`, logNotificationCallback);
 
+    // Retrieve batch context from AsyncLocalStorage
+    const batch = batchContextStorage.getStore();
+
     // Create handler context
     const context: HandlerContext = {
       logger,
@@ -2638,6 +3487,21 @@ export class BuildMCPServer {
           namespacedCall: true,
         } : {}),
       },
+      // Add MCP-specific context
+      mcp: {
+        server: {
+          name: this.options.name,
+          version: this.options.version,
+          description: this.options.description,
+        },
+        session: this.server,
+        request_context: {
+          request_id: randomUUID(),
+          meta: undefined,
+        },
+      },
+      // FOUNDATION LAYER: Add batch context if available
+      batch,
     };
 
     // Add sampling capability if enabled
@@ -2692,23 +3556,71 @@ export class BuildMCPServer {
       );
     }
 
-    // Check if template is a function (dynamic prompt)
-    let renderedText: string;
-    if (typeof prompt.template === 'function') {
-      // Call the dynamic template function
-      renderedText = await Promise.resolve(prompt.template(args));
-    } else {
-      // Render static template with variables
-      renderedText = this.renderTemplate(prompt.template, args);
+    // All prompts now require implementation (template is always a function)
+    let result: string | PromptMessage[] | SimpleMessage[];
+    if (typeof prompt.template !== 'function') {
+      throw new Error(
+        `Prompt "${promptName}" is missing implementation.\n\n` +
+        `What went wrong:\n` +
+        `  All prompts now require a method implementation.\n\n` +
+        `To fix:\n` +
+        `  1. Implement the prompt as a method in your server class\n` +
+        `  2. The method should return either a string or an array of messages\n\n` +
+        `Example:\n` +
+        `  weatherForecast = async (args: { location: string }) => {\n` +
+        `    return \`Weather forecast for \${args.location}\`;\n` +
+        `  };`
+      );
     }
 
+    // Create context for prompt execution
+    const logger = createDefaultLogger(`[Prompt:${promptName}]`, () => {});
+
+    // Retrieve batch context from AsyncLocalStorage
+    const batch = batchContextStorage.getStore();
+
+    const context: HandlerContext = {
+      logger,
+      metadata: { promptName },
+      mcp: {
+        server: {
+          name: this.options.name,
+          version: this.options.version,
+          description: this.options.description,
+        },
+        session: this.server,
+        request_context: {
+          request_id: randomUUID(),
+          meta: undefined,
+        },
+      },
+      // FOUNDATION LAYER: Add batch context if available
+      batch,
+    };
+
+    // Call the template function with context
+    result = await Promise.resolve(prompt.template(args, context));
+
+    // CRITICAL: Check SimpleMessage BEFORE PromptMessage
+    // (SimpleMessage is more specific and would be missed if PromptMessage check comes first)
+    if (this.isSimpleMessageArray(result)) {
+      return { messages: this.convertSimpleMessages(result) };
+    }
+
+    // Detect if result is already a message array
+    if (this.isPromptMessageArray(result)) {
+      // Return message array directly (MCP format)
+      return { messages: result };
+    }
+
+    // Backward compatibility: wrap string in message
     return {
       messages: [
         {
           role: 'user',
           content: {
             type: 'text',
-            text: renderedText,
+            text: String(result),
           },
         },
       ],

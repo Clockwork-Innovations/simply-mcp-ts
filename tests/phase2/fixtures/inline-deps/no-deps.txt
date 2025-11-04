@@ -1,5 +1,0 @@
-#!/usr/bin/env npx tsx
-// This file has no inline dependencies
-import { SimpleMCP } from './SimpleMCP.js';
-
-const server = new SimpleMCP({ name: 'test', version: '1.0.0' });

@@ -304,7 +304,7 @@ export function isUIResource(resource: any): resource is UIResource {
 export function createRemoteDOMResource(
   uri: string,
   script: string,
-  framework: RemoteDOMFramework = 'javascript',
+  framework: RemoteDOMFramework = 'react',
   options?: UIResourceOptions
 ): RemoteDOMResource {
   // Validate URI starts with ui://

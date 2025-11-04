@@ -489,7 +489,7 @@ myTool: MyTool = async (args) => {
 
 ## See Also
 
-- [TOOLS.md](./TOOLS.md) - More tool examples
+- [Features Guide - Tools](./FEATURES.md#tools) - More tool examples
 - [examples/interface-minimal.ts](../../examples/interface-minimal.ts) - Basic error handling patterns
 - [examples/interface-advanced.ts](../../examples/interface-advanced.ts) - Advanced error handling
 - [DEBUGGING.md](./DEBUGGING.md) - Debugging techniques

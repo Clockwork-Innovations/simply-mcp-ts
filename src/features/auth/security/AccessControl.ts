@@ -270,3 +270,66 @@ export function createAuthenticatedContext(
     createdAt: Date.now(),
   };
 }
+
+/**
+ * Map OAuth scopes to Simply-MCP permissions
+ *
+ * Converts OAuth 2.1 scopes to the permission system used by Simply-MCP.
+ * Standard scopes are mapped to permission wildcards, while custom scopes
+ * are passed through as-is.
+ *
+ * Standard scope mappings:
+ * - `read` → `read:*` (read access to all resources)
+ * - `write` → `write:*` (write access to all resources)
+ * - `tools:execute` → `tools:*` (execute any tool)
+ * - `resources:read` → `resources:*` (read any resource)
+ * - `prompts:read` → `prompts:*` (read any prompt)
+ * - `admin` → `*` (full access to everything)
+ *
+ * @param scopes - Array of OAuth scope strings
+ * @returns Array of permission strings (deduplicated)
+ *
+ * @example Basic scope mapping
+ * ```typescript
+ * const permissions = mapScopesToPermissions(['read', 'tools:execute']);
+ * // Returns: ['read:*', 'tools:*']
+ * ```
+ *
+ * @example Admin scope grants all permissions
+ * ```typescript
+ * const permissions = mapScopesToPermissions(['admin']);
+ * // Returns: ['*']
+ * ```
+ *
+ * @example Custom scopes pass through
+ * ```typescript
+ * const permissions = mapScopesToPermissions(['custom:feature', 'read']);
+ * // Returns: ['custom:feature', 'read:*']
+ * ```
+ */
+export function mapScopesToPermissions(scopes: string[]): string[] {
+  // Standard scope to permission mapping
+  const scopeMap: Record<string, string[]> = {
+    'read': ['read:*'],
+    'write': ['write:*'],
+    'tools:execute': ['tools:*'],
+    'resources:read': ['resources:*'],
+    'prompts:read': ['prompts:*'],
+    'admin': ['*'],
+  };
+
+  const permissions: string[] = [];
+
+  for (const scope of scopes) {
+    if (scopeMap[scope]) {
+      // Standard scope - use mapped permissions
+      permissions.push(...scopeMap[scope]);
+    } else {
+      // Custom scope - pass through as-is
+      permissions.push(scope);
+    }
+  }
+
+  // Deduplicate permissions using Set
+  return [...new Set(permissions)];
+}

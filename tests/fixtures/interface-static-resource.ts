@@ -8,7 +8,8 @@ const TYPE_CHART = {
 
 interface StaticServer extends IServer {
   name: 'static-resource-fixture';
-  version: '1.0.0';
+  description: 'Test server with static resources';
+  // version: '1.0.0';  // Optional (defaults to '1.0.0')
 }
 
 interface PingTool extends ITool {
@@ -22,16 +23,26 @@ interface PingTool extends ITool {
   };
 }
 
-interface TypeChartResource extends IResource<typeof TYPE_CHART> {
+interface TypeChartResource extends IResource {
   uri: 'pokemon://type-chart';
   name: 'Type Chart';
   description: 'Pokémon type effectiveness chart';
   mimeType: 'application/json';
-  data: typeof TYPE_CHART;
+  value: {
+    electric: ['water', 'flying'];
+    fire: ['grass'];
+    grass: ['water'];
+  };
 }
 
-export default class StaticResourceFixture {
-  ping: PingTool = async (params) => ({
+export default class StaticResourceFixture implements StaticServer {
+  // Server metadata from interface
+  name = 'static-resource-fixture' as const;
+  description = 'Test server with static resources' as const;
+
+  ping = async (params: { message: string }) => ({
     echoed: params.message,
   });
+
+  'pokemon://type-chart' = TYPE_CHART;
 }

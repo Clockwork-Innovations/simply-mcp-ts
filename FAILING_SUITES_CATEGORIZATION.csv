@@ -1,0 +1,20 @@
+Suite,Tests Failing,Tests Passing,Feature,Code Exists,Failure Type,Root Cause,Recommendation,Effort (hours),Priority
+tests/unit/mime-types-uri-list.test.ts,18,2,text/uri-list MIME type support,Yes,Wrong Import,Import paths incorrect in dynamic fixtures,FIX - Update import paths,0.5,HIGH
+tests/unit/ui-adapter.test.ts,10+,0,UI resource adapter,Yes,Missing Export,BuildMCPServer not exported from index,FIX - Add export to index.ts,0.25,HIGH
+tests/test-http-modes.test.ts,10,0,HTTP transport modes,Yes,Missing Export,BuildMCPServerOptions not exported,FIX - Add export to index.ts,0.25,HIGH
+tests/integration/context-injection.test.ts,5,0,Context injection,Yes,Missing Export,BuildMCPServer wrong path + not exported,FIX - Add export + update import,0.25,HIGH
+tests/unit/auth-adapter.test.ts,10,0,Auth adapter,No,Missing File,src/auth-adapter.js does not exist,REMOVE or CREATE (8h),0.1 or 8,LOW
+tests/phase2/bundle-integration.test.ts,10,0,Bundling integration,Yes,Missing Property,IServer missing description property,UPDATE - Add description to fixtures,1,MEDIUM
+tests/phase2/bundle-advanced-integration.test.ts,8,0,Advanced bundling formats,Yes,Missing Property,IServer missing description property,UPDATE - Add description to fixtures,1,MEDIUM
+tests/phase2/cross-feature-integration.test.ts,5,0,Cross-feature integration,Yes,Missing Property,IServer missing description property,UPDATE - Add description to fixtures,0.5,MEDIUM
+tests/phase2/auto-install-integration.test.ts,5,0,Auto-install feature,Yes,Missing Property,IServer missing description property,UPDATE - Add description to fixtures,0.5,MEDIUM
+tests/phase2/inline-deps-integration.test.ts,4,0,Inline dependencies,Yes,Missing Property,IServer missing description property,UPDATE - Add description to fixtures,0.5,MEDIUM
+tests/unit/entry-detector.test.ts,10,0,Entry point detection,Yes,Missing Property,IServer missing description property,UPDATE - Add description to fixtures,1,MEDIUM
+tests/e2e/simple-message.test.ts,3,0,SimpleMessage E2E,Yes,Missing Property,IServer missing description property,UPDATE - Add description to fixtures,0.5,MEDIUM
+tests/integration/ui-workflow.test.ts,3,0,UI workflow integration,Yes,Missing Property,IServer missing description property,UPDATE - Add description to fixtures,0.5,MEDIUM
+tests/unit/interface-api/basic.test.ts,11,9,Interface-driven API basics,Yes,API Change,Parser output structure changed,INVESTIGATE + UPDATE tests,2,MEDIUM
+tests/unit/interface-api/auto-export.test.ts,?,0,Named export support,Unknown,API Change,Feature may have changed,INVESTIGATE + UPDATE or REMOVE,1,MEDIUM
+tests/unit/interface-api/static-resource.test.ts,?,0,Static resource pattern,Unknown,API Change,Resource API may have changed,INVESTIGATE + UPDATE tests,1,MEDIUM
+tests/unit/interface-api/object-resource.test.ts,?,0,Object resource pattern,Unknown,API Change,Resource API may have changed,INVESTIGATE + UPDATE tests,1,MEDIUM
+tests/unit/interface-api/database-resource.test.ts,?,0,Database resources,Unknown,API Change,Resource API may have changed,INVESTIGATE + UPDATE tests,1,MEDIUM
+tests/unit/ui-parser.test.ts,?,0,UI parsing,Yes,API Change,parseUIInterface behavior changed,INVESTIGATE + UPDATE tests,1,MEDIUM

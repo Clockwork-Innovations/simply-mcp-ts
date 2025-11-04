@@ -8,6 +8,7 @@
 import * as ts from 'typescript';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import type { IDatabase } from './interface-types.js';
 
 /**
  * Parsed tool interface metadata
@@ -15,8 +16,8 @@ import { resolve } from 'path';
 export interface ParsedTool {
   /** Original interface name */
   interfaceName: string;
-  /** Tool name from interface (snake_case) */
-  name: string;
+  /** Tool name from interface (snake_case) - if omitted, inferred from methodName */
+  name?: string;
   /** Tool description */
   description: string;
   /** Expected method name (camelCase) */
@@ -29,6 +30,8 @@ export interface ParsedTool {
   paramsNode?: ts.TypeNode;
   /** Raw TypeScript node for result */
   resultNode?: ts.TypeNode;
+  /** Tool annotations (optional) @since v4.1.0 */
+  annotations?: import('./interface-types.js').IToolAnnotations;
 }
 
 /**
@@ -41,13 +44,16 @@ export interface ParsedPrompt {
   name: string;
   /** Prompt description */
   description: string;
-  /** Expected method name (camelCase) if dynamic */
+  /** Expected method name (camelCase) - all prompts require implementation */
   methodName: string;
-  /** Template string (for static prompts) */
-  template?: string;
-  /** Whether this requires dynamic implementation */
-  dynamic: boolean;
-  /** Argument type information */
+  /** Arguments metadata extracted from interface */
+  argsMetadata?: Record<string, {
+    description?: string;
+    required?: boolean;
+    type?: string;
+    enum?: string[];
+  }>;
+  /** Argument type information (for TypeScript type extraction) */
   argsType: string;
 }
 
@@ -73,6 +79,8 @@ export interface ParsedResource {
   dynamic: boolean;
   /** Data type information */
   dataType: string;
+  /** Database configuration (if resource uses database) */
+  database?: IDatabase;
 }
 
 /**
@@ -177,6 +185,11 @@ export interface ParsedUI {
   name: string;
   /** UI description */
   description: string;
+
+  // NEW v4.0: Unified source field
+  /** Unified source field (URL, HTML, file path, or folder) */
+  source?: string;
+
   /** Inline HTML content (for static UIs) */
   html?: string;
   /** Inline CSS styles (for static UIs) */
@@ -262,6 +275,29 @@ export interface ParsedUI {
 }
 
 /**
+ * Parsed router interface metadata
+ */
+export interface ParsedRouter {
+  /** Original interface name */
+  interfaceName: string;
+  /** Router name (snake_case) - if omitted, inferred from property name */
+  name?: string;
+  /** Router description */
+  description: string;
+  /** Array of tool names to include in router */
+  tools: string[];
+  /** Expected property name (camelCase) */
+  propertyName: string;
+  /** Optional metadata */
+  metadata?: {
+    category?: string;
+    tags?: string[];
+    order?: number;
+    [key: string]: unknown;
+  };
+}
+
+/**
  * Parsed authentication configuration
  */
 export interface ParsedAuth {
@@ -269,6 +305,8 @@ export interface ParsedAuth {
   type: 'apiKey' | 'oauth2' | 'database' | 'custom';
   /** Original interface name */
   interfaceName: string;
+
+  // API Key fields (when type === 'apiKey')
   /** HTTP header name for API key (apiKey type only) */
   headerName?: string;
   /** Array of API keys with permissions (apiKey type only) */
@@ -279,6 +317,24 @@ export interface ParsedAuth {
   }>;
   /** Whether to allow anonymous access (apiKey type only) */
   allowAnonymous?: boolean;
+
+  // OAuth2 fields (when type === 'oauth2')
+  /** OAuth issuer URL (oauth2 type only) */
+  issuerUrl?: string;
+  /** Registered OAuth clients (oauth2 type only) */
+  clients?: Array<{
+    clientId: string;
+    clientSecret: string;
+    redirectUris: string[];
+    scopes: string[];
+    name?: string;
+  }>;
+  /** Access token expiration in seconds (oauth2 type only) */
+  tokenExpiration?: number;
+  /** Refresh token expiration in seconds (oauth2 type only) */
+  refreshTokenExpiration?: number;
+  /** Authorization code expiration in seconds (oauth2 type only) */
+  codeExpiration?: number;
 }
 
 /**
@@ -289,20 +345,29 @@ export interface ParsedServer {
   interfaceName: string;
   /** Server name */
   name: string;
-  /** Server version */
+  /** Server version (defaults to '1.0.0' if not specified) */
   version: string;
   /** Server description */
-  description?: string;
+  description: string;
   /** Class name that implements this interface */
   className?: string;
-  /** Transport type (stdio or http) */
-  transport?: 'stdio' | 'http';
+  /** Transport type (inferred from config if not explicit) */
+  transport?: 'stdio' | 'http' | 'websocket';
   /** Port number for HTTP transport */
   port?: number;
   /** Enable stateful session management */
   stateful?: boolean;
+  /** WebSocket configuration */
+  websocket?: {
+    port?: number;
+    heartbeatInterval?: number;
+    heartbeatTimeout?: number;
+    maxMessageSize?: number;
+  };
   /** Authentication configuration */
   auth?: ParsedAuth;
+  /** Control visibility of router-assigned tools */
+  flattenRouters?: boolean;
 }
 
 /**
@@ -319,7 +384,10 @@ export interface ParseResult {
   subscriptions: ParsedSubscription[];
   completions: ParsedCompletion[];
   uis: ParsedUI[];
+  routers: ParsedRouter[];
   className?: string;
+  /** Validation errors encountered during parsing */
+  validationErrors?: string[];
 }
 
 /**
@@ -360,6 +428,26 @@ export function normalizeToolName(name: string): string {
 }
 
 /**
+ * Convert string to kebab-case
+ * Used for server names to enforce naming convention
+ *
+ * Examples:
+ * - 'My Server' -> 'my-server' (spaces to hyphens)
+ * - 'SimpleAPI' -> 'simple-api' (camelCase conversion)
+ * - 'my_server' -> 'my-server' (underscores to hyphens)
+ * - 'my-server' -> 'my-server' (already kebab-case)
+ */
+export function toKebabCase(str: string): string {
+  return str
+    .replace(/([a-z])([A-Z])/g, '$1-$2')  // camelCase → kebab-case
+    .replace(/[\s_]+/g, '-')               // spaces/underscores → hyphens
+    .replace(/[^a-z0-9-]/gi, '-')          // non-alphanumeric → hyphens
+    .replace(/-+/g, '-')                   // multiple hyphens → single
+    .replace(/^-+|-+$/g, '')               // trim leading/trailing hyphens
+    .toLowerCase();
+}
+
+/**
  * Parse a TypeScript file to discover interface-driven API definitions
  */
 export function parseInterfaceFile(filePath: string): ParseResult {
@@ -384,6 +472,8 @@ export function parseInterfaceFile(filePath: string): ParseResult {
     subscriptions: [],
     completions: [],
     uis: [],
+    routers: [],
+    validationErrors: [],
   };
 
   // Store auth interfaces by name for resolution
@@ -402,7 +492,7 @@ export function parseInterfaceFile(filePath: string): ParseResult {
             const typeName = type.expression.getText(sourceFile);
 
             if (typeName === 'ITool') {
-              const tool = parseToolInterface(node, sourceFile);
+              const tool = parseToolInterface(node, sourceFile, result.validationErrors!);
               if (tool) result.tools.push(tool);
             } else if (typeName === 'IPrompt') {
               const prompt = parsePromptInterface(node, sourceFile);
@@ -428,6 +518,9 @@ export function parseInterfaceFile(filePath: string): ParseResult {
             } else if (typeName === 'IUI') {
               const ui = parseUIInterface(node, sourceFile);
               if (ui) result.uis.push(ui);
+            } else if (typeName === 'IToolRouter' || typeName.startsWith('IToolRouter<')) {
+              const router = parseRouterInterface(node, sourceFile);
+              if (router) result.routers.push(router);
             } else if (typeName === 'IServer') {
               const server = parseServerInterface(node, sourceFile, authInterfaces);
               if (server) result.server = server;
@@ -498,9 +591,252 @@ export function parseInterfaceFile(filePath: string): ParseResult {
 }
 
 /**
+ * Validate that params use IParam interfaces (not plain TypeScript types)
+ * Each parameter must have a description property (minimum requirement)
+ */
+function validateParamsUseIParam(paramsNode: ts.TypeNode | undefined, sourceFile: ts.SourceFile, interfaceName: string): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!paramsNode) {
+    return { valid: true, errors: [] }; // No params is fine
+  }
+
+  // Check if params is a TypeLiteral (object type like { name: string; age: number })
+  if (ts.isTypeLiteralNode(paramsNode)) {
+    for (const member of paramsNode.members) {
+      if (ts.isPropertySignature(member) && member.type) {
+        const paramName = member.name?.getText(sourceFile) || 'unknown';
+        const paramType = member.type;
+
+        // CRITICAL: Check for inline IParam intersection (& IParam)
+        // This pattern does NOT work with type coercion - it's a known bug
+        if (ts.isIntersectionTypeNode(paramType)) {
+          // Check if one of the intersection types is IParam or a reference to IParam
+          const hasIParam = paramType.types.some(type => {
+            if (ts.isTypeReferenceNode(type)) {
+              const typeName = type.typeName.getText(sourceFile);
+              return typeName === 'IParam';
+            }
+            return false;
+          });
+
+          if (hasIParam) {
+            const paramTypeText = paramType.getText(sourceFile);
+            errors.push(
+              `❌ CRITICAL ERROR: Parameter '${paramName}' in ${interfaceName} uses inline IParam intersection.\n` +
+              `\n` +
+              `  Current (BROKEN - type coercion fails):\n` +
+              `    params: { ${paramName}: ${paramTypeText} }\n` +
+              `\n` +
+              `  Why this fails:\n` +
+              `    • The schema generator does NOT support intersection types (& IParam)\n` +
+              `    • Number/boolean parameters will be received as STRINGS\n` +
+              `    • Arithmetic operations will fail silently (e.g., 42 + 58 = "4258")\n` +
+              `    • This is a known framework limitation\n` +
+              `\n` +
+              `  ✅ REQUIRED FIX - Use separate interface:\n` +
+              `    interface ${paramName.charAt(0).toUpperCase() + paramName.slice(1)}Param extends IParam {\n` +
+              `      type: 'number';  // or 'string', 'boolean', etc.\n` +
+              `      description: 'Description of ${paramName}';\n` +
+              `      // Add any validation constraints here\n` +
+              `    }\n` +
+              `\n` +
+              `    params: { ${paramName}: ${paramName.charAt(0).toUpperCase() + paramName.slice(1)}Param }\n` +
+              `\n` +
+              `  📚 See examples/interface-params.ts for correct patterns.`
+            );
+            continue; // Skip other checks for this parameter
+          }
+        }
+
+        // Check if the parameter type references an interface (good)
+        // vs. using a primitive type directly (bad)
+        const isDirectType =
+          paramType.kind === ts.SyntaxKind.StringKeyword ||
+          paramType.kind === ts.SyntaxKind.NumberKeyword ||
+          paramType.kind === ts.SyntaxKind.BooleanKeyword ||
+          paramType.kind === ts.SyntaxKind.AnyKeyword ||
+          ts.isArrayTypeNode(paramType) ||    // string[], number[]
+          ts.isUnionTypeNode(paramType) ||    // 'a' | 'b'
+          ts.isLiteralTypeNode(paramType);    // 'literal'
+
+        if (isDirectType) {
+          errors.push(
+            `ERROR: Parameter '${paramName}' in ${interfaceName} uses a direct type instead of IParam.\n` +
+            `  Current: params: { ${paramName}: ${paramType.getText(sourceFile)} }\n` +
+            `  Required: params: { ${paramName}: ${paramName.charAt(0).toUpperCase() + paramName.slice(1)}Param }\n` +
+            `\n` +
+            `  Fix: Define a parameter interface:\n` +
+            `  interface ${paramName.charAt(0).toUpperCase() + paramName.slice(1)}Param extends IParam {\n` +
+            `    type: '${getIParamTypeFromTS(paramType)}';\n` +
+            `    description: 'Description of ${paramName}';\n` +
+            `  }\n` +
+            `\n` +
+            `  Why: IParam interfaces provide:\n` +
+            `  - Required 'description' field for LLM documentation\n` +
+            `  - Validation constraints (min/max, minLength/maxLength, pattern, etc.)\n` +
+            `  - Better JSON Schema generation for tool calls\n` +
+            `\n` +
+            `  See examples/interface-params.ts for complete examples.`
+          );
+        }
+      }
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Helper to suggest IParam type from TypeScript type
+ */
+function getIParamTypeFromTS(typeNode: ts.TypeNode): string {
+  if (ts.isTypeReferenceNode(typeNode)) {
+    const typeName = typeNode.typeName.getText();
+    if (typeName === 'Array' || typeName.endsWith('[]')) return 'array';
+  }
+  if (ts.isArrayTypeNode(typeNode)) return 'array';
+
+  const typeText = typeNode.getText();
+  if (typeText === 'string') return 'string';
+  if (typeText === 'number') return 'number';
+  if (typeText === 'boolean') return 'boolean';
+  if (/^\d+$/.test(typeText)) return 'integer';
+
+  return 'string';
+}
+
+/**
+ * Extract and validate tool annotations from an AST type node
+ * @param typeNode - The TypeScript type node for annotations property
+ * @param sourceFile - Source file for text extraction
+ * @param interfaceName - Tool interface name (for error messages)
+ * @param validationErrors - Array to collect validation errors
+ * @returns Parsed annotations object or undefined if invalid
+ */
+function extractAnnotationsFromType(
+  typeNode: ts.TypeNode,
+  sourceFile: ts.SourceFile,
+  interfaceName: string,
+  validationErrors: string[]
+): import('./interface-types.js').IToolAnnotations | undefined {
+  // Annotations must be an object literal type
+  if (!ts.isTypeLiteralNode(typeNode)) {
+    validationErrors.push(
+      `Tool '${interfaceName}': annotations must be an object literal type`
+    );
+    return undefined;
+  }
+
+  const annotations: any = {};
+
+  // Extract each property from the type literal
+  for (const member of typeNode.members) {
+    if (ts.isPropertySignature(member) && member.name && member.type) {
+      const propName = member.name.getText(sourceFile);
+      const propType = member.type;
+
+      // Extract literal values
+      if (ts.isLiteralTypeNode(propType)) {
+        const literal = propType.literal;
+        if (ts.isStringLiteral(literal)) {
+          annotations[propName] = literal.text;
+        } else if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+          annotations[propName] = true;
+        } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+          annotations[propName] = false;
+        } else if (ts.isNumericLiteral(literal)) {
+          annotations[propName] = Number(literal.text);
+        }
+      }
+      // Handle boolean true/false keywords directly
+      else if (propType.kind === ts.SyntaxKind.TrueKeyword) {
+        annotations[propName] = true;
+      } else if (propType.kind === ts.SyntaxKind.FalseKeyword) {
+        annotations[propName] = false;
+      }
+    }
+  }
+
+  // Validate annotations
+  validateAnnotations(annotations, interfaceName, validationErrors);
+
+  return Object.keys(annotations).length > 0 ? annotations : undefined;
+}
+
+/**
+ * Validate tool annotations according to business rules
+ * @param annotations - Parsed annotations object
+ * @param interfaceName - Tool interface name (for error messages)
+ * @param validationErrors - Array to collect validation errors
+ */
+function validateAnnotations(
+  annotations: any,
+  interfaceName: string,
+  validationErrors: string[]
+): void {
+  // Rule 1: Mutual exclusivity - readOnlyHint: true + destructiveHint: true → ERROR
+  if (annotations.readOnlyHint === true && annotations.destructiveHint === true) {
+    validationErrors.push(
+      `Tool '${interfaceName}' cannot be both readOnlyHint and destructiveHint. ` +
+      `A read-only tool cannot perform destructive operations.`
+    );
+  }
+
+  // Rule 2: Enum validation - estimatedDuration must be 'fast' | 'medium' | 'slow'
+  if (annotations.estimatedDuration !== undefined) {
+    const validDurations = ['fast', 'medium', 'slow'];
+    if (!validDurations.includes(annotations.estimatedDuration)) {
+      validationErrors.push(
+        `Tool '${interfaceName}': Invalid estimatedDuration '${annotations.estimatedDuration}'. ` +
+        `Must be one of: ${validDurations.map(d => `'${d}'`).join(', ')}`
+      );
+    }
+  }
+
+  // Rule 3: Type checking - Boolean fields must be boolean
+  const booleanFields = ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint', 'requiresConfirmation'];
+  for (const field of booleanFields) {
+    if (annotations[field] !== undefined && typeof annotations[field] !== 'boolean') {
+      validationErrors.push(
+        `Tool '${interfaceName}': Field '${field}' must be a boolean value (true or false), ` +
+        `got '${annotations[field]}'`
+      );
+    }
+  }
+
+  // Rule 4: String fields validation
+  if (annotations.title !== undefined && typeof annotations.title !== 'string') {
+    validationErrors.push(
+      `Tool '${interfaceName}': Field 'title' must be a string, got '${annotations.title}'`
+    );
+  }
+
+  if (annotations.category !== undefined && typeof annotations.category !== 'string') {
+    validationErrors.push(
+      `Tool '${interfaceName}': Field 'category' must be a string, got '${annotations.category}'`
+    );
+  }
+
+  // Rule 5: Unknown fields are allowed (custom metadata) but warn about them
+  const knownFields = [
+    'title', 'readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint',
+    'requiresConfirmation', 'category', 'estimatedDuration'
+  ];
+  for (const field of Object.keys(annotations)) {
+    if (!knownFields.includes(field)) {
+      console.warn(
+        `\n⚠️  WARNING: Tool '${interfaceName}' has unknown annotation field '${field}'. ` +
+        `This will be treated as custom metadata.\n`
+      );
+    }
+  }
+}
+
+/**
  * Parse an ITool interface
  */
-function parseToolInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFile): ParsedTool | null {
+function parseToolInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFile, validationErrors: string[]): ParsedTool | null {
   const interfaceName = node.name.text;
   let name = '';
   let description = '';
@@ -508,6 +844,7 @@ function parseToolInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Source
   let resultType = 'any';
   let paramsNode: ts.TypeNode | undefined;
   let resultNode: ts.TypeNode | undefined;
+  let annotations: import('./interface-types.js').IToolAnnotations | undefined;
 
   // Extract JSDoc description
   const jsDocTags = ts.getJSDocTags(node);
@@ -540,24 +877,50 @@ function parseToolInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Source
       } else if (memberName === 'result' && member.type) {
         resultNode = member.type;
         resultType = member.type.getText(sourceFile);
+      } else if (memberName === 'annotations' && member.type) {
+        // Extract annotations object literal
+        annotations = extractAnnotationsFromType(member.type, sourceFile, interfaceName, validationErrors);
       }
     }
   }
 
-  if (!name) {
-    console.warn(`Tool interface ${interfaceName} missing 'name' property`);
-    return null;
+  // Validate params use IParam (not direct types)
+  // Note: This is now a warning, not an error, to maintain backward compatibility
+  const validation = validateParamsUseIParam(paramsNode, sourceFile, interfaceName);
+  if (!validation.valid) {
+    // Print validation warnings (not errors) to encourage best practices
+    for (const error of validation.errors) {
+      console.warn('\n⚠️  WARNING: ' + error + '\n');
+      // Add to validationErrors array for dry-run to report
+      validationErrors.push(error);
+    }
+    // Don't return null - allow tool discovery to continue with warnings
+  }
+
+  // Phase 2.1: Tool name inference
+  // If name is not provided, guess method name from interface name
+  // e.g., "GetWeatherTool" → "getWeather", "MultiplyTool" → "multiply"
+  let methodName: string;
+  if (name) {
+    methodName = snakeToCamel(name);
+  } else {
+    // Guess method name from interface name
+    // Remove "Tool" suffix and lowercase first letter
+    methodName = interfaceName
+      .replace(/Tool$/, '')  // Remove "Tool" suffix
+      .replace(/^([A-Z])/, (m: string) => m.toLowerCase()); // Lowercase first letter
   }
 
   return {
     interfaceName,
-    name,
+    name: name || undefined,  // Store undefined if not provided
     description,
-    methodName: snakeToCamel(name),
+    methodName,  // Guessed from interface if name not provided
     paramsType,
     resultType,
     paramsNode,
     resultNode,
+    annotations,
   };
 }
 
@@ -568,9 +931,8 @@ function parsePromptInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Sour
   const interfaceName = node.name.text;
   let name = '';
   let description = '';
-  let template: string | undefined;
-  let dynamic = false;
   let argsType = 'any';
+  let argsMetadata: Record<string, { description?: string; required?: boolean }> | undefined;
 
   // Parse interface members
   for (const member of node.members) {
@@ -587,18 +949,92 @@ function parsePromptInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Sour
         if (ts.isStringLiteral(literal)) {
           description = literal.text;
         }
-      } else if (memberName === 'template' && member.type && ts.isLiteralTypeNode(member.type)) {
-        const literal = member.type.literal;
-        if (ts.isStringLiteral(literal) || ts.isNoSubstitutionTemplateLiteral(literal)) {
-          template = literal.text;
+      } else if (memberName === 'args' && member.type && ts.isTypeLiteralNode(member.type)) {
+        // Parse args metadata: Record<string, IPromptArgument>
+        // Note: Defaults are applied in the handler layer:
+        //   - type defaults to 'string'
+        //   - required defaults to true
+        argsMetadata = {};
+        for (const argMember of member.type.members) {
+          if (ts.isPropertySignature(argMember) && argMember.name && argMember.type) {
+            const argName = argMember.name.getText(sourceFile);
+            const argMetadata: { description?: string; required?: boolean; type?: string; enum?: string[] } = {};
+
+            // Parse IPromptArgument fields
+            if (ts.isTypeLiteralNode(argMember.type)) {
+              const argFieldCount = argMember.type.members.length;
+
+              // Handle empty argument definition: { argName: {} }
+              // Empty object means "use all defaults" (type='string', required=true)
+              if (argFieldCount === 0) {
+                // Store empty object to indicate all defaults should be applied
+                argsMetadata[argName] = {};
+                continue;
+              }
+
+              for (const argField of argMember.type.members) {
+                if (ts.isPropertySignature(argField) && argField.name && argField.type) {
+                  const fieldName = argField.name.getText(sourceFile);
+
+                  if (fieldName === 'description' && ts.isLiteralTypeNode(argField.type)) {
+                    const literal = argField.type.literal;
+                    if (ts.isStringLiteral(literal)) {
+                      argMetadata.description = literal.text;
+                    }
+                  } else if (fieldName === 'required' && ts.isLiteralTypeNode(argField.type)) {
+                    const literal = argField.type.literal;
+                    if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+                      argMetadata.required = true;
+                    } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+                      argMetadata.required = false;
+                    }
+                  } else if (fieldName === 'type' && ts.isLiteralTypeNode(argField.type)) {
+                    const literal = argField.type.literal;
+                    if (ts.isStringLiteral(literal)) {
+                      argMetadata.type = literal.text;
+                    }
+                  } else if (fieldName === 'enum') {
+                    // Extract enum values from tuple type (interface literals) or array literal (runtime values)
+                    if (ts.isTupleTypeNode(argField.type)) {
+                      // Tuple type: enum: ['a', 'b'] in interface
+                      argMetadata.enum = argField.type.elements
+                        .map(elem => {
+                          const elementType = ts.isNamedTupleMember(elem) ? elem.type : elem;
+                          if (ts.isLiteralTypeNode(elementType)) {
+                            const literal = elementType.literal;
+                            if (ts.isStringLiteral(literal)) {
+                              return literal.text;
+                            }
+                          }
+                          return null;
+                        })
+                        .filter((val): val is string => val !== null);
+                    } else if (ts.isArrayLiteralExpression(argField.type)) {
+                      // Array literal: enum: ['a', 'b'] (less common in interfaces)
+                      argMetadata.enum = argField.type.elements
+                        .filter(ts.isStringLiteral)
+                        .map(elem => elem.text);
+                    }
+                  }
+                }
+              }
+            }
+
+            argsMetadata[argName] = argMetadata;
+          }
         }
-      } else if (memberName === 'dynamic' && member.type && ts.isLiteralTypeNode(member.type)) {
-        const literal = member.type.literal;
-        if (literal.kind === ts.SyntaxKind.TrueKeyword) {
-          dynamic = true;
+      }
+    }
+
+    // Check for callable signature (method implementation)
+    // CallSignatureDeclaration is a different node type
+    if (ts.isCallSignatureDeclaration(member)) {
+      // Extract parameter type from callable signature
+      if (member.parameters.length > 0) {
+        const firstParam = member.parameters[0];
+        if (firstParam.type) {
+          argsType = firstParam.type.getText(sourceFile);
         }
-      } else if (memberName === 'args' && member.type) {
-        argsType = member.type.getText(sourceFile);
       }
     }
   }
@@ -608,18 +1044,12 @@ function parsePromptInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Sour
     return null;
   }
 
-  // Auto-infer dynamic flag:
-  // If template was extracted, it's static
-  // If no template and not marked dynamic, infer dynamic
-  const isDynamic = dynamic || (template === undefined);
-
   return {
     interfaceName,
     name,
     description,
     methodName: snakeToCamel(name),
-    template,
-    dynamic: isDynamic,
+    argsMetadata,
     argsType,
   };
 }
@@ -723,8 +1153,17 @@ function parseResourceInterface(node: ts.InterfaceDeclaration, sourceFile: ts.So
   let data: any = undefined;
   let dynamic = false;
   let dataType = 'any';
+  let value: any = undefined;
+  let returns: any = undefined;
+  let hasValue = false;
+  let hasReturns = false;
+  let valueType = 'any';
+  let returnsType = 'any';
+  let database: IDatabase | undefined = undefined;
 
   // Parse interface members
+  const invalidDataFields: string[] = [];
+
   for (const member of node.members) {
     if (ts.isPropertySignature(member) && member.name) {
       const memberName = member.name.getText(sourceFile);
@@ -749,15 +1188,32 @@ function parseResourceInterface(node: ts.InterfaceDeclaration, sourceFile: ts.So
         if (ts.isStringLiteral(literal)) {
           mimeType = literal.text;
         }
-      } else if (memberName === 'dynamic' && member.type && ts.isLiteralTypeNode(member.type)) {
-        const literal = member.type.literal;
-        if (literal.kind === ts.SyntaxKind.TrueKeyword) {
-          dynamic = true;
+      } else if (memberName === 'value' && member.type) {
+        // Static literal data
+        valueType = member.type.getText(sourceFile);
+        value = extractStaticData(member.type, sourceFile);
+        hasValue = true;
+      } else if (memberName === 'returns' && member.type) {
+        // Dynamic type definition
+        returnsType = member.type.getText(sourceFile);
+        returns = extractStaticData(member.type, sourceFile); // Try extraction (usually undefined for types)
+        hasReturns = true;
+      } else if (memberName === 'database' && member.type) {
+        // Database configuration
+        database = extractStaticData(member.type, sourceFile) as IDatabase | undefined;
+
+        // Validate database configuration
+        if (database && typeof database === 'object') {
+          if (!database.uri || typeof database.uri !== 'string') {
+            throw new Error(
+              `Resource interface ${interfaceName} has invalid database configuration. ` +
+              `The 'uri' field is required and must be a string.`
+            );
+          }
         }
-      } else if (memberName === 'data' && member.type) {
-        dataType = member.type.getText(sourceFile);
-        // Try to extract static data from simple literal types
-        data = extractStaticData(member.type, sourceFile);
+      } else if (memberName === 'text' || memberName === 'data' || memberName === 'content') {
+        // Track invalid fields that look like they should be 'value' or 'returns'
+        invalidDataFields.push(memberName);
       }
     }
   }
@@ -767,10 +1223,53 @@ function parseResourceInterface(node: ts.InterfaceDeclaration, sourceFile: ts.So
     return null;
   }
 
-  // Auto-infer dynamic flag if not explicitly set:
-  // If data extraction failed (undefined) but developer didn't mark as dynamic, infer it
-  // If data was extracted successfully, it's static (even if marked dynamic: false)
-  const isDynamic = dynamic || (data === undefined);
+  // Check for invalid data fields
+  if (invalidDataFields.length > 0) {
+    throw new Error(
+      `Resource interface ${interfaceName} uses invalid field(s): ${invalidDataFields.join(', ')}.\n` +
+      `\n` +
+      `Resources must use one of these fields for data:\n` +
+      `  - 'value' for static resources (literal data in the interface)\n` +
+      `  - 'returns' for dynamic resources (type annotation, requires implementation)\n` +
+      `\n` +
+      `Examples:\n` +
+      `\n` +
+      `Static resource:\n` +
+      `  interface ConfigResource extends IResource {\n` +
+      `    uri: 'config://settings';\n` +
+      `    value: { apiUrl: 'https://api.example.com' };  // Literal data\n` +
+      `  }\n` +
+      `\n` +
+      `Dynamic resource:\n` +
+      `  interface StatsResource extends IResource {\n` +
+      `    uri: 'stats://current';\n` +
+      `    returns: string;  // Type annotation\n` +
+      `  }\n` +
+      `  class MyServer {\n` +
+      `    'stats://current': StatsResource = async () => { ... };  // Implementation\n` +
+      `  }`
+    );
+  }
+
+  // Validate mutual exclusivity of value and returns
+  if (hasValue && hasReturns) {
+    throw new Error(
+      `Resource interface ${interfaceName} cannot have both 'value' and 'returns' fields. ` +
+      `Use 'value' for static resources (literal data) or 'returns' for dynamic resources (type definitions).`
+    );
+  }
+
+  // Determine if resource is dynamic based on which field is present
+  const isDynamic = hasReturns;
+
+  // Set data and dataType based on which field was used
+  if (hasValue) {
+    data = value;
+    dataType = valueType;
+  } else if (hasReturns) {
+    data = returns;
+    dataType = returnsType;
+  }
 
   return {
     interfaceName,
@@ -784,6 +1283,7 @@ function parseResourceInterface(node: ts.InterfaceDeclaration, sourceFile: ts.So
     data,
     dynamic: isDynamic,
     dataType,
+    database,
   };
 }
 
@@ -1086,6 +1586,9 @@ function parseUIInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFi
 
   // Phase 3B: Remote DOM MIME type support
   let remoteDom: string | undefined;
+
+  // v4.0: Unified source field
+  let source: string | undefined;
 
   // Parse interface members
   for (const member of node.members) {
@@ -1584,7 +2087,31 @@ function parseUIInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFi
             remoteDom = literal.text;
           }
         }
+      } else if (memberName === 'source' && member.type && ts.isLiteralTypeNode(member.type)) {
+        // Extract source field (v4.0)
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal) || ts.isNoSubstitutionTemplateLiteral(literal)) {
+          const sourceValue = literal.text.trim();
+          if (sourceValue) {  // Only set if non-empty
+            source = sourceValue;
+          }
+        }
       }
+    }
+  }
+
+  // Check for callable signature (dynamic UI)
+  for (const member of node.members) {
+    if (ts.isCallSignatureDeclaration(member)) {
+      dynamic = true;
+
+      // Extract return type if available
+      if (member.type) {
+        dataType = member.type.getText(sourceFile);
+      }
+
+      // Callable IUIs generate content dynamically
+      break;
     }
   }
 
@@ -1604,19 +2131,36 @@ function parseUIInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFi
     return null;
   }
 
-  // Validation: html, file, component, externalUrl, and remoteDom are mutually exclusive
-  const hasInlineHtml = !!html;
-  const hasFileReference = !!file;
-  const hasComponentReference = !!component;
-  const hasExternalUrl = !!externalUrl;
-  const hasRemoteDom = !!remoteDom;
-  const mutuallyExclusiveCount = [hasInlineHtml, hasFileReference, hasComponentReference, hasExternalUrl, hasRemoteDom].filter(Boolean).length;
-
-  if (mutuallyExclusiveCount > 1) {
+  // v4.0: Validate source field or callable signature
+  if (!source && !dynamic) {
     throw new Error(
-      `UI interface ${interfaceName} has conflicting fields: ` +
-      `'html', 'file', 'component', 'externalUrl', and 'remoteDom' are mutually exclusive. ` +
-      `Use only one: inline HTML (html), external file (file), React component (component), external URL (externalUrl), or Remote DOM (remoteDom).`
+      `UI interface ${interfaceName} must have either:\n` +
+      `1. A 'source' field (URL, HTML, file path, folder), or\n` +
+      `2. A callable signature: (): string | Promise<string>\n` +
+      `\n` +
+      `Example with source:\n` +
+      `  interface MyUI extends IUI {\n` +
+      `    uri: 'ui://example';\n` +
+      `    name: 'Example';\n` +
+      `    description: 'Example UI';\n` +
+      `    source: './Dashboard.tsx';  // <-- Add this\n` +
+      `  }\n` +
+      `\n` +
+      `Example with callable:\n` +
+      `  interface MyUI extends IUI {\n` +
+      `    uri: 'ui://example';\n` +
+      `    name: 'Example';\n` +
+      `    description: 'Example UI';\n` +
+      `    (): Promise<string>;  // <-- Add this\n` +
+      `  }`
+    );
+  }
+
+  // Ensure source and callable are mutually exclusive
+  if (source && dynamic) {
+    throw new Error(
+      `UI interface ${interfaceName} cannot have both 'source' field and callable signature.\n` +
+      `These are mutually exclusive - use one or the other.`
     );
   }
 
@@ -1632,8 +2176,9 @@ function parseUIInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFi
   }
 
   // Auto-detect subscribable for file-based UIs if not explicitly set
-  if (subscribable === undefined) {
-    subscribable = !!(file || component || scripts?.length || stylesheets?.length);
+  // Only set to true if file-based features are present, otherwise leave undefined
+  if (subscribable === undefined && (file || component || scripts?.length || stylesheets?.length)) {
+    subscribable = true;
   }
 
   // DEBUG: Log what's being returned
@@ -1644,6 +2189,7 @@ function parseUIInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFi
     uri,
     name,
     description,
+    source,  // NEW v4.0
     html,
     css,
     tools,
@@ -1670,6 +2216,138 @@ function parseUIInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFi
 }
 
 /**
+ * Parse an IToolRouter interface
+ */
+function parseRouterInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFile): ParsedRouter | null {
+  const interfaceName = node.name.text;
+  let name: string | undefined;
+  let description = '';
+  const tools: string[] = [];
+  let metadata: ParsedRouter['metadata'];
+
+  // Parse interface members
+  for (const member of node.members) {
+    if (ts.isPropertySignature(member) && member.name) {
+      const memberName = member.name.getText(sourceFile);
+
+      if (memberName === 'name' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          name = literal.text;
+        }
+      } else if (memberName === 'description' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          description = literal.text;
+        }
+      } else if (memberName === 'tools' && member.type) {
+        // Parse tools array: tools: [GetWeatherTool, GetForecastTool, ...]
+        // The type can be:
+        // - TupleTypeNode: [ToolA, ToolB] (expected format)
+        // - ArrayTypeNode: ITool[] (generic, cannot extract names)
+
+        if (ts.isTupleTypeNode(member.type)) {
+          // Extract tool names from tuple of type references
+          for (const element of member.type.elements) {
+            const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+
+            // Handle type references (e.g., GetWeatherTool)
+            if (ts.isTypeReferenceNode(elementType)) {
+              const typeName = elementType.typeName.getText(sourceFile);
+              // Convert interface name to tool name: GetWeatherTool -> get_weather_tool
+              // We'll look up the actual tool name from the interface later in adapter
+              // For now, store the interface name
+              tools.push(typeName);
+            }
+            // Fallback: handle string literals (backward compatibility)
+            else if (ts.isLiteralTypeNode(elementType)) {
+              const literal = elementType.literal;
+              if (ts.isStringLiteral(literal)) {
+                tools.push(literal.text);
+              }
+            }
+          }
+        } else if (ts.isArrayTypeNode(member.type)) {
+          // Array type without specific elements (tools: ITool[])
+          // Cannot extract specific tools at compile time
+          console.warn(`Router ${interfaceName}: tools must be specified as tuple [Tool1, Tool2], not generic array type`);
+        }
+      } else if (memberName === 'metadata' && member.type && ts.isTypeLiteralNode(member.type)) {
+        // Parse metadata object
+        metadata = {};
+        for (const metaMember of member.type.members) {
+          if (ts.isPropertySignature(metaMember) && metaMember.name && metaMember.type) {
+            const metaKey = metaMember.name.getText(sourceFile);
+
+            if (metaKey === 'category' && ts.isLiteralTypeNode(metaMember.type)) {
+              const literal = metaMember.type.literal;
+              if (ts.isStringLiteral(literal)) {
+                metadata.category = literal.text;
+              }
+            } else if (metaKey === 'order' && ts.isLiteralTypeNode(metaMember.type)) {
+              const literal = metaMember.type.literal;
+              if (ts.isNumericLiteral(literal)) {
+                metadata.order = parseInt(literal.text, 10);
+              }
+            } else if (metaKey === 'tags' && ts.isTupleTypeNode(metaMember.type)) {
+              // Parse tags array
+              metadata.tags = [];
+              for (const tagElement of metaMember.type.elements) {
+                const tagType = ts.isNamedTupleMember(tagElement) ? tagElement.type : tagElement;
+                if (ts.isLiteralTypeNode(tagType)) {
+                  const literal = tagType.literal;
+                  if (ts.isStringLiteral(literal)) {
+                    metadata.tags.push(literal.text);
+                  }
+                }
+              }
+            } else {
+              // Handle other metadata fields (store as unknown)
+              if (ts.isLiteralTypeNode(metaMember.type)) {
+                const literal = metaMember.type.literal;
+                if (ts.isStringLiteral(literal)) {
+                  metadata[metaKey] = literal.text;
+                } else if (ts.isNumericLiteral(literal)) {
+                  metadata[metaKey] = parseInt(literal.text, 10);
+                } else if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+                  metadata[metaKey] = true;
+                } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+                  metadata[metaKey] = false;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Validation
+  if (!description) {
+    console.warn(`Router ${interfaceName}: description is required`);
+    return null;
+  }
+
+  if (tools.length === 0) {
+    console.warn(`Router ${interfaceName}: tools array must not be empty`);
+    return null;
+  }
+
+  // Generate property name from interface name
+  // WeatherRouter -> weatherRouter
+  const propertyName = interfaceName.charAt(0).toLowerCase() + interfaceName.slice(1);
+
+  return {
+    interfaceName,
+    name,
+    description,
+    tools,
+    propertyName,
+    metadata,
+  };
+}
+
+/**
  * Parse an IServer interface
  */
 function parseServerInterface(
@@ -1681,10 +2359,12 @@ function parseServerInterface(
   let name = '';
   let version = '';
   let description: string | undefined;
-  let transport: 'stdio' | 'http' | undefined;
+  let transport: 'stdio' | 'http' | 'websocket' | undefined;
   let port: number | undefined;
   let stateful: boolean | undefined;
+  let flattenRouters: boolean | undefined;
   let authInterfaceName: string | undefined;
+  let websocketConfig: { port?: number; heartbeatInterval?: number; heartbeatTimeout?: number; maxMessageSize?: number } | undefined;
 
   // Parse interface members
   for (const member of node.members) {
@@ -1694,7 +2374,18 @@ function parseServerInterface(
       if (memberName === 'name' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
         if (ts.isStringLiteral(literal)) {
-          name = normalizeToolName(literal.text);
+          const originalName = literal.text;
+          const kebabName = toKebabCase(originalName);
+
+          // Warn if conversion happened
+          if (originalName !== kebabName) {
+            console.warn(
+              `\n⚠️  Server name '${originalName}' was auto-converted to kebab-case: '${kebabName}'` +
+              `\n   Please use kebab-case (lowercase with hyphens) in your IServer interface.\n`
+            );
+          }
+
+          name = kebabName;
         }
       } else if (memberName === 'version' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
@@ -1710,8 +2401,26 @@ function parseServerInterface(
         const literal = member.type.literal;
         if (ts.isStringLiteral(literal)) {
           const value = literal.text;
-          if (value === 'stdio' || value === 'http') {
-            transport = value;
+          if (value === 'stdio' || value === 'http' || value === 'websocket') {
+            transport = value as 'stdio' | 'http' | 'websocket';
+          }
+        }
+      } else if (memberName === 'websocket' && member.type && ts.isTypeLiteralNode(member.type)) {
+        // Parse websocket config object
+        websocketConfig = {};
+        for (const prop of member.type.members) {
+          if (ts.isPropertySignature(prop) && prop.name) {
+            const propName = prop.name.getText(sourceFile);
+            if (prop.type && ts.isLiteralTypeNode(prop.type)) {
+              const propLiteral = prop.type.literal;
+              if (ts.isNumericLiteral(propLiteral)) {
+                const value = parseInt(propLiteral.text, 10);
+                if (propName === 'port') websocketConfig.port = value;
+                else if (propName === 'heartbeatInterval') websocketConfig.heartbeatInterval = value;
+                else if (propName === 'heartbeatTimeout') websocketConfig.heartbeatTimeout = value;
+                else if (propName === 'maxMessageSize') websocketConfig.maxMessageSize = value;
+              }
+            }
           }
         }
       } else if (memberName === 'port' && member.type && ts.isLiteralTypeNode(member.type)) {
@@ -1733,6 +2442,20 @@ function parseServerInterface(
             stateful = false;
           }
         }
+      } else if (memberName === 'flattenRouters' && member.type) {
+        // Handle both direct boolean keywords and literal type nodes
+        if (member.type.kind === ts.SyntaxKind.TrueKeyword) {
+          flattenRouters = true;
+        } else if (member.type.kind === ts.SyntaxKind.FalseKeyword) {
+          flattenRouters = false;
+        } else if (ts.isLiteralTypeNode(member.type)) {
+          const literal = member.type.literal;
+          if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+            flattenRouters = true;
+          } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+            flattenRouters = false;
+          }
+        }
       } else if (memberName === 'auth' && member.type && ts.isTypeReferenceNode(member.type)) {
         // Extract interface name being referenced
         authInterfaceName = member.type.typeName.getText(sourceFile);
@@ -1740,14 +2463,33 @@ function parseServerInterface(
     }
   }
 
-  if (!name || !version) {
-    console.warn(`Server interface ${interfaceName} missing required properties`);
+  if (!name) {
+    console.warn(`Server interface ${interfaceName} missing required 'name' property`);
     return null;
   }
 
-  // Default to 'stdio' if transport not specified
+  if (!description) {
+    console.warn(`Server interface ${interfaceName} missing required 'description' property`);
+    return null;
+  }
+
+  // Default version to '1.0.0' if not specified
+  if (!version) {
+    version = '1.0.0';
+  }
+
+  // Infer transport from config if not explicitly specified
   if (!transport) {
-    transport = 'stdio';
+    if (websocketConfig) {
+      // If websocket config exists, infer websocket transport
+      transport = 'websocket';
+    } else if (port !== undefined || stateful !== undefined) {
+      // If HTTP-related config exists, infer HTTP transport
+      transport = 'http';
+    } else {
+      // Default to stdio (no config needed)
+      transport = 'stdio';
+    }
   }
 
   // Resolve auth interface if referenced
@@ -1767,6 +2509,8 @@ function parseServerInterface(
     transport,
     port,
     stateful,
+    websocket: websocketConfig,
+    flattenRouters,
     auth,
   };
 }
@@ -1777,9 +2521,18 @@ function parseServerInterface(
 function parseAuthInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFile): ParsedAuth | null {
   const interfaceName = node.name.text;
   let authType: 'apiKey' | 'oauth2' | 'database' | 'custom' | undefined;
+
+  // API Key fields
   let headerName: string | undefined;
   let allowAnonymous: boolean | undefined;
   let keys: Array<{ name: string; key: string; permissions: string[] }> | undefined;
+
+  // OAuth2 fields
+  let issuerUrl: string | undefined;
+  let clients: Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> | undefined;
+  let tokenExpiration: number | undefined;
+  let refreshTokenExpiration: number | undefined;
+  let codeExpiration: number | undefined;
 
   // Parse interface members
   for (const member of node.members) {
@@ -1794,7 +2547,9 @@ function parseAuthInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Source
             authType = value;
           }
         }
-      } else if (memberName === 'headerName' && member.type && ts.isLiteralTypeNode(member.type)) {
+      }
+      // API Key fields
+      else if (memberName === 'headerName' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
         if (ts.isStringLiteral(literal)) {
           headerName = literal.text;
@@ -1817,6 +2572,31 @@ function parseAuthInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Source
         // Parse keys array - should be a tuple type with object literals
         keys = parseKeysArray(member.type, sourceFile);
       }
+      // OAuth2 fields
+      else if (memberName === 'issuerUrl' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          issuerUrl = literal.text;
+        }
+      } else if (memberName === 'clients' && member.type) {
+        // Parse clients array - should be a tuple type with object literals
+        clients = parseOAuthClientsArray(member.type, sourceFile);
+      } else if (memberName === 'tokenExpiration' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isNumericLiteral(literal)) {
+          tokenExpiration = parseInt(literal.text, 10);
+        }
+      } else if (memberName === 'refreshTokenExpiration' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isNumericLiteral(literal)) {
+          refreshTokenExpiration = parseInt(literal.text, 10);
+        }
+      } else if (memberName === 'codeExpiration' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isNumericLiteral(literal)) {
+          codeExpiration = parseInt(literal.text, 10);
+        }
+      }
     }
   }
 
@@ -1828,9 +2608,16 @@ function parseAuthInterface(node: ts.InterfaceDeclaration, sourceFile: ts.Source
   return {
     type: authType,
     interfaceName,
+    // API Key fields
     headerName,
     keys,
     allowAnonymous,
+    // OAuth2 fields
+    issuerUrl,
+    clients,
+    tokenExpiration,
+    refreshTokenExpiration,
+    codeExpiration,
   };
 }
 
@@ -1909,4 +2696,99 @@ function parseKeyConfig(
   }
 
   return { name, key, permissions };
+}
+
+/**
+ * Parse OAuth clients array from tuple type
+ * Example: [{ clientId: 'web-app', clientSecret: 'secret', redirectUris: ['...'], scopes: ['read'] }]
+ */
+function parseOAuthClientsArray(
+  typeNode: ts.TypeNode,
+  sourceFile: ts.SourceFile
+): Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> | undefined {
+  if (!ts.isTupleTypeNode(typeNode)) {
+    return undefined;
+  }
+
+  const clients: Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> = [];
+
+  for (const element of typeNode.elements) {
+    // Handle NamedTupleMember for labeled tuples
+    const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+
+    if (ts.isTypeLiteralNode(elementType)) {
+      const clientConfig = parseOAuthClientConfig(elementType, sourceFile);
+      if (clientConfig) {
+        clients.push(clientConfig);
+      }
+    }
+  }
+
+  return clients.length > 0 ? clients : undefined;
+}
+
+/**
+ * Parse a single OAuth client configuration object
+ * Example: { clientId: 'web-app', clientSecret: 'secret', redirectUris: ['http://localhost:3000'], scopes: ['read', 'write'], name: 'Web App' }
+ */
+function parseOAuthClientConfig(
+  typeNode: ts.TypeLiteralNode,
+  sourceFile: ts.SourceFile
+): { clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string } | null {
+  let clientId = '';
+  let clientSecret = '';
+  let redirectUris: string[] = [];
+  let scopes: string[] = [];
+  let name: string | undefined;
+
+  for (const member of typeNode.members) {
+    if (ts.isPropertySignature(member) && member.name && member.type) {
+      const memberName = member.name.getText(sourceFile);
+
+      if (memberName === 'clientId' && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          clientId = literal.text;
+        }
+      } else if (memberName === 'clientSecret' && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          clientSecret = literal.text;
+        }
+      } else if (memberName === 'name' && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          name = literal.text;
+        }
+      } else if (memberName === 'redirectUris' && ts.isTupleTypeNode(member.type)) {
+        // Parse redirectUris array
+        for (const element of member.type.elements) {
+          const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+          if (ts.isLiteralTypeNode(elementType)) {
+            const literal = elementType.literal;
+            if (ts.isStringLiteral(literal)) {
+              redirectUris.push(literal.text);
+            }
+          }
+        }
+      } else if (memberName === 'scopes' && ts.isTupleTypeNode(member.type)) {
+        // Parse scopes array
+        for (const element of member.type.elements) {
+          const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+          if (ts.isLiteralTypeNode(elementType)) {
+            const literal = elementType.literal;
+            if (ts.isStringLiteral(literal)) {
+              scopes.push(literal.text);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (!clientId || !clientSecret || redirectUris.length === 0 || scopes.length === 0) {
+    return null;
+  }
+
+  return { clientId, clientSecret, redirectUris, scopes, name };
 }
