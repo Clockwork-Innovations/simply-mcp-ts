@@ -4,7 +4,7 @@
  * This is a fixture file for testing the auth adapter.
  */
 
-import type { IServer, IApiKeyAuth, ITool } from '../../src/index.js';
+import type { IServer, IApiKeyAuth, ITool, ToolHelper } from '../../src/index.js';
 
 // Define API Key authentication configuration
 interface AdminAuth extends IApiKeyAuth {
@@ -28,17 +28,39 @@ interface TestAuthServer extends IServer {
   auth: AdminAuth;
 }
 
-// Define a simple tool
+// Define a simple tool with proper IParam format
 interface GreetTool extends ITool {
   name: 'greet';
   description: 'Greet a user';
-  params: { name: string };
+  params: {
+    name: { type: 'string'; description: 'Name of the user to greet' };
+  };
   result: string;
 }
 
-// Implement the server
-export default class TestAuthServerImpl implements TestAuthServer {
-  greet: GreetTool = async (params) => {
-    return `Hello, ${params.name}!`;
-  };
-}
+// Tool implementation
+const greet: ToolHelper<GreetTool> = async (params) => {
+  return `Hello, ${params.name}!`;
+};
+
+// Server implementation using v4 const-based pattern
+const server: TestAuthServer = {
+  name: 'test-auth-server',
+  version: '1.0.0',
+  description: 'Test server with authentication',
+  transport: 'http',
+  port: 3000,
+  auth: {
+    type: 'apiKey',
+    headerName: 'x-api-key',
+    keys: [
+      { name: 'admin', key: 'sk-admin-xyz123', permissions: ['*'] },
+      { name: 'readonly', key: 'sk-read-abc456', permissions: ['read:*'] },
+      { name: 'weather', key: 'sk-weather-def789', permissions: ['tool:get_weather', 'tool:get_forecast'] }
+    ],
+    allowAnonymous: false
+  },
+  greet
+};
+
+export default server;

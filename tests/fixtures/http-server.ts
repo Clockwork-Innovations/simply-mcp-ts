@@ -5,7 +5,7 @@
  * Should start on HTTP without needing --http CLI flag.
  */
 
-import type { ITool, IServer } from '../../src/interface-types.js';
+import type { ITool, IServer, ToolHelper } from '../../src/interface-types.js';
 
 // Server configuration with HTTP transport
 interface MyHttpServer extends IServer {
@@ -17,17 +17,30 @@ interface MyHttpServer extends IServer {
   stateful: true;
 }
 
-// Simple greet tool
+// Simple greet tool with proper IParam format
 interface GreetTool extends ITool {
   name: 'greet';
   description: 'Greet a user by name';
-  params: { name: string };
+  params: {
+    name: { type: 'string'; description: 'Name of the user to greet' };
+  };
   result: string;
 }
 
-// Server implementation
-export default class HttpTestServer implements MyHttpServer {
-  greet: GreetTool = async ({ name }) => {
-    return `Hello, ${name}! This server is configured for HTTP transport.`;
-  };
-}
+// Tool implementation
+const greet: ToolHelper<GreetTool> = async (params) => {
+  return `Hello, ${params.name}! This server is configured for HTTP transport.`;
+};
+
+// Server implementation using v4 const-based pattern
+const server: MyHttpServer = {
+  name: 'http-test-server',
+  version: '1.0.0',
+  description: 'Test server with HTTP transport configured in file',
+  transport: 'http',
+  port: 4000,
+  stateful: true,
+  greet
+};
+
+export default server;

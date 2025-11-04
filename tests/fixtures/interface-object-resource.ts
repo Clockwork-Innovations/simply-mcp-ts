@@ -21,7 +21,7 @@
  * ```
  */
 
-import type { IServer, ITool, IResource } from '../../src/index.js';
+import type { IServer, ITool, IResource, ToolHelper } from '../../src/index.js';
 
 // =============================================================================
 // SERVER INTERFACE
@@ -41,7 +41,7 @@ interface PingTool extends ITool {
   name: 'ping';
   description: 'Simple ping tool';
   params: {
-    message: string;
+    message: { type: 'string'; description: 'Message to echo back' };
   };
   result: {
     echoed: string;
@@ -148,18 +148,23 @@ interface StatsResource extends IResource {
 }
 
 // =============================================================================
+// TOOL IMPLEMENTATION
+// =============================================================================
+
+const ping: ToolHelper<PingTool> = async (params) => ({
+  echoed: params.message,
+});
+
+// =============================================================================
 // SERVER IMPLEMENTATION
 // =============================================================================
 
-export default class ObjectResourceFixture implements ObjectResourceServer {
-  // Server metadata from interface
-  name = 'object-resource-fixture' as const;
-  description = 'Test server for object-with-data resource pattern' as const;
+const server: ObjectResourceServer = {
+  name: 'object-resource-fixture',
+  description: 'Test server for object-with-data resource pattern',
 
-  // Tool implementation (for completeness)
-  ping = async (params: { message: string }) => ({
-    echoed: params.message,
-  });
+  // Tool implementation
+  ping,
 
   // =============================================================================
   // PATTERN 3: Object with data property
@@ -168,18 +173,18 @@ export default class ObjectResourceFixture implements ObjectResourceServer {
   /**
    * Test Case 1: Simple object with inline data
    */
-  ['config://pokedex/server'] = {
+  'config://pokedex/server': {
     uri: 'config://pokedex/server',
     name: 'Server Configuration',
     description: 'Pokedex server configuration',
     mimeType: 'application/json',
     data: { totalPokemon: 151, region: 'Kanto' },
-  };
+  },
 
   /**
    * Test Case 2: Object with nested data structures
    */
-  ['config://database'] = {
+  'config://database': {
     uri: 'config://database',
     name: 'Database Configuration',
     description: 'Database connection settings',
@@ -196,12 +201,12 @@ export default class ObjectResourceFixture implements ObjectResourceServer {
         { name: 'readonly', size: 5 },
       ],
     },
-  };
+  },
 
   /**
    * Test Case 3: Object with array data
    */
-  ['data://pokemon/list'] = {
+  'data://pokemon/list': {
     uri: 'data://pokemon/list',
     name: 'Pokemon List',
     description: 'List of Generation 1 Pokemon',
@@ -211,38 +216,38 @@ export default class ObjectResourceFixture implements ObjectResourceServer {
       { id: 4, name: 'Charmander', type: 'Fire' },
       { id: 7, name: 'Squirtle', type: 'Water' },
     ],
-  };
+  },
 
   /**
    * Test Case 4: Object with all IResource properties
    * Note: The object properties should override interface defaults
    */
-  ['resource://detailed'] = {
+  'resource://detailed': {
     uri: 'resource://detailed',
     name: 'Detailed Resource Override',
     description: 'Description from object, not interface',
     mimeType: 'application/json', // Note: object says json, interface says text/plain
     data: { value: 'test-value' },
-  };
+  },
 
   /**
    * Test Case 5: Multiple object resources
    */
-  ['region://kanto'] = {
+  'region://kanto': {
     uri: 'region://kanto',
     name: 'Kanto Region',
     description: 'Information about Kanto region',
     mimeType: 'application/json',
     data: { name: 'Kanto', gymCount: 8 },
-  };
+  },
 
-  ['region://johto'] = {
+  'region://johto': {
     uri: 'region://johto',
     name: 'Johto Region',
     description: 'Information about Johto region',
     mimeType: 'application/json',
     data: { name: 'Johto', gymCount: 8 },
-  };
+  },
 
   // =============================================================================
   // PATTERN 2: Function-based dynamic resource (for mixed testing)
@@ -252,8 +257,10 @@ export default class ObjectResourceFixture implements ObjectResourceServer {
    * Pattern 2: Function-based resource for comparison
    * This should work alongside Pattern 3 object resources
    */
-  'stats://server' = async () => ({
+  'stats://server': async () => ({
     requestCount: Math.floor(Math.random() * 1000),
     uptime: Date.now(),
-  });
-}
+  })
+};
+
+export default server;
