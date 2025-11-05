@@ -183,6 +183,14 @@ export interface ResourceContext {
  * Resources are implemented using ResourceHelper type with const-based pattern.
  * Resources can be either static (with `value` field) or dynamic (with `returns` field).
  *
+ * **IMPORTANT:** A resource must have EXACTLY ONE of `value` or `returns`:
+ * - Use `value` for static resources (literal data, no implementation)
+ * - Use `returns` for dynamic resources (type definition, requires implementation)
+ * - Having both or neither will cause validation errors
+ *
+ * **Type Guards:** Use `isStaticResource()` or `isDynamicResource()` to check resource type
+ * **Validation:** Use `validateResource()` to ensure only one field is present
+ *
  * **Static Resources** - Use `value` field with literal data (no implementation needed):
  * @example
  * ```typescript
@@ -280,14 +288,36 @@ export interface IResource<T = any> {
   /**
    * Static literal data for static resources.
    * Use this for resources that contain fixed data that doesn't change.
-   * Cannot be used together with `returns`.
+   *
+   * **IMPORTANT:** Cannot be used together with `returns`.
+   * A resource must have EXACTLY ONE of `value` or `returns`.
+   *
+   * @example
+   * ```typescript
+   * interface ConfigResource extends IResource {
+   *   value: { version: '1.0.0' };  // Static data
+   * }
+   * ```
    */
   value?: T;
 
   /**
    * Type definition for dynamic resources.
    * Use this for resources that require runtime implementation.
-   * Cannot be used together with `value`.
+   *
+   * **IMPORTANT:** Cannot be used together with `value`.
+   * A resource must have EXACTLY ONE of `value` or `returns`.
+   *
+   * @example
+   * ```typescript
+   * interface StatsResource extends IResource {
+   *   returns: { count: number };  // Requires implementation
+   * }
+   *
+   * const stats: ResourceHelper<StatsResource> = async () => ({
+   *   count: await getCount()
+   * });
+   * ```
    */
   returns?: T;
 
@@ -324,3 +354,90 @@ export interface IResource<T = any> {
  * ```
  */
 export type ResourceData<T extends IResource> = T extends IResource<infer D> ? D : never;
+
+/**
+ * Type guard to check if a resource is static (has value field)
+ *
+ * @param resource - Resource interface to check
+ * @returns True if resource has value field (static), false otherwise
+ *
+ * @example
+ * ```typescript
+ * interface ConfigResource extends IResource {
+ *   uri: 'config://app';
+ *   name: 'Config';
+ *   value: { version: '1.0.0' };
+ * }
+ *
+ * const resource: any = { uri: 'config://app', value: { version: '1.0.0' } };
+ *
+ * if (isStaticResource(resource)) {
+ *   console.log('Static resource:', resource.value);
+ * }
+ * ```
+ */
+export function isStaticResource<T = any>(resource: IResource<T>): resource is IResource<T> & { value: T } {
+  return 'value' in resource && resource.value !== undefined;
+}
+
+/**
+ * Type guard to check if a resource is dynamic (has returns field)
+ *
+ * @param resource - Resource interface to check
+ * @returns True if resource has returns field (dynamic), false otherwise
+ *
+ * @example
+ * ```typescript
+ * interface StatsResource extends IResource {
+ *   uri: 'stats://server';
+ *   name: 'Stats';
+ *   returns: { uptime: number };
+ * }
+ *
+ * const resource: any = { uri: 'stats://server', returns: {} };
+ *
+ * if (isDynamicResource(resource)) {
+ *   console.log('Dynamic resource - requires implementation');
+ * }
+ * ```
+ */
+export function isDynamicResource<T = any>(resource: IResource<T>): resource is IResource<T> & { returns: T } {
+  return 'returns' in resource && resource.returns !== undefined;
+}
+
+/**
+ * Validates that a resource has exactly one of value or returns
+ *
+ * @param resource - Resource interface to validate
+ * @throws Error if both value and returns are present, or if neither is present
+ *
+ * @example
+ * ```typescript
+ * const validStatic = { uri: 'x', name: 'X', value: {} };
+ * validateResource(validStatic);  // ✅ OK
+ *
+ * const validDynamic = { uri: 'y', name: 'Y', returns: {} };
+ * validateResource(validDynamic);  // ✅ OK
+ *
+ * const invalid = { uri: 'z', name: 'Z', value: {}, returns: {} };
+ * validateResource(invalid);  // ❌ Throws Error
+ * ```
+ */
+export function validateResource(resource: IResource): void {
+  const hasValue = 'value' in resource && resource.value !== undefined;
+  const hasReturns = 'returns' in resource && resource.returns !== undefined;
+
+  if (hasValue && hasReturns) {
+    throw new Error(
+      `Resource '${resource.uri}' has both 'value' and 'returns' fields. ` +
+      `Only one should be specified: use 'value' for static resources or 'returns' for dynamic resources.`
+    );
+  }
+
+  if (!hasValue && !hasReturns) {
+    throw new Error(
+      `Resource '${resource.uri}' has neither 'value' nor 'returns' field. ` +
+      `One must be specified: use 'value' for static resources or 'returns' for dynamic resources.`
+    );
+  }
+}

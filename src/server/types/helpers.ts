@@ -204,6 +204,9 @@ export type InferPromptArgs<T extends { args: any }> = {
  * Use this type to create const-based prompt implementations with full type safety.
  * It automatically infers argument types from your prompt interface.
  *
+ * **Context Parameter:** Optional HandlerContext provides access to logging, permissions,
+ * and other runtime services. Consistent with ToolHelper and ResourceHelper patterns.
+ *
  * @template T - Prompt interface with args field
  *
  * @example Simple Prompt
@@ -219,6 +222,23 @@ export type InferPromptArgs<T extends { args: any }> = {
  * const greeting: PromptHelper<GreetingPrompt> = (args) => {
  *   // args.name is string (inferred!)
  *   return `Hello, ${args.name}!`;
+ * };
+ * ```
+ *
+ * @example With Context (Logging)
+ * ```typescript
+ * interface DiagnosticPrompt extends IPrompt {
+ *   name: 'diagnose';
+ *   description: 'Generate diagnostic prompt';
+ *   args: {
+ *     issue: { description: 'Issue description' };
+ *   };
+ * }
+ *
+ * const diagnose: PromptHelper<DiagnosticPrompt> = (args, context) => {
+ *   // Use context for logging
+ *   context?.logger?.info('Generating diagnostic prompt', { issue: args.issue });
+ *   return `Diagnosing issue: ${args.issue}`;
  * };
  * ```
  *
@@ -241,7 +261,8 @@ export type InferPromptArgs<T extends { args: any }> = {
  *
  * @example Async Prompt
  * ```typescript
- * const asyncPrompt: PromptHelper<MyPrompt> = async (args) => {
+ * const asyncPrompt: PromptHelper<MyPrompt> = async (args, context) => {
+ *   context?.logger?.info('Fetching data...');
  *   const data = await fetchData(args.query);
  *   return `Result: ${data}`;
  * };
@@ -257,7 +278,7 @@ export type InferPromptArgs<T extends { args: any }> = {
  * ```
  */
 export type PromptHelper<T extends { args: any }> =
-  (args: InferPromptArgs<T>) =>
+  (args: InferPromptArgs<T>, context?: import('../../types/handler.js').HandlerContext) =>
     string | PromptMessage[] | SimpleMessage[] | Promise<string | PromptMessage[] | SimpleMessage[]>;
 
 /**
