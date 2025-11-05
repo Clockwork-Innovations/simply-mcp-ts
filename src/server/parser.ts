@@ -174,6 +174,32 @@ export interface ParsedCompletion {
 }
 
 /**
+ * Discovered const implementation
+ */
+export interface DiscoveredImplementation {
+  /** Variable name (e.g., 'add', 'usersResource') */
+  name: string;
+  /** Type annotation (e.g., 'ToolHelper<AddTool>') */
+  helperType: 'ToolHelper' | 'PromptHelper' | 'ResourceHelper';
+  /** Generic type argument (e.g., 'AddTool') */
+  interfaceName: string;
+  /** Whether this is a const or class property */
+  kind: 'const' | 'class-property';
+  /** If class property, the class name */
+  className?: string;
+}
+
+/**
+ * Discovered class instance
+ */
+export interface DiscoveredInstance {
+  /** Variable name (e.g., 'weatherService') */
+  instanceName: string;
+  /** Class name (e.g., 'WeatherService') */
+  className: string;
+}
+
+/**
  * Parsed UI interface metadata
  */
 export interface ParsedUI {
@@ -388,6 +414,10 @@ export interface ParseResult {
   className?: string;
   /** Validation errors encountered during parsing */
   validationErrors?: string[];
+  /** Discovered implementations (NEW v4 auto-discovery) */
+  implementations?: DiscoveredImplementation[];
+  /** Discovered class instances (NEW v4 auto-discovery) */
+  instances?: DiscoveredInstance[];
 }
 
 /**
@@ -474,6 +504,8 @@ export function parseInterfaceFile(filePath: string): ParseResult {
     uis: [],
     routers: [],
     validationErrors: [],
+    implementations: [],
+    instances: [],
   };
 
   // Store auth interfaces by name for resolution
@@ -481,6 +513,49 @@ export function parseInterfaceFile(filePath: string): ParseResult {
 
   // Visit all nodes in the source file
   function visit(node: ts.Node) {
+    // NEW: Discover const server
+    const constServer = discoverConstServer(node, sourceFile);
+    if (constServer && !result.server) {
+      // Extract server metadata from object literal
+      const initializer = constServer.initializer;
+      if (initializer && ts.isObjectLiteralExpression(initializer)) {
+        const serverData: any = {};
+        for (const prop of initializer.properties) {
+          if (ts.isPropertyAssignment(prop)) {
+            const name = prop.name.getText(sourceFile);
+            const value = prop.initializer;
+
+            if (ts.isStringLiteral(value) || ts.isNumericLiteral(value)) {
+              serverData[name] = value.text;
+            } else if (ts.isToken(value) && value.kind === ts.SyntaxKind.TrueKeyword) {
+              serverData[name] = true;
+            } else if (ts.isToken(value) && value.kind === ts.SyntaxKind.FalseKeyword) {
+              serverData[name] = false;
+            }
+          }
+        }
+
+        result.server = {
+          interfaceName: 'IServer',
+          name: serverData.name || 'unknown',
+          version: serverData.version || '1.0.0',
+          description: serverData.description
+        };
+      }
+    }
+
+    // NEW: Discover const implementations
+    const constImpl = discoverConstImplementation(node, sourceFile);
+    if (constImpl) {
+      result.implementations!.push(constImpl);
+    }
+
+    // NEW: Discover class instantiations
+    const instance = discoverClassInstance(node, sourceFile);
+    if (instance) {
+      result.instances!.push(instance);
+    }
+
     // Check for interface declarations
     if (ts.isInterfaceDeclaration(node)) {
       const interfaceName = node.name.text;
@@ -541,6 +616,10 @@ export function parseInterfaceFile(filePath: string): ParseResult {
         return;
       }
 
+      // NEW: Discover class property implementations
+      const classImpls = discoverClassImplementations(node, sourceFile);
+      result.implementations!.push(...classImpls);
+
       const modifiers = node.modifiers ? Array.from(node.modifiers) : [];
       const hasDefaultExport = modifiers.some(mod => mod.kind === ts.SyntaxKind.DefaultKeyword);
       const hasExport = modifiers.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword);
@@ -587,7 +666,137 @@ export function parseInterfaceFile(filePath: string): ParseResult {
 
   visit(sourceFile);
 
+  // Link implementations to interfaces
+  linkImplementationsToInterfaces(result);
+
   return result;
+}
+
+/**
+ * Discover const server definition
+ * Pattern: const server: IServer = { ... }
+ */
+function discoverConstServer(node: ts.Node, sourceFile: ts.SourceFile): ts.VariableDeclaration | null {
+  if (!ts.isVariableStatement(node)) return null;
+
+  for (const declaration of node.declarationList.declarations) {
+    if (!declaration.type) continue;
+
+    const typeText = declaration.type.getText(sourceFile);
+    if (typeText === 'IServer') {
+      return declaration;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Discover const implementations
+ * Pattern: const add: ToolHelper<AddTool> = async (params) => { ... }
+ */
+function discoverConstImplementation(node: ts.Node, sourceFile: ts.SourceFile): DiscoveredImplementation | null {
+  if (!ts.isVariableStatement(node)) return null;
+
+  for (const declaration of node.declarationList.declarations) {
+    if (!declaration.type) continue;
+
+    const typeText = declaration.type.getText(sourceFile);
+
+    // Check for ToolHelper<X>, PromptHelper<X>, ResourceHelper<X>
+    const helperMatch = typeText.match(/^(Tool|Prompt|Resource)Helper<(\w+)>$/);
+    if (helperMatch) {
+      const [, helper, interfaceName] = helperMatch;
+
+      return {
+        name: declaration.name.getText(sourceFile),
+        helperType: `${helper}Helper` as any,
+        interfaceName,
+        kind: 'const'
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Discover class property implementations
+ * Pattern: class C { getWeather: ToolHelper<GetWeatherTool> = async (params) => { ... } }
+ */
+function discoverClassImplementations(node: ts.ClassDeclaration, sourceFile: ts.SourceFile): DiscoveredImplementation[] {
+  const implementations: DiscoveredImplementation[] = [];
+  const className = node.name?.text;
+
+  if (!className) return implementations;
+
+  for (const member of node.members) {
+    if (!ts.isPropertyDeclaration(member)) continue;
+    if (!member.type) continue;
+
+    const typeText = member.type.getText(sourceFile);
+    const helperMatch = typeText.match(/^(Tool|Prompt|Resource)Helper<(\w+)>$/);
+
+    if (helperMatch) {
+      const [, helper, interfaceName] = helperMatch;
+
+      implementations.push({
+        name: member.name.getText(sourceFile),
+        helperType: `${helper}Helper` as any,
+        interfaceName,
+        kind: 'class-property',
+        className
+      });
+    }
+  }
+
+  return implementations;
+}
+
+/**
+ * Discover class instantiations
+ * Pattern: const weatherService = new WeatherService();
+ */
+function discoverClassInstance(node: ts.Node, sourceFile: ts.SourceFile): DiscoveredInstance | null {
+  if (!ts.isVariableStatement(node)) return null;
+
+  for (const declaration of node.declarationList.declarations) {
+    if (!declaration.initializer) continue;
+    if (!ts.isNewExpression(declaration.initializer)) continue;
+
+    const className = declaration.initializer.expression.getText(sourceFile);
+    const instanceName = declaration.name.getText(sourceFile);
+
+    return { instanceName, className };
+  }
+
+  return null;
+}
+
+/**
+ * Link discovered implementations to their interfaces
+ */
+function linkImplementationsToInterfaces(result: ParseResult) {
+  if (!result.implementations) return;
+
+  for (const impl of result.implementations) {
+    if (impl.helperType === 'ToolHelper') {
+      const tool = result.tools.find(t => t.interfaceName === impl.interfaceName);
+      if (tool) {
+        (tool as any).implementation = impl;
+      }
+    } else if (impl.helperType === 'ResourceHelper') {
+      const resource = result.resources.find(r => r.interfaceName === impl.interfaceName);
+      if (resource) {
+        (resource as any).implementation = impl;
+      }
+    } else if (impl.helperType === 'PromptHelper') {
+      const prompt = result.prompts.find(p => p.interfaceName === impl.interfaceName);
+      if (prompt) {
+        (prompt as any).implementation = impl;
+      }
+    }
+  }
 }
 
 /**
