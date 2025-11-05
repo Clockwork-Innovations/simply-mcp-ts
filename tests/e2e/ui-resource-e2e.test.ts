@@ -14,6 +14,7 @@ import {
   createMCPChromeHelper,
   waitForCondition,
 } from './helpers/mcp-chrome-helper.js';
+import { describeIfHasBrowserAutomation } from '../utils/conditional-tests.js';
 
 /**
  * E2E Test Suite for MCP UI Resources
@@ -80,11 +81,12 @@ describe('MCP UI Resource E2E Tests', () => {
   });
 
   /**
-   * Example E2E test flow (currently disabled)
+   * Example E2E test flow
    *
-   * Uncomment when ready to run actual E2E tests with MCP Chrome DevTools
+   * Automatically runs when browser automation is available (e.g., on development laptop),
+   * skips when not available (e.g., in cloud IDEs like Claude Code)
    */
-  describe.skip('Calculator UI Resource (Example)', () => {
+  describeIfHasBrowserAutomation('Calculator UI Resource (Example)', () => {
     it('should render calculator UI and handle tool calls', async () => {
       // Navigate to server with calculator UI resource
       await helper.navigateToServer('examples/create-ui-resource-demo.ts');
@@ -119,7 +121,7 @@ describe('MCP UI Resource E2E Tests', () => {
     });
   });
 
-  describe.skip('Notification Feature (Example)', () => {
+  describeIfHasBrowserAutomation('Notification Feature (Example)', () => {
     it('should display notifications correctly', async () => {
       await helper.navigateToServer('examples/create-ui-resource-demo.ts');
 
@@ -143,7 +145,7 @@ describe('MCP UI Resource E2E Tests', () => {
     });
   });
 
-  describe.skip('Link Navigation Feature (Example)', () => {
+  describeIfHasBrowserAutomation('Link Navigation Feature (Example)', () => {
     it('should navigate to external links', async () => {
       await helper.navigateToServer('examples/create-ui-resource-demo.ts');
 
@@ -159,7 +161,7 @@ describe('MCP UI Resource E2E Tests', () => {
     });
   });
 
-  describe.skip('Prompt Submission Feature (Example)', () => {
+  describeIfHasBrowserAutomation('Prompt Submission Feature (Example)', () => {
     it('should submit prompts to LLM', async () => {
       await helper.navigateToServer('examples/create-ui-resource-demo.ts');
 
@@ -183,7 +185,7 @@ describe('MCP UI Resource E2E Tests', () => {
     });
   });
 
-  describe.skip('Console Message Verification (Example)', () => {
+  describeIfHasBrowserAutomation('Console Message Verification (Example)', () => {
     it('should capture console messages', async () => {
       await helper.navigateToServer('examples/create-ui-resource-demo.ts');
 
@@ -196,7 +198,7 @@ describe('MCP UI Resource E2E Tests', () => {
     });
   });
 
-  describe.skip('Script Execution (Example)', () => {
+  describeIfHasBrowserAutomation('Script Execution (Example)', () => {
     it('should execute JavaScript in page context', async () => {
       await helper.navigateToServer('examples/create-ui-resource-demo.ts');
 

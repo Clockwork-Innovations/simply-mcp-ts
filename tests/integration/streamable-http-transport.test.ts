@@ -24,11 +24,12 @@ import { randomUUID } from 'node:crypto';
 import { spawn, ChildProcess } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describeIfCanRunIntegration } from '../utils/conditional-tests.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-describe('Streamable HTTP Transport - Integration Tests', () => {
+describeIfCanRunIntegration('Streamable HTTP Transport - Integration Tests', () => {
   let serverProcess: ChildProcess;
   const port = 3457; // Use different port to avoid conflicts with http-oauth-integration (3456)
   const baseUrl = `http://localhost:${port}`;

@@ -17,8 +17,9 @@
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { RemoteDOMWorkerManager } from '../../../src/client/remote-dom/RemoteDOMWorkerManager.js';
 import type { RemoteDOMOperation } from '../../../src/client/remote-dom/types.js';
+import { describeIfHasWorkerAPI } from '../../utils/conditional-tests.js';
 
-describe('Remote DOM Worker - Foundation Layer', () => {
+describeIfHasWorkerAPI('Remote DOM Worker - Foundation Layer', () => {
   let manager: RemoteDOMWorkerManager;
 
   beforeEach(async () => {

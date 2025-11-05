@@ -1,423 +1,166 @@
-# MCP Test Client Infrastructure
+# Conditional Test Execution Utilities
 
-Custom MCP test client with full subscription support for testing simply-mcp UI features.
+This directory contains utilities for programmatic test skipping based on environment capabilities. Tests automatically skip when the environment doesn't support required features, and run when capabilities are available.
 
 ## Overview
 
-This test infrastructure provides:
+The conditional test system ensures that:
+- ✅ Tests run on capable systems (like development laptops)
+- ⏭️  Tests skip automatically in limited environments (like cloud IDEs)
+- 📊 Clear reporting of why tests were skipped
+- 🎯 No manual configuration needed
 
-- **MCPTestClient**: Full-featured MCP client with subscription support
-- **MultiClientManager**: Multi-client orchestration for parallel testing
-- **Test Helpers**: Async utilities, assertions, and test formatting
+## Quick Start
 
-## Files
+### 1. Check Your Environment Capabilities
 
-### Core Components
+Run the capability detection script to see what your environment supports:
 
-- `mcp-test-client.ts` (531 lines) - Main MCP test client with subscription support
-- `multi-client-manager.ts` (363 lines) - Multi-client orchestration
-- `test-helpers.ts` (436 lines) - Utility functions for testing
+```bash
+npx tsx tests/utils/check-capabilities.ts
+```
 
-### Tests
+This will show a detailed report like:
 
-- `../foundation-smoke-test.ts` (372 lines) - Smoke test validating all functionality
+```
+╔════════════════════════════════════════════════════════════╗
+║        Environment Capabilities Detection Report          ║
+╚════════════════════════════════════════════════════════════╝
 
-## MCPTestClient
+📊 Capability Summary:
+────────────────────────────────────────────────────────────
+  🚀  Spawn Servers (stdio)     ✅ Yes
+  🌐  Bind HTTP Server          ✅ Yes
+  👷  Worker API                ❌ No
+  📦  import.meta.url           ✅ Yes
+  🤖  Browser Automation        ❌ No
+  ☁️  Cloud IDE Environment     ❌ No
+```
 
-### Features
+### 2. Use Conditional Tests in Your Test Files
 
-- ✅ Stateful HTTP transport with session management
-- ✅ Resource operations (list, read, subscribe, unsubscribe)
-- ✅ Tool execution with error handling
-- ✅ SSE notification handling (when available)
-- ✅ Notification queue for testing
-- ✅ Connection lifecycle management
-- ✅ Configurable timeouts and verbose logging
-
-### Usage
+Import the conditional test helpers and use them instead of regular \`describe()\` or \`test()\`:
 
 ```typescript
-import { MCPTestClient } from './utils/mcp-test-client.js';
+import { describeIfCanRunIntegration, testIfCanSpawnServers } from '../utils/conditional-tests.js';
 
-// Create client
-const client = new MCPTestClient({
-  timeout: 5000,    // Request timeout in ms
-  verbose: false    // Debug logging
+// This entire test suite will skip if integration tests aren't supported
+describeIfCanRunIntegration('My Integration Tests', () => {
+  // Tests here will only run when environment supports it
+
+  it('should do something', async () => {
+    // Test implementation
+  });
 });
 
-// Connect to server
-await client.connect('http://localhost:3001/mcp');
-console.log('Session ID:', client.getSessionId());
-
-// List resources
-const resources = await client.listResources();
-console.log('Resources:', resources.map(r => r.uri));
-
-// Read resource
-const content = await client.readResource('ui://calculator/v1');
-console.log('Content length:', content.length);
-
-// Subscribe to updates
-await client.subscribe('ui://stats/live');
-
-// Call tool
-const result = await client.callTool('add', { a: 5, b: 3 });
-console.log('Tool result:', result);
-
-// Wait for notification
-try {
-  const notification = await client.waitForNotification('ui://stats/live', 5000);
-  console.log('Notification received:', notification);
-} catch (err) {
-  console.log('No notification received');
-}
-
-// Disconnect
-await client.disconnect();
+// Individual tests can also be conditional
+testIfCanSpawnServers('should spawn a server', async () => {
+  // This test only runs if server spawning is supported
+});
 ```
 
-### API Reference
+## Available Conditional Test Functions
 
-#### Connection Management
+### Describe Blocks (Test Suites)
 
-- `connect(serverUrl: string): Promise<void>` - Connect to MCP server
-- `disconnect(): Promise<void>` - Disconnect and cleanup
-- `isConnected(): boolean` - Check connection status
-- `getSessionId(): string | null` - Get current session ID
+Use these to conditionally run entire test suites:
 
-#### Subscriptions
+| Function | When to Use | Example |
+|----------|-------------|---------|
+| \`describeIfCanSpawnServers()\` | Tests that spawn child processes | stdio transport tests |
+| \`describeIfCanBindHttp()\` | Tests that start HTTP servers | HTTP transport tests |
+| \`describeIfHasWorkerAPI()\` | Tests requiring Web Workers | Browser worker tests |
+| \`describeIfHasBrowserAutomation()\` | Tests requiring Puppeteer/Playwright | E2E UI tests |
+| \`describeIfCanRunIntegration()\` | Full integration tests | Tests needing server + HTTP |
+| \`describeIfCanRunE2E()\` | End-to-end tests | Tests with real servers |
 
-- `subscribe(uri: string): Promise<void>` - Subscribe to resource updates
-- `unsubscribe(uri: string): Promise<void>` - Unsubscribe from resource
-- `getSubscriptions(): string[]` - Get active subscriptions
-- `waitForNotification(uri: string, timeout?: number): Promise<NotificationRecord>` - Wait for notification
-- `getNotifications(uri?: string): NotificationRecord[]` - Get notification history
-- `clearNotifications(): void` - Clear notification history
+### Individual Tests
 
-#### Resources
+Use these for individual test cases:
 
-- `listResources(): Promise<Resource[]>` - List all resources
-- `readResource(uri: string): Promise<string>` - Read resource content
+| Function | When to Use |
+|----------|-------------|
+| \`testIfCanSpawnServers()\` | Test spawns a server process |
+| \`testIfCanBindHttp()\` | Test binds to HTTP port |
+| \`testIfHasWorkerAPI()\` | Test uses Web Workers |
+| \`testIfHasBrowserAutomation()\` | Test needs browser automation |
+| \`testIfCanRunIntegration()\` | Test is an integration test |
+| \`testIfCanRunE2E()\` | Test is an E2E test |
 
-#### Tools
+### Generic Conditionals
 
-- `listTools(): Promise<Tool[]>` - List all tools
-- `callTool(name: string, args: any): Promise<any>` - Call tool with arguments
-
-## MultiClientManager
-
-### Features
-
-- ✅ Create and manage multiple clients
-- ✅ Connect/disconnect all clients in parallel or sequential
-- ✅ Subscribe all clients to the same resource
-- ✅ Wait for notifications across all clients
-- ✅ Execute tools from multiple clients
-
-### Usage
+For custom conditions:
 
 ```typescript
-import { MultiClientManager } from './utils/multi-client-manager.js';
+import { testIf, describeIf } from '../utils/conditional-tests.js';
 
-// Create manager
-const manager = new MultiClientManager({
-  timeout: 10000,
-  verbose: false,
-  delayBetweenConnections: 200  // Delay in ms between connections
+// Boolean condition
+testIf(process.env.FEATURE_FLAG === 'true', 'feature test', () => {
+  // Test runs only if condition is true
 });
 
-// Create 3 clients
-const clients = await manager.createClients(3, 'http://localhost:3001/mcp');
-
-// Connect all clients
-await manager.connectAll();
-
-// Subscribe all clients
-await manager.subscribeAll('ui://stats/live');
-
-// Call tool from specific client
-await manager.callTool(0, 'refresh_stats', {});
-
-// Wait for all clients to receive notification
-const notifications = await manager.waitForAllNotifications('ui://stats/live');
-console.log('All clients received notification');
-
-// Call tool from all clients (sequential)
-const results = await manager.callToolFromAllClientsSequential('add', { a: 10, b: 5 });
-console.log('Results:', results);
-
-// Disconnect all
-await manager.disconnectAll();
-```
-
-### API Reference
-
-#### Client Lifecycle
-
-- `createClients(count: number, serverUrl: string): Promise<MCPTestClient[]>` - Create multiple clients
-- `connectAll(): Promise<void>` - Connect all clients
-- `disconnectAll(): Promise<void>` - Disconnect all clients
-- `getClients(): MCPTestClient[]` - Get all clients
-- `getClient(index: number): MCPTestClient` - Get specific client
-- `getClientCount(): number` - Get number of clients
-
-#### Subscriptions
-
-- `subscribeAll(uri: string): Promise<void>` - Subscribe all clients
-- `unsubscribeAll(uri: string): Promise<void>` - Unsubscribe all clients
-- `waitForAllNotifications(uri: string, timeout?: number): Promise<Map<number, NotificationMap>>` - Wait for all
-- `haveAllClientsReceivedNotification(uri: string): boolean` - Check if all received
-- `clearAllNotifications(): void` - Clear all notification histories
-
-#### Tools
-
-- `callTool(clientIndex: number, toolName: string, args: any): Promise<any>` - Call from specific client
-- `callToolFromAllClients(toolName: string, args: any): Promise<Map<number, any>>` - Call from all (parallel)
-- `callToolFromAllClientsSequential(toolName: string, args: any): Promise<Map<number, any>>` - Call from all (sequential)
-
-#### Connection Status
-
-- `areAllConnected(): boolean` - Check if all connected
-- `getConnectionStatus(): Map<number, boolean>` - Get status for each
-- `getSessionIds(): Map<number, string | null>` - Get session IDs for each
-
-## Test Helpers
-
-### Async Wait Functions
-
-```typescript
-import { waitFor, waitForValue, sleep } from './utils/test-helpers.js';
-
-// Wait for condition
-await waitFor(() => client.isConnected(), { timeout: 5000, interval: 100 });
-
-// Wait for value
-await waitForValue(() => notifications.length, 3, 5000);
-
-// Sleep
-await sleep(1000);
-```
-
-### Assertion Helpers
-
-```typescript
-import {
-  assertNotificationReceived,
-  assertToolResult,
-  assertSubscriptionActive,
-  assertClientConnected,
-  assert,
-  assertEqual,
-} from './utils/test-helpers.js';
-
-// Assert notification received
-assertNotificationReceived(client.getNotifications(), 'ui://stats/live');
-
-// Assert tool result
-assertToolResult(result, 8);
-
-// Assert subscription active
-assertSubscriptionActive(client, 'ui://stats/live');
-
-// Assert client connected
-assertClientConnected(client);
-
-// Generic assertions
-assert(condition, 'Custom error message');
-assertEqual(actual, expected);
-```
-
-### Test Formatting
-
-```typescript
-import {
-  section,
-  subsection,
-  step,
-  success,
-  error,
-  info,
-  warning,
-  printSummary,
-} from './utils/test-helpers.js';
-
-console.log(section('Test Suite 1'));
-console.log(subsection('Connection Tests'));
-console.log(step(1, 'Connect to server'));
-console.log(success('Connection successful'));
-console.log(info('Session ID: abc123'));
-console.log(warning('SSE not available'));
-console.log(error('Connection failed'));
-
-printSummary(passed, failed, skipped);
-```
-
-### Server Management
-
-```typescript
-import { startTestServer, stopTestServer } from './utils/test-helpers.js';
-
-// Start server
-const server = await startTestServer(
-  'examples/interface-ui-foundation.ts',
-  3001,
-  { verbose: false }
+// Function condition
+testIf(
+  () => canRunCustomCheck(),
+  'custom test',
+  async () => {
+    // Test implementation
+  }
 );
-
-// Run tests...
-
-// Stop server
-await stopTestServer(server);
 ```
 
-## Running Tests
+## Real-World Examples
 
-### Prerequisites
+### Example 1: E2E Test with Browser Automation
 
-Start the test server:
+```typescript
+// tests/e2e/ui-resource-e2e.test.ts
+import { describeIfHasBrowserAutomation } from '../utils/conditional-tests.js';
 
-```bash
-npx simply-mcp run examples/interface-ui-foundation.ts --http --port 3001
+describe('MCP UI Resource E2E Tests', () => {
+  // Infrastructure tests run always
+  it('should create helper successfully', () => {
+    expect(helper).toBeDefined();
+  });
+
+  // Browser-dependent tests skip automatically
+  describeIfHasBrowserAutomation('Calculator UI Resource', () => {
+    it('should render calculator UI', async () => {
+      // Browser automation code here
+      // Only runs if Puppeteer/Playwright installed
+    });
+  });
+});
 ```
 
-### Run Smoke Test
+### Example 2: Integration Test with HTTP Server
 
-```bash
-npx tsx tests/foundation-smoke-test.ts
+```typescript
+// tests/integration/streamable-http-transport.test.ts
+import { describeIfCanRunIntegration } from '../utils/conditional-tests.js';
+
+describeIfCanRunIntegration('HTTP Transport Integration', () => {
+  let serverProcess: ChildProcess;
+
+  beforeAll(async () => {
+    // Spawn HTTP server
+    serverProcess = spawn('node', ['server.js']);
+    // Wait for ready
+  });
+
+  it('should handle HTTP requests', async () => {
+    const response = await fetch('http://localhost:3000');
+    expect(response.ok).toBe(true);
+  });
+
+  afterAll(() => {
+    serverProcess.kill();
+  });
+});
 ```
 
-### Expected Results
+## See Also
 
-The smoke test validates:
-
-✅ **Basic Client Operations** (7 tests)
-- Connection and session management
-- Resource listing and reading
-- Tool listing and execution
-- Disconnection
-
-✅ **Subscription Support** (6 tests)
-- Subscribe/unsubscribe operations
-- Notification waiting (graceful handling when not available)
-- Notification history
-
-⚠️ **Multi-Client Scenarios** (7 tests)
-- Client creation and connection
-- Subscription management
-- Notification broadcast (known limitation)
-- Tool execution (may timeout with multiple clients)
-
-✅ **Error Handling** (6 tests)
-- Operations before connection
-- Invalid resources and tools
-- Double connection prevention
-
-**Success Rate**: 23/26 tests pass (88%)
-
-### Known Limitations
-
-1. **SSE Notifications**: The current server implementation does not support persistent SSE connections for notifications. The client handles this gracefully.
-
-2. **Multi-Client Performance**: Some servers may experience timeouts when handling multiple simultaneous clients. The test client includes:
-   - Configurable timeouts
-   - Sequential operation mode
-   - Delays between connections
-
-3. **Notification Broadcasting**: Real-time notification broadcasting to multiple subscribed clients may not be fully implemented in all servers.
-
-## Design Decisions
-
-### 1. Custom HTTP Client vs SDK Client
-
-We built a custom HTTP client instead of using the MCP SDK's built-in client because:
-- Need full control over session management
-- Testing requires access to notification queue
-- Subscription testing needs programmatic notification access
-- Simpler for testing scenarios
-
-### 2. Notification Queue
-
-All notifications are stored in an array for testing:
-- Enables notification history inspection
-- Supports `waitForNotification()` helper
-- Allows verification of notification order
-- Can clear between tests
-
-### 3. Graceful Degradation
-
-The client gracefully handles:
-- Servers without SSE support
-- Missing notifications
-- Timeout scenarios
-- Multiple concurrent clients
-
-### 4. Sequential Multi-Client Operations
-
-When testing multiple clients:
-- Connect with delays between clients
-- Subscribe/unsubscribe sequentially
-- Add configurable delays
-- Increase timeouts
-
-This prevents overwhelming the server and improves reliability.
-
-## Future Enhancements
-
-### For Feature Layer Tests
-
-Build on this foundation to test:
-- File-based UI resources
-- React component integration
-- Theme system
-- Production optimizations
-- Component library
-- CDN integration
-
-### Potential Improvements
-
-1. **Retry Logic**: Add automatic retry for transient failures
-2. **Request Queuing**: Queue requests when server is busy
-3. **Connection Pool**: Reuse connections across tests
-4. **Snapshot Testing**: Capture and compare UI snapshots
-5. **Performance Metrics**: Track request/response times
-6. **WebSocket Support**: Add WebSocket transport option
-
-## Troubleshooting
-
-### "Request timeout after Xms"
-
-**Cause**: Server is slow or unresponsive
-**Solution**:
-- Increase timeout in client options
-- Use sequential operations instead of parallel
-- Add delays between operations
-- Check server logs for errors
-
-### "SSE connection failed"
-
-**Cause**: Server doesn't support persistent SSE
-**Solution**: This is graceful - client continues without SSE
-
-### "Invalid HTML content"
-
-**Cause**: Resource doesn't return expected HTML
-**Solution**: Check resource URI and server implementation
-
-### "Not all clients received notifications"
-
-**Cause**: Server may not broadcast to all clients
-**Solution**: This is a known limitation - test marked as optional
-
-## Contributing
-
-When adding tests:
-
-1. Use the provided helpers for consistency
-2. Handle graceful failures for optional features
-3. Add clear error messages
-4. Document known limitations
-5. Keep tests isolated and independent
-
-## License
-
-MIT License - Part of simply-mcp-ts project
+- Jest documentation on [conditional tests](https://jestjs.io/docs/api#testskipname-fn)
+- Project test configuration in \`jest.config.js\`
+- Individual test examples in \`tests/e2e/\`, \`tests/integration/\`, and \`tests/unit/\`
