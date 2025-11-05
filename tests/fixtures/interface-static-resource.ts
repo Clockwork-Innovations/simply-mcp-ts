@@ -1,4 +1,4 @@
-import type { IServer, ITool, IResource } from '../../src/index.js';
+import type { IServer, ITool, IResource, ToolHelper } from '../../src/index.js';
 
 const TYPE_CHART = {
   electric: ['water', 'flying'],
@@ -16,7 +16,7 @@ interface PingTool extends ITool {
   name: 'ping';
   description: 'Simple ping tool';
   params: {
-    message: string;
+    message: { type: 'string'; description: 'Message to echo back' };
   };
   result: {
     echoed: string;
@@ -35,14 +35,17 @@ interface TypeChartResource extends IResource {
   };
 }
 
-export default class StaticResourceFixture implements StaticServer {
-  // Server metadata from interface
-  name = 'static-resource-fixture' as const;
-  description = 'Test server with static resources' as const;
+// Tool implementation
+const ping: ToolHelper<PingTool> = async (params) => ({
+  echoed: params.message,
+});
 
-  ping = async (params: { message: string }) => ({
-    echoed: params.message,
-  });
+// Server implementation using v4 const-based pattern
+const server: StaticServer = {
+  name: 'static-resource-fixture',
+  description: 'Test server with static resources',
+  ping,
+  'pokemon://type-chart': TYPE_CHART
+};
 
-  'pokemon://type-chart' = TYPE_CHART;
-}
+export default server;

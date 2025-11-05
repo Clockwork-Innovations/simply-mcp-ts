@@ -5,23 +5,27 @@
  * enabling end-to-end subscription testing.
  *
  * Key Difference from interface-ui-foundation.ts:
- * - refresh_stats CALLS this.server.notifyResourceUpdate('ui://test/live-stats')
- * - reset CALLS this.server.notifyResourceUpdate('ui://test/live-stats')
+ * - refresh_stats CALLS server.notifyResourceUpdate('ui://test/live-stats')
+ * - reset CALLS server.notifyResourceUpdate('ui://test/live-stats')
  * - This triggers actual MCP notifications to subscribed clients
  *
  * Usage:
  *   npx simply-mcp run tests/fixtures/subscription-test-server.ts --http --port 3002
  */
 
-import type { IServer, ITool, IUI } from '../../src/index.js';
+import type { IServer, ITool, IUI, ToolHelper } from '../../src/index.js';
 
 // ============================================================================
 // Server State
 // ============================================================================
 
-let requestCount = 0;
-let lastRefresh = new Date().toISOString();
-let resetCount = 0;
+// Shared state for server and tools
+const serverState = {
+  mcpServer: undefined as any,
+  requestCount: 0,
+  lastRefresh: new Date().toISOString(),
+  resetCount: 0
+};
 
 // ============================================================================
 // Tool Interfaces
@@ -73,72 +77,64 @@ interface LiveStatsUI extends IUI {
 }
 
 // ============================================================================
-// Server Implementation
+// Tool Implementations
 // ============================================================================
 
-export default class SubscriptionTestServer implements IServer {
-  name = 'subscription-test-server';
-  version = '1.0.0';
-  description = 'Test server fixture for subscription lifecycle testing';
+/**
+ * Refresh tool - TRIGGERS NOTIFICATION
+ */
+const refresh: ToolHelper<RefreshTool> = async () => {
+  serverState.requestCount++;
+  serverState.lastRefresh = new Date().toISOString();
 
-  // This is injected by BuildMCPServer
-  server?: any;
+  // **CRITICAL:** Call notifyResourceUpdate to push notification
+  // This is what was missing in the foundation example
+  if (serverState.mcpServer) {
+    serverState.mcpServer.notifyResourceUpdate('ui://test/live-stats');
+  }
 
-  /**
-   * Refresh tool - TRIGGERS NOTIFICATION
-   */
-  refresh: RefreshTool = async () => {
-    requestCount++;
-    lastRefresh = new Date().toISOString();
+  return { timestamp: serverState.lastRefresh, count: serverState.requestCount };
+};
 
-    // **CRITICAL:** Call notifyResourceUpdate to push notification
-    // This is what was missing in the foundation example
-    if (this.server) {
-      this.server.notifyResourceUpdate('ui://test/live-stats');
-    }
+/**
+ * Reset tool - TRIGGERS NOTIFICATION
+ */
+const reset: ToolHelper<ResetTool> = async () => {
+  const previousCount = serverState.requestCount;
+  serverState.requestCount = 0;
+  serverState.resetCount++;
+  serverState.lastRefresh = new Date().toISOString();
 
-    return { timestamp: lastRefresh, count: requestCount };
-  };
+  // Trigger notification for reset too
+  if (serverState.mcpServer) {
+    serverState.mcpServer.notifyResourceUpdate('ui://test/live-stats');
+  }
 
-  /**
-   * Reset tool - TRIGGERS NOTIFICATION
-   */
-  reset: ResetTool = async () => {
-    const previousCount = requestCount;
-    requestCount = 0;
-    resetCount++;
-    lastRefresh = new Date().toISOString();
+  return { message: `Reset from ${previousCount} to 0`, previousCount };
+};
 
-    // Trigger notification for reset too
-    if (this.server) {
-      this.server.notifyResourceUpdate('ui://test/live-stats');
-    }
+/**
+ * Increment tool - DOES NOT TRIGGER NOTIFICATION
+ * Used for testing that notifications are selective
+ */
+const increment: ToolHelper<IncrementTool> = async () => {
+  serverState.requestCount++;
+  return { count: serverState.requestCount };
+};
 
-    return { message: `Reset from ${previousCount} to 0`, previousCount };
-  };
+/**
+ * Dynamic UI resource - generates fresh HTML on each read
+ */
+const liveStatsUI = async () => {
+  // Calculate uptime
+  const uptimeMs = Date.now();
+  const uptimeSeconds = Math.floor(uptimeMs / 1000);
+  const uptimeMinutes = Math.floor(uptimeSeconds / 60);
 
-  /**
-   * Increment tool - DOES NOT TRIGGER NOTIFICATION
-   * Used for testing that notifications are selective
-   */
-  increment: IncrementTool = async () => {
-    requestCount++;
-    return { count: requestCount };
-  };
-
-  /**
-   * Dynamic UI resource - generates fresh HTML on each read
-   */
-  'ui://test/live-stats': LiveStatsUI = async () => {
-    // Calculate uptime
-    const uptimeMs = Date.now();
-    const uptimeSeconds = Math.floor(uptimeMs / 1000);
-    const uptimeMinutes = Math.floor(uptimeSeconds / 60);
-
-    // Format timestamp
-    const timestamp = new Date(lastRefresh);
-    const timeStr = timestamp.toLocaleTimeString();
-    const dateStr = timestamp.toLocaleDateString();
+  // Format timestamp
+  const timestamp = new Date(serverState.lastRefresh);
+  const timeStr = timestamp.toLocaleTimeString();
+  const dateStr = timestamp.toLocaleDateString();
 
     // Return HTML string
     return `
@@ -348,13 +344,13 @@ export default class SubscriptionTestServer implements IServer {
             <div class="stats-grid">
               <div class="stat-card">
                 <div class="stat-label">Request Count</div>
-                <div class="stat-value" id="count">${requestCount}</div>
+                <div class="stat-value" id="count">${serverState.requestCount}</div>
                 <div class="stat-meta">Total API calls</div>
               </div>
 
               <div class="stat-card">
                 <div class="stat-label">Reset Count</div>
-                <div class="stat-value" id="reset-count">${resetCount}</div>
+                <div class="stat-value" id="reset-count">${serverState.resetCount}</div>
                 <div class="stat-meta">Times reset</div>
               </div>
 
@@ -432,5 +428,32 @@ export default class SubscriptionTestServer implements IServer {
         </body>
       </html>
     `;
-  };
-}
+};
+
+// ============================================================================
+// Server Implementation
+// ============================================================================
+
+const server: IServer = {
+  name: 'subscription-test-server',
+  version: '1.0.0',
+  description: 'Test server fixture for subscription lifecycle testing',
+
+  // Tools
+  refresh,
+  reset,
+  increment,
+
+  // UI Resource
+  'ui://test/live-stats': liveStatsUI,
+
+  // This property is set by BuildMCPServer to allow tools to call notifyResourceUpdate
+  get server() {
+    return serverState.mcpServer;
+  },
+  set server(mcpServer: any) {
+    serverState.mcpServer = mcpServer;
+  }
+};
+
+export default server;

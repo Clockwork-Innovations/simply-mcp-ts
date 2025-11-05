@@ -246,28 +246,23 @@ interface DatabaseStatsResource extends IResource {
 // SERVER IMPLEMENTATION
 // =============================================================================
 
-export default class DatabaseTestFixture implements DatabaseTestServer {
-  // Server metadata from interface
-  name = 'database-test-server' as const;
-  description = 'Test server with database resources' as const;
-
-  /**
-   * Users resource implementation
-   *
-   * Returns all users from the database with metadata
-   *
-   * TODO - Add authentication:
-   * async (context?: { security?: SecurityContext }) => {
-   *   if (!context?.security?.authenticated) {
-   *     throw new Error('Authentication required: No valid API key provided');
-   *   }
-   *   if (!context.security.permissions.includes('read:users')) {
-   *     throw new Error('Authorization failed: Missing read:users permission');
-   *   }
-   *   // ... query database
-   * }
-   */
-  'db://users' = async (context) => {
+/**
+ * Users resource implementation
+ *
+ * Returns all users from the database with metadata
+ *
+ * TODO - Add authentication:
+ * async (context?: { security?: SecurityContext }) => {
+ *   if (!context?.security?.authenticated) {
+ *     throw new Error('Authentication required: No valid API key provided');
+ *   }
+ *   if (!context.security.permissions.includes('read:users')) {
+ *     throw new Error('Authorization failed: Missing read:users permission');
+ *   }
+ *   // ... query database
+ * }
+ */
+const usersResource = async (context?: any) => {
     // TypeScript infers context type from UsersResource interface automatically!
     if (!context?.db) throw new Error('Database connection not available');
 
@@ -285,12 +280,12 @@ export default class DatabaseTestFixture implements DatabaseTestServer {
     };
   };
 
-  /**
-   * Products resource implementation
-   *
-   * Returns all products with inventory statistics
-   */
-  'db://products' = async (context) => {
+/**
+ * Products resource implementation
+ *
+ * Returns all products with inventory statistics
+ */
+const productsResource = async (context?: any) => {
     if (!context?.db) throw new Error('Database connection not available');
 
     const products = context.db.prepare('SELECT * FROM products ORDER BY id').all() as Array<{
@@ -310,20 +305,20 @@ export default class DatabaseTestFixture implements DatabaseTestServer {
     };
   };
 
-  /**
-   * Electronics products resource implementation
-   *
-   * Returns products filtered by Electronics category
-   *
-   * NOTE: In the feature layer with context support, this would be:
-   * async (context?: { params?: { category?: string } }) => {
-   *   const category = context?.params?.category || 'Electronics';
-   *   const products = db.prepare('SELECT * FROM products WHERE category = ? ORDER BY id')
-   *     .all(category);
-   *   ...
-   * }
-   */
-  'db://products/electronics' = async (context) => {
+/**
+ * Electronics products resource implementation
+ *
+ * Returns products filtered by Electronics category
+ *
+ * NOTE: In the feature layer with context support, this would be:
+ * async (context?: { params?: { category?: string } }) => {
+ *   const category = context?.params?.category || 'Electronics';
+ *   const products = db.prepare('SELECT * FROM products WHERE category = ? ORDER BY id')
+ *     .all(category);
+ *   ...
+ * }
+ */
+const electronicsProductsResource = async (context?: any) => {
     if (!context?.db) throw new Error('Database connection not available');
 
     const category = 'Electronics';
@@ -344,12 +339,12 @@ export default class DatabaseTestFixture implements DatabaseTestServer {
     };
   };
 
-  /**
-   * User by ID resource implementation
-   *
-   * Returns a specific user or null if not found
-   */
-  'db://users/1' = async (context) => {
+/**
+ * User by ID resource implementation
+ *
+ * Returns a specific user or null if not found
+ */
+const userByIdResource = async (context?: any) => {
     if (!context?.db) throw new Error('Database connection not available');
 
     const userId = 1; // In feature layer, this would come from URI params
@@ -366,12 +361,12 @@ export default class DatabaseTestFixture implements DatabaseTestServer {
     };
   };
 
-  /**
-   * Database statistics resource implementation
-   *
-   * Returns aggregated statistics across tables
-   */
-  'db://stats' = async (context) => {
+/**
+ * Database statistics resource implementation
+ *
+ * Returns aggregated statistics across tables
+ */
+const statsResource = async (context?: any) => {
     if (!context?.db) throw new Error('Database connection not available');
 
     const userCount = context.db.prepare('SELECT COUNT(*) as count FROM users').get() as {
@@ -398,7 +393,19 @@ export default class DatabaseTestFixture implements DatabaseTestServer {
       lastUpdated: new Date().toISOString(),
     };
   };
-}
+
+// Server implementation using v4 const-based pattern
+const server: DatabaseTestServer = {
+  name: 'database-test-server',
+  description: 'Test server with database resources',
+  'db://users': usersResource,
+  'db://products': productsResource,
+  'db://products/electronics': electronicsProductsResource,
+  'db://users/1': userByIdResource,
+  'db://stats': statsResource
+};
+
+export default server;
 
 // =============================================================================
 // FUTURE AUTH INTEGRATION CHECKLIST

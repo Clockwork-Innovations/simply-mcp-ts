@@ -1,16 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "es2020",
-    "target": "ES2022",
-    "moduleResolution": "bundler",
-    "jsx": "react"
+    "noEmit": true,
+    "skipLibCheck": true
   },
   "include": [
-    "tests/**/*.ts",
-    "tests/**/*.tsx",
-    "src/**/*.ts",
-    "src/**/*.tsx"
+    "tests/validation/**/*.ts",
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",

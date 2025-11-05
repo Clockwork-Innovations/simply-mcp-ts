@@ -10,13 +10,13 @@
  * - Type safety: verify actual types received
  */
 
-import type { IServer, ITool, IParam } from '../../src/index.js';
+import type { IServer, ITool, IParam, ToolHelper } from '../../src/index.js';
 
 // ============================================================================
 // SERVER CONFIGURATION
 // ============================================================================
 
-interface TestServer extends IServer {
+interface CoercionTestServer extends IServer {
   name: 'test-coercion-comprehensive';
   description: 'Comprehensive test suite for parameter type coercion';
   version: '1.0.0';
@@ -182,95 +182,110 @@ interface RangeTool extends ITool {
 }
 
 // ============================================================================
-// IMPLEMENTATION
+// TOOL IMPLEMENTATIONS
 // ============================================================================
 
-export default class TestServer implements TestServer {
+// Number coercion test
+const testNumber: ToolHelper<NumberTestTool> = async (params) => {
+  const valueType = typeof params.value;
+  const isNumber = valueType === 'number' && !isNaN(params.value);
 
-  // Number coercion test
-  testNumber: NumberTestTool = async ({ value }) => {
-    const valueType = typeof value;
-    const isNumber = valueType === 'number' && !isNaN(value);
-
-    return {
-      received: value,
-      type: valueType,
-      isNumber,
-      doubled: isNumber ? value * 2 : NaN,
-    };
+  return {
+    received: params.value,
+    type: valueType,
+    isNumber,
+    doubled: isNumber ? params.value * 2 : NaN,
   };
+};
 
-  // Math operation test
-  mathOperation: MathTool = async ({ a, b }) => {
-    return {
-      sum: a + b,
-      product: a * b,
-      quotient: b !== 0 ? a / b : NaN,
-      types: {
-        a: typeof a,
-        b: typeof b,
-      },
-    };
+// Math operation test
+const mathOperation: ToolHelper<MathTool> = async (params) => {
+  return {
+    sum: params.a + params.b,
+    product: params.a * params.b,
+    quotient: params.b !== 0 ? params.a / params.b : NaN,
+    types: {
+      a: typeof params.a,
+      b: typeof params.b,
+    },
   };
+};
 
-  // Boolean coercion test
-  testBoolean: BooleanTestTool = async ({ value }) => {
-    const valueType = typeof value;
-    const isBoolean = valueType === 'boolean';
+// Boolean coercion test
+const testBoolean: ToolHelper<BooleanTestTool> = async (params) => {
+  const valueType = typeof params.value;
+  const isBoolean = valueType === 'boolean';
 
-    return {
-      received: value,
-      type: valueType,
-      isBoolean,
-      negated: isBoolean ? !value : false,
-      asString: String(value),
-    };
+  return {
+    received: params.value,
+    type: valueType,
+    isBoolean,
+    negated: isBoolean ? !params.value : false,
+    asString: String(params.value),
   };
+};
 
-  // Logic operation test
-  logicOperation: LogicTool = async ({ a, b }) => {
-    return {
-      and: a && b,
-      or: a || b,
-      xor: (a || b) && !(a && b),
-      types: {
-        a: typeof a,
-        b: typeof b,
-      },
-    };
+// Logic operation test
+const logicOperation: ToolHelper<LogicTool> = async (params) => {
+  return {
+    and: params.a && params.b,
+    or: params.a || params.b,
+    xor: (params.a || params.b) && !(params.a && params.b),
+    types: {
+      a: typeof params.a,
+      b: typeof params.b,
+    },
   };
+};
 
-  // Mixed types test
-  testMixed: MixedTestTool = async ({ count, enabled, name }) => {
-    const summary = enabled
-      ? `${name}: ${count} items enabled`
-      : `${name}: disabled`;
+// Mixed types test
+const testMixed: ToolHelper<MixedTestTool> = async (params) => {
+  const summary = params.enabled
+    ? `${params.name}: ${params.count} items enabled`
+    : `${params.name}: disabled`;
 
-    return {
-      summary,
-      types: {
-        count: typeof count,
-        enabled: typeof enabled,
-        name: typeof name,
-      },
-      values: {
-        count,
-        enabled,
-        name,
-      },
-    };
+  return {
+    summary,
+    types: {
+      count: typeof params.count,
+      enabled: typeof params.enabled,
+      name: typeof params.name,
+    },
+    values: {
+      count: params.count,
+      enabled: params.enabled,
+      name: params.name,
+    },
   };
+};
 
-  // Range validation test
-  testRange: RangeTool = async ({ value }) => {
-    const valid = value >= 0 && value <= 100;
+// Range validation test
+const testRange: ToolHelper<RangeTool> = async (params) => {
+  const valid = params.value >= 0 && params.value <= 100;
 
-    return {
-      value,
-      valid,
-      message: valid
-        ? `Value ${value} is within range [0, 100]`
-        : `Value ${value} is outside range [0, 100]`,
-    };
+  return {
+    value: params.value,
+    valid,
+    message: valid
+      ? `Value ${params.value} is within range [0, 100]`
+      : `Value ${params.value} is outside range [0, 100]`,
   };
-}
+};
+
+// ============================================================================
+// SERVER IMPLEMENTATION
+// ============================================================================
+
+const server: CoercionTestServer = {
+  name: 'test-coercion-comprehensive',
+  description: 'Comprehensive test suite for parameter type coercion',
+  version: '1.0.0',
+  testNumber,
+  mathOperation,
+  testBoolean,
+  logicOperation,
+  testMixed,
+  testRange
+};
+
+export default server;
