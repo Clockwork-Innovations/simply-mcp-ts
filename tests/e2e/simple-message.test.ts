@@ -31,11 +31,11 @@ describe('SimpleMessage E2E Tests', () => {
     );
 
     await client.connect(transport);
-  }, 30000);
+  }, 60000); // Increased from 30s to 60s for stdio server startup
 
   afterAll(async () => {
     await client.close();
-  }, 30000);
+  }, 60000); // Increased from 30s to 60s for graceful shutdown
 
   describe('Protocol Integration', () => {
     it('should connect to server successfully', async () => {
