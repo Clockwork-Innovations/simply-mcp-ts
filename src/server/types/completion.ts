@@ -8,7 +8,29 @@
  * The interface defines metadata (name, description, ref) while the implementation
  * can be just the completion function itself, following the ITool pattern.
  *
- * @example Function-Based Pattern (Recommended)
+ * **Implementation Patterns:**
+ * - **Recommended:** Use CompletionHelper<T> type for automatic type inference
+ * - **Alternative:** Assign function directly (types inferred from interface)
+ *
+ * @example Pattern 1: With CompletionHelper (Recommended)
+ * ```typescript
+ * import type { ICompletion, CompletionHelper } from 'simply-mcp';
+ *
+ * interface CityCompletion extends ICompletion<string[]> {
+ *   name: 'city_autocomplete';
+ *   description: 'Autocomplete city names';
+ *   ref: { type: 'argument'; name: 'city' };
+ * }
+ *
+ * // Using CompletionHelper for automatic type inference
+ * const cityAutocomplete: CompletionHelper<CityCompletion> = async (value) => {
+ *   //                                                                ^^^^^ type is string (inferred!)
+ *   const cities = ['New York', 'Los Angeles', 'London'];
+ *   return cities.filter(c => c.toLowerCase().startsWith(value.toLowerCase()));
+ * };
+ * ```
+ *
+ * @example Pattern 2: Direct Function Assignment
  * ```typescript
  * interface CityCompletion extends ICompletion<string[]> {
  *   name: 'city_autocomplete';
@@ -16,22 +38,25 @@
  *   ref: { type: 'argument'; name: 'city' };
  * }
  *
- * export default class MyServer implements IServer {
- *   // Implementation is just the handler function
- *   cityAutocomplete: CityCompletion = async (value: string) => {
- *     const cities = ['New York', 'Los Angeles', 'London'];
- *     return cities.filter(c => c.toLowerCase().startsWith(value.toLowerCase()));
- *   };
- * }
+ * // Direct assignment (also works)
+ * const cityAutocomplete: CityCompletion = async (value: string) => {
+ *   const cities = ['New York', 'Los Angeles', 'London'];
+ *   return cities.filter(c => c.toLowerCase().startsWith(value.toLowerCase()));
+ * };
  * ```
  *
- * @example Object Literal Pattern (Also Supported)
+ * @example With Context Parameter
  * ```typescript
- * cityAutocomplete: CityCompletion = {
- *   name: 'city_autocomplete',
- *   description: 'Autocomplete city names',
- *   ref: { type: 'argument', name: 'city' },
- *   complete: async (value: string) => { ... }
+ * interface SmartCompletion extends ICompletion<string[]> {
+ *   name: 'smart_suggestions';
+ *   description: 'Context-aware completion';
+ *   ref: { type: 'argument'; name: 'query' };
+ * }
+ *
+ * const smartSuggestions: CompletionHelper<SmartCompletion> = async (value, context) => {
+ *   // Use context for smarter suggestions
+ *   const history = context?.history || [];
+ *   return generateSuggestions(value, history);
  * };
  * ```
  */

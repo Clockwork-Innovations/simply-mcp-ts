@@ -4,6 +4,7 @@
 
 import type { IParam } from './params.js';
 import type { PromptMessage, SimpleMessage } from './messages.js';
+import type { ICompletion } from './completion.js';
 
 /**
  * Helper type to infer TypeScript param types from IParam definitions
@@ -321,3 +322,116 @@ export type ResourceHelper<T> =
   T extends { result: any }
     ? () => Promise<T['result']> | T['result']
     : () => Promise<any> | any;
+
+/**
+ * Completion implementation helper type
+ *
+ * Use this type to create const-based completion implementations with full type safety.
+ * It automatically infers the suggestions type from your completion interface.
+ *
+ * @template T - Completion interface extending ICompletion
+ *
+ * @example String Array Completions
+ * ```typescript
+ * interface CityCompletion extends ICompletion<string[]> {
+ *   name: 'city_autocomplete';
+ *   description: 'Autocomplete city names';
+ *   ref: { type: 'argument'; name: 'city' };
+ * }
+ *
+ * const cityAutocomplete: CompletionHelper<CityCompletion> = async (value) => {
+ *   const cities = ['New York', 'Los Angeles', 'London'];
+ *   return cities.filter(c => c.toLowerCase().startsWith(value.toLowerCase()));
+ * };
+ * ```
+ *
+ * @example With Context
+ * ```typescript
+ * interface SmartCompletion extends ICompletion<string[]> {
+ *   name: 'smart_suggestions';
+ *   description: 'Context-aware suggestions';
+ *   ref: { type: 'argument'; name: 'query' };
+ * }
+ *
+ * const smartSuggestions: CompletionHelper<SmartCompletion> = async (value, context) => {
+ *   // Use context for smarter completions
+ *   const history = context?.history || [];
+ *   return generateSuggestions(value, history);
+ * };
+ * ```
+ *
+ * @example Object Completions
+ * ```typescript
+ * interface FileCompletion extends ICompletion<Array<{ path: string; type: string }>> {
+ *   name: 'file_suggestions';
+ *   description: 'File path completions with metadata';
+ *   ref: { type: 'argument'; name: 'filepath' };
+ * }
+ *
+ * const fileSuggestions: CompletionHelper<FileCompletion> = (value) => {
+ *   return [
+ *     { path: '/home/user/file1.txt', type: 'file' },
+ *     { path: '/home/user/dir/', type: 'directory' }
+ *   ];
+ * };
+ * ```
+ */
+export type CompletionHelper<T extends { name: string; description: string }> =
+  (value: string, context?: any) => T extends ICompletion<infer TSuggestions>
+    ? Promise<TSuggestions> | TSuggestions
+    : Promise<any> | any;
+
+/**
+ * Roots implementation helper type
+ *
+ * Use this type to create const-based roots implementations with full type safety.
+ * It validates the return type matches the expected roots array structure.
+ *
+ * @template T - Roots interface extending IRoots
+ *
+ * @example Basic Roots
+ * ```typescript
+ * interface ProjectRoots extends IRoots {
+ *   name: 'project_roots';
+ *   description: 'Get project root directories';
+ * }
+ *
+ * const projectRoots: RootsHelper<ProjectRoots> = () => {
+ *   return [
+ *     { uri: 'file:///home/user/project', name: 'My Project' },
+ *     { uri: 'file:///home/user/workspace', name: 'Workspace' }
+ *   ];
+ * };
+ * ```
+ *
+ * @example Async Roots
+ * ```typescript
+ * interface DynamicRoots extends IRoots {
+ *   name: 'workspace_roots';
+ *   description: 'Dynamically discover workspace roots';
+ * }
+ *
+ * const workspaceRoots: RootsHelper<DynamicRoots> = async () => {
+ *   const roots = await discoverWorkspaceRoots();
+ *   return roots.map(r => ({
+ *     uri: `file://${r.path}`,
+ *     name: r.name
+ *   }));
+ * };
+ * ```
+ *
+ * @example With Environment Variables
+ * ```typescript
+ * interface EnvRoots extends IRoots {
+ *   name: 'env_roots';
+ *   description: 'Roots from environment configuration';
+ * }
+ *
+ * const envRoots: RootsHelper<EnvRoots> = () => {
+ *   const rootPath = process.env.PROJECT_ROOT || process.cwd();
+ *   return [{ uri: `file://${rootPath}`, name: 'Project Root' }];
+ * };
+ * ```
+ */
+export type RootsHelper<T extends { name: string; description: string }> =
+  () => Promise<Array<{ uri: string; name?: string }>> | Array<{ uri: string; name?: string }>;
