@@ -8,10 +8,10 @@
 import type { ITool, IServer, ToolHelper } from '../../src/interface-types.js';
 
 // Server configuration with HTTP transport
-interface MyHttpServer extends IServer {
-  name: 'http-test-server';
-  version: '1.0.0';
-  description: 'Test server with HTTP transport configured in file';
+const server: IServer = {
+  name: 'http-test-server',
+  version: '1.0.0',
+  description: 'Test server with HTTP transport configured in file'
   transport: 'http';
   port: 4000;
   stateful: true;

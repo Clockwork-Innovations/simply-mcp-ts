@@ -49,7 +49,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
 console.log('\n=== Testing Static Data Extraction ===\n');

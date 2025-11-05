@@ -108,10 +108,10 @@ interface AudioCollectionResource extends IResource {
 /**
  * Server Interface
  */
-interface AudioTestServer extends IServer {
-  name: 'audio-test';
-  version: '1.0.0';
-  description: 'Audio content test server';
+const server: IServer = {
+  name: 'audio-test',
+  version: '1.0.0',
+  description: 'Audio content test server'
 }
 
 /**

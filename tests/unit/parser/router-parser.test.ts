@@ -388,10 +388,10 @@ describe('Router Parser', () => {
           tools: ['get_weather'];
         }
 
-        interface WeatherServer extends IServer {
-          name: 'weather-service';
-          version: '1.0.0';
-          description: 'Weather service';
+        const server: IServer = {
+  name: 'weather-service',
+  version: '1.0.0',
+  description: 'Weather service'
         }
       `;
 

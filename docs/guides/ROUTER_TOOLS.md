@@ -75,7 +75,7 @@ interface MyServer extends IServer {
 }
 
 // Implementation
-export default class MyServer implements MyServer {
+export default class MyServer {
   tool1: Tool1 = async (params) => ({ /* ... */ });
   tool2: Tool2 = async (params) => ({ /* ... */ });
 
@@ -197,15 +197,15 @@ interface WeatherRouter extends IToolRouter {
 }
 
 // Server interface
-interface WeatherServer extends IServer {
-  name: 'weather-service';
-  version: '1.0.0';
-  description: 'Weather information service';
+const server: IServer = {
+  name: 'weather-service',
+  version: '1.0.0',
+  description: 'Weather information service'
   flattenRouters: false;
 }
 
 // Implementation
-export default class WeatherService implements WeatherServer {
+export default class WeatherService {
   // Tool implementations
   getWeather: GetWeatherTool = async (params) => {
     return {
@@ -244,7 +244,7 @@ interface UserRouter extends IToolRouter {
   tools: [AuditLogTool];  // Same tool in both routers
 }
 
-export default class Server implements MyServer {
+export default class Server {
   createUser: CreateUserTool = async (params) => ({ /* ... */ });
   deleteUser: DeleteUserTool = async (params) => ({ /* ... */ });
   auditLog: AuditLogTool = async (params) => ({ /* ... */ });

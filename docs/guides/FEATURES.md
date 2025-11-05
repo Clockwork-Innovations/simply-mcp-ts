@@ -50,12 +50,13 @@ interface GreetTool extends ITool {
   };
 }
 
-interface MyServer extends IServer {
-  name: 'my-server';
-  description: 'Example server';
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'Example server'
 }
 
-export default class MyServer implements MyServer {
+export default class MyServer {
   greet: GreetTool = async (params) => {
     return {
       greeting: `Hello, ${params.name}!`
@@ -90,7 +91,7 @@ interface GetWeatherTool extends ITool {
   result: { temperature: number };
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   // Implementation method MUST be camelCase
   getWeather: GetWeatherTool = async (params) => {
     return { temperature: 22 };
@@ -681,7 +682,7 @@ interface GreetPrompt extends IPrompt {
   };
 }
 
-class MyServer implements IServer {
+class MyServer {
   greet: GreetPrompt = (args) => {
     // args.name → string
     // args.formal → boolean | undefined
@@ -704,7 +705,7 @@ interface ConversationPrompt extends IPrompt {
   };
 }
 
-class MyServer implements IServer {
+class MyServer {
   discussTopic: ConversationPrompt = (args): SimpleMessage[] => [
     { user: `Let's discuss ${args.topic}` },
     { assistant: `I'd be happy to discuss ${args.topic}. What would you like to know?` },
@@ -779,12 +780,13 @@ interface StatsResource extends IResource {
   };
 }
 
-interface MyServer extends IServer {
-  name: 'my-server';
-  description: 'Example server';
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'Example server'
 }
 
-export default class MyServer implements MyServer {
+export default class MyServer {
   // Method name matches URI
   'stats://server': StatsResource = async () => {
     return {
@@ -809,7 +811,7 @@ interface LogoResource extends IResource {
   returns: { blob: string };  // Base64-encoded
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   'image://logo': LogoResource = async () => {
     const data = await fs.readFile('./logo.png');
     return {
@@ -1130,9 +1132,10 @@ Audio content integrates seamlessly with the `IResource` interface:
 import type { IServer, IResource, IAudioContent } from 'simply-mcp';
 import { createAudioContent } from 'simply-mcp/core';
 
-interface AudioServer extends IServer {
-  name: 'audio-server';
-  description: 'Audio content server';
+const server: IServer = {
+  name: 'audio-server',
+  version: '1.0.0',
+  description: 'Audio content server'
   version: '1.0.0';
 }
 

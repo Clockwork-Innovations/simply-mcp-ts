@@ -19,10 +19,10 @@ interface AdminAuth extends IApiKeyAuth {
 }
 
 // Define server interface with authentication
-interface TestAuthServer extends IServer {
-  name: 'test-auth-server';
-  version: '1.0.0';
-  description: 'Test server with authentication';
+const server: IServer = {
+  name: 'test-auth-server',
+  version: '1.0.0',
+  description: 'Test server with authentication'
   transport: 'http';
   port: 3000;
   auth: AdminAuth;

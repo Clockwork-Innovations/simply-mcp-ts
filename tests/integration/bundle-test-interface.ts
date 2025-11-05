@@ -22,7 +22,7 @@ class InfoTool implements ITool {
   }
 }
 
-class BundleTestInterfaceServer implements IServer {
+class BundleTestInterfaceServer {
   name = 'bundle-test-interface';
   version = '1.0.0';
   description = 'Minimal interface server for bundle smoke testing';

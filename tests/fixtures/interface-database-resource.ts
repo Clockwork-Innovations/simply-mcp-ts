@@ -91,9 +91,10 @@ db.close();
 // SERVER INTERFACE
 // =============================================================================
 
-interface DatabaseTestServer extends IServer {
-  name: 'database-test-server';
-  description: 'Test server with database resources';
+const server: IServer = {
+  name: 'database-test-server',
+  version: '1.0.0',
+  description: 'Test server with database resources'
   // version: '1.0.0';  // Optional (defaults to '1.0.0')
 }
 

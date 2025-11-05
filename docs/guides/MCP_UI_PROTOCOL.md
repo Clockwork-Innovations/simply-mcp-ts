@@ -639,9 +639,10 @@ function Dashboard() {
 ```typescript
 import type { IServer, ITool, IUI } from 'simply-mcp';
 
-interface CalculatorServer extends IServer {
-  name: 'calculator';
-  description: 'Calculator with UI';
+const server: IServer = {
+  name: 'calculator',
+  version: '1.0.0',
+  description: 'Calculator with UI'
 }
 
 interface AddTool extends ITool {
@@ -658,7 +659,7 @@ interface CalculatorUI extends IUI {
   tools: ['add'];
 }
 
-export default class Server implements CalculatorServer {
+export default class Server {
   add: AddTool = async ({ a, b }) => a + b;
 
   calculator: CalculatorUI = {

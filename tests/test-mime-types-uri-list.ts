@@ -47,7 +47,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   name = 'test-server' as const;
   version = '1.0.0' as const;
 }
@@ -95,7 +95,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   name = 'test-server' as const;
   version = '1.0.0' as const;
 }
@@ -139,7 +139,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   name = 'test-server' as const;
   version = '1.0.0' as const;
 }
@@ -182,7 +182,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   name = 'test-server' as const;
   version = '1.0.0' as const;
 }
@@ -233,7 +233,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   name = 'test-server' as const;
   version = '1.0.0' as const;
 }
@@ -278,7 +278,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   name = 'test-server' as const;
   version = '1.0.0' as const;
 }

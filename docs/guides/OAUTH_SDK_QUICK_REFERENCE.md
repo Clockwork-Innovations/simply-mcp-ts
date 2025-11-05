@@ -164,7 +164,7 @@ const client = await response.json();
 ```typescript
 import { OAuthServerProvider } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 
-class SimplyMCPOAuthProvider implements OAuthServerProvider {
+class SimplyMCPOAuthProviderProvider {
   // Required methods:
   authorize(client, params, res): Promise<void>
   challengeForAuthorizationCode(client, code): Promise<string>

@@ -106,10 +106,10 @@ interface SimpleFormUI extends IUI {
 }
 
 // Server interface (to verify parsing works with other interface types)
-interface MyServer extends IServer {
-  name: 'test_server';
-  version: '1.0.0';
-  description: 'Test server';
+const server: IServer = {
+  name: 'test_server',
+  version: '1.0.0',
+  description: 'Test server'
 }
 `;
 

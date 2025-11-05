@@ -178,7 +178,7 @@ npx simply-mcp run server.ts --verbose
 # - Method is implemented in class
 
 # 4. Ensure export
-export default class MyServer implements IServer { ... }
+export default class MyServer { ... }
 ```
 
 ### Scenario 4: Type Errors

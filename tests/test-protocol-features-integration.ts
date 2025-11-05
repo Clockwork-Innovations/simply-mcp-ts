@@ -93,15 +93,15 @@ interface AnalyzeCodeTool extends ITool {
 
 // ===== Server Interface =====
 
-interface ProtocolTestServer extends IServer {
-  name: 'protocol-test-server';
-  version: '1.0.0';
-  description: 'Test server for protocol feature integration';
+const server: IServer = {
+  name: 'protocol-test-server',
+  version: '1.0.0',
+  description: 'Test server for protocol feature integration'
 }
 
 // ===== Implementation =====
 
-export default class ProtocolTestServerImpl implements ProtocolTestServer {
+export default class ProtocolTestServerImpl {
   // Tool that uses sampling capability
   analyzeCode: AnalyzeCodeTool = async (params, context) => {
     // In a real scenario, this would use context.sample()

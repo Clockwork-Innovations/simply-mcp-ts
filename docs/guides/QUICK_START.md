@@ -429,9 +429,10 @@ Simply-MCP provides **100% spec-compliant** MCP UI support for building interact
 ```typescript
 import type { IServer, ITool, IUI } from 'simply-mcp';
 
-interface MyServer extends IServer {
-  name: 'my-server';
-  description: 'Server with UI support';
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'Server with UI support'
 }
 
 interface ShowDashboardTool extends ITool {
@@ -450,7 +451,7 @@ interface DashboardUI extends IUI {
   tools: ['refresh_data'];  // Tool allowlist for security
 }
 
-export default class Server implements MyServer {
+export default class Server {
   dashboard: DashboardUI = {
     html: `
       <div id="app">

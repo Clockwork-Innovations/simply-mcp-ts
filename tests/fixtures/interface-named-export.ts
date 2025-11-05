@@ -6,10 +6,10 @@
 import type { IServer, ITool } from '../../src/index.js';
 
 // Server interface (use different name to avoid TS2395 error)
-interface NamedServer extends IServer {
-  name: 'named-export-test';
-  version: '1.0.0';
-  description: 'Test server with named export';
+const server: IServer = {
+  name: 'named-export-test',
+  version: '1.0.0',
+  description: 'Test server with named export'
 }
 
 // Tool interface

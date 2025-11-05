@@ -82,14 +82,14 @@ describe('Router Namespace Calling Verification', () => {
         tools: [GetWeatherTool, GetForecastTool];
       }
 
-      interface TestServer extends IServer {
-        name: 'namespace-test-server';
-        version: '1.0.0';
-        description: 'Namespace calling test server';
+      const server: IServer = {
+  name: 'namespace-test-server',
+  version: '1.0.0',
+  description: 'Namespace calling test server'
         flattenRouters: false;  // CRITICAL: Hide router tools
       }
 
-      export default class TestService implements TestServer {
+      export default class TestService {
         getWeather: GetWeatherTool = async (params) => {
           return {
             temperature: 72,
@@ -220,14 +220,14 @@ describe('Router Namespace Calling Verification', () => {
         tools: [TestTool];
       }
 
-      interface TestServer extends IServer {
-        name: 'flatten-true-server';
-        version: '1.0.0';
-        description: 'Flatten true server';
+      const server: IServer = {
+  name: 'flatten-true-server',
+  version: '1.0.0',
+  description: 'Flatten true server'
         flattenRouters: true;  // Show all tools
       }
 
-      export default class TestService implements TestServer {
+      export default class TestService {
         testTool: TestTool = async () => ({ value: 'success' });
         testRouter!: TestRouter;
       }

@@ -89,7 +89,7 @@ interface AdvancedPrompt extends IPrompt {
 /**
  * Server implementation
  */
-class SimpleMessageTestServerImpl implements SimpleMessageTestServer {
+class SimpleMessageTestServerImpl {
   serverInfo = {
     name: 'simple-message-test-server' as const,
     version: '1.0.0' as const,

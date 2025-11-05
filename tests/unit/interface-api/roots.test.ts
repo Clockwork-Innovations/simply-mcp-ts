@@ -27,10 +27,10 @@ import type { ITool, IServer, IRoots } from '../../../src/interface-types.js';
 /**
  * Test server with roots capability
  */
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'A server with roots support';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'A server with roots support'
 }
 
 /**
@@ -62,7 +62,7 @@ interface FindFileTool extends ITool {
 /**
  * Test server implementation
  */
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   findFile: FindFileTool = async (params, context) => {
     if (!context.listRoots) {
       return { found: false };
@@ -273,7 +273,7 @@ interface SimpleTool extends ITool {
   result: string;
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   simple: SimpleTool = async (params) => params.input;
 }
 `;
@@ -333,7 +333,7 @@ interface MissingNameRoots extends IRoots {
   description: 'Roots without name';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const missingNameFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-missing-name-roots.ts');
@@ -389,7 +389,7 @@ interface MissingDescRoots extends IRoots {
   name: 'project_roots';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const missingDescFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-missing-desc-roots.ts');
@@ -469,7 +469,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const emptyRootsFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-empty-roots.ts');
@@ -522,7 +522,7 @@ interface SpecialRoots extends IRoots {
   description: 'Root directories (version 2.0)';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const specialCharsFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-special-chars-roots.ts');

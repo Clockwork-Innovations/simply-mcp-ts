@@ -33,10 +33,10 @@ interface WeatherRouter extends IToolRouter {
 }
 
 // Server interface
-interface WeatherServer extends IServer {
-  name: 'weather-service';
-  version: '1.0.0';
-  description: 'Weather information service';
+const server: IServer = {
+  name: 'weather-service',
+  version: '1.0.0',
+  description: 'Weather information service'
   flattenRouters: false;
 }
 

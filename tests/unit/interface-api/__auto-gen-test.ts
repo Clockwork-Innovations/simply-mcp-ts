@@ -13,7 +13,7 @@ interface WeatherServer extends IServer {
   version: '1.0.0';
 }
 
-export default class WeatherService implements WeatherServer {
+export default class WeatherService {
   getWeather = async (params: GetWeatherTool['params']): Promise<GetWeatherTool['result']> => {
     return { temperature: 72 };
   };

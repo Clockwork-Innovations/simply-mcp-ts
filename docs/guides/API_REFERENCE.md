@@ -139,7 +139,7 @@ interface WeatherRouter extends IToolRouter {
   tools: [GetWeatherTool, GetForecastTool];
 }
 
-export default class Server implements MyServer {
+export default class Server {
   getWeather: GetWeatherTool = async (params) => ({ /* ... */ });
   getForecast: GetForecastTool = async (params) => ({ /* ... */ });
 
@@ -648,9 +648,10 @@ audioContent.metadata = {
 import type { IServer, IResource, IAudioContent } from 'simply-mcp';
 import { createAudioContent } from 'simply-mcp/core';
 
-interface MyServer extends IServer {
-  name: 'audio-server';
-  description: 'Server with audio resources';
+const server: IServer = {
+  name: 'audio-server',
+  version: '1.0.0',
+  description: 'Server with audio resources'
 }
 
 // Static audio resource
@@ -713,9 +714,10 @@ export default class MyServer {
 The Interface API supports both `stdio` (for Claude Desktop) and `http` (for web clients) transports. Configure transport settings directly in your IServer interface:
 
 ```typescript
-interface MyServer extends IServer {
-  name: 'my-server';
-  description: 'My server description';
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'My server description'
   // version: '1.0.0';            // Optional (defaults to '1.0.0')
   transport?: 'stdio' | 'http';  // Default: 'stdio'
   port?: number;                  // Required for HTTP transport
@@ -755,7 +757,7 @@ interface TimeServer extends IServer {
   stateful: true;
 }
 
-export default class TimeServer implements TimeServer {
+export default class TimeServer {
   getTime: GetTimeTool = async () => ({
     time: new Date().toISOString()
   });
@@ -1095,9 +1097,10 @@ interface AdminAuth extends IApiKeyAuth {
 }
 
 // Define server with authentication
-interface SecureServer extends IServer {
-  name: 'secure-server';
-  description: 'Secure server with API key authentication';
+const server: IServer = {
+  name: 'secure-server',
+  version: '1.0.0',
+  description: 'Secure server with API key authentication'
   // version: '1.0.0';  // Optional (defaults to '1.0.0')
   transport: 'http';
   port: 3000;
@@ -1132,7 +1135,7 @@ interface UpdateDataTool extends ITool {
 }
 
 // Implementation
-export default class SecureServer implements SecureServer {
+export default class SecureServer {
   // No duplication needed - interface is source of truth
 
   // Protected by API key authentication
@@ -1229,7 +1232,7 @@ interface SecureServer extends IServer {
   auth: EnvAuth;
 }
 
-export default class SecureServer implements SecureServer {
+export default class SecureServer {
   name = 'secure-server' as const;
   version = '1.0.0' as const;
   transport = 'http' as const;
@@ -1370,16 +1373,17 @@ interface MyOAuth extends IOAuth2Auth {
   codeExpiration: 600;           // 10 minutes
 }
 
-interface MyServer extends IServer {
-  name: 'oauth-server';
-  description: 'OAuth-protected MCP server';
+const server: IServer = {
+  name: 'oauth-server',
+  version: '1.0.0',
+  description: 'OAuth-protected MCP server'
   transport: 'http';
   port: 3000;
   stateful: true;  // Required for OAuth
   auth: MyOAuth;
 }
 
-export default class MyServer implements MyServer {
+export default class MyServer {
   // Tool implementations...
 }
 ```
@@ -1541,7 +1545,7 @@ interface AnalyzeDataTool extends ITool {
   result: { summary: string };
 }
 
-export default class Server implements IServer {
+export default class Server {
   analyzeData: AnalyzeDataTool = async ({ fileCount }, context) => {
     if (!context?.reportProgress) {
       throw new Error('This tool requires progress tracking');
@@ -1657,7 +1661,7 @@ interface CalculatorUI extends IUI {
   tools: ['add'];  // Tool allowlist for security
 }
 
-export default class Server implements MyServer {
+export default class Server {
   calculator: CalculatorUI = {
     html: `
       <h1>Calculator</h1>
@@ -1795,9 +1799,10 @@ All UI content is rendered in sandboxed iframes:
 ```typescript
 import type { IServer, ITool, IUI } from 'simply-mcp';
 
-interface MyServer extends IServer {
-  name: 'product-catalog';
-  description: 'Product catalog with interactive UI';
+const server: IServer = {
+  name: 'product-catalog',
+  version: '1.0.0',
+  description: 'Product catalog with interactive UI'
 }
 
 interface AddToCartTool extends ITool {
@@ -1822,7 +1827,7 @@ interface ProductCardUI extends IUI {
   tools: ['add_to_cart'];  // Security: Only allow add_to_cart
 }
 
-export default class Server implements MyServer {
+export default class Server {
   addToCart: AddToCartTool = async ({ productId, quantity }) => {
     // Add to cart logic
     return { success: true, cartTotal: 5 };

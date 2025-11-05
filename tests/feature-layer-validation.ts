@@ -139,7 +139,7 @@ interface CityCompletion extends ICompletion {
 // Server Implementation
 // ============================================================================
 
-export default class FeatureLayerTestServer implements TestServerInterface {
+export default class FeatureLayerTestServer {
   name: 'feature-layer-test' = 'feature-layer-test';
   version: '1.0.0' = '1.0.0';
   description: 'Feature Layer Integration Test Server' = 'Feature Layer Integration Test Server';

@@ -21,10 +21,10 @@ import type { ITool, IServer } from '../../../src/index.js';
 /**
  * Test server interface
  */
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'A test server';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'A test server'
 }
 
 /**
@@ -50,7 +50,7 @@ interface AddTool extends ITool {
 /**
  * Test server implementation
  */
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   greetUser: GreetTool = async (params) => {
     const greeting = params.formal ? 'Good day' : 'Hello';
     return \`\${greeting}, \${params.name}!\`;

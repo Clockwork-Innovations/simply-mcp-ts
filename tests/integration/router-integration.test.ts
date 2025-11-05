@@ -59,13 +59,13 @@ describe('Router Integration Tests', () => {
           tools: [GetDataTool];
         }
 
-        interface TestServer extends IServer {
-          name: 'test-server';
-          version: '1.0.0';
-          description: 'Test server';
+        const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'Test server'
         }
 
-        export default class TestService implements TestServer {
+        export default class TestService {
           getData: GetDataTool = async () => ({ data: 'test' });
           dataRouter!: DataRouter;
         }
@@ -112,13 +112,13 @@ describe('Router Integration Tests', () => {
           tools: [Tool2];
         }
 
-        interface TestServer extends IServer {
-          name: 'multi-router-server';
-          version: '1.0.0';
-          description: 'Multi router server';
+        const server: IServer = {
+  name: 'multi-router-server',
+  version: '1.0.0',
+  description: 'Multi router server'
         }
 
-        export default class TestService implements TestServer {
+        export default class TestService {
           tool1: Tool1 = async () => ({ value: 1 });
           tool2: Tool2 = async () => ({ value: 2 });
           router1!: Router1;
@@ -160,13 +160,13 @@ describe('Router Integration Tests', () => {
           tools: [SharedTool];
         }
 
-        interface TestServer extends IServer {
-          name: 'shared-tool-server';
-          version: '1.0.0';
-          description: 'Shared tool server';
+        const server: IServer = {
+  name: 'shared-tool-server',
+  version: '1.0.0',
+  description: 'Shared tool server'
         }
 
-        export default class TestService implements TestServer {
+        export default class TestService {
           sharedTool: SharedTool = async () => ({ value: 'shared' });
           adminRouter!: AdminRouter;
           userRouter!: UserRouter;
@@ -210,14 +210,14 @@ describe('Router Integration Tests', () => {
           tools: [AssignedTool];
         }
 
-        interface TestServer extends IServer {
-          name: 'flatten-false-server';
-          version: '1.0.0';
-          description: 'Flatten false server';
+        const server: IServer = {
+  name: 'flatten-false-server',
+  version: '1.0.0',
+  description: 'Flatten false server'
           flattenRouters: false;
         }
 
-        export default class TestService implements TestServer {
+        export default class TestService {
           assignedTool: AssignedTool = async () => ({ value: 'assigned' });
           unassignedTool: UnassignedTool = async () => ({ value: 'unassigned' });
           testRouter!: TestRouter;
@@ -255,14 +255,14 @@ describe('Router Integration Tests', () => {
           tools: [AssignedTool];
         }
 
-        interface TestServer extends IServer {
-          name: 'flatten-true-server';
-          version: '1.0.0';
-          description: 'Flatten true server';
+        const server: IServer = {
+  name: 'flatten-true-server',
+  version: '1.0.0',
+  description: 'Flatten true server'
           flattenRouters: true;
         }
 
-        export default class TestService implements TestServer {
+        export default class TestService {
           assignedTool: AssignedTool = async () => ({ value: 'assigned' });
           testRouter!: TestRouter;
         }
@@ -305,13 +305,13 @@ describe('Router Integration Tests', () => {
           tools: [Tool1, Tool2];
         }
 
-        interface TestServer extends IServer {
-          name: 'router-call-server';
-          version: '1.0.0';
-          description: 'Router call server';
+        const server: IServer = {
+  name: 'router-call-server',
+  version: '1.0.0',
+  description: 'Router call server'
         }
 
-        export default class TestService implements TestServer {
+        export default class TestService {
           tool1: Tool1 = async () => ({ value: 1 });
           tool2: Tool2 = async () => ({ value: 2 });
           testRouter!: TestRouter;
@@ -363,13 +363,13 @@ describe('Router Integration Tests', () => {
           tools: [InterfaceTool, 'string_tool'];
         }
 
-        interface TestServer extends IServer {
-          name: 'dual-syntax-server';
-          version: '1.0.0';
-          description: 'Dual syntax server';
+        const server: IServer = {
+  name: 'dual-syntax-server',
+  version: '1.0.0',
+  description: 'Dual syntax server'
         }
 
-        export default class TestService implements TestServer {
+        export default class TestService {
           interfaceTool: InterfaceTool = async () => ({ value: 'from-interface' });
           stringTool: StringTool = async () => ({ value: 'from-string' });
           mixedRouter!: MixedRouter;
@@ -411,13 +411,13 @@ describe('Router Integration Tests', () => {
           tools: [MyTool];
         }
 
-        interface TestServer extends IServer {
-          name: 'name-preference-server';
-          version: '1.0.0';
-          description: 'Name preference server';
+        const server: IServer = {
+  name: 'name-preference-server',
+  version: '1.0.0',
+  description: 'Name preference server'
         }
 
-        export default class TestService implements TestServer {
+        export default class TestService {
           myActualTool: MyTool = async () => ({ value: 'resolved' });
           testRouter!: TestRouter;
         }

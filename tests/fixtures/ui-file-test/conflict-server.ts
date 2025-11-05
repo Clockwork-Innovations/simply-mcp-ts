@@ -14,4 +14,4 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServer implements MyServer {}
+export default class TestServer {}

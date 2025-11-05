@@ -23,9 +23,10 @@ describe('OAuth Interface Types', () => {
         ];
       }
 
-      interface TestServer extends IServer {
-        name: 'test-oauth-server';
-        description: 'Test OAuth server';
+      const server: IServer = {
+  name: 'test-oauth-server',
+  version: '1.0.0',
+  description: 'Test OAuth server'
         transport: 'http';
         auth: TestAuth;
       }

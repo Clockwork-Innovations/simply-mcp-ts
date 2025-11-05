@@ -29,10 +29,10 @@ import type { IPrompt, IServer, PromptMessage } from '../../../src/server/interf
 /**
  * Test server with mixed prompt types
  */
-interface TestServer extends IServer {
-  name: 'message-array-test-server';
-  version: '1.0.0';
-  description: 'Test server for PromptMessage[] support';
+const server: IServer = {
+  name: 'message-array-test-server',
+  version: '1.0.0',
+  description: 'Test server for PromptMessage[] support'
 }
 
 /**
@@ -83,7 +83,7 @@ interface StaticPrompt extends IPrompt {
 /**
  * Test server implementation
  */
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   name = 'message-array-test-server' as const;
   version = '1.0.0' as const;
   description = 'Test server for PromptMessage[] support' as const;

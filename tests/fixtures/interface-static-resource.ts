@@ -6,9 +6,10 @@ const TYPE_CHART = {
   grass: ['water'],
 } as const;
 
-interface StaticServer extends IServer {
-  name: 'static-resource-fixture';
-  description: 'Test server with static resources';
+const server: IServer = {
+  name: 'static-resource-fixture',
+  version: '1.0.0',
+  description: 'Test server with static resources'
   // version: '1.0.0';  // Optional (defaults to '1.0.0')
 }
 
