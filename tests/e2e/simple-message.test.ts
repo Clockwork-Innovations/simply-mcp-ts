@@ -8,8 +8,9 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describeIfCanRunE2E } from '../utils/conditional-tests.js';
 
-describe('SimpleMessage E2E Tests', () => {
+describeIfCanRunE2E('SimpleMessage E2E Tests', () => {
   let client: Client;
   let transport: StdioClientTransport;
 
