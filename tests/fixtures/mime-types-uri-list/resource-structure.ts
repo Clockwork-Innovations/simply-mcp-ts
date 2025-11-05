@@ -4,7 +4,7 @@ interface StructureUI extends IUI {
   uri: 'ui://test/structure';
   name: 'Structure Test';
   description: 'Test resource structure';
-  externalUrl: 'https://example.com';
+  source: 'https://example.com';
 }
 
 const server: IServer = {

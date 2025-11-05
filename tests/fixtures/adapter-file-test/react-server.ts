@@ -5,8 +5,7 @@ interface ReactUI extends IUI {
   uri: 'ui://react/dashboard';
   name: 'React Dashboard';
   description: 'React component UI';
-  component: './components/Dashboard.tsx';
-  dependencies: ['react'];
+  source: './components/Dashboard.tsx';
 }
 
 interface MyServer extends IServer {

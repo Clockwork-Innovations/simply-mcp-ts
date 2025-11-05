@@ -4,7 +4,7 @@ interface CustomNameUI extends IUI {
   uri: 'ui://analytics/dashboard';
   name: 'Custom Analytics Dashboard';
   description: 'Custom name test';
-  externalUrl: 'https://analytics.example.com';
+  source: 'https://analytics.example.com';
 }
 
 const server: IServer = {

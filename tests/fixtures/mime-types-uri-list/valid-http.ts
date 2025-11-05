@@ -4,7 +4,7 @@ interface HttpUI extends IUI {
   uri: 'ui://test/http';
   name: 'HTTP UI';
   description: 'HTTP URL';
-  externalUrl: 'http://example.com';
+  source: 'http://example.com';
 }
 
 const server: IServer = {

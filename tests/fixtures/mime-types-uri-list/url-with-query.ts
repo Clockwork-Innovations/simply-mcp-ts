@@ -4,7 +4,7 @@ interface QueryUI extends IUI {
   uri: 'ui://test/query';
   name: 'Query UI';
   description: 'URL with query params';
-  externalUrl: 'https://example.com/dashboard?user=123&view=analytics';
+  source: 'https://example.com/dashboard?user=123&view=analytics';
 }
 
 const server: IServer = {

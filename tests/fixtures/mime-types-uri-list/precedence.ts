@@ -4,7 +4,7 @@ interface PrecedenceUI extends IUI {
   uri: 'ui://test/precedence';
   name: 'Precedence UI';
   description: 'Test precedence';
-  externalUrl: 'https://example.com';
+  source: 'https://example.com';
 }
 
 const server: IServer = {

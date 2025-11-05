@@ -16,8 +16,7 @@ interface ReactDashboard extends IUI {
   uri: 'ui://dashboard/v1';
   name: 'Dashboard';
   description: 'React-based dashboard';
-  component: './components/Dashboard.tsx';
-  dependencies: ['react', 'recharts'];
+  source: './components/Dashboard.tsx';
   tools: ['fetch_data'];
 }
 

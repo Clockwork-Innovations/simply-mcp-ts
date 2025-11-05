@@ -4,7 +4,7 @@ interface ParserUI extends IUI {
   uri: 'ui://test/parser';
   name: 'Parser Test';
   description: 'Parser integration';
-  externalUrl: 'https://example.com/dashboard';
+  source: 'https://example.com/dashboard';
 }
 
 const server: IServer = {

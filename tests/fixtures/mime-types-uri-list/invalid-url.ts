@@ -4,7 +4,7 @@ interface InvalidUI extends IUI {
   uri: 'ui://test/invalid';
   name: 'Invalid UI';
   description: 'Invalid URL';
-  externalUrl: 'not-a-valid-url';
+  source: 'not-a-valid-url';
 }
 
 const server: IServer = {

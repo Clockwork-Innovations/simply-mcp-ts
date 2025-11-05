@@ -39,7 +39,7 @@ interface ExternalDashboard extends IUI {
   uri: 'ui://dashboard/external';
   name: 'External Dashboard';
   description: 'External analytics dashboard';
-  externalUrl: 'https://dashboard.example.com';
+  source: 'https://dashboard.example.com';  // v4: unified source field (auto-detected as external URL)
 }
 
 interface TestServer extends IServer {
@@ -87,7 +87,7 @@ interface InternalUI extends IUI {
   uri: 'ui://internal/ui';
   name: 'Internal UI';
   description: 'Inline HTML UI';
-  html: '<div>Hello World</div>';
+  source: '<div>Hello World</div>';  // v4: unified source field (auto-detected as inline HTML)
 }
 
 interface TestServer extends IServer {
@@ -131,7 +131,7 @@ interface QueryUI extends IUI {
   uri: 'ui://test/query';
   name: 'Query UI';
   description: 'URL with query params';
-  externalUrl: '${url}';
+  source: '${url}';  // v4: unified source field
 }
 
 interface TestServer extends IServer {
@@ -174,7 +174,7 @@ interface ParserUI extends IUI {
   uri: 'ui://test/parser';
   name: 'Parser Test';
   description: 'Parser integration';
-  externalUrl: 'https://example.com/dashboard';
+  source: 'https://example.com/dashboard';  // v4: unified source field
 }
 
 interface TestServer extends IServer {
@@ -225,7 +225,7 @@ interface InvalidUI extends IUI {
   uri: 'ui://test/invalid';
   name: 'Invalid UI';
   description: 'Invalid URL';
-  externalUrl: 'not-a-valid-url';
+  source: 'not-a-valid-url';  // v4: unified source field
 }
 
 interface TestServer extends IServer {
@@ -270,7 +270,7 @@ interface PlainUI extends IUI {
   uri: 'ui://test/plain';
   name: 'Plain UI';
   description: 'Plain URL test';
-  externalUrl: 'https://analytics.example.com/dashboard';
+  source: 'https://analytics.example.com/dashboard';  // v4: unified source field
 }
 
 interface TestServer extends IServer {

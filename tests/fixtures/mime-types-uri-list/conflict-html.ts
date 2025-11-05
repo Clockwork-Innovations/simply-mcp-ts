@@ -5,7 +5,7 @@ interface ConflictUI extends IUI {
   uri: 'ui://test/conflict';
   name: 'Conflict UI';
   description: 'Should fail';
-  externalUrl: 'https://example.com';
+  source: 'https://example.com';
   // html: '<div>Hello</div>'; // Cannot add both in TypeScript interface
 }
 

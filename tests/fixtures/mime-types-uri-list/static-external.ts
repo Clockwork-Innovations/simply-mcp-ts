@@ -4,7 +4,7 @@ interface StaticExternal extends IUI {
   uri: 'ui://test/static';
   name: 'Static External';
   description: 'Static external URL';
-  externalUrl: 'https://static.example.com';
+  source: 'https://static.example.com';
 }
 
 const server: IServer = {

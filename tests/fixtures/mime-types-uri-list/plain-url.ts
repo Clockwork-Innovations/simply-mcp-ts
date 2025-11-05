@@ -4,7 +4,7 @@ interface PlainUI extends IUI {
   uri: 'ui://test/plain';
   name: 'Plain UI';
   description: 'Plain URL test';
-  externalUrl: 'https://analytics.example.com/dashboard';
+  source: 'https://analytics.example.com/dashboard';
 }
 
 const server: IServer = {
