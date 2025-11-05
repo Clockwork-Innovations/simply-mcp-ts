@@ -23,17 +23,10 @@ describe('OAuth Interface Types', () => {
         ];
       }
 
-      const server: IServer = {
-  name: 'test-oauth-server',
-  version: '1.0.0',
-  description: 'Test OAuth server'
-        transport: 'http';
-        auth: TestAuth;
-      }
-
       // Type inference test (if this compiles, the test passes)
-      const server: TestServer = {
+      const server: IServer & { auth: IOAuth2Auth } = {
         name: 'test-oauth-server',
+        version: '1.0.0',
         description: 'Test OAuth server',
         transport: 'http',
         auth: {

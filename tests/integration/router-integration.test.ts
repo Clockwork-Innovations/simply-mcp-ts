@@ -211,11 +211,11 @@ describe('Router Integration Tests', () => {
         }
 
         const server: IServer = {
-  name: 'flatten-false-server',
-  version: '1.0.0',
-  description: 'Flatten false server'
-          flattenRouters: false;
-        }
+          name: 'flatten-false-server',
+          version: '1.0.0',
+          description: 'Flatten false server',
+          flattenRouters: false
+        };
 
         export default class TestService {
           assignedTool: AssignedTool = async () => ({ value: 'assigned' });
@@ -256,11 +256,11 @@ describe('Router Integration Tests', () => {
         }
 
         const server: IServer = {
-  name: 'flatten-true-server',
-  version: '1.0.0',
-  description: 'Flatten true server'
-          flattenRouters: true;
-        }
+          name: 'flatten-true-server',
+          version: '1.0.0',
+          description: 'Flatten true server',
+          flattenRouters: true
+        };
 
         export default class TestService {
           assignedTool: AssignedTool = async () => ({ value: 'assigned' });
