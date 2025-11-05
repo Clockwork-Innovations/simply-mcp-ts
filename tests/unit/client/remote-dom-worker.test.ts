@@ -10,6 +10,7 @@
  * - Batch operations
  * - Error handling
  *
+ * @jest-environment jsdom
  * @module tests/unit/client/remote-dom-worker
  */
 

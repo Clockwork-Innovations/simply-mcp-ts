@@ -149,10 +149,11 @@ const createServerFromConfig = (config: ServerConfig) => {
     }
   );
 
-  // Initialize handler manager
+  // Initialize handler manager with configurable timeout
+  const handlerTimeout = config.timeout?.handler || 5000;
   const handlerManager = new HandlerManager({
     basePath: process.cwd(),
-    defaultTimeout: 5000,
+    defaultTimeout: handlerTimeout,
   });
 
   // Register tools

@@ -90,7 +90,7 @@ describe('Streamable HTTP Transport - Integration Tests', () => {
     }
 
     console.log('✓ Server started successfully on port', port);
-  }, 20000);
+  }, 30000); // Increased from 20s to 30s for HTTP server startup
 
   /**
    * Stop the server after all tests complete

@@ -67,6 +67,24 @@ export interface ResourceConfig {
 }
 
 /**
+ * Timeout configuration for MCP server
+ */
+export interface TimeoutConfig {
+  /**
+   * Handler execution timeout in milliseconds
+   * @default 5000
+   */
+  handler?: number;
+
+  /**
+   * Batch response collection timeout in milliseconds
+   * When undefined, defaults to handler * 2 for sequential batches
+   * @default undefined (auto-calculated)
+   */
+  batch?: number;
+}
+
+/**
  * Server configuration interface
  * Defines the complete structure for an MCP server configuration
  */
@@ -78,4 +96,9 @@ export interface ServerConfig {
   prompts?: PromptConfig[];
   resources?: ResourceConfig[];
   security?: SecurityConfig;
+
+  /**
+   * Timeout configuration for handlers and batches
+   */
+  timeout?: TimeoutConfig;
 }
