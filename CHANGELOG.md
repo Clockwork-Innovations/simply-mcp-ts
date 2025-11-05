@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [4.0.0] - 2025-11-05
+
 ### Added
 
 #### WebSocket Transport Support
@@ -32,7 +36,24 @@ interface MyServer extends IServer {
 }
 ```
 
-## [4.0.0] - TBD
+#### Remote DOM Support (MCP-UI Compliance)
+- ✨ **Full Remote DOM implementation** for declarative UI definitions
+- Web Worker-based sandbox for secure UI execution
+- Component library with whitelisted HTML elements
+- Protocol validation for all DOM operations
+- Resource limits and CSP validation
+- Complete client-side renderer (`RemoteDOMRenderer`)
+- Worker manager with timeout handling
+- Example: `examples/v4/06-remote-dom.ts`
+- MIME type: `application/vnd.mcp-ui.remote-dom+javascript`
+
+**Features:**
+- JSON-based DOM structure definitions
+- Event handler bridging through postMessage
+- Lazy component loading
+- Operation batching for performance
+- Host-receiver architecture for React integration
+- Framework support (React, Web Components)
 
 ### 🚀 BREAKING CHANGES
 
