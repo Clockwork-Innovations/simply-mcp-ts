@@ -77,8 +77,7 @@ interface ReactDashboard extends IUI {
   uri: 'ui://dashboard/v1';
   name: 'Dashboard';
   description: 'React-based dashboard';
-  component: './components/Dashboard.tsx';
-  dependencies: ['react', 'recharts'];
+  source: './components/Dashboard.tsx';  // v4: unified source field (dependencies auto-extracted)
   tools: ['fetch_data'];
 }
 
@@ -86,7 +85,7 @@ interface InlineUI extends IUI {
   uri: 'ui://simple/v1';
   name: 'Simple UI';
   description: 'Inline HTML UI';
-  html: '<div>Hello World</div>';
+  source: '<div>Hello World</div>';  // v4: unified source field (auto-detected as inline HTML)
 }
 
 interface MyServer extends IServer {

@@ -4,7 +4,7 @@ interface HttpsUI extends IUI {
   uri: 'ui://test/https';
   name: 'HTTPS UI';
   description: 'HTTPS URL';
-  externalUrl: 'https://secure.example.com';
+  source: 'https://secure.example.com';
 }
 
 const server: IServer = {

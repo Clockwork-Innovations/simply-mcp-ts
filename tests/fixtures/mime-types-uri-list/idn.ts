@@ -4,7 +4,7 @@ interface IDNUI extends IUI {
   uri: 'ui://test/idn';
   name: 'IDN UI';
   description: 'International domain';
-  externalUrl: 'https://münchen.example.com';
+  source: 'https://münchen.example.com';
 }
 
 const server: IServer = {

@@ -75,9 +75,8 @@ interface CounterUI extends IUI {
   uri: 'ui://counter';
   name: 'Counter';
   description: 'React counter component';
-  component: './Counter.tsx';
+  source: './Counter.tsx';  // v4: unified source field (dependencies auto-extracted)
   tools: ['increment'];
-  dependencies: [];
 }
 
 // Define increment tool

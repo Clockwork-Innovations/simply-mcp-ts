@@ -4,7 +4,7 @@ interface PortUI extends IUI {
   uri: 'ui://test/port';
   name: 'Port UI';
   description: 'URL with port';
-  externalUrl: 'https://example.com:8443/dashboard';
+  source: 'https://example.com:8443/dashboard';
 }
 
 const server: IServer = {

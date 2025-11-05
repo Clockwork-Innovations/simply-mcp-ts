@@ -4,7 +4,7 @@ interface ExternalDashboard extends IUI {
   uri: 'ui://dashboard/external';
   name: 'External Dashboard';
   description: 'External analytics dashboard';
-  externalUrl: 'https://dashboard.example.com';
+  source: 'https://dashboard.example.com';
 }
 
 const server: IServer = {

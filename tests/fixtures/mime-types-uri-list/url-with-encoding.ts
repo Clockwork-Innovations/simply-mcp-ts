@@ -4,7 +4,7 @@ interface EncodedUI extends IUI {
   uri: 'ui://test/encoded';
   name: 'Encoded UI';
   description: 'URL with encoded chars';
-  externalUrl: 'https://example.com/search?q=hello%20world&lang=en';
+  source: 'https://example.com/search?q=hello%20world&lang=en';
 }
 
 const server: IServer = {

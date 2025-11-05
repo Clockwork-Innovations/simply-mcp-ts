@@ -4,7 +4,7 @@ interface FileUI extends IUI {
   uri: 'ui://test/file';
   name: 'File UI';
   description: 'File URL';
-  externalUrl: 'file:///home/user/dashboard.html';
+  source: 'file:///home/user/dashboard.html';
 }
 
 const server: IServer = {

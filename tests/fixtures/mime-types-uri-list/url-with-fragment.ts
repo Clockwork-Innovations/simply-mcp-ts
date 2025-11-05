@@ -4,7 +4,7 @@ interface FragmentUI extends IUI {
   uri: 'ui://test/fragment';
   name: 'Fragment UI';
   description: 'URL with fragment';
-  externalUrl: 'https://example.com/page#section';
+  source: 'https://example.com/page#section';
 }
 
 const server: IServer = {

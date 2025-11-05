@@ -3,33 +3,64 @@
  *
  * Create interactive UIs that can call MCP tools.
  * Perfect for action-oriented interfaces, forms with server actions, etc.
+ *
+ * This example demonstrates:
+ * - Tool definitions using v4 ITool interface with IParam
+ * - UI resources that can call tools via window.mcpTools API
+ * - Proper separation of interface definitions and implementations
  */
 
-import { InterfaceServer, IUI, ITool } from '../../src/index.js';
+import type { IUI, ITool, IParam, IServer } from '../../src/index.js';
 
-const server = new InterfaceServer({
+// ============================================================================
+// Server Configuration
+// ============================================================================
+
+const server: IServer = {
   name: 'tools-ui-server',
   version: '1.0.0',
-});
+  description: 'Interactive UI server with tool integration',
+};
+
+// ============================================================================
+// Parameter Interfaces using IParam (v4 pattern)
+// ============================================================================
+
+interface MessageParam extends IParam {
+  type: 'string';
+  description: 'Notification message to display';
+  minLength: 1;
+}
+
+interface TypeParam extends IParam {
+  type: 'string';
+  description: 'Notification type';
+  enum: ['info', 'success', 'warning', 'error'];
+}
+
+// ============================================================================
+// Tool Interfaces
+// ============================================================================
 
 /**
  * Notification Tool
  *
- * Simple tool that the UI can call
+ * Simple tool that the UI can call to send notifications.
+ * The UI accesses this via window.mcpTools.notify()
  */
 interface NotifyTool extends ITool {
   name: 'notify';
   description: 'Send a notification to the user';
-  parameters: {
-    message: string;
-    type: 'info' | 'success' | 'warning' | 'error';
+  params: {
+    message: MessageParam;
+    type: TypeParam;
   };
-
-  (params: { message: string; type: 'info' | 'success' | 'warning' | 'error' }): { sent: boolean } {
-    console.log(`[${params.type.toUpperCase()}] ${params.message}`);
-    return { sent: true };
-  }
+  result: { sent: boolean; timestamp: string };
 }
+
+// ============================================================================
+// UI Interfaces
+// ============================================================================
 
 /**
  * Interactive Dashboard with Tools
@@ -44,6 +75,9 @@ interface InteractiveDashboard extends IUI {
   source: `
     <div style="font-family: system-ui; padding: 2rem;">
       <h1>Interactive Dashboard</h1>
+      <p style="color: #666; margin-bottom: 2rem;">
+        This UI demonstrates calling MCP tools from the client.
+      </p>
 
       <div style="margin: 1rem 0;">
         <button
@@ -75,7 +109,7 @@ interface InteractiveDashboard extends IUI {
     </div>
   `;
 
-  // Specify which tools this UI can call
+  // Specify which tools this UI can call (security whitelist)
   tools: ['notify'];
 }
 
@@ -92,6 +126,9 @@ interface ActionForm extends IUI {
   source: `
     <div style="max-width: 400px; margin: 0 auto; padding: 2rem; font-family: system-ui;">
       <h2>Contact Form</h2>
+      <p style="color: #666; font-size: 0.875rem; margin-bottom: 1rem;">
+        This form demonstrates calling MCP tools on form submission.
+      </p>
 
       <form id="contactForm" style="margin-top: 1rem;">
         <div style="margin-bottom: 1rem;">
@@ -150,4 +187,27 @@ interface ActionForm extends IUI {
   tools: ['notify'];
 }
 
-export default server;
+// ============================================================================
+// Server Implementation
+// ============================================================================
+
+export default class ToolsUIServer {
+  /**
+   * Notify tool implementation
+   *
+   * Logs notification to console and returns confirmation.
+   * In a real application, this could send notifications via email,
+   * push notifications, or other messaging services.
+   */
+  notify: NotifyTool = async (params) => {
+    // Log to console with appropriate styling
+    const prefix = `[${params.type.toUpperCase()}]`;
+    console.log(`${prefix} ${params.message}`);
+
+    // Return confirmation with timestamp
+    return {
+      sent: true,
+      timestamp: new Date().toISOString(),
+    };
+  };
+}

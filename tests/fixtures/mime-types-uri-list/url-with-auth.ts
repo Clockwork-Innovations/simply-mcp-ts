@@ -4,7 +4,7 @@ interface AuthUI extends IUI {
   uri: 'ui://test/auth';
   name: 'Auth UI';
   description: 'URL with auth';
-  externalUrl: 'https://user:pass@example.com/dashboard';
+  source: 'https://user:pass@example.com/dashboard';
 }
 
 const server: IServer = {
