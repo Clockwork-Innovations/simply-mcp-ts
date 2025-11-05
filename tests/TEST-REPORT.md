@@ -1,23 +1,23 @@
 # MCP Framework - Transport Test Report
 
-**Generated:** 2025-11-05 16:37:47
-**Duration:** 99s
+**Generated:** 2025-11-05 18:01:23
+**Duration:** 38s
 
 ## Summary
 
 - **Total Test Suites:** 4
-- **Passed:** 3
-- **Failed:** 1
-- **Success Rate:** 75%
+- **Passed:** 4
+- **Failed:** 0
+- **Success Rate:** 100%
 
 ## Test Results
 
 | Transport Type | Status | Duration |
 |----------------|--------|----------|
-| Stdio Transport | ❌ FAIL | 63s |
+| Stdio Transport | ✅ PASS | 5s |
 | Stateless HTTP Transport | ✅ PASS | 10s |
-| Stateful HTTP Transport | ✅ PASS | 9s |
-| HTTP Modes (Stateful/Stateless) | ✅ PASS | 11s |
+| Stateful HTTP Transport | ✅ PASS | 8s |
+| HTTP Modes (Stateful/Stateless) | ✅ PASS | 9s |
 
 ## Test Categories
 
@@ -49,7 +49,7 @@
 
 All servers use the **Interface API** exclusively. See [QUICK_START.md](docs/guides/QUICK_START.md) for current usage.
 
-Some test suites failed. Please review the test output above.
+All test suites passed successfully!
 
 ---
 
