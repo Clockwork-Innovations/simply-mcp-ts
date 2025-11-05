@@ -14,6 +14,7 @@ import {
   getFileCacheStats,
   invalidateFileCache,
 } from '../../src/features/ui/ui-file-resolver.js';
+import { testIfCanEnforceFilePermissions } from '../utils/conditional-tests.js';
 
 describe('UI File Resolver', () => {
   let testDir: string;
@@ -136,13 +137,7 @@ describe('UI File Resolver', () => {
       ).rejects.toThrow(/File not found.*missing\.html/);
     });
 
-    it('should handle permission errors gracefully', async () => {
-      // This test is platform-dependent and may not work on all systems
-      // Skip on Windows where chmod doesn't work the same way
-      if (process.platform === 'win32') {
-        return;
-      }
-
+    testIfCanEnforceFilePermissions('should handle permission errors gracefully', async () => {
       const restrictedFile = join(testDir, 'ui', 'restricted.html');
       await writeFile(restrictedFile, 'Restricted');
 

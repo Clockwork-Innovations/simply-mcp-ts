@@ -13,6 +13,7 @@ import {
   hasBrowserAutomation,
   canRunIntegrationTests,
   canRunE2ETests,
+  canEnforceFilePermissions,
 } from './env-capabilities';
 
 type TestFunction = Parameters<typeof test>[1];
@@ -26,13 +27,13 @@ export function testIfCanSpawnServers(
   fn: TestFunction,
   timeout?: number
 ): void {
-  const wrappedFn: TestFunction = async (done?: any) => {
+  const wrappedFn = async () => {
     const capable = await canSpawnServers();
     if (!capable) {
       console.warn(`⊘ Skipping test "${name}" - cannot spawn servers in this environment`);
       return;
     }
-    return typeof fn === 'function' ? await fn(done) : undefined;
+    return (fn as any)();
   };
 
   if (timeout !== undefined) {
@@ -50,13 +51,13 @@ export function testIfCanBindHttp(
   fn: TestFunction,
   timeout?: number
 ): void {
-  const wrappedFn: TestFunction = async (done?: any) => {
+  const wrappedFn = async () => {
     const capable = await canBindHttpServer();
     if (!capable) {
       console.warn(`⊘ Skipping test "${name}" - cannot bind HTTP server in this environment`);
       return;
     }
-    return typeof fn === 'function' ? await fn(done) : undefined;
+    return (fn as any)();
   };
 
   if (timeout !== undefined) {
@@ -114,13 +115,13 @@ export function testIfCanRunIntegration(
   fn: TestFunction,
   timeout?: number
 ): void {
-  const wrappedFn: TestFunction = async (done?: any) => {
+  const wrappedFn = async () => {
     const capable = await canRunIntegrationTests();
     if (!capable) {
       console.warn(`⊘ Skipping test "${name}" - cannot run integration tests in this environment`);
       return;
     }
-    return typeof fn === 'function' ? await fn(done) : undefined;
+    return (fn as any)();
   };
 
   if (timeout !== undefined) {
@@ -139,13 +140,37 @@ export function testIfCanRunE2E(
   requiresBrowser = false,
   timeout?: number
 ): void {
-  const wrappedFn: TestFunction = async (done?: any) => {
+  const wrappedFn = async () => {
     const capable = await canRunE2ETests(requiresBrowser);
     if (!capable) {
       console.warn(`⊘ Skipping test "${name}" - cannot run E2E tests in this environment`);
       return;
     }
-    return typeof fn === 'function' ? await fn(done) : undefined;
+    return (fn as any)();
+  };
+
+  if (timeout !== undefined) {
+    test(name, wrappedFn, timeout);
+  } else {
+    test(name, wrappedFn);
+  }
+}
+
+/**
+ * Run test only if file permissions are enforced
+ */
+export function testIfCanEnforceFilePermissions(
+  name: string,
+  fn: TestFunction,
+  timeout?: number
+): void {
+  const wrappedFn = async () => {
+    const capable = await canEnforceFilePermissions();
+    if (!capable) {
+      console.warn(`⊘ Skipping test "${name}" - file permissions not enforced in this environment`);
+      return;
+    }
+    return (fn as any)();
   };
 
   if (timeout !== undefined) {
@@ -301,13 +326,13 @@ export function testIf(
       }
     }
   } else if (typeof condition === 'function') {
-    const wrappedFn: TestFunction = async (done?: any) => {
+    const wrappedFn = async () => {
       const shouldRun = await Promise.resolve(condition());
       if (!shouldRun) {
         console.warn(`⊘ Skipping test "${name}" - condition not met`);
         return;
       }
-      return typeof fn === 'function' ? await fn(done) : undefined;
+      return (fn as any)();
     };
 
     if (timeout !== undefined) {

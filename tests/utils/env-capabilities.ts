@@ -193,6 +193,66 @@ export function hasBrowserAutomation(): boolean {
 }
 
 /**
+ * Detects if the environment enforces file permissions.
+ * Required for: Tests that rely on chmod/file permission errors
+ * Returns false in containers and some cloud environments where permissions aren't enforced.
+ */
+export async function canEnforceFilePermissions(): Promise<boolean> {
+  const cacheKey = 'canEnforceFilePermissions';
+  if (capabilityCache.has(cacheKey)) {
+    return capabilityCache.get(cacheKey)!;
+  }
+
+  // Windows doesn't support Unix-style permissions
+  if (process.platform === 'win32') {
+    capabilityCache.set(cacheKey, false);
+    return false;
+  }
+
+  try {
+    const fs = await import('fs/promises');
+    const os = await import('os');
+    const path = await import('path');
+
+    // Create a temporary test file
+    const tmpDir = os.tmpdir();
+    const testFile = path.join(tmpDir, `.perm-test-${Date.now()}`);
+
+    await fs.writeFile(testFile, 'test');
+
+    // Try to make it unreadable
+    await fs.chmod(testFile, 0o000);
+
+    // Try to read it - if permissions work, this should fail
+    let permissionsWork = false;
+    try {
+      await fs.readFile(testFile);
+      // If we can read it, permissions aren't enforced
+      permissionsWork = false;
+    } catch (err: any) {
+      // If we get EACCES or EPERM, permissions are working
+      if (err.code === 'EACCES' || err.code === 'EPERM') {
+        permissionsWork = true;
+      }
+    }
+
+    // Cleanup - restore permissions first
+    try {
+      await fs.chmod(testFile, 0o644);
+      await fs.unlink(testFile);
+    } catch {
+      // Cleanup failed, not critical
+    }
+
+    capabilityCache.set(cacheKey, permissionsWork);
+    return permissionsWork;
+  } catch {
+    capabilityCache.set(cacheKey, false);
+    return false;
+  }
+}
+
+/**
  * Composite check: Can run full integration tests?
  * Requires both server spawning and HTTP binding capabilities.
  */
@@ -223,11 +283,12 @@ export async function canRunE2ETests(requiresBrowser = false): Promise<boolean> 
  * Helper to get a summary of all capabilities for debugging
  */
 export async function getCapabilitiesSummary(): Promise<Record<string, boolean>> {
-  const [canSpawn, canBind, canIntegration, canE2E] = await Promise.all([
+  const [canSpawn, canBind, canIntegration, canE2E, canEnforcePerms] = await Promise.all([
     canSpawnServers(),
     canBindHttpServer(),
     canRunIntegrationTests(),
     canRunE2ETests(),
+    canEnforceFilePermissions(),
   ]);
 
   return {
@@ -237,6 +298,7 @@ export async function getCapabilitiesSummary(): Promise<Record<string, boolean>>
     hasImportMetaUrl: hasImportMetaUrl(),
     isCloudIDE: isCloudIDE(),
     hasBrowserAutomation: hasBrowserAutomation(),
+    canEnforceFilePermissions: canEnforcePerms,
     canRunIntegrationTests: canIntegration,
     canRunE2ETests: canE2E,
   };
