@@ -316,13 +316,14 @@ interface ProcessTool extends ITool {
 }
 
 // Server metadata
-interface MyServer extends IServer {
-  name: 'my-server';
-  description: 'Example server with validated parameters';
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'Example server with validated parameters'
 }
 
 // Implementation
-export default class MyServerImpl implements MyServer {
+export default class MyServerImpl {
   processItems: ProcessTool = async (params) => {
     // All parameter types are correct:
     // - params.count is a number (not a string!)

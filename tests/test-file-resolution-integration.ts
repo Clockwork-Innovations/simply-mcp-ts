@@ -94,7 +94,7 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServer implements MyServer {}
+export default class TestServer {}
 `;
 
   writeFileSync(serverFile, serverCode);
@@ -229,7 +229,7 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServer implements MyServer {}
+export default class TestServer {}
 `;
 
   const conflictServerFile = resolve(testDir, 'conflict-server.ts');

@@ -43,7 +43,7 @@ interface ExplainCodeTool extends ITool {
   result: { explanation: string };
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   explainCode: ExplainCodeTool = async (params, context) => {
     if (!context?.sample) {
       return { explanation: 'Sampling not available' };
@@ -89,7 +89,7 @@ interface ConfigureTool extends ITool {
   result: { success: boolean };
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   configureApi: ConfigureTool = async (params, context) => {
     if (!context?.elicitInput) {
       return { success: false };
@@ -141,7 +141,7 @@ interface ListProjectFilesTool extends ITool {
   result: { roots: Array<{ uri: string; name?: string }> };
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   listProjectFiles: ListProjectFilesTool = async (params, context) => {
     if (!context?.listRoots) {
       return { roots: [] };
@@ -179,7 +179,7 @@ interface StatsResource extends IResource {
   returns: { activeConnections: number };
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   'stats://current': StatsResource = async () => {
     return {
       activeConnections: connectionPool.size
@@ -195,7 +195,7 @@ Use the server's notification method to push updates:
 ```typescript
 import { InterfaceServer } from 'simply-mcp';
 
-class MyServer implements IServer {
+class MyServer {
   private connections = 0;
 
   async onNewConnection(server: InterfaceServer) {
@@ -237,7 +237,7 @@ interface CityCompletion extends ICompletion<string[]> {
   ref: { type: 'argument'; name: 'city' };
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   cityAutocomplete: CityCompletion = async (value: string) => {
     const cities = ['New York', 'Los Angeles', 'London', 'Tokyo'];
     return cities.filter(c =>
@@ -280,7 +280,7 @@ interface ProcessFilesTool extends ITool {
   result: { success: boolean };
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   processFiles: ProcessFilesTool = async ({ fileCount }, context) => {
     if (!context?.reportProgress) {
       throw new Error('This tool requires progress tracking');
@@ -368,7 +368,7 @@ for (let i = 0; i < items.length; i++) {
 Progress reporting (including messages) is only available when the request includes a `progressToken`. Always check for availability:
 
 ```typescript
-export default class MyServer implements IServer {
+export default class MyServer {
   myTool: MyTool = async (params, context) => {
     if (!context?.reportProgress) {
       // Progress not available - handle gracefully
@@ -799,7 +799,7 @@ Send progress notification during long-running operations. The optional `message
 Always check if a capability is available before using:
 
 ```typescript
-export default class MyServer implements IServer {
+export default class MyServer {
   myTool: MyTool = async (params, context) => {
     // Check if sampling is available
     if (!context?.sample) {

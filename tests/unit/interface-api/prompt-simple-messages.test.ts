@@ -25,10 +25,10 @@ import { resolve } from 'path';
 const TEST_SERVER_CODE = `
 import type { IPrompt, IServer, PromptMessage, SimpleMessage } from '../../../src/server/interface-types.js';
 
-interface TestServer extends IServer {
-  name: 'simple-message-test-server';
-  version: '1.0.0';
-  description: 'Test server for SimpleMessage support';
+const server: IServer = {
+  name: 'simple-message-test-server',
+  version: '1.0.0',
+  description: 'Test server for SimpleMessage support'
 }
 
 // Pattern 1: String return
@@ -82,7 +82,7 @@ interface AdvancedPrompt extends IPrompt {
   };
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   name = 'simple-message-test-server' as const;
   version = '1.0.0' as const;
   description = 'Test server for SimpleMessage support' as const;

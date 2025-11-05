@@ -50,14 +50,14 @@ interface TestTool extends ITool {
   result: string;
 }
 
-interface TestServer extends IServer {
-  name: 'test-interface-server';
-  version: '1.0.0';
-  description: 'Test interface server';
+const server: IServer = {
+  name: 'test-interface-server',
+  version: '1.0.0',
+  description: 'Test interface server'
 }
 
 // Test implementation
-class TestServerImpl implements TestServer {
+class TestServerImpl {
   testTool: TestTool = async (params) => {
     const count = params.count || 1;
     return `Received: ${params.input} (${count} times)`;

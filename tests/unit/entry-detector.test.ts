@@ -29,10 +29,10 @@ const TEMP_DIR = '/tmp/mcp-test-entry-detector';
 // Valid interface-driven server fixture
 const VALID_INTERFACE_SERVER = `import type { IServer, ITool } from 'simply-mcp';
 
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'A test server';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'A test server'
 }
 
 interface GreetTool extends ITool {
@@ -42,30 +42,30 @@ interface GreetTool extends ITool {
   result: string;
 }
 
-export default class implements TestServer {
+export default class {
   greet: GreetTool = async ({ name }) => \`Hello, \${name}!\`;
 }`;
 
 // Invalid server (no tools)
 const SERVER_WITHOUT_TOOLS = `import type { IServer } from 'simply-mcp';
 
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'Test server';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'Test server'
 }
 
-export default class implements TestServer {
+export default class {
 }`;
 
 // Invalid TypeScript (syntax error) - TypeScript parser is actually quite lenient
 // so we need a truly broken file that the parser can't handle
 const INVALID_TYPESCRIPT = `import type { IServer, ITool } from 'simply-mcp';
 
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'Test server';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'Test server'
 }
 
 // Missing closing brace - this will cause parse failure
@@ -74,7 +74,7 @@ interface TestTool extends ITool {
   params: { value: string };
   result: string;
 
-export default class implements TestServer {
+export default class {
   test: TestTool = async ({ value }) => value;
 }`;
 
@@ -88,10 +88,10 @@ const NON_INTERFACE_SERVER = `export default class MyServer {
 // Interface server with custom name
 const SERVER_WITH_CUSTOM_NAME = `import type { IServer, ITool } from 'simply-mcp';
 
-interface WeatherServer extends IServer {
-  name: 'weather-api';
-  version: '2.0.0';
-  description: 'Weather information service';
+const server: IServer = {
+  name: 'weather-api',
+  version: '2.0.0',
+  description: 'Weather information service'
 }
 
 interface GetWeatherTool extends ITool {
@@ -101,7 +101,7 @@ interface GetWeatherTool extends ITool {
   result: { temp: number; condition: string };
 }
 
-export default class implements WeatherServer {
+export default class {
   getWeather: GetWeatherTool = async ({ city }) => {
     return { temp: 72, condition: 'sunny' };
   };
@@ -110,10 +110,10 @@ export default class implements WeatherServer {
 // ESM module with import/export
 const ESM_SERVER = `import type { IServer, ITool } from 'simply-mcp';
 
-export interface TestServer extends IServer {
-  name: 'esm-server';
-  version: '1.0.0';
-  description: 'ESM test server';
+export const server: IServer = {
+  name: 'esm-server',
+  version: '1.0.0',
+  description: 'ESM test server'
 }
 
 export interface TestTool extends ITool {
@@ -122,7 +122,7 @@ export interface TestTool extends ITool {
   result: string;
 }
 
-export default class implements TestServer {
+export default class {
   test: TestTool = async () => 'test';
 }`;
 

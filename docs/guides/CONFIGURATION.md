@@ -432,7 +432,7 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class MyServer implements MyServer {
+export default class MyServer {
   callApi: CallApiTool = async (args) => {
     const response = await fetch(args.endpoint, {
       headers: { 'Authorization': `Bearer ${apiKey}` }
@@ -463,13 +463,13 @@ interface GreetTool extends ITool {
   result: string;
 }
 
-interface MyServer extends IServer {
-  name: 'my-server';
-  version: '1.0.0';
-  description: 'What this server does';
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'What this server does'
 }
 
-export default class MyServer implements MyServer {
+export default class MyServer {
   greet: GreetTool = async ({ name }) => `Hello, ${name}!`;
 }
 ```
@@ -635,7 +635,7 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class MyServer implements MyServer {
+export default class MyServer {
   fetchData: FetchDataTool = async (args) => {
     const cacheKey = JSON.stringify(args);
     if (cache.has(cacheKey)) {

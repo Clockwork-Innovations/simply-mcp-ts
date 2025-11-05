@@ -28,10 +28,10 @@ import type { ITool, IServer, IElicit } from '../../../src/interface-types.js';
 /**
  * Test server with elicitation capability
  */
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'A server with elicitation support';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'A server with elicitation support'
 }
 
 /**
@@ -76,7 +76,7 @@ interface ConfigureTool extends ITool {
 /**
  * Test server implementation
  */
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   configureApi: ConfigureTool = async (params, context) => {
     if (!context.elicitInput) {
       return { configured: false };
@@ -340,7 +340,7 @@ interface SimpleTool extends ITool {
   result: string;
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   simple: SimpleTool = async (params) => params.input;
 }
 `;
@@ -413,7 +413,7 @@ interface ComplexElicit extends IElicit {
   result: { success: boolean };
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const complexArgsFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-complex-elicit.ts');
@@ -484,7 +484,7 @@ interface MissingPromptElicit extends IElicit {
   result: { output: string };
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const missingPromptFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-missing-prompt.ts');

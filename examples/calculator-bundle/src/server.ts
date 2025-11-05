@@ -6,7 +6,7 @@
  *
  * Features:
  * - Add, subtract, multiply, and divide operations
- * - Input validation
+ * - Input validation using IParam
  * - Error handling (division by zero)
  * - Clean Interface API pattern
  *
@@ -21,7 +21,31 @@
  *   npx simply-mcp run . --dry-run
  */
 
-import type { ITool, IServer } from 'simply-mcp';
+import type { ITool, IParam, IServer } from 'simply-mcp';
+
+// ============================================================================
+// Server Configuration
+// ============================================================================
+
+const server: IServer = {
+  name: 'calculator-mcp-server',
+  version: '1.0.0',
+  description: 'Simple calculator with basic arithmetic operations'
+};
+
+// ============================================================================
+// Parameter Interfaces (using IParam for validation)
+// ============================================================================
+
+interface AParam extends IParam {
+  type: 'number';
+  description: 'First number';
+}
+
+interface BParam extends IParam {
+  type: 'number';
+  description: 'Second number';
+}
 
 // ============================================================================
 // Tool Interfaces
@@ -31,10 +55,8 @@ interface AddTool extends ITool {
   name: 'add';
   description: 'Add two numbers together';
   params: {
-    /** First number */
-    a: number;
-    /** Second number */
-    b: number;
+    a: AParam;
+    b: BParam;
   };
   result: number;
 }
@@ -43,10 +65,8 @@ interface SubtractTool extends ITool {
   name: 'subtract';
   description: 'Subtract second number from first number';
   params: {
-    /** First number (minuend) */
-    a: number;
-    /** Second number (subtrahend) */
-    b: number;
+    a: AParam;
+    b: BParam;
   };
   result: number;
 }
@@ -55,10 +75,8 @@ interface MultiplyTool extends ITool {
   name: 'multiply';
   description: 'Multiply two numbers';
   params: {
-    /** First number */
-    a: number;
-    /** Second number */
-    b: number;
+    a: AParam;
+    b: BParam;
   };
   result: number;
 }
@@ -67,57 +85,45 @@ interface DivideTool extends ITool {
   name: 'divide';
   description: 'Divide first number by second number';
   params: {
-    /** Numerator */
-    a: number;
-    /** Denominator (cannot be zero) */
-    b: number;
+    a: AParam;
+    b: BParam;
   };
   result: number | string;
-}
-
-// ============================================================================
-// Server Interface
-// ============================================================================
-
-interface CalculatorServer extends IServer {
-  name: 'calculator-mcp-server';
-  version: '1.0.0';
-  description: 'Simple calculator with basic arithmetic operations';
 }
 
 // ============================================================================
 // Server Implementation
 // ============================================================================
 
-export default class CalculatorServerImpl implements CalculatorServer {
+export default class CalculatorServer {
   /**
    * Add two numbers
    */
-  add: AddTool = async ({ a, b }) => {
-    return a + b;
+  add: AddTool = async (params) => {
+    return params.a + params.b;
   };
 
   /**
    * Subtract second number from first
    */
-  subtract: SubtractTool = async ({ a, b }) => {
-    return a - b;
+  subtract: SubtractTool = async (params) => {
+    return params.a - params.b;
   };
 
   /**
    * Multiply two numbers
    */
-  multiply: MultiplyTool = async ({ a, b }) => {
-    return a * b;
+  multiply: MultiplyTool = async (params) => {
+    return params.a * params.b;
   };
 
   /**
    * Divide first number by second with zero-division check
    */
-  divide: DivideTool = async ({ a, b }) => {
-    if (b === 0) {
+  divide: DivideTool = async (params) => {
+    if (params.b === 0) {
       return 'Error: Division by zero is undefined';
     }
-    return a / b;
+    return params.a / params.b;
   };
 }

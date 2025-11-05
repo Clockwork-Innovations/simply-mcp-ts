@@ -14,4 +14,4 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class ReactServer implements MyServer {}
+export default class ReactServer {}

@@ -35,7 +35,7 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class MyServer implements MyServer {
+export default class MyServer {
   myTool: MyTool = async (args) => {
     try {
       // Validate input
@@ -74,7 +74,7 @@ interface ValidateTool extends ITool {
   result: any;
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   validateEmail: ValidateTool = async (args) => {
     // Check required fields
     if (!args.email || !args.email.includes('@')) {
@@ -104,7 +104,7 @@ interface FetchTool extends ITool {
   result: string;
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   fetchUrl: FetchTool = async (args) => {
     try {
       const response = await fetch(args.url);
@@ -134,7 +134,7 @@ interface FetchWithTimeoutTool extends ITool {
   result: string;
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   fetchWithTimeout: FetchWithTimeoutTool = async (args) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -166,7 +166,7 @@ interface ProcessTool extends ITool {
   result: any;
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   processData: ProcessTool = async (args) => {
     try {
       const module = require('optional-module');
@@ -195,7 +195,7 @@ interface BatchTool extends ITool {
   result: any[];
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   batchOperations: BatchTool = async (args) => {
     try {
       // Run multiple async operations safely
@@ -259,7 +259,7 @@ interface ProcessTool extends ITool {
   result: any;
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   processData: ProcessTool = async (args) => {
     console.log('Starting tool with args:', args);
 
@@ -314,7 +314,7 @@ async function retryableOperation(fn, maxRetries = 3) {
 }
 
 // Usage
-export default class MyServer implements IServer {
+export default class MyServer {
   fetchWithRetry: FetchTool = async (args) => {
     return retryableOperation(() => fetch(args.url));
   };
@@ -347,7 +347,7 @@ interface ValidateTool extends ITool {
   result: any;
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   validateInput: ValidateTool = async (args) => {
     try {
       // IParam provides automatic validation
@@ -379,7 +379,7 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class MyServer implements MyServer {
+export default class MyServer {
   myTool: MyTool = async (args) => {
     try {
       return await myLogic(args);

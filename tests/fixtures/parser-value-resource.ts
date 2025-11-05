@@ -11,10 +11,10 @@ import type { IServer, IResource } from '../../src/index.js';
 // SERVER INTERFACE
 // =============================================================================
 
-interface ParserValueTestServer extends IServer {
-  name: 'parser-value-test';
-  version: '1.0.0';
-  description: 'Test server for parser value field detection';
+const server: IServer = {
+  name: 'parser-value-test',
+  version: '1.0.0',
+  description: 'Test server for parser value field detection'
 }
 
 // =============================================================================

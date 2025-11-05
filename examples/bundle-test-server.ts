@@ -7,17 +7,20 @@
 
 import type { IServer, ITool, IParam } from 'simply-mcp';
 
-interface BundleTestServer extends IServer {
-  name: 'bundle-test';
-  version: '1.0.0';
-  description: 'Test server for bundle integration testing';
-}
+// Server configuration
+const server: IServer = {
+  name: 'bundle-test',
+  version: '1.0.0',
+  description: 'Test server for bundle integration testing'
+};
 
+// Parameter interface
 interface InputParam extends IParam {
   type: 'string';
   description: 'Input text to echo';
 }
 
+// Tool interface
 interface TestTool extends ITool {
   name: 'test';
   description: 'Test tool that echoes input';
@@ -25,8 +28,9 @@ interface TestTool extends ITool {
   result: { output: string };
 }
 
-export default class implements BundleTestServer {
-  test: TestTool = async ({ input }) => {
-    return { output: `Processed: ${input}` };
+// Implementation
+export default class BundleTestServer {
+  test: TestTool = async (params) => {
+    return { output: `Processed: ${params.input}` };
   };
 }

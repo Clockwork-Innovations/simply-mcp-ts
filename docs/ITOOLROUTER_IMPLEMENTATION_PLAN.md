@@ -164,14 +164,14 @@ interface WeatherRouter extends IToolRouter<'get_weather' | 'get_forecast'> {
 }
 
 // Server with tools and router
-interface WeatherServer extends IServer {
-  name: 'weather-service';
-  version: '1.0.0';
-  description: 'Weather information service';
+const server: IServer = {
+  name: 'weather-service',
+  version: '1.0.0',
+  description: 'Weather information service'
   flattenRouters: false; // Hide router-assigned tools from main list
 }
 
-export default class WeatherService implements WeatherServer {
+export default class WeatherService {
   // Tool implementations
   getWeather: GetWeatherTool = async (params) => {
     return { temperature: 72, conditions: 'Sunny' };
@@ -996,7 +996,7 @@ interface WeatherRouter extends IToolRouter<'get_weather' | 'get_forecast'> {
   tools: ['get_weather', 'get_forecast'];
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   weatherRouter!: WeatherRouter; // No implementation needed!
 }
 \`\`\`
@@ -1030,7 +1030,7 @@ interface WeatherServer extends IServer {
   flattenRouters: false; // Hide assigned tools from main list
 }
 
-export default class WeatherService implements WeatherServer {
+export default class WeatherService {
   // Tools
   getWeather: GetWeatherTool = async (params) => { ... };
   getForecast: GetForecastTool = async (params) => { ... };
@@ -1105,7 +1105,7 @@ interface MyServer extends IServer {
   flattenRouters: false;
 }
 
-export default class MyServerImpl implements MyServer {
+export default class MyServerImpl {
   getWeather: GetWeatherTool = async (params) => { ... };
   getForecast: GetForecastTool = async (params) => { ... };
   weatherRouter!: WeatherRouter; // Declarative!
@@ -1156,7 +1156,7 @@ interface MyRouter extends IToolRouter<'tool1' | 'tool2'> {
   tools: ['tool1', 'tool2'];
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   myRouter!: MyRouter;
 }
 ```

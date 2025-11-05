@@ -10,6 +10,7 @@
  * - Get active weather alerts
  * - Unit conversion (Fahrenheit/Celsius)
  * - Mock data for demonstration
+ * - IParam validation with optional parameters
  *
  * Usage:
  *   # From bundle directory
@@ -22,7 +23,42 @@
  *   npx simply-mcp run . --dry-run
  */
 
-import type { ITool, IServer } from 'simply-mcp';
+import type { ITool, IParam, IServer } from 'simply-mcp';
+
+// ============================================================================
+// Server Configuration
+// ============================================================================
+
+const server: IServer = {
+  name: 'weather-mcp-server',
+  version: '1.0.0',
+  description: 'Get weather forecasts and current conditions for any location'
+};
+
+// ============================================================================
+// Parameter Interfaces (using IParam for validation)
+// ============================================================================
+
+interface LocationParam extends IParam {
+  type: 'string';
+  description: 'City name, address, or coordinates';
+  minLength: 1;
+}
+
+interface UnitsParam extends IParam {
+  type: 'string';
+  description: 'Temperature units';
+  enum: ['fahrenheit', 'celsius'];
+  required: false;
+}
+
+interface DaysParam extends IParam {
+  type: 'integer';
+  description: 'Number of days to forecast';
+  min: 1;
+  max: 7;
+  required: false;
+}
 
 // ============================================================================
 // Tool Interfaces
@@ -32,10 +68,8 @@ interface GetCurrentWeatherTool extends ITool {
   name: 'get_current_weather';
   description: 'Get current weather conditions for a specific location';
   params: {
-    /** City name, address, or coordinates (e.g., "San Francisco", "New York, NY", "40.7128,-74.0060") */
-    location: string;
-    /** Temperature units */
-    units?: 'fahrenheit' | 'celsius';
+    location: LocationParam;
+    units: UnitsParam;
   };
   result: string;
 }
@@ -44,12 +78,9 @@ interface GetForecastTool extends ITool {
   name: 'get_forecast';
   description: 'Get multi-day weather forecast for a location';
   params: {
-    /** City name or address */
-    location: string;
-    /** Number of days to forecast (1-7) */
-    days?: number;
-    /** Temperature units */
-    units?: 'fahrenheit' | 'celsius';
+    location: LocationParam;
+    days: DaysParam;
+    units: UnitsParam;
   };
   result: string;
 }
@@ -58,33 +89,25 @@ interface GetWeatherAlertsTool extends ITool {
   name: 'get_weather_alerts';
   description: 'Get active weather alerts and warnings for a location';
   params: {
-    /** City name or address */
-    location: string;
+    location: LocationParam;
   };
   result: string;
-}
-
-// ============================================================================
-// Server Interface
-// ============================================================================
-
-interface WeatherServer extends IServer {
-  name: 'weather-mcp-server';
-  version: '1.0.0';
-  description: 'Get weather forecasts and current conditions for any location';
 }
 
 // ============================================================================
 // Server Implementation
 // ============================================================================
 
-export default class WeatherServerImpl implements WeatherServer {
+export default class WeatherServer {
   /**
    * Get current weather conditions
    *
    * Returns mock weather data based on location hash for consistency.
    */
-  getCurrentWeather: GetCurrentWeatherTool = async ({ location, units = 'fahrenheit' }) => {
+  getCurrentWeather: GetCurrentWeatherTool = async (params) => {
+    const location = params.location;
+    const units = params.units || 'fahrenheit';
+
     // Mock weather data based on location hash
     const temps = [72, 65, 80, 55, 90, 68, 75, 82, 60, 70];
     const conditions = ['sunny', 'cloudy', 'rainy', 'windy', 'stormy', 'partly cloudy', 'foggy', 'clear', 'overcast', 'drizzle'];
@@ -120,7 +143,11 @@ Note: This is mock data for demonstration purposes.`;
    *
    * Generates consistent forecast data based on location and days requested.
    */
-  getForecast: GetForecastTool = async ({ location, days = 3, units = 'fahrenheit' }) => {
+  getForecast: GetForecastTool = async (params) => {
+    const location = params.location;
+    const days = params.days || 3;
+    const units = params.units || 'fahrenheit';
+
     // Validate days range
     const forecastDays = Math.min(Math.max(days, 1), 7);
 
@@ -165,7 +192,8 @@ Note: This is mock data for demonstration purposes.`;
    *
    * Returns mock alerts for some locations based on hash.
    */
-  getWeatherAlerts: GetWeatherAlertsTool = async ({ location }) => {
+  getWeatherAlerts: GetWeatherAlertsTool = async (params) => {
+    const location = params.location;
     const hash = location.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
     // Mock alerts based on location

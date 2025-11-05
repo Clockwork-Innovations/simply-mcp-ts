@@ -22,7 +22,7 @@ class InfoTool implements ITool {
   }
 }
 
-class InterfaceTestServer implements IServer {
+class InterfaceTestServer {
   name = 'interface-test-server';
   version = '1.0.0';
   description = 'Interface API HTTP Transport Test Server';

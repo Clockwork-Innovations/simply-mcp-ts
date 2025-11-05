@@ -36,14 +36,14 @@ interface AddTool extends ITool {
 }
 
 // Define server metadata
-interface Calculator extends IServer {
-  name: 'calculator';
-  description: 'A simple calculator server';
-  // version: '1.0.0';  // Optional (defaults to '1.0.0')
-}
+const server: IServer = {
+  name: 'calculator',
+  version: '1.0.0',
+  description: 'A simple calculator server'
+};
 
 // Implement the server
-export default class CalculatorService implements Calculator {
+export default class CalculatorService {
   add: AddTool = async (params) => ({
     sum: params.a + params.b
   });
@@ -74,11 +74,11 @@ Here's a server using all MCP features together - tools, prompts, and resources:
 import type { IServer, ITool, IParam, IPrompt, IResource } from 'simply-mcp';
 
 // Server configuration
-interface MyServer extends IServer {
-  name: 'my-app';
-  description: 'My application server';
-  // version: '1.0.0';  // Optional (defaults to '1.0.0')
-}
+const server: IServer = {
+  name: 'my-app',
+  version: '1.0.0',
+  description: 'My application server'
+};
 
 // Tool parameter: Use IParam for validation
 interface NameParam extends IParam {
@@ -137,7 +137,7 @@ interface StatsResource extends IResource {
 }
 
 // Implementation
-export default class MyServer implements MyServer {
+export default class MyServer {
   // ✅ Tool - always implement
   greet: GreetTool = async (params) => ({
     greeting: `Hello ${params.name}!`
@@ -429,9 +429,10 @@ Simply-MCP provides **100% spec-compliant** MCP UI support for building interact
 ```typescript
 import type { IServer, ITool, IUI } from 'simply-mcp';
 
-interface MyServer extends IServer {
-  name: 'my-server';
-  description: 'Server with UI support';
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'Server with UI support'
 }
 
 interface ShowDashboardTool extends ITool {
@@ -450,7 +451,7 @@ interface DashboardUI extends IUI {
   tools: ['refresh_data'];  // Tool allowlist for security
 }
 
-export default class Server implements MyServer {
+export default class Server {
   dashboard: DashboardUI = {
     html: `
       <div id="app">

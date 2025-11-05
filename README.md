@@ -141,10 +141,11 @@ npm install simply-mcp
 import type { ITool, IParam, IServer } from 'simply-mcp';
 
 // 1. Configure your server
-interface MyServer extends IServer {
-  name: 'my-server';
-  description: 'A helpful MCP server';
-}
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'A helpful MCP server'
+};
 
 // 2. Define parameter interface
 interface NameParam extends IParam {
@@ -161,8 +162,8 @@ interface GreetTool extends ITool {
 }
 
 // 4. Implement the server
-export default class Server implements MyServer {
-  greet: GreetTool = async ({ name }) => `Hello, ${name}!`;
+export default class Server {
+  greet: GreetTool = async (params) => `Hello, ${params.name}!`;
 }
 ```
 

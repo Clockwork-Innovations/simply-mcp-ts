@@ -28,10 +28,10 @@ import type { IResource, IServer, ISubscription } from '../../../src/interface-t
 /**
  * Test server with subscriptions capability
  */
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'A server with subscriptions support';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'A server with subscriptions support'
 }
 
 /**
@@ -83,7 +83,7 @@ interface StatsSubscription extends ISubscription {
 /**
  * Test server implementation
  */
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   private intervalId?: NodeJS.Timeout;
 
   'stats://current': StatsResource = async () => ({
@@ -349,7 +349,7 @@ interface SimpleTool extends ITool {
   result: string;
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   simple: SimpleTool = async (params) => params.input;
 }
 `;
@@ -394,7 +394,7 @@ interface MissingUriSub extends ISubscription {
   description: 'Subscription without URI';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const missingUriFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-missing-uri-sub.ts');
@@ -461,7 +461,7 @@ interface CustomSub extends ISubscription {
   description: 'Custom scheme resource';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const specialSchemeFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-special-scheme-sub.ts');
@@ -533,7 +533,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const emptySubsFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-empty-subs.ts');

@@ -11,10 +11,10 @@ import type { IServer, IResource } from '../../src/index.js';
 // SERVER INTERFACE
 // =============================================================================
 
-interface ParserReturnsTestServer extends IServer {
-  name: 'parser-returns-test';
-  version: '1.0.0';
-  description: 'Test server for parser returns field detection';
+const server: IServer = {
+  name: 'parser-returns-test',
+  version: '1.0.0',
+  description: 'Test server for parser returns field detection'
 }
 
 // =============================================================================

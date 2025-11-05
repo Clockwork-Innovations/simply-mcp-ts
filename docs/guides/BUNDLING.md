@@ -67,7 +67,7 @@ interface MyTool extends ITool {
   result: { output: string };
 }
 
-export default class implements MyServer {
+export default class {
   my_tool: MyTool = async ({ input }) => {
     return { output: `Processed: ${input}` };
   };
@@ -628,7 +628,7 @@ interface MyServer extends IServer {
   version: '1.0.0';
 }
 
-export default class implements MyServer {
+export default class {
   my_tool: MyTool = async ({ input }) => {
     return { output: `Result: ${input}` };
   };

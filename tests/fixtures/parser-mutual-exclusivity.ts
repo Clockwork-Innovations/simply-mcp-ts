@@ -13,10 +13,10 @@ import type { IServer, IResource } from '../../src/index.js';
 // SERVER INTERFACE
 // =============================================================================
 
-interface ParserMutualExclusivityTestServer extends IServer {
-  name: 'parser-mutual-exclusivity-test';
-  version: '1.0.0';
-  description: 'Test server for parser mutual exclusivity validation';
+const server: IServer = {
+  name: 'parser-mutual-exclusivity-test',
+  version: '1.0.0',
+  description: 'Test server for parser mutual exclusivity validation'
 }
 
 // =============================================================================

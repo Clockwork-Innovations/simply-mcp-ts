@@ -93,13 +93,13 @@ interface IncrementTool extends ITool {
 }
 
 // Define server
-interface TestServer extends IServer {
-  name: 'react-test-server';
-  version: '1.0.0';
-  description: 'Test server with React UI';
+const server: IServer = {
+  name: 'react-test-server',
+  version: '1.0.0',
+  description: 'Test server with React UI'
 }
 
-export default class implements TestServer {
+export default class {
   // Implement increment tool
   increment: IncrementTool = async (params) => {
     return {

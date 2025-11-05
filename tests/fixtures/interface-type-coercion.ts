@@ -16,9 +16,10 @@ import type { IServer, ITool, IParam, ToolHelper } from '../../src/index.js';
 // SERVER CONFIGURATION
 // ============================================================================
 
-interface CoercionTestServer extends IServer {
-  name: 'test-coercion-comprehensive';
-  description: 'Comprehensive test suite for parameter type coercion';
+const server: IServer = {
+  name: 'test-coercion-comprehensive',
+  version: '1.0.0',
+  description: 'Comprehensive test suite for parameter type coercion'
   version: '1.0.0';
 }
 

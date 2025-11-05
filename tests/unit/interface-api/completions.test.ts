@@ -28,10 +28,10 @@ import type { IPrompt, IServer, ICompletion } from '../../../src/interface-types
 /**
  * Test server with completions capability
  */
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'A server with completions support';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'A server with completions support'
 }
 
 /**
@@ -69,7 +69,7 @@ interface StyleCompletion extends ICompletion {
 /**
  * Test server implementation
  */
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   cityAutocomplete: CityCompletion = async (value: string) => {
     const cities = ['New York', 'New Orleans', 'Newark', 'Newcastle', 'Newport'];
     return cities.filter(city => city.toLowerCase().startsWith(value.toLowerCase()));
@@ -384,7 +384,7 @@ interface SimpleTool extends ITool {
   result: string;
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   simple: SimpleTool = async (params) => params.input;
 }
 `;
@@ -446,7 +446,7 @@ interface MissingNameCompletion extends ICompletion {
   complete: (value: string) => string[];
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const missingNameFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-missing-name-completion.ts');
@@ -508,7 +508,7 @@ interface ComplexRefCompletion extends ICompletion {
   complete: (value: string, context?: any) => Promise<string[]>;
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const complexRefFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-complex-ref.ts');
@@ -591,7 +591,7 @@ interface TestServer extends IServer {
   version: '1.0.0';
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const emptyCompletionsFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-empty-completions.ts');

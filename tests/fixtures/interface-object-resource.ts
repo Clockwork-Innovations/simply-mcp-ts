@@ -27,9 +27,10 @@ import type { IServer, ITool, IResource, ToolHelper } from '../../src/index.js';
 // SERVER INTERFACE
 // =============================================================================
 
-interface ObjectResourceServer extends IServer {
-  name: 'object-resource-fixture';
-  description: 'Test server for object-with-data resource pattern';
+const server: IServer = {
+  name: 'object-resource-fixture',
+  version: '1.0.0',
+  description: 'Test server for object-with-data resource pattern'
   // version: '1.0.0';  // Optional (defaults to '1.0.0')
 }
 

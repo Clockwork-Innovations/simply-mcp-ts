@@ -85,9 +85,10 @@ interface MyAuth extends IOAuth2Auth {
 }
 
 // Configure server with OAuth
-interface MyServer extends IServer {
-  name: 'oauth-server';
-  description: 'OAuth-protected MCP server';
+const server: IServer = {
+  name: 'oauth-server',
+  version: '1.0.0',
+  description: 'OAuth-protected MCP server'
   transport: 'http';
   port: 3000;
   stateful: true;  // Required for OAuth
@@ -108,7 +109,7 @@ interface GreetTool extends ITool {
 }
 
 // Implement server
-export default class Server implements MyServer {
+export default class Server {
   greet: GreetTool = async ({ name }) => ({
     message: `Hello, ${name}!`
   });
@@ -305,9 +306,10 @@ interface MyAuth extends IOAuth2Auth {
   codeExpiration?: number;
 }
 
-interface MyServer extends IServer {
-  name: 'my-server';
-  description: 'OAuth-protected server';
+const server: IServer = {
+  name: 'my-server',
+  version: '1.0.0',
+  description: 'OAuth-protected server'
   transport: 'http';
   port: 3000;
   stateful: true;  // REQUIRED for OAuth
@@ -752,7 +754,7 @@ interface AdminTool extends ITool {
   result: { status: string };
 }
 
-export default class MyServer implements IServer {
+export default class MyServer {
   adminAction: AdminTool = async (params, context) => {
     // Check if user has admin permission
     if (!context?.securityContext?.permissions?.includes('*')) {
@@ -1492,9 +1494,10 @@ interface ProductionAuth extends IOAuth2Auth {
   codeExpiration: 300;          // 5 minutes
 }
 
-interface ProductionServer extends IServer {
-  name: 'production-server';
-  description: 'Production MCP server';
+const server: IServer = {
+  name: 'production-server',
+  version: '1.0.0',
+  description: 'Production MCP server'
   transport: 'http';
   port: 443;  // HTTPS
   stateful: true;

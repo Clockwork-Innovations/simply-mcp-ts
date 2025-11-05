@@ -19,10 +19,10 @@ import type {
 // Server Interface
 // ============================================================================
 
-interface MixedFeatureServer extends IServer {
-  name: 'mixed-feature-test';
-  version: '1.0.0';
-  description: 'Tests mixed combinations of features';
+const server: IServer = {
+  name: 'mixed-feature-test',
+  version: '1.0.0',
+  description: 'Tests mixed combinations of features'
 }
 
 // ============================================================================
@@ -135,7 +135,7 @@ interface StatsSubscription extends ISubscription {
 // Server Implementation
 // ============================================================================
 
-export default class MixedFeatureServerImpl implements MixedFeatureServer {
+export default class MixedFeatureServerImpl {
   name: 'mixed-feature-test' = 'mixed-feature-test';
   version: '1.0.0' = '1.0.0';
   description: 'Tests mixed combinations of features' = 'Tests mixed combinations of features';

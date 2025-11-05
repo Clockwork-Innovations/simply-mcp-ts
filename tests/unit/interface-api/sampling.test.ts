@@ -27,10 +27,10 @@ import type { ITool, IServer, ISampling } from '../../../src/interface-types.js'
 /**
  * Test server with sampling capability
  */
-interface TestServer extends IServer {
-  name: 'test-server';
-  version: '1.0.0';
-  description: 'A server with sampling support';
+const server: IServer = {
+  name: 'test-server',
+  version: '1.0.0',
+  description: 'A server with sampling support'
 }
 
 /**
@@ -60,7 +60,7 @@ interface AnalyzeTool extends ITool {
 /**
  * Test server implementation
  */
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   analyzeCode: AnalyzeTool = async (params, context) => {
     if (!context.sample) {
       return { analysis: 'Sampling not available' };
@@ -261,7 +261,7 @@ interface Sampling2 extends ISampling {
   options?: { maxTokens?: number };
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const multiFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-multi-sampling.ts');
@@ -305,7 +305,7 @@ interface NoOptionsSampling extends ISampling {
   messages: Array<{ role: 'user'; content: { type: 'text'; text: string } }>;
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const noOptionsFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-no-options-sampling.ts');
@@ -394,7 +394,7 @@ interface SimpleTool extends ITool {
   result: string;
 }
 
-export default class TestServerImpl implements TestServer {
+export default class TestServerImpl {
   simple: SimpleTool = async (params) => params.input;
 }
 `;
@@ -454,7 +454,7 @@ interface EmptyMessagesSampling extends ISampling {
   messages: [];
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const emptyMessagesFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-empty-messages.ts');
@@ -515,7 +515,7 @@ interface FullOptionsSampling extends ISampling {
   };
 }
 
-export default class TestServerImpl implements TestServer {}
+export default class TestServerImpl {}
 `;
 
     const fullOptionsFilePath = resolve(process.cwd(), 'tests/unit/interface-api/__test-full-options.ts');
