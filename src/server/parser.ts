@@ -621,8 +621,8 @@ export function parseInterfaceFile(filePath: string): ParseResult {
       result.implementations!.push(...classImpls);
 
       const modifiers = node.modifiers ? Array.from(node.modifiers) : [];
-      const hasDefaultExport = modifiers.some(mod => mod.kind === ts.SyntaxKind.DefaultKeyword);
-      const hasExport = modifiers.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword);
+      const hasDefaultExport = modifiers.some((mod: ts.Node) => mod.kind === ts.SyntaxKind.DefaultKeyword);
+      const hasExport = modifiers.some((mod: ts.Node) => mod.kind === ts.SyntaxKind.ExportKeyword);
 
       // Priority 1: Explicit export default (backward compatible)
       if (hasExport && hasDefaultExport) {
@@ -668,6 +668,9 @@ export function parseInterfaceFile(filePath: string): ParseResult {
 
   // Link implementations to interfaces
   linkImplementationsToInterfaces(result);
+
+  // Validate implementations (Phase 2B: Auto-discovery validation)
+  validateImplementations(result);
 
   return result;
 }
@@ -797,6 +800,139 @@ function linkImplementationsToInterfaces(result: ParseResult) {
       }
     }
   }
+}
+
+/**
+ * Validate implementations and their links to interfaces
+ * Ensures every interface has implementation and vice versa
+ */
+function validateImplementations(result: ParseResult) {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (!result.implementations) {
+    result.implementations = [];
+  }
+
+  // Step 1: Check that every tool/prompt/resource interface has an implementation
+  for (const tool of result.tools) {
+    const hasImpl = result.implementations.some(
+      impl => impl.helperType === 'ToolHelper' && impl.interfaceName === tool.interfaceName
+    );
+
+    if (!hasImpl) {
+      const exampleName = tool.methodName; // camelCase version
+      errors.push(
+        `Tool '${tool.interfaceName}' defined but not implemented.\n` +
+        `  Add: const ${exampleName}: ToolHelper<${tool.interfaceName}> = async (params) => { ... }`
+      );
+    }
+  }
+
+  for (const prompt of result.prompts) {
+    const hasImpl = result.implementations.some(
+      impl => impl.helperType === 'PromptHelper' && impl.interfaceName === prompt.interfaceName
+    );
+
+    if (!hasImpl) {
+      const exampleName = prompt.methodName;
+      errors.push(
+        `Prompt '${prompt.interfaceName}' defined but not implemented.\n` +
+        `  Add: const ${exampleName}: PromptHelper<${prompt.interfaceName}> = async (args) => { ... }`
+      );
+    }
+  }
+
+  for (const resource of result.resources) {
+    // Only check dynamic resources
+    if (resource.dynamic) {
+      const hasImpl = result.implementations.some(
+        impl => impl.helperType === 'ResourceHelper' && impl.interfaceName === resource.interfaceName
+      );
+
+      if (!hasImpl) {
+        const exampleName = resource.methodName;
+        errors.push(
+          `Resource '${resource.interfaceName}' defined but not implemented.\n` +
+          `  Add: const ${exampleName}: ResourceHelper<${resource.interfaceName}> = async () => { ... }`
+        );
+      }
+    }
+  }
+
+  // Step 2: Check that every implementation has a matching interface
+  for (const impl of result.implementations) {
+    let found = false;
+
+    if (impl.helperType === 'ToolHelper') {
+      found = result.tools.some(t => t.interfaceName === impl.interfaceName);
+      if (!found) {
+        errors.push(
+          `Implementation '${impl.name}' references unknown tool interface '${impl.interfaceName}'.\n` +
+          `  Define: interface ${impl.interfaceName} extends ITool { ... }`
+        );
+      }
+    } else if (impl.helperType === 'PromptHelper') {
+      found = result.prompts.some(p => p.interfaceName === impl.interfaceName);
+      if (!found) {
+        errors.push(
+          `Implementation '${impl.name}' references unknown prompt interface '${impl.interfaceName}'.\n` +
+          `  Define: interface ${impl.interfaceName} extends IPrompt { ... }`
+        );
+      }
+    } else if (impl.helperType === 'ResourceHelper') {
+      found = result.resources.some(r => r.interfaceName === impl.interfaceName);
+      if (!found) {
+        errors.push(
+          `Implementation '${impl.name}' references unknown resource interface '${impl.interfaceName}'.\n` +
+          `  Define: interface ${impl.interfaceName} extends IResource { ... }`
+        );
+      }
+    }
+  }
+
+  // Step 3: Check that classes with implementations have instantiation
+  const classImplementations = result.implementations.filter(impl => impl.kind === 'class-property');
+  const classNamesWithImpls = new Set(classImplementations.map(impl => impl.className!));
+
+  for (const className of classNamesWithImpls) {
+    const hasInstance = result.instances?.some(inst => inst.className === className);
+
+    if (!hasInstance) {
+      const lowerCaseName = className.charAt(0).toLowerCase() + className.slice(1);
+      errors.push(
+        `Class '${className}' has tool/prompt/resource implementations but is not instantiated.\n` +
+        `  Add: const ${lowerCaseName} = new ${className}();`
+      );
+    }
+  }
+
+  // Step 4: Add warnings for unused instances (class instantiated but no implementations found)
+  if (result.instances) {
+    for (const instance of result.instances) {
+      const hasImpls = result.implementations.some(
+        impl => impl.kind === 'class-property' && impl.className === instance.className
+      );
+
+      if (!hasImpls) {
+        warnings.push(
+          `Class instance '${instance.instanceName}' (${instance.className}) created but has no tool/prompt/resource implementations.\n` +
+          `  Either add implementations to ${instance.className} or remove the instance.`
+        );
+      }
+    }
+  }
+
+  // Add errors to result
+  if (errors.length > 0) {
+    if (!result.validationErrors) {
+      result.validationErrors = [];
+    }
+    result.validationErrors.push(...errors);
+  }
+
+  // Note: We don't fail on warnings, just add them for informational purposes
+  // You could add a result.validationWarnings field if desired
 }
 
 /**
