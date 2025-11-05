@@ -95,6 +95,24 @@ export function compileInterfaceFile(filePath: string): ParseResult {
               serverData[name] = true;
             } else if (ts.isToken(value) && value.kind === ts.SyntaxKind.FalseKeyword) {
               serverData[name] = false;
+            } else if (ts.isObjectLiteralExpression(value)) {
+              // Handle nested objects (websocket, auth, etc.)
+              const nestedObj: any = {};
+              for (const nestedProp of value.properties) {
+                if (ts.isPropertyAssignment(nestedProp)) {
+                  const nestedName = nestedProp.name.getText(sourceFile);
+                  const nestedValue = nestedProp.initializer;
+
+                  if (ts.isStringLiteral(nestedValue) || ts.isNumericLiteral(nestedValue)) {
+                    nestedObj[nestedName] = nestedValue.text;
+                  } else if (ts.isToken(nestedValue) && nestedValue.kind === ts.SyntaxKind.TrueKeyword) {
+                    nestedObj[nestedName] = true;
+                  } else if (ts.isToken(nestedValue) && nestedValue.kind === ts.SyntaxKind.FalseKeyword) {
+                    nestedObj[nestedName] = false;
+                  }
+                }
+              }
+              serverData[name] = nestedObj;
             }
           }
         }
@@ -103,7 +121,13 @@ export function compileInterfaceFile(filePath: string): ParseResult {
           interfaceName: 'IServer',
           name: serverData.name || 'unknown',
           version: serverData.version || '1.0.0',
-          description: serverData.description
+          description: serverData.description,
+          transport: serverData.transport,
+          port: serverData.port ? parseInt(serverData.port, 10) : undefined,
+          stateful: serverData.stateful,
+          flattenRouters: serverData.flattenRouters,
+          websocket: serverData.websocket,
+          auth: serverData.auth
         };
       }
     }
