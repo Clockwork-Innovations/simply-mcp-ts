@@ -5,9 +5,6 @@
  * Define pure TypeScript interfaces that extend base types, and the framework
  * handles everything else via AST parsing.
  *
- * This file now serves as a compatibility layer, re-exporting all types
- * from the modular structure in ./types/ directory.
- *
  * @example
  * ```typescript
  * import type { ITool, IServer } from 'simply-mcp';
@@ -36,5 +33,23 @@
  * ```
  */
 
-// Re-export all types from the modular types directory
-export * from './types/index.js';
+// Re-export all types from modular files
+export * from './params.js';
+export * from './tool.js';
+export * from './prompt.js';
+export * from './messages.js';
+export * from './resource.js';
+export * from './server.js';
+export * from './auth.js';
+export * from './ui.js';
+export * from './sampling.js';
+export * from './elicit.js';
+export * from './completion.js';
+export * from './roots.js';
+export * from './subscription.js';
+export * from './router.js';
+export * from './audio.js';
+export * from './helpers.js';
+
+// Re-export HandlerContext for easier access
+export type { HandlerContext } from '../../types/handler.js';

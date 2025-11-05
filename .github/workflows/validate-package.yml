@@ -1,21 +1,8 @@
 name: Package Validation
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'package.json'
-      - 'package-lock.json'
-      - 'src/**'
-      - 'tsconfig.json'
-      - '.github/workflows/validate-package.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'package.json'
-      - 'package-lock.json'
-      - 'src/**'
-      - 'tsconfig.json'
+  release:
+    types: [created, published, prereleased]
   workflow_dispatch:
 
 jobs:

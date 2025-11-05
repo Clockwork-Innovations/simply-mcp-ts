@@ -70,7 +70,14 @@ export type {
   InferArgs,
   IAudioContent,
   IAudioMetadata,
-} from './server/interface-types.js';
+  // Helper types for const-based server definitions (Phase 1)
+  ToolHelper,
+  PromptHelper,
+  ResourceHelper,
+  InferParams,
+  InferParamType,
+  InferPromptArgs,
+} from './server/types/index.js';
 
 export {
   loadInterfaceServer,
