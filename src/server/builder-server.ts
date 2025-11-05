@@ -566,7 +566,7 @@ function wrapStdioTransportForBatch(
       // This timeout is just for collecting responses - if responses don't arrive within
       // a reasonable time, we send what we have. Request execution timeouts are handled
       // separately in the request handlers.
-      const collectionTimeout = 60000; // 60 seconds to collect all responses
+      const collectionTimeout = config.collectionTimeout ?? 60000; // Default: 60 seconds
 
       batchResponses.set(batchId, {
         responses: new Array(parsed.length),

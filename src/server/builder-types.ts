@@ -162,6 +162,14 @@ export interface BatchingConfig {
    * @default undefined
    */
   timeout?: number;
+
+  /**
+   * Batch response collection timeout in milliseconds.
+   * How long to wait for all responses in a batch before sending partial results.
+   * Foundation Layer: implements this
+   * @default 60000 (60 seconds)
+   */
+  collectionTimeout?: number;
 }
 
 /**
