@@ -631,22 +631,69 @@ const search = useMCPTool('search', {
 });
 ```
 
-### Pattern 3: Optimistic Updates
+### Pattern 3: Optimistic Updates (React Query Style)
+
+**✅ RECOMMENDED: Use context passing for automatic rollback**
 
 ```tsx
 const [items, setItems] = useState([]);
 
+// Define context type for type safety
+interface AddItemContext {
+  previousItems: Item[];
+  tempId: string;
+}
+
+const addItem = useMCPTool<Item, AddItemContext>('add_item', {
+  onMutate: (params) => {
+    // 1. Snapshot current state
+    const previousItems = [...items];
+
+    // 2. Create temp item
+    const tempId = `temp-${Date.now()}`;
+    const optimisticItem = { id: tempId, ...params };
+
+    // 3. Optimistically update
+    setItems([...items, optimisticItem]);
+
+    // 4. Return context for rollback
+    return { previousItems, tempId };
+  },
+  onSuccess: (serverItem) => {
+    // Replace temp with server-confirmed item
+    setItems(prev => prev.map(i =>
+      i.id.startsWith('temp-') ? serverItem : i
+    ));
+  },
+  onError: (error, params, context) => {
+    // ✅ Automatic rollback using context
+    if (context?.previousItems) {
+      setItems(context.previousItems);
+    }
+    // Show error notification
+    toast.error(error.message);
+  }
+});
+```
+
+**Key Benefits:**
+- ✅ Context is type-safe with generics `<TData, TContext>`
+- ✅ Automatic rollback on error
+- ✅ No manual state tracking needed
+- ✅ Follows React Query best practices
+- ✅ Prevents memory leaks (hook checks if mounted)
+
+**Old Pattern (Still Works):**
+
+If you don't need context passing, the simpler pattern still works:
+
+```tsx
 const addItem = useMCPTool('add_item', {
   onMutate: (params) => {
-    // Add with temporary ID
     setItems([...items, { id: 'temp', ...params }]);
   },
-  onSuccess: (newItem) => {
-    // Replace temp with real item
-    setItems(prev => [...prev.filter(i => i.id !== 'temp'), newItem]);
-  },
   onError: () => {
-    // Remove temp on error
+    // Manual rollback
     setItems(prev => prev.filter(i => i.id !== 'temp'));
   }
 });

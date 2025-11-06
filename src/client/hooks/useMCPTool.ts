@@ -34,7 +34,7 @@
  * ```
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useMergedOptions } from './MCPProvider.js';
 
 /**
@@ -53,7 +53,7 @@ export interface MCPToolResult {
 /**
  * Hook options for useMCPTool
  */
-export interface UseMCPToolOptions<TData = any> {
+export interface UseMCPToolOptions<TData = any, TContext = unknown> {
   /**
    * Called when tool execution succeeds
    */
@@ -61,13 +61,15 @@ export interface UseMCPToolOptions<TData = any> {
 
   /**
    * Called when tool execution fails
+   * Receives context returned from onMutate for rollback
    */
-  onError?: (error: Error) => void;
+  onError?: (error: Error, params: any, context?: TContext) => void;
 
   /**
    * Called before execution starts (for optimistic updates)
+   * Return a context object that will be passed to onError for rollback
    */
-  onMutate?: (params: any) => void | Promise<void>;
+  onMutate?: (params: any) => TContext | Promise<TContext> | void | Promise<void>;
 
   /**
    * Enable optimistic loading state (true by default)
@@ -227,6 +229,19 @@ export function useMCPTool<TData = any>(
   // Ref for in-flight requests (deduplication)
   const inflightRef = useRef<Map<string, Promise<TData>>>(new Map());
 
+  // Ref to track if component is mounted (prevent state updates after unmount)
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      inflightRef.current.clear();
+    };
+  }, []);
+
   /**
    * Execute the tool with retry logic
    */
@@ -268,8 +283,10 @@ export function useMCPTool<TData = any>(
 
     // Create execution promise
     const executionPromise = (async () => {
+      let context: any = undefined;
+
       try {
-        // Mark as called
+        // Mark as called (safe - happens before async)
         setCalled(true);
 
         // Optimistic state update
@@ -279,8 +296,9 @@ export function useMCPTool<TData = any>(
         }
 
         // Call onMutate for optimistic updates
+        // Capture context for potential rollback
         if (onMutate) {
-          await onMutate(params);
+          context = await onMutate(params);
         }
 
         // Execute tool with retries
@@ -289,28 +307,32 @@ export function useMCPTool<TData = any>(
         // Parse result
         const parsedData = parseResult<TData>(result, parseAs);
 
-        // Update state
-        setData(parsedData);
-        setError(null);
-        setLoading(false);
+        // Update state only if still mounted
+        if (isMountedRef.current) {
+          setData(parsedData);
+          setError(null);
+          setLoading(false);
 
-        // Call success callback
-        if (onSuccess) {
-          onSuccess(parsedData, result);
+          // Call success callback
+          if (onSuccess) {
+            onSuccess(parsedData, result);
+          }
         }
 
         return parsedData;
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
 
-        // Update state
-        setError(error);
-        setData(null);
-        setLoading(false);
+        // Update state only if still mounted
+        if (isMountedRef.current) {
+          setError(error);
+          setData(null);
+          setLoading(false);
 
-        // Call error callback
-        if (onError) {
-          onError(error);
+          // Call error callback with context for rollback
+          if (onError) {
+            onError(error, params, context);
+          }
         }
 
         throw error;
