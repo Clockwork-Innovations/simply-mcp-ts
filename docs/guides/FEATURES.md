@@ -23,6 +23,7 @@ Complete guide to implementing tools, prompts, and resources in Simply MCP.
   - [Completions](#completions) - Argument autocomplete
   - [Progress](#progress) - Long-running operation tracking
 - [React Hooks Adapter](#react-hooks-adapter) - Client-side integration
+- [Remote DOM Client](#remote-dom-client) - Sandboxed UI rendering
 - [UI Resources](#ui-resources) - Interactive UI components
 - [Authentication](#authentication) - Secure your MCP server
   - [API Key Authentication](#api-key-authentication) - Simple key-based auth
@@ -1486,10 +1487,448 @@ function ChakraExample() {
 }
 ```
 
+## Additional Hooks
+
+### useIntent
+
+Trigger user intent actions:
+
+```typescript
+import { useIntent } from 'simply-mcp/client';
+
+function ActionButton() {
+  const { trigger, history } = useIntent();
+
+  return (
+    <button onClick={() => trigger('search', { query: 'laptop' })}>
+      Search
+    </button>
+  );
+}
+```
+
+### useNotify
+
+Display notifications to users:
+
+```typescript
+import { useNotify } from 'simply-mcp/client';
+
+function NotificationExample() {
+  const { notify } = useNotify();
+
+  return (
+    <button onClick={() => notify('info', 'Operation completed')}>
+      Show Notification
+    </button>
+  );
+}
+```
+
+### useOpenLink
+
+Open external links:
+
+```typescript
+import { useOpenLink } from 'simply-mcp/client';
+
+function LinkButton() {
+  const { openLink, history } = useOpenLink();
+
+  return (
+    <button onClick={() => openLink('https://example.com')}>
+      Open Link
+    </button>
+  );
+}
+```
+
+## Helper Utilities
+
+Work with multiple tools efficiently:
+
+```typescript
+import {
+  useMCPTool,
+  isAnyLoading,
+  hasAnyError,
+  getAllErrors,
+  resetAllTools
+} from 'simply-mcp/client';
+
+function MultiToolComponent() {
+  const search = useMCPTool('search');
+  const filter = useMCPTool('filter');
+  const sort = useMCPTool('sort');
+
+  const tools = [search, filter, sort];
+
+  return (
+    <div>
+      {isAnyLoading(tools) && <Spinner />}
+      {hasAnyError(tools) && (
+        <ErrorDisplay errors={getAllErrors(tools)} />
+      )}
+      <button onClick={() => resetAllTools(tools)}>Reset All</button>
+    </div>
+  );
+}
+```
+
 ## See Also
 
 - [Example: react-hooks-demo.ts](../../examples/react-hooks-demo.ts) - Complete examples
 - [API Reference - React Hooks](./API_REFERENCE.md#react-hooks) - Full API documentation
+
+---
+
+# Remote DOM Client
+
+**Available since:** v4.0.0
+
+Client-side rendering engine for safely executing server-provided UI code in a sandboxed Web Worker.
+
+## Overview
+
+Remote DOM enables MCP servers to provide interactive UIs that render securely in MCP clients. The client-side implementation uses Web Workers to sandbox UI code, preventing security risks while maintaining full interactivity.
+
+**Key Features:**
+- **Sandboxed execution** - UI code runs in isolated Web Worker
+- **Security-first design** - CSP validation, whitelisted elements, resource limits
+- **Performance optimized** - Operation batching, lazy loading
+- **Framework support** - React, Web Components, and custom frameworks
+- **Event bridging** - Safe communication between sandbox and host
+
+**MIME Type:** `application/vnd.mcp-ui.remote-dom+javascript`
+
+## Architecture
+
+```
+MCP Server                    MCP Client
+┌──────────────┐             ┌─────────────────────────────┐
+│ UI Resource  │────────────>│  RemoteDOMWorkerManager     │
+│ (JavaScript) │             │  ┌───────────────────────┐  │
+└──────────────┘             │  │   Web Worker          │  │
+                             │  │   (Sandbox)           │  │
+                             │  │   - Execute UI code   │  │
+                             │  │   - Build virtual DOM │  │
+                             │  │   - Emit operations   │  │
+                             │  └───────────────────────┘  │
+                             │           ↓                  │
+                             │  ┌───────────────────────┐  │
+                             │  │   Host Renderer       │  │
+                             │  │   - Apply operations  │  │
+                             │  │   - Render to real DOM│  │
+                             │  │   - Handle events     │  │
+                             │  └───────────────────────┘  │
+                             └─────────────────────────────┘
+```
+
+## RemoteDOMWorkerManager
+
+Manages the Web Worker lifecycle and provides a Promise-based API for communication.
+
+### Basic Usage
+
+```typescript
+import { RemoteDOMWorkerManager } from 'simply-mcp/client';
+
+// Initialize worker
+const manager = new RemoteDOMWorkerManager({
+  timeout: 5000,         // Operation timeout (default: 5s)
+  debug: false,          // Enable logging
+  config: {
+    allowedElements: ['div', 'span', 'button', 'input'],
+    maxDepth: 10,        // Max DOM tree depth
+    maxNodes: 1000       // Max total nodes
+  }
+});
+
+await manager.init();
+
+// Execute Remote DOM code from server
+await manager.execute(`
+  const root = document.createElement('div');
+  const button = document.createElement('button');
+  button.textContent = 'Click me';
+  button.onclick = () => window.callTool('greet', { name: 'User' });
+  root.appendChild(button);
+  document.body.appendChild(root);
+`);
+
+// Cleanup
+await manager.terminate();
+```
+
+### Configuration Options
+
+```typescript
+interface RemoteDOMWorkerManagerOptions {
+  workerURL?: string;        // Custom worker script URL
+  timeout?: number;          // Operation timeout (ms)
+  debug?: boolean;           // Verbose logging
+  config?: RemoteDOMConfig;  // Sandbox configuration
+}
+
+interface RemoteDOMConfig {
+  allowedElements?: string[];     // Whitelisted HTML elements
+  maxDepth?: number;              // Max DOM nesting level
+  maxNodes?: number;              // Max total DOM nodes
+  maxAttributeLength?: number;    // Max attribute value length
+  allowedProtocols?: string[];    // URL protocols (http, https, etc.)
+}
+```
+
+## HostReceiver (React Integration)
+
+React component for rendering Remote DOM UIs with event handling.
+
+### Usage
+
+```typescript
+import { HostReceiver } from 'simply-mcp/client/remote-dom';
+
+function UIRenderer({ uiCode }: { uiCode: string }) {
+  const [operations, setOperations] = useState([]);
+
+  useEffect(() => {
+    const manager = new RemoteDOMWorkerManager();
+
+    manager.on('operations', (ops) => {
+      setOperations(ops);
+    });
+
+    manager.init().then(() => {
+      manager.execute(uiCode);
+    });
+
+    return () => manager.terminate();
+  }, [uiCode]);
+
+  return (
+    <HostReceiver
+      operations={operations}
+      onEvent={(eventType, data) => {
+        // Handle events from Remote DOM
+        console.log('Event:', eventType, data);
+      }}
+    />
+  );
+}
+```
+
+### Event Handling
+
+Events from the sandboxed UI are safely bridged to the host:
+
+```typescript
+// In Remote DOM (sandbox)
+button.onclick = () => {
+  window.callTool('save_data', { value: 42 });
+};
+
+// In Host (React)
+<HostReceiver
+  operations={operations}
+  onEvent={(eventType, data) => {
+    if (eventType === 'toolCall') {
+      const { toolName, args } = data;
+      // Execute tool via MCP
+      executeTool(toolName, args);
+    }
+  }}
+/>
+```
+
+## Component Library
+
+Whitelisted HTML elements for security:
+
+### Standard Elements
+
+```typescript
+// Allowed by default:
+['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+ 'button', 'input', 'textarea', 'select', 'option',
+ 'label', 'form', 'a', 'img', 'ul', 'ol', 'li',
+ 'table', 'thead', 'tbody', 'tr', 'th', 'td']
+```
+
+### Custom Component Registration
+
+```typescript
+const manager = new RemoteDOMWorkerManager({
+  config: {
+    allowedElements: [
+      ...defaultElements,
+      'custom-widget',
+      'data-grid'
+    ]
+  }
+});
+```
+
+## Security Features
+
+### Content Security Policy (CSP) Validation
+
+Validates UI code against security policies:
+
+```typescript
+import { validateCSP } from 'simply-mcp/client/remote-dom';
+
+const violations = validateCSP(uiCode, {
+  allowInlineScripts: false,
+  allowEval: false,
+  allowedDomains: ['https://cdn.example.com']
+});
+
+if (violations.length > 0) {
+  console.error('CSP violations:', violations);
+}
+```
+
+### Resource Limits
+
+Prevent resource exhaustion:
+
+```typescript
+interface RemoteDOMConfig {
+  maxDepth: 10;              // Max DOM nesting (default: 10)
+  maxNodes: 1000;            // Max total nodes (default: 1000)
+  maxAttributeLength: 1024;  // Max attribute length (default: 1KB)
+  maxEventListeners: 100;    // Max event listeners (default: 100)
+  timeout: 5000;             // Execution timeout (default: 5s)
+}
+```
+
+**Enforced at runtime:**
+- Attempts to exceed limits throw errors
+- Worker terminates on timeout
+- Memory limits enforced by browser
+
+## Performance Optimization
+
+### Operation Batching
+
+Operations are batched to reduce overhead:
+
+```typescript
+// Individual operations are batched automatically
+createElement('div')     // Batched
+setAttribute(el, 'id', 'container')  // Batched
+appendChild(parent, el)  // Batched
+// Batch is flushed every 16ms (60fps)
+```
+
+### Lazy Component Loading
+
+Load components on-demand:
+
+```typescript
+await manager.loadComponent('data-grid', {
+  url: 'https://cdn.example.com/data-grid.js',
+  lazy: true  // Load when first used
+});
+```
+
+## Complete Example
+
+```typescript
+import { RemoteDOMWorkerManager, HostReceiver } from 'simply-mcp/client';
+import { useMCPTool } from 'simply-mcp/client/hooks';
+
+function RemoteDOMUI({ uiResource }: { uiResource: UIResource }) {
+  const [manager] = useState(() => new RemoteDOMWorkerManager({
+    timeout: 10000,
+    config: {
+      allowedElements: ['div', 'button', 'input'],
+      maxDepth: 15,
+      maxNodes: 500
+    }
+  }));
+  const [operations, setOperations] = useState([]);
+  const { execute: executeTool } = useMCPTool();
+
+  useEffect(() => {
+    manager.on('operations', setOperations);
+    manager.on('toolCall', ({ toolName, args }) => {
+      executeTool(toolName, args);
+    });
+
+    manager.init().then(() => {
+      // Load UI code from server
+      fetch(uiResource.uri)
+        .then(r => r.text())
+        .then(code => manager.execute(code));
+    });
+
+    return () => manager.terminate();
+  }, [uiResource]);
+
+  return (
+    <div className="remote-dom-container">
+      <HostReceiver
+        operations={operations}
+        onEvent={(type, data) => {
+          console.log('Remote DOM event:', type, data);
+        }}
+      />
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+**1. Security:**
+- Always validate UI code with CSP before execution
+- Use strict resource limits in production
+- Whitelist only necessary HTML elements
+- Sanitize all user-generated content
+
+**2. Performance:**
+- Use operation batching (enabled by default)
+- Lazy-load components when possible
+- Set appropriate timeout values (5-10s)
+- Limit DOM depth and node count
+
+**3. Error Handling:**
+```typescript
+manager.on('error', (error) => {
+  console.error('Remote DOM error:', error);
+  // Show fallback UI
+  setFallbackMode(true);
+});
+
+// Timeout handling
+try {
+  await manager.execute(code);
+} catch (error) {
+  if (error.name === 'TimeoutError') {
+    console.error('UI execution timed out');
+  }
+}
+```
+
+**4. Debugging:**
+```typescript
+const manager = new RemoteDOMWorkerManager({
+  debug: true  // Enable verbose logging
+});
+
+// Monitor operations
+manager.on('operations', (ops) => {
+  console.log('DOM operations:', ops);
+});
+```
+
+## See Also
+
+- [Remote DOM Guide](./REMOTE_DOM.md) - Comprehensive Remote DOM documentation
+- [UI Resources](#ui-resources) - Server-side UI definition
+- [Example: v4/06-remote-dom.ts](../../examples/v4/06-remote-dom.ts) - Complete Remote DOM example
+- [API Reference - Remote DOM](./API_REFERENCE.md#remote-dom) - Full API documentation
 
 ---
 
