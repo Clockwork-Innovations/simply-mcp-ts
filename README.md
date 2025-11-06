@@ -48,6 +48,16 @@
 - **Hot Reload**: Watch mode automatically tracks all relevant files
 - **Production Optimizations**: Bundling, minification, CDN via `simply-mcp.config.ts`
 
+🎯 **UI Adapter Layer - React Hooks** (New!)
+- **Use ANY component library**: shadcn/ui, Radix UI, Material-UI, Chakra UI, native HTML - all work seamlessly
+- **Zero boilerplate**: Reduces 30+ lines of state management to 3 lines
+- **useMCPTool hook**: Automatic loading/error/data state management for single tools
+- **useMCPTools hook**: Manage multiple tools simultaneously with helper functions
+- **MCPProvider**: Global configuration and error handling
+- **Production-ready**: Request deduplication, retry logic, optimistic updates
+- **Type-safe**: Full TypeScript support with automatic type inference
+- **No MCP-specific components needed**: Use your favorite UI library as-is
+
 🎵 **Audio Resources** (v4.2)
 - **IAudioContent Interface**: Type-safe audio content with base64 encoding
 - **IAudioMetadata Interface**: Rich metadata (duration, sample rate, channels, bitrate, codec)
@@ -67,6 +77,7 @@ Simply-MCP v4.0.0 achieves **100% compliance** with the [MCP UI specification](h
 
 - 📘 [MCP UI Protocol Reference](./docs/guides/MCP_UI_PROTOCOL.md)
 - 📘 [MCP UI Migration Guide](./docs/guides/MCP_UI_MIGRATION.md)
+- 📘 [MCP UI Adapter Hooks Guide](./docs/guides/MCP_UI_ADAPTER_HOOKS.md) ⭐ **NEW**
 - 📘 [Remote DOM Advanced Patterns](./docs/guides/REMOTE_DOM_ADVANCED.md)
 - 🔧 [Remote DOM Troubleshooting](./docs/guides/REMOTE_DOM_TROUBLESHOOTING.md)
 - 🔗 [Official MCP-UI Spec](https://github.com/idosal/mcp-ui)
@@ -98,6 +109,7 @@ Simply-MCP builds **on top of** the SDK to provide:
 │  • Tool routers & namespaces                        │
 │  • CLI tooling (run, bundle, watch)                 │
 │  • UI resource helpers (React/JSX compilation)      │
+│  • UI adapter layer (React hooks for any library)   │
 │  • OAuth storage adapters (InMemoryStorage, Redis)  │
 │  • Batch processing context                         │
 ├─────────────────────────────────────────────────────┤
@@ -295,6 +307,57 @@ interface MyServer extends IServer {
 - [OAuth Migration Guide](./docs/guides/OAUTH_MIGRATION.md) - Migrate from API keys
 - [Transport Guide](./docs/guides/TRANSPORT.md) - Stdio, HTTP stateful/stateless
 - [API Reference](./docs/guides/API_REFERENCE.md) - Authentication details
+
+---
+
+## UI Adapter Layer - React Hooks
+
+**Build UIs with ANY React component library - zero boilerplate!**
+
+The UI Adapter Layer provides React hooks that eliminate boilerplate when calling MCP tools from React components. Use shadcn/ui, Radix UI, Material-UI, Chakra UI, or native HTML - all work seamlessly.
+
+### Quick Example
+
+```typescript
+// server.ts - Define your UI with tools whitelist
+interface SearchUI extends IUI {
+  uri: 'ui://search';
+  name: 'Product Search';
+  tools: ['search_products', 'add_to_cart']; // ✅ Security whitelist
+  source: './SearchComponent.tsx';
+}
+
+// SearchComponent.tsx - Use ANY component library!
+import { useMCPTool } from 'simply-mcp/client';
+import { Button } from '@/components/ui/button'; // shadcn, Radix, MUI, etc.
+
+export default function SearchComponent() {
+  const search = useMCPTool('search_products', {
+    onSuccess: (data) => console.log('Found:', data)
+  });
+
+  return (
+    <Button
+      onClick={() => search.execute({ query: 'laptop' })}
+      disabled={search.loading}
+    >
+      {search.loading ? 'Searching...' : 'Search'}
+    </Button>
+  );
+}
+```
+
+**That's it!** 90% less code compared to manual state management.
+
+### Available Hooks
+
+- **`useMCPTool`** - Single tool with automatic state management
+- **`useMCPTools`** - Multiple tools with helper functions
+- **`MCPProvider`** - Global configuration and error handling
+
+**Learn More:**
+- 📘 [MCP UI Adapter Hooks Guide](./docs/guides/MCP_UI_ADAPTER_HOOKS.md) - Complete documentation
+- 💡 [Examples](./examples/ui-with-hooks/) - Working examples with shadcn-style components
 
 ---
 
