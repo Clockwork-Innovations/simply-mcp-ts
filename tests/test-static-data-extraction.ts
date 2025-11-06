@@ -15,7 +15,7 @@ interface SimpleResource extends IResource {
   name: 'Version';
   description: 'API version';
   mimeType: 'text/plain';
-  data: '1.0.0';
+  value: '1.0.0';
 }
 
 // Test 2: Object with literal properties
@@ -24,7 +24,7 @@ interface ConfigResource extends IResource {
   name: 'Settings';
   description: 'Server settings';
   mimeType: 'application/json';
-  data: {
+  value: {
     maxConnections: 100;
     timeout: 5000;
     debug: false;
@@ -37,8 +37,7 @@ interface ComplexResource extends IResource {
   name: 'Complex';
   description: 'Complex config';
   mimeType: 'application/json';
-  dynamic: true;  // Must be dynamic
-  data: {
+  returns: {
     version: string;  // Non-literal type
     features: string[];  // Non-literal array
   };
@@ -117,7 +116,7 @@ try {
   console.log('Static data extraction allows:');
   console.log('  ✅ Simple literals (strings, numbers, booleans)');
   console.log('  ✅ Object literals with all literal properties');
-  console.log('  ❌ Non-literal types (string, number[], etc.) - require dynamic: true');
+  console.log('  ❌ Non-literal types (string, number[], etc.) - require returns: field');
 
 } catch (error: any) {
   console.error('❌ Error:', error.message);

@@ -42,7 +42,7 @@ interface ConfigResource extends IResource {
   name: 'Server Configuration';
   description: 'Server settings and metadata';
   mimeType: 'application/json';
-  data: {
+  returns: {
     apiVersion: string;
     features: string[];
   };
@@ -64,8 +64,7 @@ interface StatsResource extends IResource {
   name: 'Current Statistics';
   description: 'Real-time server statistics';
   mimeType: 'application/json';
-  dynamic: true;
-  data: {
+  returns: {
     requestCount: number;
     uptime: number;
   };

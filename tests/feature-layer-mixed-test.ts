@@ -101,8 +101,7 @@ interface ConfigResource extends IResource {
   name: 'Application Configuration';
   description: 'App configuration data';
   mimeType: 'application/json';
-  dynamic: true;
-  data: {
+  returns: {
     version: string;
     features: string[];
   };
@@ -118,8 +117,7 @@ interface StatsResource extends IResource {
   name: 'Real-time Statistics';
   description: 'Live server statistics';
   mimeType: 'application/json';
-  dynamic: true;
-  data: {
+  returns: {
     requests: number;
     uptime: number;
   };
