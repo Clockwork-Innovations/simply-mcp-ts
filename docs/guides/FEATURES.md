@@ -6,14 +6,177 @@ Complete guide to implementing tools, prompts, and resources in Simply MCP.
 
 ## Table of Contents
 
+- [Transports](#transports) - Communication protocols for your server
+  - [WebSocket Transport](#websocket-transport) - Real-time bidirectional communication
+  - [HTTP Transport](#http-transport) - RESTful server with SSE streaming
+  - [Stdio Transport](#stdio-transport) - Standard input/output communication
 - [Tools](#tools) - Functions your server can perform
   - [Tool Annotations](#tool-annotations) - Metadata hints about tool behavior
   - [Batch Processing](#batch-processing) - Process multiple tool calls atomically with DoS protection
 - [Prompts](#prompts) - Template generators for LLM interactions
 - [Resources](#resources) - Static and dynamic data exposure
+  - [Audio Resources](#audio-resources) - Native audio content support
+- [MCP Protocol Features](#mcp-protocol-features) - Advanced server-client capabilities
+  - [Sampling](#sampling) - LLM integration for servers
+  - [Elicitation](#elicitation) - User input collection
+  - [Roots](#roots) - Filesystem discovery
+  - [Completions](#completions) - Argument autocomplete
+  - [Progress](#progress) - Long-running operation tracking
+- [React Hooks Adapter](#react-hooks-adapter) - Client-side integration
+- [UI Resources](#ui-resources) - Interactive UI components
 - [Authentication](#authentication) - Secure your MCP server
   - [API Key Authentication](#api-key-authentication) - Simple key-based auth
   - [OAuth 2.1 Authentication](#oauth-21-authentication) - Industry-standard OAuth
+
+---
+
+# Transports
+
+Simply-MCP supports multiple communication protocols to connect your server with clients.
+
+## WebSocket Transport
+
+**Available since:** v4.0.0
+
+Real-time, bidirectional communication with automatic reconnection and low latency.
+
+### Overview
+
+WebSocket transport provides persistent connections for interactive applications requiring real-time updates. It's ideal for chat applications, live dashboards, collaborative tools, and any scenario requiring push notifications.
+
+**Key Benefits:**
+- **Low latency**: ~10-30ms vs ~50-100ms for SSE
+- **Bidirectional**: Server can push updates without polling
+- **Automatic reconnection**: Exponential backoff retry logic
+- **Heartbeat mechanism**: Built-in ping/pong for connection health
+- **Multiple clients**: Handle many concurrent connections efficiently
+
+### Configuration
+
+```typescript
+import type { IServer } from 'simply-mcp';
+
+interface MyServer extends IServer {
+  name: 'websocket-server';
+  version: '1.0.0';
+  transport: 'websocket';
+  websocket: {
+    port: 8080;
+    heartbeatInterval?: 30000;      // Ping interval (default: 30s)
+    heartbeatTimeout?: 5000;        // Pong timeout (default: 5s)
+    maxMessageSize?: 10485760;      // Max message size (default: 10MB)
+  };
+}
+```
+
+### Client Connection
+
+```typescript
+import { WebSocketClient } from 'simply-mcp/client';
+
+const client = new WebSocketClient('ws://localhost:8080');
+
+// Connect with automatic reconnection
+await client.connect();
+
+// Call tools
+const result = await client.callTool('greet', { name: 'World' });
+
+// Subscribe to resource updates
+client.on('resourceUpdated', (uri) => {
+  console.log(`Resource ${uri} was updated`);
+});
+
+// Cleanup
+await client.disconnect();
+```
+
+### Features
+
+**Connection Management:**
+- Automatic reconnection with exponential backoff (1s, 2s, 4s, 8s, 16s max)
+- Graceful degradation on network failures
+- Connection state tracking (connecting, connected, disconnected, reconnecting)
+
+**Heartbeat Monitoring:**
+- Configurable ping/pong intervals
+- Automatic connection recovery on timeout
+- Prevents zombie connections
+
+**Message Size Limits:**
+- Configurable maximum message size
+- Prevents memory exhaustion attacks
+- Default: 10MB per message
+
+**See working examples:** [examples/interface-websocket.ts](../../examples/interface-websocket.ts)
+
+---
+
+## HTTP Transport
+
+**Available since:** v1.0.0
+
+RESTful HTTP server with Server-Sent Events (SSE) for streaming responses.
+
+### Stateful HTTP (Default)
+
+Session-based communication with cookie management:
+
+```typescript
+interface MyServer extends IServer {
+  name: 'http-server';
+  transport: 'http';
+  http: {
+    port: 3000;
+  };
+  stateful: true;  // Default: enables sessions
+}
+```
+
+**Features:**
+- Session management with cookies
+- Server-Sent Events (SSE) for streaming
+- Built-in middleware support
+- OAuth and API key authentication
+
+**Best For:** Web applications, traditional APIs, OAuth flows
+
+### Stateless HTTP
+
+Serverless-optimized transport without session state:
+
+```typescript
+interface MyServer extends IServer {
+  name: 'serverless-api';
+  transport: 'http-stateless';
+  http: { port: 3000 };
+}
+```
+
+**Best For:** AWS Lambda, Vercel, serverless deployments
+
+---
+
+## Stdio Transport
+
+**Available since:** v1.0.0
+
+Standard input/output communication for CLI integration.
+
+```typescript
+interface MyServer extends IServer {
+  name: 'stdio-server';
+  transport: 'stdio';  // Default
+}
+```
+
+**Features:**
+- Zero configuration required
+- No network dependencies
+- Direct process communication
+- JSON-RPC over stdio streams
+
+**Best For:** CLI tools, desktop integrations, development
 
 ---
 
@@ -827,146 +990,40 @@ export default class MyServer {
 
 **Available since:** v4.2.0
 
-Simply MCP provides native support for audio content through the `IAudioContent` interface. Audio resources enable your server to expose audio files with rich metadata, supporting all standard audio formats.
+Native support for audio content with rich metadata through `IAudioContent` interface.
 
-### Overview
+### Key Features
 
-Audio resources can be either static (embedded base64 data) or dynamic (loaded from files at runtime). The framework provides type-safe interfaces and helper functions to make working with audio content simple and intuitive.
+- Type-safe audio with `IAudioContent` and `IAudioMetadata` interfaces
+- `createAudioContent()` helper for file loading
+- Standard formats: MP3, WAV, OGG, FLAC, AAC, M4A, WebM
+- Base64 encoding with automatic MIME type detection
+- Static (embedded) or dynamic (runtime-loaded) resources
 
-**Key Features:**
-- Type-safe audio content with `IAudioContent` interface
-- Rich metadata support via `IAudioMetadata` (duration, sample rate, channels, bitrate, codec, size)
-- `createAudioContent()` helper for easy file loading
-- Support for all standard audio formats (MP3, WAV, OGG, FLAC, AAC, M4A, WebM)
-- Base64 encoding for binary audio data
-- Automatic MIME type detection
-
-### Supported Audio Formats
-
-Simply MCP supports all standard audio formats with automatic MIME type detection:
-
-| Format | MIME Type | Extension | Description |
-|--------|-----------|-----------|-------------|
-| MP3 | `audio/mpeg` | `.mp3` | MPEG Audio Layer 3 (compressed) |
-| WAV | `audio/wav` | `.wav` | Waveform Audio (uncompressed) |
-| OGG | `audio/ogg` | `.ogg` | Ogg Vorbis (compressed, open source) |
-| M4A | `audio/mp4` | `.m4a` | AAC in MP4 container |
-| FLAC | `audio/flac` | `.flac` | Free Lossless Audio Codec |
-| AAC | `audio/aac` | `.aac` | Advanced Audio Coding |
-| WebM | `audio/webm` | `.webm` | WebM audio (web optimized) |
-
-Custom audio formats are also supported via the string fallback type.
-
-### IAudioContent Interface
-
-The `IAudioContent` interface represents audio data in your resources:
+### Quick Example
 
 ```typescript
-interface IAudioContent {
-  type: 'audio';                    // Content type discriminator
-  data: string;                     // Base64-encoded audio data
-  mimeType: 'audio/mpeg'            // Audio MIME type
-    | 'audio/wav'
-    | 'audio/ogg'
-    | 'audio/webm'
-    | 'audio/mp4'
-    | 'audio/aac'
-    | 'audio/flac'
-    | string;                        // Custom types supported
-  metadata?: IAudioMetadata;         // Optional metadata
-}
-```
-
-### IAudioMetadata Interface
-
-Rich metadata about your audio content (all fields optional):
-
-```typescript
-interface IAudioMetadata {
-  duration?: number;        // Duration in seconds (e.g., 120.5)
-  sampleRate?: number;      // Sample rate in Hz (e.g., 44100, 48000, 96000)
-  channels?: number;        // Number of channels (1=mono, 2=stereo, 6=5.1, 8=7.1)
-  bitrate?: number;         // Bitrate in kbps (e.g., 128, 192, 320)
-  codec?: string;           // Codec identifier (e.g., 'mp3', 'aac', 'flac', 'vorbis')
-  size?: number;            // File size in bytes
-  originalPath?: string;    // Original file path (for debugging)
-}
-```
-
-**Common Sample Rates:**
-- `8000` - Telephone quality
-- `22050` - Radio quality
-- `44100` - CD quality (standard)
-- `48000` - Professional audio
-- `96000` - High-resolution audio
-
-**Common Bitrates:**
-- `128` - Standard quality (MP3/AAC)
-- `192` - High quality
-- `256` - Very high quality
-- `320` - Maximum MP3 quality
-
-### Static Audio Resource
-
-Static resources contain embedded base64 audio data known at compile time:
-
-```typescript
-import type { IResource, IAudioContent } from 'simply-mcp';
-
-interface MusicSampleResource extends IResource {
-  uri: 'audio://music-sample';
-  name: 'Music Sample';
-  description: 'Embedded audio sample';
-  mimeType: 'audio/mp3';
-  value: IAudioContent;  // Static: use 'value' field
-}
-
-export default class MyServer {
-  'audio://music-sample': MusicSampleResource['value'] = {
-    type: 'audio',
-    data: 'base64-encoded-mp3-data-here...',
-    mimeType: 'audio/mpeg',
-    metadata: {
-      duration: 180.5,      // 3 minutes 0.5 seconds
-      sampleRate: 44100,    // CD quality
-      channels: 2,          // Stereo
-      bitrate: 320,         // Maximum MP3 quality
-      codec: 'mp3'
-    }
-  };
-}
-```
-
-### Dynamic Audio Resource
-
-Dynamic resources load audio from files at runtime using the `createAudioContent()` helper:
-
-```typescript
-import type { IResource, IAudioContent } from 'simply-mcp';
 import { createAudioContent } from 'simply-mcp/core';
+import type { IResource, IAudioContent } from 'simply-mcp';
 
 interface PodcastResource extends IResource {
   uri: 'audio://podcast';
-  name: 'Latest Podcast Episode';
-  description: 'Audio loaded from filesystem';
+  name: 'Podcast Episode';
   mimeType: 'audio/mp3';
-  returns: IAudioContent;  // Dynamic: use 'returns' field
+  returns: IAudioContent;
 }
 
 export default class MyServer {
   'audio://podcast' = async (): Promise<IAudioContent> => {
-    // createAudioContent handles file reading, encoding, and basic metadata
-    const audioContent = await createAudioContent('./episodes/latest.mp3');
+    const audio = await createAudioContent('./episode.mp3');
 
-    // Add custom metadata
     return {
-      ...audioContent,
+      ...audio,
       metadata: {
-        ...audioContent._meta,  // Includes size and originalPath
-        duration: 3600,         // 1 hour
-        sampleRate: 48000,
-        channels: 2,
-        bitrate: 192,
+        duration: 3600,       // 1 hour
+        sampleRate: 48000,    // 48kHz
+        channels: 2,          // Stereo
+        bitrate: 192,         // 192 kbps
         codec: 'mp3'
       }
     };
@@ -974,219 +1031,23 @@ export default class MyServer {
 }
 ```
 
-### Using createAudioContent() Helper
-
-The `createAudioContent()` helper simplifies audio loading:
+### Interfaces
 
 ```typescript
-import { createAudioContent } from 'simply-mcp/core';
-
-// From file path (automatic MIME type detection)
-const audio1 = await createAudioContent('./audio/sample.mp3');
-
-// From file path with explicit MIME type
-const audio2 = await createAudioContent('./audio/custom.dat', 'audio/mpeg');
-
-// From Buffer
-import { readFileSync } from 'fs';
-const buffer = readFileSync('./audio.wav');
-const audio3 = await createAudioContent(buffer, 'audio/wav');
-
-// From base64 string
-const base64Audio = 'UklGRiQAAABXQVZF...';
-const audio4 = await createAudioContent(base64Audio, 'audio/wav');
-```
-
-**What createAudioContent() does:**
-1. Reads the file or processes the input
-2. Detects MIME type from file extension or content
-3. Converts to base64 encoding
-4. Populates basic metadata (`size`, `originalPath`)
-
-### Audio with Full Metadata
-
-Example with all metadata fields populated:
-
-```typescript
-interface HighResAudioResource extends IResource {
-  uri: 'audio://high-res';
-  name: 'High-Resolution Audio';
-  description: 'Professional quality FLAC audio';
-  mimeType: 'audio/flac';
-  returns: IAudioContent;
+interface IAudioContent {
+  type: 'audio';
+  data: string;              // Base64-encoded
+  mimeType: string;          // e.g., 'audio/mpeg', 'audio/wav'
+  metadata?: IAudioMetadata;
 }
 
-export default class MyServer {
-  'audio://high-res' = async (): Promise<IAudioContent> => {
-    const audioContent = await createAudioContent('./masters/track01.flac');
-
-    return {
-      ...audioContent,
-      metadata: {
-        duration: 245.7,        // 4 minutes 5.7 seconds
-        sampleRate: 96000,      // High-resolution: 96kHz
-        channels: 2,            // Stereo
-        bitrate: 2304,          // 96kHz * 24-bit * 2 channels / 1000
-        codec: 'flac',          // Lossless codec
-        size: 56640000,         // ~54 MB
-        originalPath: '/masters/track01.flac'
-      }
-    };
-  };
-}
-```
-
-### Audio Collection Resource
-
-Return multiple audio files in a single resource:
-
-```typescript
-interface AudioLibraryResource extends IResource {
-  uri: 'audio://library';
-  name: 'Audio Library';
-  description: 'Collection of audio files';
-  mimeType: 'application/json';
-  returns: {
-    items: Array<IAudioContent & { name: string; description: string }>;
-    total: number;
-  };
-}
-
-export default class MyServer {
-  'audio://library' = async () => {
-    const items = [
-      {
-        name: 'Track 1',
-        description: 'First track',
-        ...(await createAudioContent('./tracks/track1.mp3')),
-        metadata: { duration: 180, sampleRate: 44100, channels: 2 }
-      },
-      {
-        name: 'Track 2',
-        description: 'Second track',
-        ...(await createAudioContent('./tracks/track2.mp3')),
-        metadata: { duration: 210, sampleRate: 44100, channels: 2 }
-      }
-    ];
-
-    return { items, total: items.length };
-  };
-}
-```
-
-### Integration with IResource
-
-Audio content integrates seamlessly with the `IResource` interface:
-
-**Static Pattern:**
-- Use `value: IAudioContent` for compile-time audio data
-- No implementation method needed (framework extracts from interface)
-
-**Dynamic Pattern:**
-- Use `returns: IAudioContent` for runtime-loaded audio
-- Implement method matching the URI
-- Method returns `Promise<IAudioContent>` or `IAudioContent`
-
-### Best Practices
-
-**1. Choose Appropriate Formats:**
-- **MP3/AAC**: Best for speech, podcasts (good compression, universal support)
-- **OGG Vorbis**: Open-source alternative to MP3
-- **FLAC**: Lossless compression for archival, music masters
-- **WAV**: Uncompressed, large files (avoid for web delivery)
-
-**2. File Size Considerations:**
-- Compressed formats (MP3, AAC, OGG): ~1 MB per minute at 128 kbps
-- Lossless (FLAC): ~5-10 MB per minute
-- Uncompressed (WAV): ~10 MB per minute (44.1kHz stereo)
-- Consider streaming for large files instead of embedding
-
-**3. Metadata Completeness:**
-- Always include `duration` for player UI
-- Include `sampleRate` and `channels` for quality indication
-- Add `codec` for client compatibility checking
-- Populate `size` to help clients manage bandwidth
-
-**4. Error Handling:**
-```typescript
-'audio://dynamic' = async (): Promise<IAudioContent> => {
-  try {
-    return await createAudioContent('./audio/file.mp3');
-  } catch (error) {
-    // Fallback to default audio or throw meaningful error
-    console.error('Failed to load audio:', error);
-    throw new Error('Audio resource temporarily unavailable');
-  }
-};
-```
-
-**5. Performance Tips:**
-- Use dynamic resources for large audio files (avoid bloating interface definitions)
-- Consider caching loaded audio in memory for frequently accessed files
-- Use appropriate bitrates (don't use 320 kbps for voice content)
-- Provide progress tracking for large file operations
-
-### Complete Example
-
-```typescript
-import type { IServer, IResource, IAudioContent } from 'simply-mcp';
-import { createAudioContent } from 'simply-mcp/core';
-
-const server: IServer = {
-  name: 'audio-server',
-  version: '1.0.0',
-  description: 'Audio content server'
-  version: '1.0.0';
-}
-
-// Static audio resource
-interface NotificationSoundResource extends IResource {
-  uri: 'audio://notification';
-  name: 'Notification Sound';
-  description: 'Short notification audio';
-  mimeType: 'audio/wav';
-  value: IAudioContent;
-}
-
-// Dynamic audio resource
-interface MusicTrackResource extends IResource {
-  uri: 'audio://music-track';
-  name: 'Music Track';
-  description: 'Music track loaded from file';
-  mimeType: 'audio/mp3';
-  returns: IAudioContent;
-}
-
-export default class AudioServer {
-  // Static resource - no implementation needed
-  'audio://notification': NotificationSoundResource['value'] = {
-    type: 'audio',
-    data: 'UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgA...',
-    mimeType: 'audio/wav',
-    metadata: {
-      duration: 0.5,
-      sampleRate: 44100,
-      channels: 1,
-      codec: 'pcm'
-    }
-  };
-
-  // Dynamic resource - requires implementation
-  'audio://music-track' = async (): Promise<IAudioContent> => {
-    const audioContent = await createAudioContent('./music/track.mp3');
-
-    return {
-      ...audioContent,
-      metadata: {
-        ...audioContent._meta,
-        duration: 240,
-        sampleRate: 48000,
-        channels: 2,
-        bitrate: 192,
-        codec: 'mp3'
-      }
-    };
-  };
+interface IAudioMetadata {
+  duration?: number;         // Seconds
+  sampleRate?: number;       // Hz (44100, 48000, etc.)
+  channels?: number;         // 1=mono, 2=stereo
+  bitrate?: number;          // kbps
+  codec?: string;            // 'mp3', 'aac', 'flac', etc.
+  size?: number;             // Bytes
 }
 ```
 
@@ -1195,6 +1056,680 @@ export default class AudioServer {
 - [API Reference - IAudioContent](./API_REFERENCE.md#iaudiocontent) - Complete interface documentation
 - [API Reference - IAudioMetadata](./API_REFERENCE.md#iaudiometadata) - Metadata field reference
 - [Example: interface-audio-resource.ts](../../examples/interface-audio-resource.ts) - Working code examples
+
+---
+
+# MCP Protocol Features
+
+Advanced server-client communication capabilities beyond basic tools, prompts, and resources.
+
+## Sampling
+
+**Available since:** v3.0.0
+
+Enable your MCP server to call the client's LLM for generation, allowing servers to leverage AI capabilities.
+
+### Overview
+
+Sampling allows your server to send prompts to the client's LLM and receive generated responses. This enables powerful patterns like:
+- Servers that use AI to process data
+- Multi-step reasoning workflows
+- Code generation within tools
+- Interactive dialogue management
+
+### Usage
+
+```typescript
+import type { ITool, IParam } from 'simply-mcp';
+
+interface QueryParam extends IParam {
+  type: 'string';
+  description: 'User query to analyze';
+}
+
+interface AnalyzeTool extends ITool {
+  name: 'analyze_with_ai';
+  description: 'Analyze user query using LLM';
+  params: { query: QueryParam };
+  result: { analysis: string };
+}
+
+export default class MyServer {
+  analyzeWithAi: AnalyzeTool = async (params, context) => {
+    // Request LLM sampling from client
+    const result = await context.sample({
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `Analyze this query: ${params.query}`
+          }
+        }
+      ],
+      maxTokens: 500
+    });
+
+    return {
+      analysis: result.content.text
+    };
+  };
+}
+```
+
+### Configuration
+
+Enable sampling in your server interface:
+
+```typescript
+interface MyServer extends IServer {
+  name: 'ai-server';
+  sampling: {
+    enabled: true;
+  };
+}
+```
+
+---
+
+## Elicitation
+
+**Available since:** v3.0.0
+
+Request user input during tool execution for interactive workflows.
+
+### Overview
+
+Elicitation allows your tools to pause execution and request additional information from the user. Perfect for:
+- Multi-step wizards
+- Confirmation dialogs
+- Dynamic form collection
+- Interactive CLI tools
+
+### Usage
+
+```typescript
+interface DeployTool extends ITool {
+  name: 'deploy_app';
+  description: 'Deploy application with confirmation';
+  params: { appName: AppNameParam };
+  result: { status: string };
+}
+
+export default class MyServer {
+  deployApp: DeployTool = async (params, context) => {
+    // Request user confirmation
+    const confirmation = await context.elicitInput({
+      prompt: `Deploy ${params.appName} to production?`,
+      fields: [
+        {
+          name: 'confirm',
+          type: 'boolean',
+          description: 'Confirm deployment',
+          required: true
+        }
+      ]
+    });
+
+    if (!confirmation.confirm) {
+      return { status: 'Deployment cancelled' };
+    }
+
+    // Proceed with deployment
+    return { status: 'Deployed successfully' };
+  };
+}
+```
+
+---
+
+## Roots
+
+**Available since:** v3.0.0
+
+Discover accessible filesystem roots from the client.
+
+### Overview
+
+Roots allow your server to discover which directories the client has access to. Useful for:
+- File operation tools
+- Project-based tools
+- Workspace management
+- Path validation
+
+### Usage
+
+```typescript
+interface ListProjectsTool extends ITool {
+  name: 'list_projects';
+  description: 'List available projects';
+  params: {};
+  result: { projects: string[] };
+}
+
+export default class MyServer {
+  listProjects: ListProjectsTool = async (params, context) => {
+    // Get accessible roots from client
+    const roots = await context.listRoots();
+
+    const projects = roots
+      .filter(root => root.name.includes('project'))
+      .map(root => root.uri);
+
+    return { projects };
+  };
+}
+```
+
+---
+
+## Completions
+
+**Available since:** v3.0.0
+
+Provide autocomplete suggestions for tool arguments.
+
+### Overview
+
+Completions enhance the user experience by providing intelligent suggestions as users type tool arguments.
+
+### Usage
+
+```typescript
+import type { ICompletion } from 'simply-mcp';
+
+interface FileCompletion extends ICompletion {
+  argument: {
+    name: 'read_file';
+    argumentName: 'path';
+  };
+  completions: (partial: string) => Promise<string[]>;
+}
+
+export default class MyServer {
+  'completion/read_file/path': FileCompletion = async (partial) => {
+    // Return file paths matching partial input
+    const files = await searchFiles(partial);
+    return files.map(f => f.path);
+  };
+}
+```
+
+---
+
+## Progress
+
+**Available since:** v3.0.0
+
+Report progress for long-running operations.
+
+### Overview
+
+Progress tracking provides feedback to users during time-consuming operations, improving perceived performance.
+
+### Usage
+
+```typescript
+interface ProcessTool extends ITool {
+  name: 'process_large_file';
+  description: 'Process a large file with progress tracking';
+  params: { filePath: FilePathParam };
+  result: { processed: number };
+}
+
+export default class MyServer {
+  processLargeFile: ProcessTool = async (params, context) => {
+    const totalLines = await countLines(params.filePath);
+    let processed = 0;
+
+    for await (const line of readLines(params.filePath)) {
+      // Process line...
+      processed++;
+
+      // Report progress every 100 lines
+      if (processed % 100 === 0) {
+        await context.reportProgress({
+          progress: processed,
+          total: totalLines
+        });
+      }
+    }
+
+    return { processed };
+  };
+}
+```
+
+---
+
+# React Hooks Adapter
+
+**Available since:** v4.0.0
+
+Client-side React integration for seamless MCP tool interaction with minimal boilerplate.
+
+## Overview
+
+The React Hooks Adapter provides type-safe, declarative hooks for calling MCP tools from React applications. Works with **any** UI component library - no MCP-specific components required.
+
+**Key Benefits:**
+- **90% less boilerplate** - No manual state management
+- **Type-safe** - Full TypeScript inference
+- **Framework agnostic** - Use with Material-UI, Chakra, Ant Design, etc.
+- **Automatic state** - Loading, error, and data states handled
+- **Optimistic updates** - Instant UI feedback
+- **Request deduplication** - Avoid duplicate calls
+- **Built-in retry** - Configurable retry logic
+
+**Location:** `simply-mcp/client/hooks`
+
+## useMCPTool Hook
+
+Execute MCP tools with automatic state management:
+
+```typescript
+import { useMCPTool } from 'simply-mcp/client';
+
+function GreetingComponent() {
+  const { execute, loading, error, data } = useMCPTool('greet', {
+    onSuccess: (result) => {
+      console.log('Greeting received:', result);
+    },
+    onError: (error) => {
+      console.error('Failed to greet:', error);
+    }
+  });
+
+  return (
+    <div>
+      <button
+        onClick={() => execute({ name: 'Alice' })}
+        disabled={loading}
+      >
+        {loading ? 'Greeting...' : 'Say Hello'}
+      </button>
+      {error && <p>Error: {error.message}</p>}
+      {data && <p>{data.greeting}</p>}
+    </div>
+  );
+}
+```
+
+### Hook Options
+
+```typescript
+interface UseMCPToolOptions<TResult> {
+  onSuccess?: (result: TResult) => void;
+  onError?: (error: Error) => void;
+  onMutate?: (params: any) => void;
+  retry?: number;                    // Retry attempts (default: 0)
+  retryDelay?: number;               // Delay between retries (ms)
+  deduplicate?: boolean;             // Prevent duplicate calls (default: true)
+  optimisticUpdate?: (params: any) => TResult;  // Optimistic result
+}
+```
+
+### Return Value
+
+```typescript
+interface UseMCPToolResult<TResult> {
+  execute: (params: any) => Promise<TResult>;
+  loading: boolean;
+  error: Error | null;
+  data: TResult | null;
+  reset: () => void;
+}
+```
+
+## usePromptSubmit Hook
+
+Submit prompts to MCP servers:
+
+```typescript
+import { usePromptSubmit } from 'simply-mcp/client';
+
+function ChatComponent() {
+  const { submit, loading, response } = usePromptSubmit('chat_template');
+
+  const handleSubmit = () => {
+    submit({
+      topic: 'TypeScript',
+      depth: 'advanced'
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={handleSubmit} disabled={loading}>
+        Start Chat
+      </button>
+      {response && <ChatDisplay messages={response} />}
+    </div>
+  );
+}
+```
+
+## MCPProvider Context
+
+Global configuration for all hooks:
+
+```typescript
+import { MCPProvider } from 'simply-mcp/client';
+
+function App() {
+  return (
+    <MCPProvider
+      config={{
+        serverUrl: 'http://localhost:3000',
+        retry: 3,
+        retryDelay: 1000,
+        onError: (error) => {
+          // Global error handling
+          console.error('MCP Error:', error);
+        }
+      }}
+    >
+      <YourApp />
+    </MCPProvider>
+  );
+}
+```
+
+## Integration with UI Libraries
+
+Works seamlessly with popular UI libraries:
+
+### Material-UI Example
+
+```typescript
+import { useMCPTool } from 'simply-mcp/client';
+import { Button, CircularProgress, Alert } from '@mui/material';
+
+function MaterialUIExample() {
+  const { execute, loading, error, data } = useMCPTool('fetch_data');
+
+  return (
+    <>
+      <Button
+        variant="contained"
+        onClick={() => execute({})}
+        disabled={loading}
+      >
+        {loading ? <CircularProgress size={24} /> : 'Load Data'}
+      </Button>
+      {error && <Alert severity="error">{error.message}</Alert>}
+      {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
+    </>
+  );
+}
+```
+
+### Chakra UI Example
+
+```typescript
+import { useMCPTool } from 'simply-mcp/client';
+import { Button, Spinner, Alert } from '@chakra-ui/react';
+
+function ChakraExample() {
+  const { execute, loading, error } = useMCPTool('save_data');
+
+  return (
+    <Button
+      colorScheme="blue"
+      onClick={() => execute({ value: 42 })}
+      isLoading={loading}
+      spinner={<Spinner />}
+    >
+      Save
+    </Button>
+  );
+}
+```
+
+## See Also
+
+- [Example: react-hooks-demo.ts](../../examples/react-hooks-demo.ts) - Complete examples
+- [API Reference - React Hooks](./API_REFERENCE.md#react-hooks) - Full API documentation
+
+---
+
+# UI Resources
+
+**Available since:** v4.0.0 (Ultra-Minimal Redesign)
+
+Interactive UI components for rich server experiences.
+
+## Overview
+
+UI Resources enable your MCP server to provide interactive interfaces that render in MCP clients. The v4.0 redesign dramatically simplifies UI creation through intelligent auto-detection and zero-config builds.
+
+**v4.0 Ultra-Minimal Changes:**
+- **6 fields instead of 30+** - Reduced configuration by 80%
+- **Single `source` field** - Auto-detects URL, file, inline HTML, React, or Remote DOM
+- **Auto-dependency extraction** - No manual dependency arrays
+- **Zero-config build** - Smart defaults with optional overrides
+- **Watch mode** - Auto-tracks all relevant files
+
+## IUI Interface (v4.0)
+
+```typescript
+interface IUI extends IResource {
+  uri: string;              // Unique identifier (e.g., 'ui://dashboard')
+  name: string;             // Display name
+  description?: string;     // Optional description
+  mimeType: 'text/html'     // UI content type
+    | 'application/javascript'
+    | 'application/vnd.mcp-ui.remote-dom+javascript';
+
+  source: string;           // AUTO-DETECTED SOURCE TYPE
+  // Can be:
+  // 1. External URL: 'https://example.com/ui.html'
+  // 2. Inline HTML: '<div>Hello</div>'
+  // 3. File path: './ui/dashboard.html'
+  // 4. React component: './components/Dashboard.tsx'
+  // 5. Remote DOM: './remote-dom/app.js'
+  // 6. Folder: './ui-folder/'
+
+  theme?: 'light' | 'dark' | 'auto';  // Optional theme preference
+}
+```
+
+## Source Auto-Detection
+
+The framework automatically detects your source type:
+
+### 1. External URL
+
+```typescript
+interface DashboardUI extends IUI {
+  uri: 'ui://dashboard';
+  name: 'Dashboard';
+  mimeType: 'text/html';
+  source: 'https://example.com/dashboard.html';  // ✅ Auto-detected as URL
+}
+```
+
+### 2. Inline HTML
+
+```typescript
+interface SimpleUI extends IUI {
+  uri: 'ui://simple';
+  name: 'Simple UI';
+  mimeType: 'text/html';
+  source: '<div><h1>Hello World</h1></div>';  // ✅ Auto-detected as inline HTML
+}
+```
+
+### 3. React Component (TSX/JSX)
+
+```typescript
+interface ReactUI extends IUI {
+  uri: 'ui://react-app';
+  name: 'React App';
+  mimeType: 'text/html';
+  source: './src/components/App.tsx';  // ✅ Auto-detected as React
+  // Dependencies auto-extracted from imports!
+}
+```
+
+### 4. HTML File
+
+```typescript
+interface FileUI extends IUI {
+  uri: 'ui://file';
+  name: 'File UI';
+  mimeType: 'text/html';
+  source: './public/index.html';  // ✅ Auto-detected as HTML file
+}
+```
+
+### 5. Remote DOM (JavaScript)
+
+```typescript
+interface RemoteDOMUI extends IUI {
+  uri: 'ui://remote';
+  name: 'Remote DOM UI';
+  mimeType: 'application/vnd.mcp-ui.remote-dom+javascript';
+  source: './remote/app.js';  // ✅ Auto-detected as Remote DOM
+}
+```
+
+### 6. Folder-Based UI
+
+```typescript
+interface FolderUI extends IUI {
+  uri: 'ui://folder';
+  name: 'Folder UI';
+  mimeType: 'text/html';
+  source: './ui-folder/';  // ✅ Auto-detected as folder
+  // Serves index.html from folder
+}
+```
+
+## Auto-Dependency Extraction
+
+**Before v4.0 (Manual):**
+```typescript
+dependencies: [
+  'react@18.2.0',
+  'react-dom@18.2.0',
+  'lucide-react@0.263.1',
+  '@mui/material@5.14.0'
+]
+```
+
+**After v4.0 (Automatic):**
+```typescript
+// NO DEPENDENCIES FIELD NEEDED!
+// Framework extracts from imports automatically:
+import React from 'react';              // ✅ Auto-detected
+import { Button } from '@mui/material'; // ✅ Auto-detected
+import { Download } from 'lucide-react'; // ✅ Auto-detected
+```
+
+## Build Configuration (Optional)
+
+Override defaults with `simply-mcp.config.ts`:
+
+```typescript
+export default {
+  ui: {
+    build: {
+      bundle: true,        // Bundle all dependencies (default: true)
+      minify: true,        // Minify output (default: true)
+      sourcemap: false,    // Generate sourcemaps (default: false)
+      target: 'es2020',    // JS target (default: es2020)
+      cdn: 'esm.sh'        // CDN for dependencies (default: esm.sh)
+    },
+    performance: {
+      lazy: true,          // Lazy load components (default: true)
+      optimizeSize: true   // Optimize bundle size (default: true)
+    }
+  }
+};
+```
+
+## Theme Support
+
+Built-in CSS variable theming:
+
+```typescript
+interface ThemedUI extends IUI {
+  uri: 'ui://themed';
+  name: 'Themed UI';
+  mimeType: 'text/html';
+  source: './ui/themed.html';
+  theme: 'auto';  // Respects user's system preference
+}
+```
+
+Access theme variables in CSS:
+
+```css
+.container {
+  background: var(--mcp-background);
+  color: var(--mcp-foreground);
+  border: 1px solid var(--mcp-border);
+}
+```
+
+## Complete Example
+
+```typescript
+import type { IServer, IUI, ITool, IParam } from 'simply-mcp';
+
+// UI Resource - Auto-detects React, extracts deps, builds, serves
+interface CalculatorUI extends IUI {
+  uri: 'ui://calculator';
+  name: 'Calculator';
+  description: 'Interactive calculator UI';
+  mimeType: 'text/html';
+  source: './src/Calculator.tsx';  // That's it!
+  theme: 'auto';
+}
+
+// Tool that UI can call
+interface AddTool extends ITool {
+  name: 'add';
+  params: { a: NumberParam; b: NumberParam };
+  result: { sum: number };
+}
+
+interface MyServer extends IServer {
+  name: 'calculator-server';
+  version: '1.0.0';
+  transport: 'http';
+  http: { port: 3000 };
+}
+
+export default class CalculatorServer {
+  add: AddTool = async (params) => ({
+    sum: params.a + params.b
+  });
+}
+```
+
+## Watch Mode
+
+Auto-reloads on file changes:
+
+```bash
+simply-mcp run server.ts --watch
+```
+
+Tracks:
+- Main server file
+- UI source files
+- Imported dependencies
+- Theme files
+- Configuration
+
+## See Also
+
+- [UI Resources Guide](./UI_RESOURCES.md) - Comprehensive UI documentation
+- [Remote DOM Guide](./REMOTE_DOM.md) - Sandboxed UI execution
+- [Example: interface-ui-resource.ts](../../examples/interface-ui-resource.ts) - Working examples
+- [Example: v4/07-with-tools.ts](../../examples/v4/07-with-tools.ts) - Complete server with UI
 
 ---
 
