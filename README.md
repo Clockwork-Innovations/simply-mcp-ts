@@ -252,6 +252,25 @@ Working examples using the Interface API:
 
 ---
 
+## MCP Interpreter - Reference Client
+
+A Next.js application demonstrating MCP client integration with visual interfaces for testing and development.
+
+**Features:**
+- Visual interface for all MCP primitives (tools, resources, prompts, roots, sampling, elicitation)
+- Connection management for testing MCP servers
+- Sandboxed iframe support for UI resources with postMessage communication
+- Implementation of MCP UI adapter hooks
+
+**Location:** [mcp-interpreter/](./mcp-interpreter/)
+
+**Use Cases:**
+- Testing your MCP servers during development
+- Learning how to build MCP clients
+- Reference implementation for client-side MCP integration
+
+---
+
 ## Testing
 
 ```bash
