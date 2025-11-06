@@ -20,7 +20,7 @@ Complete reference for the MCP UI specification implementation in Simply-MCP.
 
 ## Overview
 
-Simply-MCP implements **100% spec-compliant** MCP UI support including all three official MIME types (text/html, text/uri-list, and Remote DOM), fully compatible with the official [@mcp-ui](https://github.com/idosal/mcp-ui) specification. This enables MCP servers to provide rich, interactive user interfaces alongside traditional tools, prompts, and resources.
+Simply-MCP implements the MCP UI specification including all three official MIME types (text/html, text/uri-list, and Remote DOM), compatible with the official [@mcp-ui](https://github.com/idosal/mcp-ui) specification. This enables MCP servers to provide rich, interactive user interfaces alongside traditional tools, prompts, and resources.
 
 ### Official Specification
 
@@ -30,40 +30,35 @@ Simply-MCP implements **100% spec-compliant** MCP UI support including all three
 
 ### Key Features
 
-- ✅ **5/5 Action Types** - Complete postMessage protocol support (tool, prompt, notify, intent, link)
-- ✅ **3/3 MIME Types** - text/html ✅, text/uri-list ✅, Remote DOM ✅
-- ✅ **SDK-Compatible API** - createUIResource(), onUIAction prop, htmlProps support
-- ✅ **Spec-Compliant Protocol** - Official message format, ui-message-response, acknowledgments
-- ✅ **Security First** - Sandboxed iframes with origin validation, Web Worker isolation for Remote DOM
-- ✅ **React Integration** - UIResourceRenderer component and hooks (useMCPTool, usePromptSubmit, etc.)
-- ✅ **Remote DOM Client** - RemoteDOMWorkerManager, HostReceiver, CSP validation, resource limits
-- ✅ **Comprehensive Tests** - Full test coverage validates spec compliance
+- **Action Types** - postMessage protocol support (tool, prompt, notify, intent, link)
+- **MIME Types** - text/html, text/uri-list, Remote DOM
+- **SDK-Compatible API** - createUIResource(), onUIAction prop, htmlProps support
+- **Protocol** - Official message format, ui-message-response, acknowledgments
+- **Security** - Sandboxed iframes with origin validation, Web Worker isolation for Remote DOM
+- **React Integration** - UIResourceRenderer component and hooks (useMCPTool, usePromptSubmit, etc.)
+- **Remote DOM Client** - RemoteDOMWorkerManager, HostReceiver, CSP validation, resource limits
 
 ---
 
 ## Protocol Compliance
 
-Simply-MCP achieves full protocol compliance for the core MCP UI specification:
+### Supported Action Types
 
-### Supported Action Types (5/5)
-
-| Action Type | Status | Description |
-|-------------|--------|-------------|
-| `tool` | ✅ Implemented | Execute MCP server tools |
-| `notify` | ✅ Implemented | Display user notifications |
-| `prompt` | ✅ Implemented | Submit to LLM |
-| `intent` | ✅ Implemented | Trigger platform intents |
-| `link` | ✅ Implemented | Navigate to URLs |
+| Action Type | Description |
+|-------------|-------------|
+| `tool` | Execute MCP server tools |
+| `notify` | Display user notifications |
+| `prompt` | Submit to LLM |
+| `intent` | Trigger platform intents |
+| `link` | Navigate to URLs |
 
 ### Supported MIME Types
 
-| MIME Type | Status | Description |
-|-----------|--------|-------------|
-| `text/html` | ✅ **100% Compliant** | Inline HTML content in sandboxed iframes |
-| `text/uri-list` | ✅ **100% Compliant** | External URLs loaded in iframes |
-| `application/vnd.mcp-ui.remote-dom+javascript` | ✅ **100% Compliant** | Sandboxed Web Worker execution with RemoteDOMWorkerManager |
-
-**Protocol Coverage:** 3/3 MIME types fully supported (100% compliance)
+| MIME Type | Description |
+|-----------|-------------|
+| `text/html` | Inline HTML content in sandboxed iframes |
+| `text/uri-list` | External URLs loaded in iframes |
+| `application/vnd.mcp-ui.remote-dom+javascript` | Sandboxed Web Worker execution with RemoteDOMWorkerManager |
 
 ### Protocol Format
 
@@ -82,7 +77,7 @@ Simply-MCP uses the **official nested payload structure** with proper `messageId
 
 ### Known Limitations
 
-Simply-MCP has **100% compliance** with the MCP UI specification including all three MIME types. The following minor client-side API features are in development:
+The following client-side API features are in development:
 
 #### Client-Side API Enhancements (In Progress)
 - **`onUIAction` prop:** Not yet available
