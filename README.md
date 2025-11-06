@@ -19,28 +19,28 @@
 - Compile-time validation
 - Clean, intuitive API
 
-📦 **v4.0 Improvements**
-- **Slim Package**: 50-60% smaller with optional dependencies
-- **File-Based Configuration**: Declare transport and auth in your server interface
-- **Built-In Authentication**: API key and OAuth 2.1 authentication
-- **MCP Protocol Features**: Full support for server-to-client communication
+📦 **Streamlined Package**
+- Slim package with optional dependencies
+- File-based configuration: Declare transport and auth in your server interface
+- Built-in authentication: API key and OAuth 2.1 authentication
+- Full support for server-to-client communication
 
 🚀 **Multiple Transport Support**
 - 📡 Stdio (standard input/output)
 - 🌐 HTTP with dual modes: Stateful (sessions + SSE, aka Streamable HTTP) and Stateless (serverless)
 
-🔌 **MCP Protocol Features** (v4.0)
+🔌 **MCP Protocol Features**
 - **Sampling**: Request LLM completions from clients
 - **Elicitation**: Request user input during tool execution
 - **Roots**: Discover client root directories
 - **Subscriptions**: Notify clients of resource updates
 - **Completions**: Provide autocomplete suggestions
-- **Progress Messages**: Provide human-readable status updates during long-running operations (v4.1.0)
+- **Progress Messages**: Provide human-readable status updates during long-running operations
 - **Tool Annotations**: Metadata hints about tool behavior (read-only, destructive, categories, performance)
 - **JSON-RPC 2.0 Batch Processing**: 5x throughput with parallel mode, minimal overhead (1.9%)
 
-🎨 **UI Resources** (v4.0 - Ultra-Minimal Redesign)
-- **IUI Interface**: Reduced from 30+ fields to just 6 fields!
+🎨 **UI Resources**
+- **IUI Interface**: Minimal 6-field interface design
 - **Auto-Detection**: 6 source types automatically detected (URL, HTML, React, Remote DOM, files, folders)
 - **Auto-Extraction**: Dependencies extracted from imports - no manual configuration
 - **Zero-Config**: Smart defaults based on NODE_ENV (optional config file for customization)
@@ -48,7 +48,7 @@
 - **Hot Reload**: Watch mode automatically tracks all relevant files
 - **Production Optimizations**: Bundling, minification, CDN via `simply-mcp.config.ts`
 
-🎯 **UI Adapter Layer - React Hooks** (New!)
+🎯 **UI Adapter Layer - React Hooks**
 - **Use ANY component library**: shadcn/ui, Radix UI, Material-UI, Chakra UI, native HTML - all work seamlessly
 - **Zero boilerplate**: Reduces 30+ lines of state management to 3 lines
 - **useMCPTool hook**: Automatic loading/error/data state management for tool calls
@@ -58,29 +58,12 @@
 - **Type-safe**: Full TypeScript support with automatic type inference
 - **No MCP-specific components needed**: Use your favorite UI library as-is
 
-🎵 **Audio Resources** (v4.2)
+🎵 **Audio Resources**
 - **IAudioContent Interface**: Type-safe audio content with base64 encoding
 - **IAudioMetadata Interface**: Rich metadata (duration, sample rate, channels, bitrate, codec)
 - **createAudioContent() Helper**: Simplify loading audio from files or buffers
 - **Multi-Format Support**: MP3, WAV, OGG, FLAC, AAC, M4A, WebM with automatic MIME type detection
 - **Static & Dynamic Patterns**: Embedded or runtime-loaded audio resources
-
-## 🎉 v4.0.0: 100% MCP UI Protocol Compliance (Community Extension)
-
-Simply-MCP v4.0.0 achieves **100% compliance** with the [MCP UI specification](https://github.com/idosal/mcp-ui), a community-maintained extension to the official MCP protocol.
-
-> **Note:** MCP-UI is a community extension by [@idosal](https://github.com/idosal), not part of the official Anthropic MCP specification. It extends the protocol to support interactive web UIs alongside traditional tools and resources.
-
-✅ **5/5 Action Types** | ✅ **2/2 Core MIME Types** | ✅ **Official Protocol Format** | ✅ **SDK API Compatibility**
-
-### Resources
-
-- 📘 [MCP UI Protocol Reference](./docs/guides/MCP_UI_PROTOCOL.md)
-- 📘 [MCP UI Migration Guide](./docs/guides/MCP_UI_MIGRATION.md)
-- 📘 [MCP UI Adapter Hooks Guide](./docs/guides/MCP_UI_ADAPTER_HOOKS.md) ⭐ **NEW**
-- 📘 [Remote DOM Advanced Patterns](./docs/guides/REMOTE_DOM_ADVANCED.md)
-- 🔧 [Remote DOM Troubleshooting](./docs/guides/REMOTE_DOM_TROUBLESHOOTING.md)
-- 🔗 [Official MCP-UI Spec](https://github.com/idosal/mcp-ui)
 
 ---
 
@@ -354,11 +337,9 @@ export default function SearchComponent() {
 }
 ```
 
-**That's it!** 90% less code compared to manual state management.
-
 ### Available Hooks
 
-**100% MCP UI Protocol Coverage** - All 5 official protocol actions have React hooks:
+All 5 official MCP UI protocol actions have React hooks:
 
 1. **Tool Calls** (complex, stateful)
    - **`useMCPTool`** - Call multiple times for multiple tools (standard React pattern)
@@ -699,7 +680,3 @@ MIT © [Nicholas Marinkovich, MD](https://cwinnov.com)
 ## Acknowledgments
 
 Built with the [Model Context Protocol SDK](https://github.com/modelcontextprotocol/sdk) by Anthropic.
-
----
-
-**Made with ❤️ by the Simply MCP Team**
