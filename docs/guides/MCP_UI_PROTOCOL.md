@@ -20,7 +20,7 @@ Complete reference for the MCP UI specification implementation in Simply-MCP.
 
 ## Overview
 
-Simply-MCP implements **100% spec-compliant** MCP UI support for the core protocol (text/html and text/uri-list), fully compatible with the official [@mcp-ui](https://github.com/idosal/mcp-ui) specification. Advanced features like Remote DOM are planned for future releases. This enables MCP servers to provide rich, interactive user interfaces alongside traditional tools, prompts, and resources.
+Simply-MCP implements **100% spec-compliant** MCP UI support including all three official MIME types (text/html, text/uri-list, and Remote DOM), fully compatible with the official [@mcp-ui](https://github.com/idosal/mcp-ui) specification. This enables MCP servers to provide rich, interactive user interfaces alongside traditional tools, prompts, and resources.
 
 ### Official Specification
 
@@ -31,12 +31,13 @@ Simply-MCP implements **100% spec-compliant** MCP UI support for the core protoc
 ### Key Features
 
 - ✅ **5/5 Action Types** - Complete postMessage protocol support (tool, prompt, notify, intent, link)
-- ✅ **2/2 Core MIME Types** - text/html ✅, text/uri-list ✅ (Remote DOM planned for Phase 2)
+- ✅ **3/3 MIME Types** - text/html ✅, text/uri-list ✅, Remote DOM ✅
 - ✅ **SDK-Compatible API** - createUIResource(), onUIAction prop, htmlProps support
 - ✅ **Spec-Compliant Protocol** - Official message format, ui-message-response, acknowledgments
-- ✅ **Security First** - Sandboxed iframes with origin validation
-- ✅ **React Integration** - UIResourceRenderer component for clients
-- ✅ **1022 Passing Tests** - Comprehensive test coverage validates spec compliance
+- ✅ **Security First** - Sandboxed iframes with origin validation, Web Worker isolation for Remote DOM
+- ✅ **React Integration** - UIResourceRenderer component and hooks (useMCPTool, usePromptSubmit, etc.)
+- ✅ **Remote DOM Client** - RemoteDOMWorkerManager, HostReceiver, CSP validation, resource limits
+- ✅ **Comprehensive Tests** - Full test coverage validates spec compliance
 
 ---
 
@@ -60,9 +61,9 @@ Simply-MCP achieves full protocol compliance for the core MCP UI specification:
 |-----------|--------|-------------|
 | `text/html` | ✅ **100% Compliant** | Inline HTML content in sandboxed iframes |
 | `text/uri-list` | ✅ **100% Compliant** | External URLs loaded in iframes |
-| `application/vnd.mcp-ui.remote-dom+javascript` | ⏳ **Planned (Phase 2)** | Advanced Remote DOM rendering (40-60h future work) |
+| `application/vnd.mcp-ui.remote-dom+javascript` | ✅ **100% Compliant** | Sandboxed Web Worker execution with RemoteDOMWorkerManager |
 
-**Core Protocol Coverage:** 2/2 primary MIME types fully supported (100% compliance)
+**Protocol Coverage:** 3/3 MIME types fully supported (100% compliance)
 
 ### Protocol Format
 
@@ -81,23 +82,16 @@ Simply-MCP uses the **official nested payload structure** with proper `messageId
 
 ### Known Limitations
 
-Simply-MCP has **100% compliance** with the core MCP UI specification (text/html and text/uri-list). The following advanced feature is planned for future releases:
+Simply-MCP has **100% compliance** with the MCP UI specification including all three MIME types. The following minor client-side API features are in development:
 
-#### Remote DOM Rendering
-- **Status:** ⏳ Planned for future release
-- **Current:** MIME type is detected and validated but not rendered
-- **Impact:** Advanced React/Web Component UIs cannot be rendered
-- **Workaround:** Use `text/html` with embedded scripts or `text/uri-list` for external UIs
-- **Tracking:** See [Protocol Parity Analysis](../../MCP_UI_PROTOCOL_PARITY_ANALYSIS.md)
-
-#### Client-Side API Differences
+#### Client-Side API Enhancements (In Progress)
 - **`onUIAction` prop:** Not yet available
-  - Current: Use context-based message handling
+  - Current: Use context-based message handling or React hooks
   - Planned: Full prop support in future release
-- **`htmlProps`:** Not yet implemented
-  - Missing: `style`, `autoResize`, `className` customization
-  - Workaround: Use inline HTML styling
-- **`remoteDomProps`:** N/A (Remote DOM not implemented)
+- **`htmlProps`:** Partial implementation
+  - Available: Basic iframe configuration
+  - Missing: `autoResize`, advanced `className` customization
+  - Workaround: Use inline HTML styling or CSS injection
 
 #### Legacy Protocol Support
 - **Status:** ⏳ Temporary (v4.x only)
@@ -161,18 +155,29 @@ Embeds external HTTPS URLs in iframes.
 
 ### application/vnd.mcp-ui.remote-dom+javascript
 
-Executes JavaScript in Web Worker sandbox for dynamic UI generation.
+**Available since:** v4.0.0
+
+Executes JavaScript in a sandboxed Web Worker for maximum security and dynamic UI generation.
 
 **When to use:**
 - React components
 - Web Components
 - Highly dynamic UIs
 - Maximum security isolation
+- Server-generated UIs
 
 **Security:**
 - Executed in Web Worker (no DOM access)
-- Communicates via Remote DOM protocol
-- Complete sandboxing
+- CSP (Content Security Policy) validation
+- Whitelisted HTML elements only
+- Resource limits (max depth, nodes, attributes)
+- Timeout enforcement
+
+**Client Implementation:**
+- `RemoteDOMWorkerManager` - Web Worker lifecycle management
+- `HostReceiver` - React component for rendering
+- Operation batching for performance
+- Event bridging between sandbox and host
 
 **Example:**
 ```typescript
@@ -182,6 +187,10 @@ Executes JavaScript in Web Worker sandbox for dynamic UI generation.
   text: 'import React from "react"; export default () => <div>Widget</div>;'
 }
 ```
+
+**See also:**
+- [Remote DOM Client Documentation](./FEATURES.md#remote-dom-client) - Complete client-side reference
+- [Example: v4/06-remote-dom.ts](../../examples/v4/06-remote-dom.ts) - Working example
 
 ---
 
