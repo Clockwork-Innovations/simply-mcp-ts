@@ -12,6 +12,11 @@ The MCP UI Adapter Layer provides React hooks that make it trivial to call MCP t
   - [useMCPTool](#usemcptool)
   - [useMCPTools](#usemcptools)
   - [MCPProvider](#mcpprovider)
+- [MCP UI Protocol Action Hooks](#mcp-ui-protocol-action-hooks)
+  - [usePromptSubmit](#usepromptsubmit)
+  - [useIntent](#useintent)
+  - [useNotify](#usenotify)
+  - [useOpenLink](#useopenlink)
 - [Examples](#examples)
 - [Patterns](#patterns)
 - [TypeScript](#typescript)
@@ -472,6 +477,351 @@ function App() {
   );
 }
 ```
+
+---
+
+## MCP UI Protocol Action Hooks
+
+The following hooks provide convenient React APIs for the 5 core MCP UI protocol actions. While `window.*` functions work for simple cases, these hooks provide:
+
+- ✅ State tracking (loading, history)
+- ✅ Error handling with callbacks
+- ✅ Memory leak prevention
+- ✅ History tracking and management
+- ✅ Additional features (debouncing, rate limiting, validation)
+
+---
+
+### `usePromptSubmit`
+
+Hook for submitting prompts to the LLM.
+
+#### Signature
+
+```typescript
+function usePromptSubmit(options?: UsePromptSubmitOptions): UsePromptSubmitResult
+```
+
+#### Options
+
+```typescript
+interface UsePromptSubmitOptions {
+  // Called when prompt is submitted
+  onSubmit?: (prompt: string) => void;
+
+  // Called on submission error
+  onError?: (error: Error, prompt: string) => void;
+
+  // Prevent duplicate submissions
+  preventDuplicates?: boolean; // default: false
+
+  // Track submission history
+  trackHistory?: boolean; // default: true
+
+  // Maximum history size
+  maxHistorySize?: number; // default: 50
+}
+```
+
+#### Return Value
+
+```typescript
+interface UsePromptSubmitResult {
+  submit: (prompt: string) => void;
+  submitting: boolean;
+  lastPrompt: string | null;
+  history: string[];
+  clearHistory: () => void;
+  error: Error | null;
+}
+```
+
+#### Example
+
+```tsx
+import { usePromptSubmit } from 'simply-mcp/client';
+
+function PromptInput() {
+  const [text, setText] = useState('');
+
+  const promptSubmit = usePromptSubmit({
+    onSubmit: (prompt) => console.log('Submitted:', prompt),
+    onError: (err) => console.error('Failed:', err),
+    preventDuplicates: true,
+  });
+
+  return (
+    <div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <button
+        onClick={() => {
+          promptSubmit.submit(text);
+          setText('');
+        }}
+        disabled={promptSubmit.submitting}
+      >
+        Submit to LLM
+      </button>
+
+      {/* Show history */}
+      <div>
+        {promptSubmit.history.map((prompt, i) => (
+          <div key={i}>{prompt}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+**Simple Alternative:** For basic usage, you can use `window.submitPrompt('your prompt')` directly.
+
+---
+
+### `useIntent`
+
+Hook for triggering application intents (navigation, actions, etc.).
+
+#### Signature
+
+```typescript
+function useIntent(intentName: string, options?: UseIntentOptions): UseIntentResult
+```
+
+#### Options
+
+```typescript
+interface UseIntentOptions {
+  // Called when intent is triggered
+  onTrigger?: (params: any) => void;
+
+  // Called on trigger error
+  onError?: (error: Error, params: any) => void;
+
+  // Debounce delay in ms
+  debounce?: number; // default: 0
+
+  // Track trigger history
+  trackHistory?: boolean; // default: true
+
+  // Maximum history size
+  maxHistorySize?: number; // default: 50
+}
+```
+
+#### Return Value
+
+```typescript
+interface UseIntentResult {
+  trigger: (params?: any) => void;
+  triggering: boolean;
+  lastParams: any | null;
+  history: IntentHistoryEntry[];
+  clearHistory: () => void;
+  error: Error | null;
+}
+```
+
+#### Example
+
+```tsx
+import { useIntent } from 'simply-mcp/client';
+
+function Navigation() {
+  const navigate = useIntent('navigate', {
+    onTrigger: (params) => console.log('Navigating to:', params.page),
+    debounce: 300, // Debounce rapid clicks
+  });
+
+  return (
+    <div>
+      <button onClick={() => navigate.trigger({ page: 'dashboard' })}>
+        Dashboard
+      </button>
+      <button onClick={() => navigate.trigger({ page: 'settings' })}>
+        Settings
+      </button>
+
+      {/* Show where we've navigated */}
+      <div>
+        Last: {navigate.lastParams?.page}
+      </div>
+    </div>
+  );
+}
+```
+
+**Simple Alternative:** For basic usage, you can use `window.triggerIntent('intentName', params)` directly.
+
+---
+
+### `useNotify`
+
+Hook for sending notifications to the user.
+
+#### Signature
+
+```typescript
+function useNotify(options?: UseNotifyOptions): UseNotifyResult
+```
+
+#### Options
+
+```typescript
+interface UseNotifyOptions {
+  // Called when notification is sent
+  onNotify?: (level: NotificationLevel, message: string) => void;
+
+  // Called on notification error
+  onError?: (error: Error) => void;
+
+  // Rate limiting
+  rateLimit?: {
+    maxPerMinute: number;
+    burst?: number;
+  };
+}
+
+type NotificationLevel = 'info' | 'success' | 'warning' | 'error';
+```
+
+#### Return Value
+
+```typescript
+interface UseNotifyResult {
+  notify: (level: NotificationLevel, message: string) => void;
+
+  // Convenience methods
+  info: (message: string) => void;
+  success: (message: string) => void;
+  warning: (message: string) => void;
+  error: (message: string) => void;
+
+  notifying: boolean;
+  lastNotification: { level: NotificationLevel; message: string } | null;
+  error: Error | null;
+}
+```
+
+#### Example
+
+```tsx
+import { useNotify } from 'simply-mcp/client';
+
+function MyComponent() {
+  const notifications = useNotify({
+    onNotify: (level, msg) => console.log(`[${level}] ${msg}`),
+    rateLimit: { maxPerMinute: 10 },
+  });
+
+  return (
+    <div>
+      <button onClick={() => notifications.info('Hello!')}>
+        Info
+      </button>
+      <button onClick={() => notifications.success('Saved!')}>
+        Success
+      </button>
+      <button onClick={() => notifications.warning('Be careful!')}>
+        Warning
+      </button>
+      <button onClick={() => notifications.error('Something broke!')}>
+        Error
+      </button>
+    </div>
+  );
+}
+```
+
+**Simple Alternative:** For basic usage, you can use `window.notify('level', 'message')` directly.
+
+---
+
+### `useOpenLink`
+
+Hook for opening external URLs with validation and security.
+
+#### Signature
+
+```typescript
+function useOpenLink(options?: UseOpenLinkOptions): UseOpenLinkResult
+```
+
+#### Options
+
+```typescript
+interface UseOpenLinkOptions {
+  // Called when link is opened
+  onOpen?: (url: string) => void;
+
+  // Called on open error
+  onError?: (error: Error, url: string) => void;
+
+  // Validate URLs before opening
+  validateUrl?: boolean; // default: true
+
+  // Allow only HTTPS URLs
+  httpsOnly?: boolean; // default: false
+
+  // Track opening history
+  trackHistory?: boolean; // default: true
+
+  // Maximum history size
+  maxHistorySize?: number; // default: 50
+
+  // Allowed domains (empty = all allowed)
+  allowedDomains?: string[]; // default: []
+}
+```
+
+#### Return Value
+
+```typescript
+interface UseOpenLinkResult {
+  open: (url: string) => void;
+  opening: boolean;
+  lastUrl: string | null;
+  history: LinkHistoryEntry[];
+  clearHistory: () => void;
+  error: Error | null;
+}
+```
+
+#### Example
+
+```tsx
+import { useOpenLink } from 'simply-mcp/client';
+
+function ExternalLinks() {
+  const linkOpener = useOpenLink({
+    validateUrl: true,
+    httpsOnly: true,
+    allowedDomains: ['example.com', 'trusted-site.com'],
+    onOpen: (url) => console.log('Opening:', url),
+    onError: (err) => console.error('Failed:', err),
+  });
+
+  return (
+    <div>
+      <button onClick={() => linkOpener.open('https://example.com')}>
+        Visit Example.com
+      </button>
+
+      {/* Show recently opened links */}
+      <div>
+        {linkOpener.history.map((entry, i) => (
+          <div key={i}>{entry.url}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+**Simple Alternative:** For basic usage, you can use `window.openLink('url')` directly.
 
 ---
 

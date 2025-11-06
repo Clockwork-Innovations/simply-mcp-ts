@@ -57,3 +57,31 @@ export type {
   MCPContextValue,
   MCPProviderProps,
 } from './MCPProvider.js';
+
+// MCP UI Protocol Action Hooks
+export { usePromptSubmit } from './usePromptSubmit.js';
+export type {
+  UsePromptSubmitOptions,
+  UsePromptSubmitResult,
+} from './usePromptSubmit.js';
+
+export { useIntent } from './useIntent.js';
+export type {
+  UseIntentOptions,
+  UseIntentResult,
+  IntentHistoryEntry,
+} from './useIntent.js';
+
+export { useNotify } from './useNotify.js';
+export type {
+  UseNotifyOptions,
+  UseNotifyResult,
+  NotificationLevel,
+} from './useNotify.js';
+
+export { useOpenLink } from './useOpenLink.js';
+export type {
+  UseOpenLinkOptions,
+  UseOpenLinkResult,
+  LinkHistoryEntry,
+} from './useOpenLink.js';

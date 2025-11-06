@@ -351,13 +351,35 @@ export default function SearchComponent() {
 
 ### Available Hooks
 
-- **`useMCPTool`** - Single tool with automatic state management
-- **`useMCPTools`** - Multiple tools with helper functions
+#### Core Tool Execution
+- **`useMCPTool`** - Single tool with automatic state management, optimistic updates, retry logic
+- **`useMCPTools`** - Multiple tools with helper functions (isAnyLoading, hasAnyError, etc.)
 - **`MCPProvider`** - Global configuration and error handling
 
+#### MCP UI Protocol Actions
+All 5 official MCP-UI protocol actions are supported with React hooks:
+
+- **`usePromptSubmit`** - Submit prompts to LLM with history tracking and duplicate prevention
+- **`useIntent`** - Trigger application actions (navigation, refresh) with debouncing
+- **`useNotify`** - Send notifications with convenience methods (info, success, warning, error)
+- **`useOpenLink`** - Open URLs with validation, HTTPS-only mode, and domain whitelisting
+
+**Simple Alternatives:** For basic usage, all protocol actions also have window API functions:
+- `window.callTool()` - Call MCP tools (recommended: use `useMCPTool` hook for state management)
+- `window.submitPrompt()` - Submit prompts to LLM
+- `window.triggerIntent()` - Trigger application intents
+- `window.notify()` - Send notifications
+- `window.openLink()` - Open external URLs
+
 **Learn More:**
-- 📘 [MCP UI Adapter Hooks Guide](./docs/guides/MCP_UI_ADAPTER_HOOKS.md) - Complete documentation
+- 📘 [MCP UI Adapter Hooks Guide](./docs/guides/MCP_UI_ADAPTER_HOOKS.md) - Complete API documentation for all hooks
+- 📘 [MCP UI Protocol Reference](./docs/guides/MCP_UI_PROTOCOL.md) - Official protocol specification
+- 📘 [MCP UI Compliance Verification](./MCP_UI_COMPLIANCE_VERIFICATION.md) - 100% protocol compliance checklist
 - 💡 [Examples](./examples/ui-with-hooks/) - Working examples with shadcn-style components
+  - [SearchExample.tsx](./examples/ui-with-hooks/SearchExample.tsx) - Product search with useMCPTool
+  - [DashboardExample.tsx](./examples/ui-with-hooks/DashboardExample.tsx) - Multi-tool dashboard with useMCPTools
+  - [OptimisticUpdateExample.tsx](./examples/ui-with-hooks/OptimisticUpdateExample.tsx) - React Query-style optimistic updates
+  - [CompleteMCPUIExample.tsx](./examples/ui-with-hooks/CompleteMCPUIExample.tsx) - All 5 protocol actions in one example
 
 ---
 
