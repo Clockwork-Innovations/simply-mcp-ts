@@ -351,25 +351,21 @@ export default function SearchComponent() {
 
 ### Available Hooks
 
-#### Core Tool Execution
-- **`useMCPTool`** - Single tool with automatic state management, optimistic updates, retry logic
-- **`useMCPTools`** - Multiple tools with helper functions (isAnyLoading, hasAnyError, etc.)
-- **`MCPProvider`** - Global configuration and error handling
+**100% MCP UI Protocol Coverage** - All 5 official protocol actions have React hooks:
 
-#### MCP UI Protocol Actions
-All 5 official MCP-UI protocol actions are supported with React hooks:
+1. **Tool Calls** (complex, stateful)
+   - **`useMCPTool`** - Single tool with automatic loading/error/data state, optimistic updates, retry logic
+   - **`useMCPTools`** - Multiple tools with helper functions (isAnyLoading, hasAnyError, etc.)
+   - **`MCPProvider`** - Global configuration and error handling
 
-- **`usePromptSubmit`** - Submit prompts to LLM with history tracking and duplicate prevention
-- **`useIntent`** - Trigger application actions (navigation, refresh) with debouncing
-- **`useNotify`** - Send notifications with convenience methods (info, success, warning, error)
-- **`useOpenLink`** - Open URLs with validation, HTTPS-only mode, and domain whitelisting
+2. **Prompt Submission** - **`usePromptSubmit`** with history tracking and duplicate prevention
+3. **Intent Triggers** - **`useIntent`** with debouncing and history tracking
+4. **Notifications** - **`useNotify`** with convenience methods (info, success, warning, error)
+5. **Link Opening** - **`useOpenLink`** with URL validation, HTTPS-only mode, and domain whitelisting
 
-**Simple Alternatives:** For basic usage, all protocol actions also have window API functions:
-- `window.callTool()` - Call MCP tools (recommended: use `useMCPTool` hook for state management)
-- `window.submitPrompt()` - Submit prompts to LLM
-- `window.triggerIntent()` - Trigger application intents
-- `window.notify()` - Send notifications
-- `window.openLink()` - Open external URLs
+**When to use hooks vs window API:**
+- **Use hooks** for tool calls (complex, need state management) or when you need callbacks, history, or advanced features
+- **Use window API** for simple fire-and-forget actions: `window.submitPrompt()`, `window.triggerIntent()`, `window.notify()`, `window.openLink()`
 
 **Learn More:**
 - 📘 [MCP UI Adapter Hooks Guide](./docs/guides/MCP_UI_ADAPTER_HOOKS.md) - Complete API documentation for all hooks
