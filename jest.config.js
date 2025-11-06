@@ -26,6 +26,7 @@ export default {
     '/config/',
     '/trash/',  // Deprecated/archived tests (includes phase2 bundling tests)
     '/__temp_test_deps__/',  // Temporary test files created by dependency-extractor.test.ts
+    '/tests/e2e/',  // Playwright E2E tests (run separately with test:e2e)
     '/src/api/mcp/wizard/__tests__/',  // Wizard feature tests (experimental)
     '/tests/unit/interface-api/schema.test.ts',  // typeNodeToZodSchema() not fully implemented (returns empty array)
     '/tests/unit/interface-api.test.ts',  // Broken imports, superseded by tests/unit/interface-api/*.test.ts
@@ -45,11 +46,8 @@ export default {
     '/tests/unit/ui-watch-manager.test.ts',  // Uses import.meta.url (requires workaround)
     '/tests/unit/dependency-extractor.test.ts',  // Uses import.meta.url (requires workaround)
     '/examples/nextjs-mcp-ui/',  // Incomplete experimental UI feature
-    // Note: The following tests now use programmatic capability detection and will skip automatically if environment doesn't support them:
-    // - /tests/e2e/simple-message.test.ts (checks canRunE2ETests)
-    // - /tests/integration/streamable-http-transport.test.ts (checks canRunIntegrationTests)
-    // They are still excluded here to avoid timeout issues in CI/limited environments
-    '/tests/e2e/simple-message.test.ts',  // E2E test - uses programmatic skip (describeIfCanRunE2E)
+    // Note: The following tests use programmatic capability detection and will skip automatically if environment doesn't support them.
+    // They are still excluded here to avoid timeout issues in CI/limited environments:
     '/tests/integration/streamable-http-transport.test.ts',  // Integration test - uses programmatic skip (describeIfCanRunIntegration)
     '/tests/performance/streamable-http-performance.test.ts',  // Performance test - requires HTTP server (run separately)
     '/tests/unit/client/component-library-v2.test.tsx',  // Requires browser Worker API for RemoteDOMWorkerManager
