@@ -7,7 +7,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added
+
+#### MCP UI Adapter Layer - React Hooks
+
+**Use ANY React component library with MCP UI - zero boilerplate!**
+
+A complete adapter layer that allows using any React component library (shadcn/ui, Radix UI, Material-UI, Chakra UI, native HTML, etc.) with MCP UI without needing specialized components or boilerplate code.
+
+**New Hooks:**
+- ✨ **`useMCPTool`**: Hook for calling single MCP tools with automatic state management
+  - Automatic loading/error/data state management
+  - Optimistic updates support
+  - Request deduplication
+  - Built-in retry logic with configurable delays
+  - TypeScript type inference for tool results
+  - Configurable parsing (JSON/text/raw)
+  - `onSuccess`, `onError`, `onMutate` callbacks
+
+- ✨ **`useMCPTools`**: Hook for managing multiple tools simultaneously
+  - Manage multiple tools with one hook
+  - Per-tool and global configuration options
+  - Helper functions: `isAnyLoading`, `hasAnyError`, `getAllErrors`, `resetAllTools`
+  - Type-safe tool definitions
+
+- ✨ **`MCPProvider`**: Context provider for global configuration
+  - Set default options for all hooks in the component tree
+  - Global error and success handlers
+  - Configurable defaults (parsing mode, retries, optimistic updates)
+
+**Key Benefits:**
+- **90% less boilerplate** - Reduces 30+ lines of state management to 3 lines
+- **Works with ANY component library** - shadcn, Radix, MUI, Chakra, native HTML
+- **Zero MCP-specific components** - Use components exactly as designed
+- **Production-ready** - Request deduplication, retry logic, optimistic updates
+- **Type-safe** - Full TypeScript support with type inference
+- **Automatic everything** - State management, error handling, loading states, data parsing
+
+**Usage Example:**
+
+```typescript
+// Server definition - define tools whitelist
+interface SearchUI extends IUI {
+  uri: 'ui://search';
+  tools: ['search_products', 'add_to_cart']; // ✅ Security whitelist
+  source: './SearchComponent.tsx';
+}
+
+// Component - use ANY UI library!
+import { useMCPTool } from 'simply-mcp/client';
+import { Button } from '@/components/ui/button'; // shadcn, Radix, MUI, etc.
+
+export default function SearchComponent() {
+  const search = useMCPTool('search_products', {
+    onSuccess: (data) => console.log('Found:', data)
+  });
+
+  return (
+    <Button
+      onClick={() => search.execute({ query: 'laptop' })}
+      disabled={search.loading}
+    >
+      {search.loading ? 'Searching...' : 'Search'}
+    </Button>
+  );
+}
+```
+
+**New Files:**
+- `src/client/hooks/useMCPTool.ts` - Core hook for single tool calls
+- `src/client/hooks/useMCPTools.ts` - Hook for multiple tools
+- `src/client/hooks/MCPProvider.tsx` - Context provider
+- `src/client/hooks/index.ts` - Hook exports
+- `src/client/index.ts` - Client-side exports
+- `examples/ui-with-hooks/SearchExample.tsx` - Search UI example with shadcn-style components
+- `examples/ui-with-hooks/DashboardExample.tsx` - Multi-tool dashboard example
+- `docs/guides/MCP_UI_ADAPTER_HOOKS.md` - Complete API reference and guide
+
+**Architecture:**
+
+The adapter layer sits between React components and `window.callTool()` (which is auto-injected by simply-mcp), handling all state management, error handling, and parsing automatically. No specialized MCP components needed - just use your favorite UI library as-is.
+
+```
+React Component (Any library!)
+    ↓
+useMCPTool Hook (State management)
+    ↓
+window.callTool (Auto-injected, security enforced)
+    ↓
+MCP Tool Execution
+```
+
+**See:** `docs/guides/MCP_UI_ADAPTER_HOOKS.md` for complete documentation and examples.
 
 ## [4.0.0] - 2025-11-05
 
