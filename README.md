@@ -134,6 +134,13 @@ See [SDK Documentation](https://github.com/modelcontextprotocol/typescript-sdk) 
 npm install simply-mcp
 ```
 
+**Optional Dependencies:** Simply-MCP uses lazy loading for advanced features. Dependencies are only required when you use them:
+- HTTP transport → `express`, `cors`
+- Watch mode → `chokidar`
+- Bundling → `esbuild`
+- Minification → `terser`, `html-minifier-terser`, `cssnano`
+- Client rendering → `@remote-dom/core`, `@remote-dom/react`, `react`, `react-dom`
+
 ### Create Your First Server
 
 ```typescript
