@@ -7,15 +7,9 @@
 > Type-safe TypeScript framework for building MCP servers with pure interface-driven API - zero boilerplate, full type safety.
 
 [![npm version](https://badge.fury.io/js/simply-mcp.svg)](https://www.npmjs.com/package/simply-mcp)
-[![License: Non-Commercial](https://img.shields.io/badge/License-Non--Commercial-orange.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Node Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
-
----
-
-**📢 License Notice:** SimplyMCP v4.0.0+ requires a [commercial license](mailto:licensing@cwinnov.com) for commercial use. Free for personal, academic, and non-commercial projects. [See details](#license)
-
----
 
 ## Features
 
@@ -597,35 +591,7 @@ Contributions are welcome! Please read our [Contributing Guide](./.github/CONTRI
 
 ## License
 
-**SimplyMCP Non-Commercial License v1.0**
-
-- **Version 4.0.0+**: Licensed under the SimplyMCP Non-Commercial License
-- **Version 3.4.0 and earlier**: Licensed under MIT License
-
-### Non-Commercial Use
-
-Free for:
-- Academic research and education
-- Personal hobby projects
-- Internal evaluation and testing
-- Open source projects (non-commercial)
-
-### Commercial Use
-
-Requires a commercial license for:
-- Use by for-profit businesses
-- Providing services to customers/clients
-- Employment or contractor work
-- Incorporation into commercial products
-- Any revenue-generating activities
-
-**Get a Commercial License:** [licensing@cwinnov.com](mailto:licensing@cwinnov.com) | [https://cwinnov.com](https://cwinnov.com)
-
-See the [LICENSE](LICENSE) file for full terms.
-
----
-
-**Copyright © 2025 Clockwork Innovations, LLC & Nicholas Marinkovich, MD**
+MIT © [Nicholas Marinkovich, MD](https://cwinnov.com)
 
 ---
 
