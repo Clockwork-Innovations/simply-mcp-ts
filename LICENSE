@@ -1,22 +1,222 @@
-MIT License
+SimplyMCP Non-Commercial License
+
+Version 1.0, Effective 2025-11-06
 
 Copyright (c) 2025 Clockwork Innovations, LLC
 Copyright (c) 2025 Nicholas Marinkovich, MD
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+NOTICE: This license applies to SimplyMCP version 4.0.0 and later.
+Previous versions (3.4.0 and earlier) remain under the MIT License.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+================================================================================
+
+ACCEPTANCE
+
+By using, copying, modifying, or distributing the Software, you agree to be
+bound by the terms of this License. If you do not agree to the terms of this
+License, you may not use, copy, modify, or distribute the Software.
+
+================================================================================
+
+GRANT OF RIGHTS
+
+Subject to the limitations and conditions set forth below, Clockwork
+Innovations, LLC hereby grants you a non-exclusive, worldwide, royalty-free
+license to:
+
+1. Use the Software for Non-Commercial Purposes
+2. Copy and distribute the Software for Non-Commercial Purposes
+3. Modify the Software for Non-Commercial Purposes
+4. Create derivative works of the Software for Non-Commercial Purposes
+
+================================================================================
+
+DEFINITIONS
+
+"Software" means the SimplyMCP software, including all source code,
+documentation, and associated materials.
+
+"Non-Commercial Purpose" means academic research, personal study, personal
+hobby projects, educational purposes, or internal evaluation and testing,
+where:
+  - You are not receiving compensation or revenue related to the Software
+  - You are not using the Software to provide services to third parties
+  - You are not using the Software as part of a commercial product or service
+  - You are not employed to use the Software as part of your job duties
+
+"Commercial Use" means any use that does NOT qualify as a Non-Commercial
+Purpose, including but not limited to:
+  - Use of the Software by a for-profit business entity
+  - Use of the Software to provide services to customers or clients
+  - Use of the Software in connection with employment or contractor work
+  - Incorporating the Software into a commercial product or service
+  - Using the Software to generate revenue, directly or indirectly
+  - Use by government agencies or non-profit organizations for their
+    operational purposes
+
+================================================================================
+
+LIMITATIONS
+
+The following uses are prohibited without a separate Commercial License
+Agreement from Clockwork Innovations, LLC:
+
+1. COMMERCIAL USE
+   You may not use the Software for Commercial Use without obtaining a
+   commercial license from Clockwork Innovations, LLC.
+
+2. PROVIDING AS A SERVICE
+   You may not provide the Software or its functionality to third parties as
+   a hosted or managed service without a commercial license.
+
+3. COMMERCIAL REDISTRIBUTION
+   You may not distribute the Software or derivative works as part of a
+   commercial offering without a commercial license.
+
+4. REMOVAL OF RESTRICTIONS
+   You may not remove, modify, or circumvent any license key mechanisms,
+   usage limitations, or other technological measures that control access
+   to the Software.
+
+5. REMOVAL OF NOTICES
+   You may not remove or obscure any licensing, copyright, or attribution
+   notices in the Software.
+
+================================================================================
+
+OBTAINING A COMMERCIAL LICENSE
+
+To use the Software for Commercial Use, you must obtain a separate commercial
+license from Clockwork Innovations, LLC.
+
+For commercial licensing inquiries, please contact:
+  Email: licensing@cwinnov.com
+  Web: https://cwinnov.com/simply-mcp/commercial
+
+Commercial licenses are available for:
+  - Individual developers and small teams
+  - Startups and small businesses
+  - Enterprise organizations
+  - OEM and redistribution partners
+
+Pricing is based on use case, organization size, and deployment scope.
+
+================================================================================
+
+ATTRIBUTION
+
+All copies or substantial portions of the Software must include:
+  - This license text in full
+  - The above copyright notices
+  - A prominent notice stating that the Software is licensed under the
+    SimplyMCP Non-Commercial License
+
+================================================================================
+
+CONTRIBUTIONS
+
+By submitting a contribution to the Software, you grant Clockwork Innovations,
+LLC a perpetual, irrevocable, worldwide, royalty-free license to use, copy,
+modify, distribute, sublicense, and relicense your contribution under any
+license terms, including this license and commercial licenses.
+
+You represent that:
+  - You have the right to submit the contribution
+  - The contribution is your original work
+  - You grant the above license willingly
+
+================================================================================
+
+MODIFICATIONS AND DERIVATIVE WORKS
+
+You may create and distribute modifications and derivative works, provided:
+  1. Such modifications and derivative works are also for Non-Commercial
+     Purposes only
+  2. You include a prominent notice stating that you have modified the Software
+  3. You include the original copyright notices and this license
+  4. You do not use trademarks of Clockwork Innovations, LLC or Nicholas
+     Marinkovich, MD to market your modifications without written permission
+
+If you wish to distribute modifications commercially, you must obtain a
+commercial license.
+
+================================================================================
+
+TERMINATION
+
+This license automatically terminates if you violate any of its terms. Upon
+termination, you must cease all use of the Software and destroy all copies
+in your possession.
+
+Clockwork Innovations, LLC may also terminate this license with 30 days
+written notice for any reason.
+
+================================================================================
+
+DISCLAIMER OF WARRANTY
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+
+IN NO EVENT SHALL CLOCKWORK INNOVATIONS, LLC OR NICHOLAS MARINKOVICH, MD BE
+LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH
+THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+================================================================================
+
+LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL CLOCKWORK
+INNOVATIONS, LLC OR NICHOLAS MARINKOVICH, MD BE LIABLE FOR ANY SPECIAL,
+INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT
+LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS
+OF BUSINESS INFORMATION, OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE
+OF OR INABILITY TO USE THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
+
+================================================================================
+
+GOVERNING LAW
+
+This license shall be governed by and construed in accordance with the laws
+of the jurisdiction in which Clockwork Innovations, LLC is established,
+without regard to its conflict of law provisions.
+
+================================================================================
+
+MISCELLANEOUS
+
+1. ENTIRE AGREEMENT
+   This license constitutes the entire agreement between you and Clockwork
+   Innovations, LLC regarding the Software and supersedes all prior agreements.
+
+2. SEVERABILITY
+   If any provision of this license is held to be unenforceable, such
+   provision shall be reformed only to the extent necessary to make it
+   enforceable, and the remaining provisions shall remain in full effect.
+
+3. NO WAIVER
+   The failure to exercise or enforce any right or provision of this license
+   shall not constitute a waiver of such right or provision.
+
+4. AMENDMENTS
+   Clockwork Innovations, LLC reserves the right to modify this license for
+   future versions of the Software. Such modifications will not affect your
+   rights to versions released under previous license terms.
+
+================================================================================
+
+QUESTIONS
+
+For questions about this license or to report violations, please contact:
+  Email: licensing@cwinnov.com
+  Web: https://cwinnov.com
+
+================================================================================
+
+LICENSE HISTORY
+
+Versions 3.4.0 and earlier: MIT License
+Versions 4.0.0 and later: SimplyMCP Non-Commercial License v1.0
