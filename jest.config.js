@@ -48,12 +48,10 @@ export default {
     // Note: The following tests now use programmatic capability detection and will skip automatically if environment doesn't support them:
     // - /tests/e2e/simple-message.test.ts (checks canRunE2ETests)
     // - /tests/integration/streamable-http-transport.test.ts (checks canRunIntegrationTests)
-    // - /tests/unit/client/remote-dom-worker.test.ts (checks hasWorkerAPI)
     // They are still excluded here to avoid timeout issues in CI/limited environments
     '/tests/e2e/simple-message.test.ts',  // E2E test - uses programmatic skip (describeIfCanRunE2E)
     '/tests/integration/streamable-http-transport.test.ts',  // Integration test - uses programmatic skip (describeIfCanRunIntegration)
     '/tests/performance/streamable-http-performance.test.ts',  // Performance test - requires HTTP server (run separately)
-    '/tests/unit/client/remote-dom-worker.test.ts',  // Uses programmatic skip (describeIfHasWorkerAPI)
     '/tests/unit/client/component-library-v2.test.tsx',  // Requires browser Worker API for RemoteDOMWorkerManager
     '\\.manual\\.ts$',  // Custom-runner tests (not Jest-compatible)
     '\\.md$'  // Exclude markdown files from test execution

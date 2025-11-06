@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote DOM Worker Test</title>
+</head>
+<body>
+    <h1>Remote DOM Worker Test Page</h1>
+    <div id="test-output"></div>
+
+    <script type="module">
+        // Import RemoteDOMWorkerManager from the bundled version
+        import { RemoteDOMWorkerManager } from './dist/worker-manager.js';
+
+        // Make it available globally for Playwright tests
+        window.RemoteDOMWorkerManager = RemoteDOMWorkerManager;
+
+        // Signal that the page is ready for testing
+        window.testReady = true;
+    </script>
+</body>
+</html>
