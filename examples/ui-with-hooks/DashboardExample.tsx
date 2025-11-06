@@ -1,16 +1,16 @@
 /**
- * Dashboard Example - Using useMCPTools for Multiple Tools
+ * Dashboard Example - Using Multiple useMCPTool Hooks
  *
  * Demonstrates:
- * - Managing multiple MCP tools with useMCPTools
- * - Helper functions (isAnyLoading, hasAnyError, etc.)
+ * - Managing multiple MCP tools by calling useMCPTool multiple times (standard React pattern)
+ * - Helper functions (isAnyLoading, hasAnyError, etc.) that work with arrays
  * - MCPProvider for global configuration
  * - Optimistic updates
  * - Real-world dashboard patterns
  */
 
 import React, { useEffect, useState } from 'react';
-import { useMCPTools, isAnyLoading, hasAnyError, MCPProvider } from '../../src/client/hooks/index.js';
+import { useMCPTool, isAnyLoading, hasAnyError, MCPProvider } from '../../src/client/hooks/index.js';
 
 // ============================================================================
 // Mock UI Components
@@ -83,35 +83,23 @@ interface ActivityLog {
 function DashboardContent() {
   const [refreshCount, setRefreshCount] = useState(0);
 
-  // ✅ Manage multiple tools at once with useMCPTools
-  const tools = useMCPTools(
-    {
-      // Map local names to MCP tool names
-      getStats: 'get_dashboard_stats',
-      getActivity: 'get_activity_log',
-      exportData: 'export_dashboard',
-      clearCache: 'clear_cache',
-    },
-    {
-      // Global options for all tools
-      optimistic: true,
-      parseAs: 'json',
-    },
-    {
-      // Per-tool options
-      getStats: {
-        onSuccess: (data) => console.log('Stats loaded:', data),
-      },
-      exportData: {
-        parseAs: 'text', // This tool returns a filename, not JSON
-      },
-    }
-  );
+  // ✅ Standard React pattern: Call useMCPTool multiple times (like useState, useQuery, etc.)
+  const getStats = useMCPTool<DashboardStats>('get_dashboard_stats', {
+    onSuccess: (data) => console.log('Stats loaded:', data),
+  });
+
+  const getActivity = useMCPTool<ActivityLog[]>('get_activity_log');
+
+  const exportData = useMCPTool<string>('export_dashboard', {
+    parseAs: 'text', // This tool returns a filename, not JSON
+  });
+
+  const clearCache = useMCPTool('clear_cache');
 
   // Load data on mount
   useEffect(() => {
-    tools.getStats.execute({ timeRange: 'week' });
-    tools.getActivity.execute({ limit: 5 });
+    getStats.execute({ timeRange: 'week' });
+    getActivity.execute({ limit: 5 });
   }, [refreshCount]);
 
   // Handle refresh
@@ -122,7 +110,7 @@ function DashboardContent() {
   // Handle export
   const handleExport = async (format: 'csv' | 'json' | 'pdf') => {
     try {
-      const filename = await tools.exportData.execute({ format });
+      const filename = await exportData.execute({ format });
       window.notify('success', `Exported as ${filename}`);
     } catch (err) {
       window.notify('error', 'Export failed');
@@ -132,17 +120,18 @@ function DashboardContent() {
   // Handle cache clear
   const handleClearCache = async () => {
     if (!confirm('Clear all cached data?')) return;
-    await tools.clearCache.execute({});
+    await clearCache.execute({});
     window.notify('success', 'Cache cleared');
     setRefreshCount((c) => c + 1);
   };
 
-  // ✅ Use helper functions to check state across all tools
+  // ✅ Use helper functions to check state across all tools (pass an array)
+  const tools = [getStats, getActivity, exportData, clearCache];
   const anyLoading = isAnyLoading(tools);
   const anyError = hasAnyError(tools);
 
-  const stats: DashboardStats | null = tools.getStats.data;
-  const activity: ActivityLog[] | null = tools.getActivity.data;
+  const stats: DashboardStats | null = getStats.data;
+  const activity: ActivityLog[] | null = getActivity.data;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem', fontFamily: 'system-ui' }}>
@@ -152,11 +141,11 @@ function DashboardContent() {
           <Button onClick={handleRefresh} disabled={anyLoading}>
             {anyLoading ? 'Refreshing...' : '🔄 Refresh'}
           </Button>
-          <Button onClick={() => handleExport('csv')} disabled={tools.exportData.loading} variant="outline">
-            {tools.exportData.loading ? 'Exporting...' : '📊 Export CSV'}
+          <Button onClick={() => handleExport('csv')} disabled={exportData.loading} variant="outline">
+            {exportData.loading ? 'Exporting...' : '📊 Export CSV'}
           </Button>
-          <Button onClick={handleClearCache} disabled={tools.clearCache.loading} variant="destructive">
-            {tools.clearCache.loading ? 'Clearing...' : '🗑️ Clear Cache'}
+          <Button onClick={handleClearCache} disabled={clearCache.loading} variant="destructive">
+            {clearCache.loading ? 'Clearing...' : '🗑️ Clear Cache'}
           </Button>
         </div>
       </div>
@@ -173,21 +162,21 @@ function DashboardContent() {
             marginBottom: '1rem',
           }}
         >
-          <strong>Error:</strong> {tools.getStats.error?.message || tools.getActivity.error?.message}
+          <strong>Error:</strong> {getStats.error?.message || getActivity.error?.message}
         </div>
       )}
 
       {/* Stats Cards */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-        <Card title="Total Users" value={stats?.users.toLocaleString() || '—'} trend={stats?.growth} loading={tools.getStats.loading} />
-        <Card title="Revenue" value={stats ? `$${stats.revenue.toLocaleString()}` : '—'} trend={8.2} loading={tools.getStats.loading} />
-        <Card title="Orders" value={stats?.orders.toLocaleString() || '—'} trend={-2.1} loading={tools.getStats.loading} />
+        <Card title="Total Users" value={stats?.users.toLocaleString() || '—'} trend={stats?.growth} loading={getStats.loading} />
+        <Card title="Revenue" value={stats ? `$${stats.revenue.toLocaleString()}` : '—'} trend={8.2} loading={getStats.loading} />
+        <Card title="Orders" value={stats?.orders.toLocaleString() || '—'} trend={-2.1} loading={getStats.loading} />
       </div>
 
       {/* Activity Log */}
       <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1.5rem' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>Recent Activity</h2>
-        {tools.getActivity.loading ? (
+        {getActivity.loading ? (
           <div style={{ color: '#999', textAlign: 'center', padding: '2rem' }}>Loading activity...</div>
         ) : activity && activity.length > 0 ? (
           <div>
@@ -229,10 +218,10 @@ function DashboardContent() {
       >
         <strong>State Management:</strong>
         <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-          <li>getStats: {tools.getStats.loading ? 'loading' : tools.getStats.data ? 'loaded' : 'idle'}</li>
-          <li>getActivity: {tools.getActivity.loading ? 'loading' : tools.getActivity.data ? 'loaded' : 'idle'}</li>
-          <li>exportData: {tools.exportData.loading ? 'loading' : tools.exportData.data ? 'loaded' : 'idle'}</li>
-          <li>clearCache: {tools.clearCache.loading ? 'loading' : 'idle'}</li>
+          <li>getStats: {getStats.loading ? 'loading' : getStats.data ? 'loaded' : 'idle'}</li>
+          <li>getActivity: {getActivity.loading ? 'loading' : getActivity.data ? 'loaded' : 'idle'}</li>
+          <li>exportData: {exportData.loading ? 'loading' : exportData.data ? 'loaded' : 'idle'}</li>
+          <li>clearCache: {clearCache.loading ? 'loading' : 'idle'}</li>
         </ul>
       </div>
     </div>

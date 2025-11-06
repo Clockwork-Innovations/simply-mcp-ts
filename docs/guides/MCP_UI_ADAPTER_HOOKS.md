@@ -10,7 +10,7 @@ The MCP UI Adapter Layer provides React hooks that make it trivial to call MCP t
 - [Core Concept](#core-concept)
 - [API Reference](#api-reference)
   - [useMCPTool](#usemcptool)
-  - [useMCPTools](#usemcptools)
+  - [Multiple Tools & Helper Utilities](#multiple-tools--helper-utilities)
   - [MCPProvider](#mcpprovider)
 - [MCP UI Protocol Action Hooks](#mcp-ui-protocol-action-hooks)
   - [usePromptSubmit](#usepromptsubmit)
@@ -319,76 +319,52 @@ console.log('Exported to:', filename);
 
 ---
 
-### `useMCPTools`
+### Multiple Tools & Helper Utilities
 
-Hook for managing multiple MCP tools simultaneously.
+**Standard React Pattern:** Call `useMCPTool` multiple times (like `useState`, `useQuery`, etc.)
 
-#### Signature
-
-```typescript
-function useMCPTools<T extends ToolDefinitions>(
-  tools: T,
-  globalOptions?: UseMCPToolOptions,
-  toolOptions?: ToolOptionsMap<T>
-): UseMCPToolsResult<T>
-```
-
-#### Types
-
-```typescript
-// Map of local names to MCP tool names
-type ToolDefinitions = Record<string, string>;
-
-// Per-tool options
-type ToolOptionsMap<T> = {
-  [K in keyof T]?: UseMCPToolOptions;
-};
-
-// Result - maps each tool to its hook result
-type UseMCPToolsResult<T> = {
-  [K in keyof T]: UseMCPToolResult;
-};
-```
-
-#### Example
+#### Example: Multiple Tools
 
 ```tsx
-const tools = useMCPTools(
-  {
-    // Map friendly names to MCP tool names
-    search: 'search_products',
-    addToCart: 'add_to_cart',
-    getStats: 'get_dashboard_stats'
-  },
-  {
-    // Global options for all tools
-    optimistic: true,
-    parseAs: 'json'
-  },
-  {
-    // Per-tool options
-    search: {
-      onSuccess: (data) => console.log('Search:', data)
-    },
-    addToCart: {
-      onSuccess: () => window.notify('success', 'Added to cart!')
-    }
-  }
-);
+import { useMCPTool } from 'simply-mcp/client';
 
-// Use individual tools
-await tools.search.execute({ query: 'laptop' });
-await tools.addToCart.execute({ productId: '123' });
+function Dashboard() {
+  // ✅ Standard React pattern: call the hook multiple times
+  const search = useMCPTool('search_products', {
+    onSuccess: (data) => console.log('Search:', data)
+  });
 
-// Check state
-if (tools.search.loading) { /* ... */ }
-if (tools.addToCart.error) { /* ... */ }
+  const addToCart = useMCPTool('add_to_cart', {
+    onSuccess: () => window.notify('success', 'Added to cart!')
+  });
+
+  const getStats = useMCPTool('get_dashboard_stats');
+
+  // Use each tool independently
+  return (
+    <div>
+      <button onClick={() => search.execute({ query: 'laptop' })}>
+        {search.loading ? 'Searching...' : 'Search'}
+      </button>
+
+      <button onClick={() => addToCart.execute({ id: '123' })}>
+        {addToCart.loading ? 'Adding...' : 'Add to Cart'}
+      </button>
+
+      {search.data && <div>Results: {search.data.length}</div>}
+      {addToCart.error && <div>Error: {addToCart.error.message}</div>}
+    </div>
+  );
+}
 ```
 
-#### Helper Functions
+#### Helper Functions for Multiple Tools
+
+Work with arrays of tool results for aggregate operations:
 
 ```typescript
 import {
+  useMCPTool,
   isAnyLoading,
   areAllLoading,
   hasAnyError,
@@ -396,21 +372,54 @@ import {
   resetAllTools
 } from 'simply-mcp/client';
 
-const tools = useMCPTools({ search: 'search', add: 'add' });
+function Dashboard() {
+  const search = useMCPTool('search');
+  const add = useMCPTool('add_to_cart');
+  const stats = useMCPTool('get_stats');
 
-// Check if any tool is loading
-if (isAnyLoading(tools)) {
-  return <div>Loading...</div>;
+  // Group tools in an array for helpers
+  const tools = [search, add, stats];
+
+  // Check if any tool is loading
+  if (isAnyLoading(tools)) {
+    return <div>Loading...</div>;
+  }
+
+  // Check if all tools are loading
+  if (areAllLoading(tools)) {
+    return <div>All operations in progress...</div>;
+  }
+
+  // Check if any tool has errors
+  if (hasAnyError(tools)) {
+    const errors = getAllErrors(tools);
+    return <div>Errors: {errors.map(e => e.message).join(', ')}</div>;
+  }
+
+  // Reset all tools at once
+  const handleReset = () => resetAllTools(tools);
+
+  return <div>...</div>;
 }
+```
 
-// Check if any tool has errors
-if (hasAnyError(tools)) {
-  const errors = getAllErrors(tools);
-  return <div>Errors: {errors.map(e => e.message).join(', ')}</div>;
-}
+#### Helper Function Signatures
 
-// Reset all tools
-resetAllTools(tools);
+```typescript
+// Check if any tools are loading
+function isAnyLoading(tools: UseMCPToolResult<any>[]): boolean
+
+// Check if all tools are loading
+function areAllLoading(tools: UseMCPToolResult<any>[]): boolean
+
+// Check if any tools have errors
+function hasAnyError(tools: UseMCPToolResult<any>[]): boolean
+
+// Get all errors from tools
+function getAllErrors(tools: UseMCPToolResult<any>[]): Error[]
+
+// Reset all tools to initial state
+function resetAllTools(tools: UseMCPToolResult<any>[]): void
 ```
 
 ---
@@ -863,35 +872,37 @@ function SearchUI() {
 ### Example 2: Dashboard with Multiple Tools
 
 ```tsx
-import { useMCPTools, isAnyLoading } from 'simply-mcp/client';
+import { useMCPTool, isAnyLoading } from 'simply-mcp/client';
 import { Button } from '@/components/ui/button';
 
 function Dashboard() {
-  const tools = useMCPTools({
-    getStats: 'get_dashboard_stats',
-    refresh: 'refresh_data',
-    exportData: 'export_dashboard'
-  });
+  // Standard React pattern: call the hook multiple times
+  const getStats = useMCPTool('get_dashboard_stats');
+  const refresh = useMCPTool('refresh_data');
+  const exportData = useMCPTool('export_dashboard');
 
   useEffect(() => {
-    tools.getStats.execute({ timeRange: 'week' });
+    getStats.execute({ timeRange: 'week' });
   }, []);
+
+  // Use helper with array of tools
+  const tools = [getStats, refresh, exportData];
 
   return (
     <div>
       <h1>Dashboard</h1>
 
       <Button
-        onClick={() => tools.refresh.execute()}
+        onClick={() => refresh.execute()}
         disabled={isAnyLoading(tools)}
       >
         Refresh
       </Button>
 
-      {tools.getStats.data && (
+      {getStats.data && (
         <div>
-          <div>Users: {tools.getStats.data.users}</div>
-          <div>Revenue: ${tools.getStats.data.revenue}</div>
+          <div>Users: {getStats.data.users}</div>
+          <div>Revenue: ${getStats.data.revenue}</div>
         </div>
       )}
     </div>
@@ -1099,14 +1110,13 @@ interface ActivityLog {
   logs: LogEntry[];
 }
 
-const tools = useMCPTools({
-  getStats: 'get_dashboard_stats',
-  getActivity: 'get_activity_log'
-});
+// Type each tool individually
+const getStats = useMCPTool<DashboardStats>('get_dashboard_stats');
+const getActivity = useMCPTool<ActivityLog>('get_activity_log');
 
-// tools.getStats.data is typed from inference
-// Or specify explicitly:
-const stats = tools.getStats.data as DashboardStats | null;
+// Data is now typed automatically
+getStats.data?.users; // number | undefined
+getActivity.data?.logs; // LogEntry[] | undefined
 ```
 
 ### Type-Safe Params
@@ -1152,7 +1162,7 @@ A: MCP handles auth automatically. Just call tools - the whitelist ensures secur
 
 **Q: Can I call multiple tools in parallel?**
 
-A: Yes! Use `Promise.all([tool1.execute(), tool2.execute()])` or `useMCPTools`.
+A: Yes! Use `Promise.all([tool1.execute(), tool2.execute()])` for parallel execution.
 
 **Q: What if window.callTool doesn't exist?**
 

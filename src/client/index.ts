@@ -25,4 +25,4 @@
 export * from './hooks/index.js';
 
 // Re-export for convenience
-export { useMCPTool, useMCPTools, MCPProvider } from './hooks/index.js';
+export { useMCPTool, MCPProvider } from './hooks/index.js';

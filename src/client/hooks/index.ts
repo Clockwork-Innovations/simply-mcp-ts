@@ -32,20 +32,14 @@ export type {
   MCPToolResult,
 } from './useMCPTool.js';
 
-// Multiple tools hook
+// Helper utilities for working with multiple tools
 export {
-  useMCPTools,
   isAnyLoading,
   areAllLoading,
   hasAnyError,
   getAllErrors,
   resetAllTools,
-} from './useMCPTools.js';
-export type {
-  ToolDefinitions,
-  ToolOptionsMap,
-  UseMCPToolsResult,
-} from './useMCPTools.js';
+} from './useMCPToolHelpers.js';
 
 // Context provider
 export {
