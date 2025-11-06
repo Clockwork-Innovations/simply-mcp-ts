@@ -37,8 +37,6 @@ Simply-MCP supports multiple communication protocols to connect your server with
 
 ## WebSocket Transport
 
-**Available since:** v4.0.0
-
 Real-time, bidirectional communication with automatic reconnection and low latency.
 
 ### Overview
@@ -115,8 +113,6 @@ await client.disconnect();
 
 ## HTTP Transport
 
-**Available since:** v1.0.0
-
 RESTful HTTP server with Server-Sent Events (SSE) for streaming responses.
 
 ### Stateful HTTP (Default)
@@ -159,8 +155,6 @@ interface MyServer extends IServer {
 ---
 
 ## Stdio Transport
-
-**Available since:** v1.0.0
 
 Standard input/output communication for CLI integration.
 
@@ -392,8 +386,6 @@ interface MyServer extends IServer {
 ---
 
 ## Tool Annotations
-
-**Available since:** v4.1.0
 
 Tool annotations provide metadata hints about tool behavior to help MCP clients make informed decisions about tool usage.
 
@@ -989,8 +981,6 @@ export default class MyServer {
 
 ## Audio Resources
 
-**Available since:** v4.2.0
-
 Native support for audio content with rich metadata through `IAudioContent` interface.
 
 ### Key Features
@@ -1066,8 +1056,6 @@ Advanced server-client communication capabilities beyond basic tools, prompts, a
 
 ## Sampling
 
-**Available since:** v3.0.0
-
 Enable your MCP server to call the client's LLM for generation, allowing servers to leverage AI capabilities.
 
 ### Overview
@@ -1135,8 +1123,6 @@ interface MyServer extends IServer {
 
 ## Elicitation
 
-**Available since:** v3.0.0
-
 Request user input during tool execution for interactive workflows.
 
 ### Overview
@@ -1186,8 +1172,6 @@ export default class MyServer {
 
 ## Roots
 
-**Available since:** v3.0.0
-
 Discover accessible filesystem roots from the client.
 
 ### Overview
@@ -1226,8 +1210,6 @@ export default class MyServer {
 
 ## Completions
 
-**Available since:** v3.0.0
-
 Provide autocomplete suggestions for tool arguments.
 
 ### Overview
@@ -1259,8 +1241,6 @@ export default class MyServer {
 ---
 
 ## Progress
-
-**Available since:** v3.0.0
 
 Report progress for long-running operations.
 
@@ -1304,8 +1284,6 @@ export default class MyServer {
 ---
 
 # React Hooks Adapter
-
-**Available since:** v4.0.0
 
 Client-side React integration for seamless MCP tool interaction with minimal boilerplate.
 
@@ -1583,8 +1561,6 @@ function MultiToolComponent() {
 ---
 
 # Remote DOM Client
-
-**Available since:** v4.0.0
 
 Client-side rendering engine for safely executing server-provided UI code in a sandboxed Web Worker.
 
@@ -1934,22 +1910,20 @@ manager.on('operations', (ops) => {
 
 # UI Resources
 
-**Available since:** v4.0.0 (Ultra-Minimal Redesign)
-
 Interactive UI components for rich server experiences.
 
 ## Overview
 
-UI Resources enable your MCP server to provide interactive interfaces that render in MCP clients. The v4.0 redesign dramatically simplifies UI creation through intelligent auto-detection and zero-config builds.
+UI Resources enable your MCP server to provide interactive interfaces that render in MCP clients. The ultra-minimal design dramatically simplifies UI creation through intelligent auto-detection and zero-config builds.
 
-**v4.0 Ultra-Minimal Changes:**
-- **6 fields instead of 30+** - Reduced configuration by 80%
+**Key Features:**
+- **Minimal configuration** - 6 essential fields
 - **Single `source` field** - Auto-detects URL, file, inline HTML, React, or Remote DOM
 - **Auto-dependency extraction** - No manual dependency arrays
 - **Zero-config build** - Smart defaults with optional overrides
 - **Watch mode** - Auto-tracks all relevant files
 
-## IUI Interface (v4.0)
+## IUI Interface
 
 ```typescript
 interface IUI extends IResource {
@@ -2047,19 +2021,10 @@ interface FolderUI extends IUI {
 
 ## Auto-Dependency Extraction
 
-**Before v4.0 (Manual):**
-```typescript
-dependencies: [
-  'react@18.2.0',
-  'react-dom@18.2.0',
-  'lucide-react@0.263.1',
-  '@mui/material@5.14.0'
-]
-```
+Dependencies are automatically extracted from your imports:
 
-**After v4.0 (Automatic):**
 ```typescript
-// NO DEPENDENCIES FIELD NEEDED!
+// No dependencies field needed!
 // Framework extracts from imports automatically:
 import React from 'react';              // ✅ Auto-detected
 import { Button } from '@mui/material'; // ✅ Auto-detected
@@ -2223,8 +2188,6 @@ interface MyServer extends IServer {
 ---
 
 ## OAuth 2.1 Authentication
-
-**Available since:** v3.4.0
 
 Industry-standard OAuth 2.1 authentication with scope-based access control, powered by Anthropic's MCP SDK.
 
