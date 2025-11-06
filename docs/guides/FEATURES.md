@@ -43,12 +43,12 @@ Real-time, bidirectional communication with automatic reconnection and low laten
 
 WebSocket transport provides persistent connections for interactive applications requiring real-time updates. It's ideal for chat applications, live dashboards, collaborative tools, and any scenario requiring push notifications.
 
-**Key Benefits:**
-- **Low latency**: ~10-30ms vs ~50-100ms for SSE
-- **Bidirectional**: Server can push updates without polling
-- **Automatic reconnection**: Exponential backoff retry logic
-- **Heartbeat mechanism**: Built-in ping/pong for connection health
-- **Multiple clients**: Handle many concurrent connections efficiently
+**Features:**
+- Low latency: ~10-30ms vs ~50-100ms for SSE
+- Bidirectional: Server can push updates without polling
+- Automatic reconnection with exponential backoff retry logic
+- Heartbeat mechanism with ping/pong for connection health
+- Handles many concurrent connections efficiently
 
 ### Configuration
 
@@ -223,11 +223,11 @@ export default class MyServer {
 }
 ```
 
-**Key Benefits:**
-- Full type safety with IntelliSense
+**Features:**
+- Type-safe with IntelliSense support
 - Auto-generated schemas from TypeScript types
 - Compile-time validation
-- No schema boilerplate
+- No manual schema definition required
 
 ## Method Naming Conventions
 
@@ -494,14 +494,12 @@ Simply-MCP supports JSON-RPC 2.0 batch requests for high-throughput operations w
 
 Batch processing allows clients to send multiple requests in a single JSON-RPC message, receiving all responses together. This significantly reduces network overhead and improves throughput.
 
-**Key Benefits:**
-- **5x throughput improvement** in parallel mode (940 vs 192 req/sec)
-- **Minimal overhead**: Only 1.9% compared to individual requests
-- **Order preservation**: Sequential mode maintains request order
-- **Concurrent execution**: Parallel mode processes independent requests simultaneously
-- **Batch context awareness**: Tools can access batch metadata for resource optimization
-
-**Availability:** ✅ Built-in transport feature (requires explicit enablement)
+**Features:**
+- 5x throughput improvement in parallel mode (940 vs 192 req/sec)
+- Minimal overhead: 1.9% compared to individual requests
+- Order preservation: Sequential mode maintains request order
+- Concurrent execution: Parallel mode processes independent requests simultaneously
+- Batch context awareness: Tools can access batch metadata for resource optimization
 
 **See working examples:**
 - [interface-batch-requests.ts](../../examples/interface-batch-requests.ts) - Complete sequential and parallel examples
@@ -1060,7 +1058,7 @@ Enable your MCP server to call the client's LLM for generation, allowing servers
 
 ### Overview
 
-Sampling allows your server to send prompts to the client's LLM and receive generated responses. This enables powerful patterns like:
+Sampling allows your server to send prompts to the client's LLM and receive generated responses. Use cases include:
 - Servers that use AI to process data
 - Multi-step reasoning workflows
 - Code generation within tools
@@ -1285,20 +1283,19 @@ export default class MyServer {
 
 # React Hooks Adapter
 
-Client-side React integration for seamless MCP tool interaction with minimal boilerplate.
+Client-side React integration for calling MCP tools from React applications.
 
 ## Overview
 
-The React Hooks Adapter provides type-safe, declarative hooks for calling MCP tools from React applications. Works with **any** UI component library - no MCP-specific components required.
+The React Hooks Adapter provides type-safe, declarative hooks for calling MCP tools from React applications. Works with any UI component library - no MCP-specific components required.
 
-**Key Benefits:**
-- **90% less boilerplate** - No manual state management
-- **Type-safe** - Full TypeScript inference
-- **Framework agnostic** - Use with Material-UI, Chakra, Ant Design, etc.
-- **Automatic state** - Loading, error, and data states handled
-- **Optimistic updates** - Instant UI feedback
-- **Request deduplication** - Avoid duplicate calls
-- **Built-in retry** - Configurable retry logic
+**Features:**
+- Type-safe with full TypeScript inference
+- Framework agnostic - works with Material-UI, Chakra, Ant Design, etc.
+- Automatic state management for loading, errors, and data
+- Optimistic updates for instant UI feedback
+- Request deduplication
+- Configurable retry logic
 
 **Location:** `simply-mcp/client/hooks`
 
@@ -1416,7 +1413,7 @@ function App() {
 
 ## Integration with UI Libraries
 
-Works seamlessly with popular UI libraries:
+Compatible with popular UI libraries:
 
 ### Material-UI Example
 
@@ -1914,14 +1911,14 @@ Interactive UI components for rich server experiences.
 
 ## Overview
 
-UI Resources enable your MCP server to provide interactive interfaces that render in MCP clients. The ultra-minimal design dramatically simplifies UI creation through intelligent auto-detection and zero-config builds.
+UI Resources enable your MCP server to provide interactive interfaces that render in MCP clients.
 
 **Key Features:**
-- **Minimal configuration** - 6 essential fields
-- **Single `source` field** - Auto-detects URL, file, inline HTML, React, or Remote DOM
-- **Auto-dependency extraction** - No manual dependency arrays
-- **Zero-config build** - Smart defaults with optional overrides
-- **Watch mode** - Auto-tracks all relevant files
+- Minimal configuration with 6 essential fields
+- Single `source` field auto-detects URL, file, inline HTML, React, or Remote DOM
+- Automatic dependency extraction from imports
+- Build system with smart defaults and optional customization
+- Watch mode tracks all relevant files
 
 ## IUI Interface
 
@@ -2176,10 +2173,10 @@ interface MyServer extends IServer {
 
 ### Features
 
-- **Simple Setup**: Just add keys to your server configuration
-- **Permission-Based**: Control access with permission strings
-- **Wildcards**: Use `*` and `read:*` for broad permissions
-- **Header-Based**: Send API key in `x-api-key` header (configurable)
+- Configure keys in your server definition
+- Permission-based access control with permission strings
+- Wildcard permissions: `*` and `read:*` for broad access
+- Header-based authentication via `x-api-key` header (configurable)
 
 **Best For:** Internal tools, development, server-to-server communication
 
