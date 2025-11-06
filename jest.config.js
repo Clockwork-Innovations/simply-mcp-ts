@@ -50,7 +50,7 @@ export default {
     // They are still excluded here to avoid timeout issues in CI/limited environments:
     '/tests/integration/streamable-http-transport.test.ts',  // Integration test - uses programmatic skip (describeIfCanRunIntegration)
     '/tests/performance/streamable-http-performance.test.ts',  // Performance test - requires HTTP server (run separately)
-    '/tests/unit/client/component-library-v2.test.tsx',  // Requires browser Worker API for RemoteDOMWorkerManager
+    '/tests/unit/client/component-library-v2.test.tsx',  // Migrated to Playwright E2E (tests/e2e/component-library.spec.ts)
     '\\.manual\\.ts$',  // Custom-runner tests (not Jest-compatible)
     '\\.md$'  // Exclude markdown files from test execution
   ],

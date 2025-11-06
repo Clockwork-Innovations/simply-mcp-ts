@@ -73,7 +73,6 @@ interface LiveStatsUI extends IUI {
   uri: 'ui://test/live-stats';
   name: 'Live Statistics';
   description: 'Dynamic UI that updates when refresh/reset tools are called';
-  dynamic: true;
 }
 
 // ============================================================================

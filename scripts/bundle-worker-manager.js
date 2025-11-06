@@ -22,9 +22,10 @@ if (!existsSync(outDir)) {
   mkdirSync(outDir, { recursive: true });
 }
 
-console.log('📦 Bundling RemoteDOMWorkerManager for browser...');
+console.log('📦 Bundling Remote DOM modules for browser...');
 
 try {
+  // Bundle RemoteDOMWorkerManager
   await esbuild.build({
     entryPoints: [join(projectRoot, 'src/client/remote-dom/RemoteDOMWorkerManager.ts')],
     bundle: true,
@@ -35,9 +36,41 @@ try {
     sourcemap: true,
     minify: false, // Keep readable for debugging
     logLevel: 'info',
+    external: ['react', 'react-dom'],
   });
+  console.log('✅ worker-manager.js bundled');
 
-  console.log('✅ Bundle created successfully at tests/e2e/dist/worker-manager.js');
+  // Bundle RemoteDOMContext
+  await esbuild.build({
+    entryPoints: [join(projectRoot, 'src/client/remote-dom/RemoteDOMContext.tsx')],
+    bundle: true,
+    format: 'esm',
+    target: 'es2020',
+    outfile: join(outDir, 'RemoteDOMContext.js'),
+    platform: 'browser',
+    sourcemap: true,
+    minify: false,
+    logLevel: 'info',
+    external: ['react', 'react-dom'],
+  });
+  console.log('✅ RemoteDOMContext.js bundled');
+
+  // Bundle component-library-v2
+  await esbuild.build({
+    entryPoints: [join(projectRoot, 'src/client/remote-dom/component-library-v2.tsx')],
+    bundle: true,
+    format: 'esm',
+    target: 'es2020',
+    outfile: join(outDir, 'component-library-v2.js'),
+    platform: 'browser',
+    sourcemap: true,
+    minify: false,
+    logLevel: 'info',
+    external: ['react', 'react-dom'],
+  });
+  console.log('✅ component-library-v2.js bundled');
+
+  console.log('\n✅ All bundles created successfully in tests/e2e/dist/');
 } catch (error) {
   console.error('❌ Bundle failed:', error);
   process.exit(1);

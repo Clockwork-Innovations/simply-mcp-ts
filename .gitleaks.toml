@@ -1,0 +1,128 @@
+# GitLeaks configuration for simply-mcp
+# This configuration helps prevent API key leaks in the repository
+
+title = "SimplyMCP Secret Scanning"
+
+# Extend default rules with custom patterns
+[extend]
+useDefault = true
+
+# Allow example keys in documentation
+[allowlist]
+description = "Allow example/placeholder keys in documentation"
+paths = [
+  '''docs/.*\.md$''',  # Allow placeholders in markdown docs
+  '''README\.md$''',
+  '''CHANGELOG\.md$''',
+]
+regexes = [
+  '''sk-(admin|read|limit)-(xxx|yyy|zzz)-''',  # Our doc examples
+  '''example-key''',
+  '''placeholder''',
+  '''YOUR_API_KEY''',
+  '''YOUR_.*_KEY''',
+  '''xxxxx''',
+  '''yyyyy''',
+  '''zzzzz''',
+]
+
+# Ignore test fixtures with fake data
+[[allowlist.paths]]
+description = "Test fixtures with mock data"
+paths = [
+  '''tests/fixtures/.*\.ts$''',
+  '''tests/.*\.test\.ts$''',
+  '''.*\.spec\.ts$''',
+]
+
+# Ignore compiled/bundled code
+[[allowlist.paths]]
+description = "Compiled and bundled code"
+paths = [
+  '''dist/.*''',
+  '''build/.*''',
+  '''node_modules/.*''',
+  '''playwright-report/.*''',
+  '''test-results/.*''',
+]
+
+# Custom rules for API keys we want to detect
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key"
+regex = '''sk-[a-zA-Z0-9]{48,}'''
+tags = ["api", "openai", "key"]
+[[rules.Entropies]]
+  Min = "4.5"
+  Max = "8.0"
+
+[[rules]]
+id = "openai-project-key"
+description = "OpenAI Project API Key"
+regex = '''sk-proj-[a-zA-Z0-9]{48,}'''
+tags = ["api", "openai", "key"]
+
+[[rules]]
+id = "anthropic-api-key"
+description = "Anthropic API Key"
+regex = '''sk-ant-[a-zA-Z0-9_-]{95,}'''
+tags = ["api", "anthropic", "key"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["api", "aws", "key"]
+
+[[rules]]
+id = "google-api-key"
+description = "Google API Key"
+regex = '''AIza[0-9A-Za-z\-_]{35}'''
+tags = ["api", "google", "key"]
+
+[[rules]]
+id = "slack-token"
+description = "Slack Token"
+regex = '''xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,}'''
+tags = ["api", "slack", "token"]
+
+[[rules]]
+id = "github-pat"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[A-Za-z0-9_]{36,}'''
+tags = ["api", "github", "token"]
+
+[[rules]]
+id = "github-oauth"
+description = "GitHub OAuth Token"
+regex = '''gho_[A-Za-z0-9_]{36,}'''
+tags = ["api", "github", "token"]
+
+[[rules]]
+id = "github-app-token"
+description = "GitHub App Token"
+regex = '''(ghu|ghs)_[A-Za-z0-9_]{36,}'''
+tags = ["api", "github", "token"]
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+[[rules]]
+id = "env-secret"
+description = "Environment Secret Assignment"
+regex = '''(?i)(secret|password|api_key|apikey|access_token|auth_token)[\s]*=[\s]*['"][^'"]{16,}['"]'''
+tags = ["secret", "env"]
+[rules.allowlist]
+  paths = [
+    '''\.env\.example$''',
+    '''\.env\.template$''',
+  ]
+
+# Configure entropy detection
+[rules.entropies]
+  description = "High entropy strings (potential secrets)"
+  min = "4.5"
+  max = "8.0"

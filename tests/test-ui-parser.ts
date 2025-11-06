@@ -125,7 +125,6 @@ interface StatsUI extends IUI {
   uri: 'ui://stats/live';
   name: 'Live Statistics';
   description: 'Real-time server stats';
-  dynamic: true;
   tools: ['reset_counter'];
   data: string;
 }

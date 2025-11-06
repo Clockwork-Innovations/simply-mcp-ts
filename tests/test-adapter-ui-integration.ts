@@ -133,7 +133,6 @@ interface LiveStatsUI extends IUI {
   uri: 'ui://stats/live';
   name: 'Live Stats';
   description: 'Real-time statistics';
-  dynamic: true;
   data: string;
   tools: ['refresh_stats'];
 }

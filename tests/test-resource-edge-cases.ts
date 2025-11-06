@@ -126,7 +126,6 @@ interface ExplicitDynamic extends IResource {
   name: 'Explicit Dynamic';
   description: 'Explicitly marked as dynamic';
   mimeType: 'application/json';
-  dynamic: true;
   data: {
     value: 'static looking but dynamic';
   };

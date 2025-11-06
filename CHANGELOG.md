@@ -100,6 +100,50 @@ MCP Tool Execution
 
 **See:** `docs/guides/MCP_UI_ADAPTER_HOOKS.md` for complete documentation and examples.
 
+#### Secret Scanning & Security
+- ✨ **NEW**: Comprehensive secret scanning system to prevent API key leaks
+- Added GitHub Actions workflow for automated secret detection
+- Added local git hooks for pre-commit/pre-push secret scanning
+- Added `npm run security:scan` command for manual scanning
+- Added `npm run security:install-hooks` to install git hooks
+- Detects OpenAI, Anthropic, AWS, Google, Slack, GitHub tokens, and private keys
+- GitLeaks integration with custom configuration (`.gitleaks.toml`)
+- TruffleHog integration for verified secret detection
+- Custom pattern scanning for common API key formats
+- Documentation: `SECURITY.md` and `docs/SECURITY-SETUP.md`
+
+**Security Features:**
+- Automatic scanning on push to main/release branches
+- Pre-commit hooks block commits with secrets
+- Pre-push hooks for extra security on protected branches
+- Validates .gitignore coverage for sensitive files
+- Scans commit messages for accidental secret references
+- Smart exclusions for documentation placeholders and test fixtures
+
+### Removed
+
+#### IResource `dynamic` field
+- ❌ **REMOVED**: The `dynamic: boolean` field in IResource has been completely removed
+- Resources are now automatically detected as dynamic when using the `returns` field
+- Resources are automatically detected as static when using the `value` field
+- The field is now ignored by the compiler (no errors, no warnings)
+
+**Migration:**
+```typescript
+// Before (v3.x):
+interface StatsResource extends IResource {
+  uri: 'stats://current';
+  dynamic: true;  // ❌ Remove this line
+  returns: { count: number };
+}
+
+// After (v4.0):
+interface StatsResource extends IResource {
+  uri: 'stats://current';
+  returns: { count: number };  // ✅ Automatically dynamic
+}
+```
+
 ## [4.0.0] - 2025-11-05
 
 ### Added

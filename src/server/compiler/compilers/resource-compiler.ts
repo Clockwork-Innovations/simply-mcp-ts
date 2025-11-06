@@ -16,7 +16,6 @@ export function compileResourceInterface(node: ts.InterfaceDeclaration, sourceFi
   let description = '';
   let mimeType = '';
   let data: any = undefined;
-  let dynamic = false;
   let dataType = 'any';
   let value: any = undefined;
   let returns: any = undefined;
@@ -80,6 +79,7 @@ export function compileResourceInterface(node: ts.InterfaceDeclaration, sourceFi
         // Track invalid fields that look like they should be 'value' or 'returns'
         invalidDataFields.push(memberName);
       }
+      // Note: 'dynamic' field is ignored (legacy v3.x field, no longer needed)
     }
   }
 

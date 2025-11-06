@@ -4,17 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remote DOM Worker Test</title>
+
+    <!-- Import map to resolve React from CDN -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.3.1",
+        "react-dom": "https://esm.sh/react-dom@18.3.1",
+        "react-dom/client": "https://esm.sh/react-dom@18.3.1/client"
+      }
+    }
+    </script>
 </head>
 <body>
     <h1>Remote DOM Worker Test Page</h1>
     <div id="test-output"></div>
+    <div id="root"></div>
 
     <script type="module">
+        // Import React from CDN (via import map)
+        import React from 'react';
+        import ReactDOM from 'react-dom/client';
+
         // Import RemoteDOMWorkerManager from the bundled version
         import { RemoteDOMWorkerManager } from './dist/worker-manager.js';
 
-        // Make it available globally for Playwright tests
+        // Import component library (includes RemoteDOMProvider)
+        import * as ComponentLibrary from './dist/component-library-v2.js';
+        import { RemoteDOMProvider } from './dist/component-library-v2.js';
+
+        // Make available globally for Playwright tests
+        window.React = React;
+        window.ReactDOM = ReactDOM;
         window.RemoteDOMWorkerManager = RemoteDOMWorkerManager;
+        window.ComponentLibrary = ComponentLibrary;
+        window.RemoteDOMProvider = RemoteDOMProvider;
 
         // Signal that the page is ready for testing
         window.testReady = true;

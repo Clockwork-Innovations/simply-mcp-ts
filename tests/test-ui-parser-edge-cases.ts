@@ -164,7 +164,6 @@ interface UI3 extends IUI {
   uri: 'ui://test/three';
   name: 'UI Three';
   description: 'Third UI';
-  dynamic: true;
   data: string;
 }
 `;

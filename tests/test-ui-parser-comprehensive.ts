@@ -89,7 +89,6 @@ interface LiveChartUI extends IUI {
   uri: 'ui://charts/live';
   name: 'Live Chart';
   description: 'Real-time updating chart with tool integration';
-  dynamic: true;
   subscribable: true;
   tools: ['pause_updates', 'resume_updates', 'reset_data'];
   size: { width: 800, height: 600 };

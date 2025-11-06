@@ -1691,3 +1691,6 @@ export const COMPONENT_COUNTS = {
   Navigation: 5,
   Total: 56,
 } as const;
+
+// Re-export RemoteDOMProvider for convenience in tests and usage
+export { RemoteDOMProvider } from './RemoteDOMContext.js';

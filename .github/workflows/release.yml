@@ -38,6 +38,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Security scan - Secret detection
+        run: bash scripts/secret-scan.sh
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

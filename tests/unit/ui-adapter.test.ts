@@ -68,10 +68,10 @@ describe('UI Adapter', () => {
           uri: 'ui://stats/live',
           name: 'Live Stats',
           description: 'Real-time stats',
-          dynamic: true,
           methodName: 'statsLive',
           tools: ['refresh_stats'],
           dataType: 'string',
+          dynamic: true,
         },
       ];
 
@@ -156,9 +156,9 @@ describe('UI Adapter', () => {
           uri: 'ui://missing/method',
           name: 'Missing Method',
           description: 'UI with missing method',
-          dynamic: true,
           methodName: 'nonExistentMethod',
           dataType: 'string',
+          dynamic: true,
         },
       ];
 
