@@ -64,20 +64,16 @@ check_real_secrets() {
 check_env_files() {
     echo -e "${BLUE}[2/6]${NC} Checking for .env files..."
 
-    ENV_FILES=$(find . -name ".env*" -type f \
-        -not -path "./node_modules/*" \
-        -not -path "./.git/*" \
-        -not -path "./dist/*" \
-        -not -name ".env.example" \
-        -not -name ".env.template" 2>/dev/null)
+    # Check for .env files that are tracked by git (accidentally committed)
+    TRACKED_ENV=$(git ls-files | grep -E '^\.env' | grep -vE '\.(example|template)$' || true)
 
-    if [ -n "$ENV_FILES" ]; then
-        echo -e "${RED}❌ ERROR: Found .env files that should be gitignored:${NC}"
-        echo "$ENV_FILES"
-        echo -e "${YELLOW}These files may contain secrets. Ensure they're in .gitignore${NC}"
+    if [ -n "$TRACKED_ENV" ]; then
+        echo -e "${RED}❌ ERROR: Found .env files tracked by git:${NC}"
+        echo "$TRACKED_ENV"
+        echo -e "${YELLOW}These files are committed to the repository and may contain secrets!${NC}"
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
     else
-        echo -e "${GREEN}✅ No .env files in repository${NC}"
+        echo -e "${GREEN}✅ No .env files tracked in git${NC}"
     fi
 }
 
@@ -175,7 +171,31 @@ check_commit_messages() {
     fi
 }
 
+# Check for gitignored files that are tracked (accidentally committed)
+check_tracked_gitignored_files() {
+    echo -e "${BLUE}[0/6]${NC} Checking for tracked files that should be gitignored..."
+
+    # Find files that are both tracked by git AND match .gitignore patterns
+    TRACKED_IGNORED=""
+    while IFS= read -r file; do
+        if [ -n "$file" ] && git check-ignore -q "$file" 2>/dev/null; then
+            TRACKED_IGNORED="${TRACKED_IGNORED}${file}\n"
+        fi
+    done < <(git ls-files)
+
+    if [ -n "$TRACKED_IGNORED" ]; then
+        echo -e "${RED}❌ ERROR: Found tracked files that match .gitignore patterns:${NC}"
+        echo -e "$TRACKED_IGNORED"
+        echo -e "${YELLOW}These files are in .gitignore but were committed before being ignored.${NC}"
+        echo -e "${YELLOW}Remove them with: git rm --cached <file>${NC}"
+        ISSUES_FOUND=$((ISSUES_FOUND + 1))
+    else
+        echo -e "${GREEN}✅ No tracked files in gitignore${NC}"
+    fi
+}
+
 # Run all checks
+check_tracked_gitignored_files
 check_real_secrets
 check_env_files
 check_gitignore
