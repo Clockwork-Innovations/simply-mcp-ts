@@ -114,6 +114,9 @@ export interface ResourceDefinition {
    * Resource content or function that generates content dynamically
    * - string/object/Buffer/Uint8Array: Static content served as-is
    * - function: Called at runtime, returns content (supports async)
+   *   - params parameter is optional for backward compatibility
+   *   - When URI contains templates (e.g., pokemon://{name}), params will contain extracted values
+   *   - For non-template URIs, params will be an empty object
    *
    * For UI resources (uri starting with ui://):
    * - text/html: Provide complete HTML document as string
@@ -125,7 +128,7 @@ export interface ResourceDefinition {
     | { [key: string]: any }
     | Buffer
     | Uint8Array
-    | (() => string | { [key: string]: any } | Buffer | Uint8Array | Promise<string | { [key: string]: any } | Buffer | Uint8Array>);
+    | ((params?: Record<string, string>) => string | { [key: string]: any } | Buffer | Uint8Array | Promise<string | { [key: string]: any } | Buffer | Uint8Array>);
 }
 
 /**

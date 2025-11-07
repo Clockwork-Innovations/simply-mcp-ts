@@ -9,6 +9,57 @@ import type { ParsedPrompt } from '../server/parser.js';
 import type { BuildMCPServer } from '../server/builder-server.js';
 
 /**
+ * Helper: Generate all naming variations for a prompt method name
+ * Returns variations in different naming conventions (same logic as tools)
+ */
+function getNamingVariations(methodName: string): string[] {
+  const variations: string[] = [];
+
+  // Original name
+  variations.push(methodName);
+
+  // snake_case (if not already)
+  if (!methodName.includes('_')) {
+    const snakeCase = methodName
+      .replace(/([A-Z])/g, '_$1')
+      .toLowerCase()
+      .replace(/^_/, '')
+      .replace(/-/g, '_');
+    if (snakeCase !== methodName) {
+      variations.push(snakeCase);
+    }
+  }
+
+  // camelCase
+  const camelCase = methodName
+    .replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase())
+    .replace(/^[A-Z]/, match => match.toLowerCase());
+  if (camelCase !== methodName) {
+    variations.push(camelCase);
+  }
+
+  // PascalCase
+  const pascalCase = methodName
+    .replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase())
+    .replace(/^[a-z]/, match => match.toUpperCase());
+  if (pascalCase !== methodName && pascalCase !== camelCase) {
+    variations.push(pascalCase);
+  }
+
+  // kebab-case
+  const kebabCase = methodName
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/[_\s]+/g, '-')
+    .toLowerCase();
+  if (kebabCase !== methodName) {
+    variations.push(kebabCase);
+  }
+
+  // Remove duplicates
+  return [...new Set(variations)];
+}
+
+/**
  * Register a prompt with the MCP server
  * All prompts require a method implementation on the server class
  */
@@ -19,19 +70,77 @@ export function registerPrompt(
 ): void {
   const { name, description, methodName, argsMetadata } = prompt;
 
-  // Check if method exists on server instance
-  const method = serverInstance[methodName];
+  // Generate all possible naming variations for the method name
+  const possibleMethodNames = getNamingVariations(methodName);
 
-  if (!method) {
+  // Check for ambiguous naming collisions (both camelCase and snake_case exist)
+  const existingVariations = possibleMethodNames.filter(v => typeof serverInstance[v] === 'function');
+  if (existingVariations.length > 1) {
     throw new Error(
-      `Prompt "${name}" requires method "${methodName}" but it was not found on server class.\n` +
-      `Expected: class implements { ${methodName}: ${prompt.interfaceName} }`
+      `❌ Prompt "${name}" has ambiguous method names - multiple naming variations exist:\n` +
+      existingVariations.map(v => `  - ${v}`).join('\n') + '\n\n' +
+      `This is ambiguous. Please keep only ONE of these methods.\n` +
+      `Recommended: Use camelCase "${methodName}" and remove the others.\n\n` +
+      `Why this matters: Having multiple naming variations causes confusion about which ` +
+      `method will be called and makes the codebase harder to maintain.`
     );
+  }
+
+  // Try exact match first (prefer explicit naming)
+  let method = serverInstance[methodName];
+  let foundMethodName = methodName;
+
+  // If exact match not found, try naming variations
+  if (!method) {
+    for (const variationName of possibleMethodNames) {
+      if (variationName !== methodName && serverInstance[variationName]) {
+        method = serverInstance[variationName];
+        foundMethodName = variationName;
+        break;
+      }
+    }
+  }
+
+  // If still not found after trying all variations, show enhanced error
+  if (!method) {
+    // Get available methods for helpful error message
+    const availableMethodNames = Object.keys(serverInstance)
+      .filter(key => typeof serverInstance[key] === 'function');
+
+    const availableMethods = availableMethodNames
+      .map(key => `  - ${key}`)
+      .join('\n');
+
+    // Build comprehensive error message
+    let errorMessage =
+      `❌ Prompt "${name}" requires method "${methodName}" but it was not found on server class.\n\n` +
+      `Expected pattern:\n` +
+      `  interface ${prompt.interfaceName} extends IPrompt {\n` +
+      `    name: '${name}';  // ← Prompt name\n` +
+      `    // ...\n` +
+      `  }\n\n` +
+      `  export default class YourServer {\n` +
+      `    ${methodName}: ${prompt.interfaceName} = (args) => { ... };  // ← Method\n` +
+      `  }\n\n`;
+
+    // Show naming variations that were tried
+    if (possibleMethodNames.length > 1) {
+      errorMessage +=
+        `🔤 Tried these naming variations automatically:\n` +
+        possibleMethodNames.map(v => `  - ${v}`).join('\n') + '\n\n';
+    }
+
+    // Show all available methods
+    if (availableMethods) {
+      errorMessage += `📋 Available methods on your class:\n${availableMethods}\n\n`;
+    }
+
+    throw new Error(errorMessage);
   }
 
   if (typeof method !== 'function') {
     throw new Error(
-      `Prompt "${name}" method "${methodName}" is not a function (found: ${typeof method})`
+      `❌ Prompt "${name}" method "${methodName}" is not a function (found: ${typeof method})`
     );
   }
 

@@ -49,6 +49,8 @@ mcp/tests/TEST-REPORT.md
 claude.md
 **/.claude.md
 **/claude.md
+CLAUDE.md
+**/CLAUDE.md
 
 # AI Agent working directory
 .agents/

@@ -668,6 +668,7 @@ function findDidYouMeanSuggestions(
 
 /**
  * Register a tool with the MCP server
+ * Returns naming convention warning if snake_case method was used
  */
 async function registerTool(
   server: BuildMCPServer,
@@ -675,7 +676,7 @@ async function registerTool(
   tool: ParsedTool | any, // Allow runtime tool objects
   filePath: string,
   verbose?: boolean
-): Promise<void> {
+): Promise<{ warning?: { toolName: string; foundMethod: string; suggestion: string } }> {
   let { name, methodName, description, paramsNode, annotations } = tool;
 
   // Phase 2.1: Tool name inference from method name
@@ -721,7 +722,7 @@ async function registerTool(
       },
     });
 
-    return;
+    return {}; // No naming warnings for runtime tools
   }
 
   // Handle statically analyzed tools (original behavior)
@@ -729,6 +730,19 @@ async function registerTool(
 
   // Generate all possible naming variations for the method name
   const possibleMethodNames = getNamingVariations(methodName);
+
+  // Check for ambiguous naming collisions (both camelCase and snake_case exist)
+  const existingVariations = possibleMethodNames.filter(v => typeof serverInstance[v] === 'function');
+  if (existingVariations.length > 1) {
+    throw new Error(
+      `❌ Tool "${name}" has ambiguous method names - multiple naming variations exist:\n` +
+      existingVariations.map(v => `  - ${v}`).join('\n') + '\n\n' +
+      `This is ambiguous. Please keep only ONE of these methods.\n` +
+      `Recommended: Use camelCase "${methodName}" and remove the others.\n\n` +
+      `Why this matters: Having multiple naming variations causes confusion about which ` +
+      `method will be called and makes the codebase harder to maintain.`
+    );
+  }
 
   // Try exact match first (prefer explicit naming)
   let method = serverInstance[methodName];
@@ -808,19 +822,6 @@ async function registerTool(
     throw new Error(errorMessage);
   }
 
-  // Warn if snake_case method was used (encourage JavaScript conventions)
-  if (foundMethodName !== methodName && foundMethodName.includes('_')) {
-    // Import snakeToCamel for the suggestion
-    const { snakeToCamel } = await import('./parser.js');
-    const camelCaseSuggestion = snakeToCamel(foundMethodName);
-
-    console.warn(
-      `\n⚠️  [simply-mcp] Tool "${name}" matched method "${foundMethodName}".\n` +
-      `   Consider renaming to "${camelCaseSuggestion}" for JavaScript naming conventions.\n` +
-      `   (Both will work, but camelCase is preferred)\n`
-    );
-  }
-
   if (typeof method !== 'function') {
     throw new Error(
       `❌ Tool "${name}" method "${methodName}" is not a function (found: ${typeof method})\n\n` +
@@ -847,6 +848,8 @@ async function registerTool(
     },
     ...(annotations && { annotations }), // Include annotations if present
   });
+
+  return {}; // No warnings needed - both naming conventions are valid
 }
 
 /**

@@ -144,31 +144,82 @@ The Inspector provides:
 
 **Option 2: Command Line Testing (HTTP/WebSocket)**
 
-For HTTP or WebSocket transports, you can test with curl:
+For HTTP or WebSocket transports, you can test with curl using the JSON-RPC protocol:
 
 ```bash
 # Start server in HTTP mode
 npx simply-mcp run server.ts --transport http --port 3000
 
-# List available tools
-curl http://localhost:3000/tools/list
-
-# Call a tool (HTTP)
-curl -X POST http://localhost:3000/tools/call \
+# Initialize the connection (required first step)
+curl -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "greet",
-    "arguments": {
-      "name": "Alice"
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {},
+      "clientInfo": {
+        "name": "test-client",
+        "version": "1.0.0"
+      }
+    }
+  }'
+
+# List available tools
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }'
+
+# Call a tool
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "greet",
+      "arguments": {
+        "name": "Alice"
+      }
     }
   }'
 
 # List resources
-curl http://localhost:3000/resources/list
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "resources/list",
+    "params": {}
+  }'
 
-# Get a resource
-curl http://localhost:3000/resources/read?uri=config://app
+# Read a resource
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "resources/read",
+    "params": {
+      "uri": "config://app"
+    }
+  }'
+
+# Check server health (non-MCP endpoint)
+curl http://localhost:3000/health
 ```
+
+**Note:** HTTP transport uses the MCP JSON-RPC protocol. All MCP requests go to the `/mcp` endpoint.
+For stateful mode (default), you'll receive a session ID in the response headers that should be included in subsequent requests via the `Mcp-Session-Id` header.
 
 **Option 3: Integration in Claude Desktop**
 

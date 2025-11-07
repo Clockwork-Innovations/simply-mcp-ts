@@ -82,6 +82,7 @@ import {
 } from '../core/content-helpers.js';
 import { createSecurityMiddleware, type SecurityConfig } from '../features/auth/security/index.js';
 import { createOAuthRouter, createOAuthMiddleware } from '../features/auth/oauth/router.js';
+import { matchResourceUri } from './uri-template-matcher.js';
 import type {
   ExecuteFunction,
   ToolDefinition,
@@ -1314,6 +1315,13 @@ export class BuildMCPServer {
       }
     );
 
+    // Handle the 'initialized' notification from clients (MCP protocol requirement)
+    this.server.oninitialized = () => {
+      // Client has completed initialization handshake
+      // This is a standard MCP notification and requires no response
+      console.log('[BuildMCPServer] Client initialization complete (received initialized notification)');
+    };
+
     // Register handlers
     this.registerToolHandlers();
     this.registerPromptHandlers();
@@ -1893,9 +1901,11 @@ export class BuildMCPServer {
     // Read resource handler
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
       const resourceUri = request.params.uri;
-      const resource = this.resources.get(resourceUri);
 
-      if (!resource) {
+      // Try to match the URI (supports both exact matches and templates)
+      const match = matchResourceUri(resourceUri, this.resources);
+
+      if (!match) {
         const availableResources = Array.from(this.resources.keys()).join(', ') || 'none';
         throw new Error(
           `Unknown resource: ${resourceUri}\n\n` +
@@ -1910,11 +1920,13 @@ export class BuildMCPServer {
         );
       }
 
+      const { resource, params } = match;
+
       // Check if content is a function (dynamic resource)
       let content: string | { [key: string]: any } | Buffer | Uint8Array;
       if (typeof resource.content === 'function') {
-        // Call the dynamic content function
-        content = await Promise.resolve(resource.content());
+        // Call the dynamic content function with params (always passed, may be empty)
+        content = await Promise.resolve(resource.content(params));
       } else {
         // Use static content
         content = resource.content;
@@ -1962,8 +1974,10 @@ export class BuildMCPServer {
     this.server.setRequestHandler(SubscribeRequestSchema, async (request) => {
       const uri = request.params.uri;
 
-      // Verify resource exists
-      if (!this.resources.has(uri)) {
+      // Try to match the URI (supports both exact matches and templates)
+      const match = matchResourceUri(uri, this.resources);
+
+      if (!match) {
         const availableResources = Array.from(this.resources.keys()).join(', ') || 'none';
         throw new Error(
           `Cannot subscribe to unknown resource: ${uri}\n\n` +
@@ -1978,7 +1992,7 @@ export class BuildMCPServer {
       }
 
       // Verify resource is subscribable
-      const resource = this.resources.get(uri)!;
+      const { resource } = match;
       if (resource.subscribable !== true) {
         const subscribableResources = this.getSubscribableResources().join(', ') || 'none';
         throw new Error(
@@ -2075,6 +2089,13 @@ export class BuildMCPServer {
         },
       }
     );
+
+    // Handle the 'initialized' notification from clients (MCP protocol requirement)
+    sessionServer.oninitialized = () => {
+      // Client has completed initialization handshake
+      // This is a standard MCP notification and requires no response
+      console.log('[BuildMCPServer] Session client initialization complete (received initialized notification)');
+    };
 
     // Register all handlers on the session server
     // We temporarily swap this.server to register handlers on the new server
@@ -3633,9 +3654,10 @@ export class BuildMCPServer {
    * @returns Resource contents
    */
   async readResourceDirect(uri: string): Promise<any> {
-    const resource = this.resources.get(uri);
+    // Try to match the URI (supports both exact matches and templates)
+    const match = matchResourceUri(uri, this.resources);
 
-    if (!resource) {
+    if (!match) {
       const availableResources = Array.from(this.resources.keys()).join(', ') || 'none';
       throw new Error(
         `Unknown resource: ${uri}\n\n` +
@@ -3650,11 +3672,13 @@ export class BuildMCPServer {
       );
     }
 
+    const { resource, params } = match;
+
     // Check if content is a function (dynamic resource)
     let content: string | { [key: string]: any } | Buffer | Uint8Array;
     if (typeof resource.content === 'function') {
-      // Call the dynamic content function
-      content = await Promise.resolve(resource.content());
+      // Call the dynamic content function with params (always passed, may be empty)
+      content = await Promise.resolve(resource.content(params));
     } else {
       // Use static content
       content = resource.content;
