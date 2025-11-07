@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.12] - 2025-11-07
+
+### Fixed
+- Fixed CLI transport tests timing issues on macOS (increased timeout and added robust output detection)
+- Fixed batch processing timeout test timing on macOS (increased slow task duration and timeout threshold)
+- Improved cross-platform test reliability with promise-based output detection instead of fixed sleeps
+
+### Tests
+- CLI transport tests: Extended timeout from 5s to 8s and increased test timeout from 10s to 12s
+- Batch processing tests: Increased slow task duration from 150ms to 5000ms for reliable timeout testing
+
 ## [4.0.11] - 2025-11-07
 
 ### Fixed

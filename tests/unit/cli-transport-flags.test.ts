@@ -111,21 +111,35 @@ describe('CLI Transport Flags', () => {
       });
 
       let stderr = '';
+      let stdout = '';
       proc.stderr.on('data', (data) => {
         stderr += data.toString();
       });
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
 
-      // Wait for server to start
-      await sleep(2000);
+      // Wait for server to start (look for port in output)
+      await new Promise<void>((resolve) => {
+        const checkOutput = () => {
+          if (stderr.includes('3100') || stdout.includes('3100')) {
+            resolve();
+          }
+        };
+        proc.stderr.on('data', checkOutput);
+        proc.stdout.on('data', checkOutput);
+        setTimeout(() => resolve(), 8000);
+      });
 
       // Check that HTTP server started
+      const output = stderr + stdout;
       expect(stderr).not.toContain('Invalid transport');
-      expect(stderr).toContain('3100'); // Should mention the port
+      expect(output).toContain('3100'); // Should mention the port
 
       // Cleanup
       proc.kill();
       await sleep(500);
-    }, 10000);
+    }, 12000);
 
     it('should accept --transport http-stateless', async () => {
       const serverPath = createTestServer('http-stateless-test.ts');
@@ -152,7 +166,7 @@ describe('CLI Transport Flags', () => {
         };
         proc.stderr.on('data', checkOutput);
         proc.stdout.on('data', checkOutput);
-        setTimeout(() => resolve(), 5000);
+        setTimeout(() => resolve(), 8000);
       });
 
       // Check that HTTP server started in stateless mode
@@ -163,7 +177,7 @@ describe('CLI Transport Flags', () => {
       // Cleanup
       proc.kill();
       await sleep(500);
-    }, 10000);
+    }, 12000);
 
     it('should accept --transport ws', async () => {
       const serverPath = createTestServer('ws-test.ts');
@@ -190,7 +204,7 @@ describe('CLI Transport Flags', () => {
         };
         proc.stderr.on('data', checkOutput);
         proc.stdout.on('data', checkOutput);
-        setTimeout(() => resolve(), 5000);
+        setTimeout(() => resolve(), 8000);
       });
 
       // Check that WebSocket server started
@@ -201,7 +215,7 @@ describe('CLI Transport Flags', () => {
       // Cleanup
       proc.kill();
       await sleep(500);
-    }, 10000);
+    }, 12000);
 
     it('should reject invalid transport values', async () => {
       const serverPath = createTestServer('invalid-transport-test.ts');
