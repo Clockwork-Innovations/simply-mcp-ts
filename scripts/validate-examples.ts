@@ -38,7 +38,8 @@ const EXCLUDED_EXAMPLES = [
   'oauth-router-demo.ts',                  // Tutorial demo, not a runnable server
   'oauth-scope-enforcement-demo.ts',       // Tutorial demo, not a runnable server
   'react-compiler-demo.ts',                // Demo file, not a runnable server
-  'reference-oauth-provider.ts'            // Reference implementation, not a runnable server
+  'reference-oauth-provider.ts',           // Reference implementation, not a runnable server
+  'uri-template-resources.ts'              // Feature demo with test code, not a runnable server
 ];
 
 async function validateExample(filePath: string): Promise<ValidationResult> {

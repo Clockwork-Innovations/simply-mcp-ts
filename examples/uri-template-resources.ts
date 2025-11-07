@@ -10,7 +10,7 @@
  *   node dist/examples/uri-template-resources.js
  */
 
-import { BuildMCPServer } from '../server/builder-server.js';
+import { BuildMCPServer } from 'simply-mcp';
 
 async function main() {
   const server = new BuildMCPServer({
@@ -25,13 +25,14 @@ async function main() {
     name: 'Pokemon Info',
     description: 'Get information about a specific Pokemon',
     mimeType: 'application/json',
-    content: (params) => {
-      // params.name will contain the value from the URI
+    content: (context) => {
+      // Extract params from context.metadata.params
+      const params = (context?.metadata?.params as Record<string, string>) || {};
       return JSON.stringify({
-        name: params?.name || 'unknown',
+        name: params.name || 'unknown',
         level: 50,
         type: 'Unknown',
-        description: `This is ${params?.name || 'a Pokemon'}`,
+        description: `This is ${params.name || 'a Pokemon'}`,
       }, null, 2);
     },
   });
@@ -43,12 +44,13 @@ async function main() {
     name: 'API Endpoint',
     description: 'Access versioned API endpoints',
     mimeType: 'application/json',
-    content: (params) => {
+    content: (context) => {
+      const params = (context?.metadata?.params as Record<string, string>) || {};
       return JSON.stringify({
-        version: params?.version || 'unknown',
-        endpoint: params?.endpoint || 'unknown',
+        version: params.version || 'unknown',
+        endpoint: params.endpoint || 'unknown',
         status: 'ok',
-        message: `Accessing ${params?.endpoint} on ${params?.version}`,
+        message: `Accessing ${params.endpoint} on ${params.version}`,
       }, null, 2);
     },
   });
