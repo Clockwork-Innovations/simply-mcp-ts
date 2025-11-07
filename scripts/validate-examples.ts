@@ -29,9 +29,16 @@ const TIMEOUT_MS = 30000; // 30 seconds per example
 const REPORT_FILE = 'examples-validation-report.md';
 
 // Examples to exclude from validation (experimental/demo-only)
-// These examples showcase features that are still being integrated
+// These examples showcase features that are still being integrated or are demos/tutorials
 const EXCLUDED_EXAMPLES = [
-  'ui-all-apis-demo.ts'           // Demo-only file, showcases API styles
+  'ui-all-apis-demo.ts',                   // Demo-only file, showcases API styles
+  'oauth-in-memory-simple.ts',             // Tutorial demo, not a runnable server
+  'oauth-redis-production.ts',             // Tutorial demo, not a runnable server
+  'oauth-provider-demo.ts',                // Tutorial demo, not a runnable server
+  'oauth-router-demo.ts',                  // Tutorial demo, not a runnable server
+  'oauth-scope-enforcement-demo.ts',       // Tutorial demo, not a runnable server
+  'react-compiler-demo.ts',                // Demo file, not a runnable server
+  'reference-oauth-provider.ts'            // Reference implementation, not a runnable server
 ];
 
 async function validateExample(filePath: string): Promise<ValidationResult> {

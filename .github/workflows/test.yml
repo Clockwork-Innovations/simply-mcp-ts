@@ -90,7 +90,7 @@ jobs:
       - name: Validate all examples
         id: validate-examples
         run: npm run test:examples
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Upload validation report
         if: always()
@@ -332,9 +332,10 @@ jobs:
             exit 1
           fi
 
-          # Examples validation is informational (requires fixing the validation script first)
+          # Fail if examples validation failed (required)
           if [ "${{ needs.example-validation.result }}" != "success" ]; then
-            echo "⚠️  Examples validation failed - WARNING (non-blocking until validation script is fixed)"
+            echo "❌ Examples validation failed - CRITICAL"
+            exit 1
           fi
 
           # Integration tests are informational warnings

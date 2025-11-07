@@ -34,3 +34,6 @@ export default class BundleTestServer {
     return { output: `Processed: ${params.input}` };
   };
 }
+
+// Instantiate the server
+const bundleTestServer = new BundleTestServer();

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.8] - 2025-11-07
+
+### Fixed
+- Fixed example validation failures by adding class instantiation to interface examples
+- Updated examples validation to properly exclude demo/tutorial files from validation
+
+### Changed
+- Examples validation now required in CI (no longer marked as non-critical)
+- Excluded OAuth demos and tutorial examples from validation (not runnable servers)
+
+### Documentation
+- Fixed `bundle-test-server.ts` and `interface-websocket.ts` examples to instantiate classes
+- Clarified which examples are demos vs runnable servers
+
 ## [4.0.7] - 2025-11-07
 
 ### Fixed

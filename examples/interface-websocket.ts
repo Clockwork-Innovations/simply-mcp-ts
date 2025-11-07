@@ -89,3 +89,6 @@ export default class WebSocketExample {
     };
   };
 }
+
+// Instantiate the server
+const webSocketExample = new WebSocketExample();
