@@ -60,6 +60,8 @@ claude.md
 
 # Sensitive files
 *secret*
+# Exception: secret scanning script is safe to commit
+!scripts/secret-scan.sh
 *credential*
 *password*
 *.key
