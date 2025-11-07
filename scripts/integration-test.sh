@@ -373,18 +373,24 @@ EOF
 
   # Create a simple bundle test server
   cat > bundle-test-server.ts << 'EOF'
-import type { ITool, IServer } from 'simply-mcp';
+import type { ITool, IServer, IParam } from 'simply-mcp';
+
+interface InputParam extends IParam {
+  type: 'string';
+  description: 'Test input';
+}
 
 interface BundleTestTool extends ITool {
   name: 'test';
   description: 'Test tool';
-  params: { input: string };
+  params: { input: InputParam };
   result: { output: string };
 }
 
 interface BundleTestServer extends IServer {
   name: 'bundle-test';
   version: '1.0.0';
+  description: 'Bundle test server';
 }
 
 export default class implements BundleTestServer {
