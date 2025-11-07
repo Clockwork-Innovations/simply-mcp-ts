@@ -1925,8 +1925,78 @@ export class BuildMCPServer {
       // Check if content is a function (dynamic resource)
       let content: string | { [key: string]: any } | Buffer | Uint8Array;
       if (typeof resource.content === 'function') {
-        // Call the dynamic content function with params (always passed, may be empty)
-        content = await Promise.resolve(resource.content(params));
+        // Create logger for resource
+        const logNotificationCallback: LogNotificationCallback | undefined =
+          this.options.capabilities?.logging && this.server
+            ? (level: LogLevel, message: string, data?: unknown) => {
+                this.sendLoggingNotification(level, message, data);
+              }
+            : undefined;
+
+        const logger = createDefaultLogger(`[Resource:${resource.uri}]`, logNotificationCallback);
+
+        // Retrieve batch context from AsyncLocalStorage
+        const batch = batchContextStorage.getStore();
+
+        // Create handler context for resource
+        const context: HandlerContext = {
+          logger,
+          metadata: {
+            resourceUri: resource.uri,
+            params, // Include URI template parameters in metadata
+          },
+          // Add MCP-specific context
+          mcp: {
+            server: {
+              name: this.options.name,
+              version: this.options.version,
+              description: this.options.description,
+            },
+            session: this.server,
+            request_context: {
+              request_id: randomUUID(),
+              meta: undefined,
+            },
+          },
+          // Add batch context if available
+          batch,
+        };
+
+        // Add sampling capability if enabled
+        if (this.options.capabilities?.sampling && this.server) {
+          context.sample = async (messages: SamplingMessage[], options?: SamplingOptions) => {
+            return this.requestSampling(messages, options);
+          };
+        }
+
+        // Add resource reading capability if resources are available
+        if (this.resources.size > 0) {
+          context.readResource = async (uri: string) => {
+            return this.readResourceByUri(uri);
+          };
+        }
+
+        // Add elicitation capability if enabled
+        if (this.options.capabilities?.elicitation && this.server) {
+          context.elicitInput = async (prompt: string, args: Record<string, any>) => {
+            return this.requestElicitation(prompt, args);
+          };
+        }
+
+        // Add listRoots capability if enabled
+        if (this.options.capabilities?.roots && this.server) {
+          context.listRoots = async () => {
+            const result = await this.requestRoots();
+            // Map SDK roots to simplified format
+            return (result.roots || []).map(root => ({
+              uri: root.uri || '',
+              name: root.name,
+            }));
+          };
+        }
+
+        // Call the dynamic content function with context
+        content = await Promise.resolve(resource.content(context));
       } else {
         // Use static content
         content = resource.content;
@@ -3677,8 +3747,78 @@ export class BuildMCPServer {
     // Check if content is a function (dynamic resource)
     let content: string | { [key: string]: any } | Buffer | Uint8Array;
     if (typeof resource.content === 'function') {
-      // Call the dynamic content function with params (always passed, may be empty)
-      content = await Promise.resolve(resource.content(params));
+      // Create logger for resource
+      const logNotificationCallback: LogNotificationCallback | undefined =
+        this.options.capabilities?.logging && this.server
+          ? (level: LogLevel, message: string, data?: unknown) => {
+              this.sendLoggingNotification(level, message, data);
+            }
+          : undefined;
+
+      const logger = createDefaultLogger(`[Resource:${resource.uri}]`, logNotificationCallback);
+
+      // Retrieve batch context from AsyncLocalStorage
+      const batch = batchContextStorage.getStore();
+
+      // Create handler context for resource
+      const context: HandlerContext = {
+        logger,
+        metadata: {
+          resourceUri: resource.uri,
+          params, // Include URI template parameters in metadata
+        },
+        // Add MCP-specific context
+        mcp: {
+          server: {
+            name: this.options.name,
+            version: this.options.version,
+            description: this.options.description,
+          },
+          session: this.server,
+          request_context: {
+            request_id: randomUUID(),
+            meta: undefined,
+          },
+        },
+        // Add batch context if available
+        batch,
+      };
+
+      // Add sampling capability if enabled
+      if (this.options.capabilities?.sampling && this.server) {
+        context.sample = async (messages: SamplingMessage[], options?: SamplingOptions) => {
+          return this.requestSampling(messages, options);
+        };
+      }
+
+      // Add resource reading capability if resources are available
+      if (this.resources.size > 0) {
+        context.readResource = async (uri: string) => {
+          return this.readResourceByUri(uri);
+        };
+      }
+
+      // Add elicitation capability if enabled
+      if (this.options.capabilities?.elicitation && this.server) {
+        context.elicitInput = async (prompt: string, args: Record<string, any>) => {
+          return this.requestElicitation(prompt, args);
+        };
+      }
+
+      // Add listRoots capability if enabled
+      if (this.options.capabilities?.roots && this.server) {
+        context.listRoots = async () => {
+          const result = await this.requestRoots();
+          // Map SDK roots to simplified format
+          return (result.roots || []).map(root => ({
+            uri: root.uri || '',
+            name: root.name,
+          }));
+        };
+      }
+
+      // Call the dynamic content function with context
+      content = await Promise.resolve(resource.content(context));
     } else {
       // Use static content
       content = resource.content;

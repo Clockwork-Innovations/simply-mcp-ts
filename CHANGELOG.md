@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.15] - 2025-11-07
+
+### Fixed
+
+#### Resource Handler Context Injection (CRITICAL)
+- **Fixed**: Resource content functions now receive full HandlerContext instead of just params
+  - Resources previously received only URI template params, missing logger, server metadata, and capabilities
+  - Resource handlers now have access to context.mcp (server info, session, request ID)
+  - Resource handlers can now use context.logger, context.sample, context.readResource, etc.
+  - URI template params moved to context.metadata.params for consistency
+  - Maintains backward compatibility with static content resources
+- **Breaking Change**: Resource content function signature changed from `(params?: Record<string, string>)` to `(context?: HandlerContext)`
+  - Migration: Change `content: (params) => ...` to `content: (context) => { const params = context?.metadata?.params || {}; ... }`
+- **Modified Files**:
+  - `src/server/builder-types.ts:131` - Updated ResourceDefinition.content signature
+  - `src/server/builder-server.ts:1927-1994, 3744-3821` - Create and pass HandlerContext to resources
+  - `tests/unit/resource-uri-template.test.ts` - Updated all tests to use new context signature
+
 ## [4.0.14] - 2025-11-07
 
 ### Fixed
