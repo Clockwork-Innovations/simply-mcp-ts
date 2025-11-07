@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.10] - 2025-11-07
+
+### Fixed
+- Fixed CI package validation to import both BuildMCPServer and defineConfig from index.js
+- Removed incorrect import path for defineConfig (was trying ./dist/src/config.js which doesn't exist)
+
+### Changed
+- All package exports now imported from single index.js entry point in CI tests
+
 ## [4.0.9] - 2025-11-07
 
 ### Fixed
