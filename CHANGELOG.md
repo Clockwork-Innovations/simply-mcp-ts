@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.13] - 2025-11-07
+
+### Added
+- **Pure Bare Interface Pattern**: Servers can now be written with ZERO class boilerplate
+  - Just `const server: IServer` + `const tool: ToolInterface`
+  - No `export default class` needed
+  - No manual instantiation needed
+  - True zero-boilerplate interface-driven API
+- Auto-instantiation of `export default class` patterns
+  - Classes marked with `export default` are automatically instantiated by the compiler
+  - Eliminates the need for manual `const server = new Server()` boilerplate
+  - Maintains backward compatibility with explicit instantiation
+
+### Fixed
+- Runtime adapter now detects and supports bare interface pattern (no class exports)
+- Dry-run command now properly handles bare interface servers
+- Compiler validation no longer requires instantiation for `export default class`
+
+### Changed
+- `src/server/adapter.ts`: Added bare interface pattern detection in module loading
+- `src/cli/dry-run.ts`: Enhanced to support both class-based and bare interface patterns
+- `src/server/compiler/main-compiler.ts`: Auto-instantiate `export default` classes
+
+### Tests
+- Added comprehensive red-to-green test suite for export default auto-instantiation (5 tests)
+- Added bare interface pattern test suite (6 tests)
+- All 69 test suites pass (1738 → 1744 tests)
+- Verified bare interface pattern works end-to-end
+
+### Documentation
+- Server definitions now support three patterns:
+  1. Pure bare interface (recommended): `const server: IServer` + `const tool: ToolInterface`
+  2. Export default class (auto-instantiated): `export default class Server { ... }`
+  3. Explicit instantiation (backward compatible): `export default class` + `const server = new Server()`
+
 ## [4.0.12] - 2025-11-07
 
 ### Fixed

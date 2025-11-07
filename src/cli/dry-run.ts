@@ -385,9 +385,20 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
         module.default ||
         (parsed.className ? module[parsed.className] : null);
 
-      if (ServerClass) {
+      // Support two patterns:
+      // 1. Class-based: export default class Server { ... }
+      // 2. Bare interface: const greet: GreetTool = async () => { ... }
+      const hasConstImplementations = parsed.implementations?.some(impl => impl.kind === 'const');
+      const hasClassImplementations = parsed.implementations?.some(impl => impl.kind === 'class-property');
+
+      if (ServerClass && typeof ServerClass === 'function') {
+        // Class-based pattern - ServerClass is a constructor
         serverInstance = new ServerClass();
+      } else if (hasConstImplementations && !hasClassImplementations) {
+        // Bare interface pattern - use the module itself as the server instance
+        serverInstance = module;
       }
+      // Note: If neither condition is true, serverInstance remains null
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
 

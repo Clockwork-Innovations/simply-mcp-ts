@@ -114,12 +114,28 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     }
   }
 
-  if (!ServerClass) {
+  // Step 3: Create server instance
+  // Support two patterns:
+  // 1. Class-based: export default class Server { ... }
+  // 2. Bare interface: const greet: GreetTool = async () => { ... }
+  let serverInstance: any;
+
+  // Check if this is a bare interface pattern (no class, only const implementations)
+  const hasConstImplementations = parseResult.implementations?.some(impl => impl.kind === 'const');
+  const hasClassImplementations = parseResult.implementations?.some(impl => impl.kind === 'class-property');
+
+  if (!ServerClass && hasConstImplementations && !hasClassImplementations) {
+    // Bare interface pattern - use the module itself as the server instance
+    if (verbose) {
+      console.log('[Interface Adapter] Detected bare interface pattern (no class, const implementations)');
+    }
+    serverInstance = module;
+  } else if (ServerClass) {
+    // Class-based pattern - instantiate the class
+    serverInstance = new ServerClass();
+  } else {
     throw new Error(`No default export or class '${parseResult.className || 'unknown'}' found in ${filePath}`);
   }
-
-  // Step 3: Create server instance
-  const serverInstance = new ServerClass();
 
   // Step 3.5: Auto-detect capabilities from parsed protocol features
   const capabilities: any = {};

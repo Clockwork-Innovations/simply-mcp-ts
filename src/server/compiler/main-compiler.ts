@@ -195,6 +195,16 @@ export function compileInterfaceFile(filePath: string): ParseResult {
         if (result.server) {
           result.server.className = className;
         }
+
+        // Auto-instantiate export default classes
+        // Classes marked with `export default` are automatically treated as instantiated
+        // This eliminates the need for manual `const server = new Server()` boilerplate
+        const instanceName = className.charAt(0).toLowerCase() + className.slice(1);
+        result.instances!.push({
+          instanceName,
+          className,
+          isAutoInstantiated: true  // Mark as auto-instantiated for debugging
+        } as any);
       }
 
       // Priority 2: Class implements server interface
