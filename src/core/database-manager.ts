@@ -8,11 +8,17 @@
  * - URI parsing with environment variable substitution
  * - Connection caching and reuse
  * - Proper lifecycle management (open/close)
- * - SQLite support via better-sqlite3
+ * - SQLite support via better-sqlite3 (optional dependency)
  */
 
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import type { IDatabase } from '../server/interface-types.js';
+
+/**
+ * Lazy-loaded better-sqlite3 constructor
+ * Only imported when SQLite database features are actually used
+ */
+let DatabaseConstructor: typeof Database | undefined;
 
 /**
  * Database connection instance
@@ -187,9 +193,24 @@ export class DatabaseManager {
    * @param uri - Resolved SQLite URI
    * @param config - Database configuration
    * @returns SQLite Database instance
-   * @throws Error if connection fails
+   * @throws Error if connection fails or better-sqlite3 is not installed
    */
   private connectSqlite(uri: string, config: IDatabase): Database.Database {
+    // Lazy-load better-sqlite3 only when needed
+    if (!DatabaseConstructor) {
+      try {
+        // Use dynamic require to avoid bundling issues
+        DatabaseConstructor = require('better-sqlite3');
+      } catch (error) {
+        throw new Error(
+          `better-sqlite3 is required for SQLite database support but is not installed. ` +
+          `Install it with: npm install better-sqlite3\n` +
+          `Note: better-sqlite3 is an optional dependency for simply-mcp. ` +
+          `It's only needed if you use database resources with SQLite.`
+        );
+      }
+    }
+
     // Extract path from URI
     let path: string;
 
@@ -204,7 +225,7 @@ export class DatabaseManager {
     }
 
     // Create database connection
-    const db = new Database(path, {
+    const db = new DatabaseConstructor(path, {
       readonly: config.readonly ?? false,
       timeout: config.timeout ?? 5000,
     });
