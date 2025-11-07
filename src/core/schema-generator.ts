@@ -830,7 +830,18 @@ export function typeNodeToZodSchema(
 
     default:
       // Fallback to any for unsupported types
-      console.warn(`Unsupported TypeScript type: ${ts.SyntaxKind[typeNode.kind]}`);
+      const typeName = ts.SyntaxKind[typeNode.kind];
+      console.warn(
+        `⚠️  Unsupported TypeScript type: ${typeName}\n` +
+        `   Falling back to 'any' type for schema generation.\n` +
+        `   \n` +
+        `   Common causes:\n` +
+        `   • IntersectionType: Use TypeReference instead (e.g., ParamInterface not Param1 & Param2)\n` +
+        `   • Conditional types: Simplify to concrete types\n` +
+        `   • Complex mapped types: Use explicit interface definitions\n` +
+        `   \n` +
+        `   If you need this type supported, please file an issue with a code example.`
+      );
       return z.any();
   }
 }

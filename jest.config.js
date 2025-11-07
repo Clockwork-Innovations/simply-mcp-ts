@@ -11,7 +11,13 @@ export default {
       'ts-jest',
       {
         useESM: true,
-        tsconfig: './tsconfig.test.json', // Use test-specific tsconfig that supports import.meta
+        tsconfig: {
+          module: 'ES2020',
+          moduleResolution: 'node',
+          target: 'ES2020',
+          skipLibCheck: true,
+          noEmit: true
+        }
       },
     ],
   },
@@ -29,7 +35,6 @@ export default {
     '/tests/e2e/',  // Playwright E2E tests (run separately with test:e2e)
     '/src/api/mcp/wizard/__tests__/',  // Wizard feature tests (experimental)
     '/tests/unit/interface-api/schema.test.ts',  // typeNodeToZodSchema() not fully implemented (returns empty array)
-    '/tests/unit/interface-api.test.ts',  // Broken imports, superseded by tests/unit/interface-api/*.test.ts
     '/tests/unit/interface-api/completions.test.ts',  // Custom runner (use tsx to run standalone)
     '/tests/unit/interface-api/elicitation.test.ts',  // Custom runner (use tsx to run standalone)
     '/tests/unit/interface-api/roots.test.ts',  // Custom runner (use tsx to run standalone)
@@ -50,7 +55,6 @@ export default {
     // They are still excluded here to avoid timeout issues in CI/limited environments:
     '/tests/integration/streamable-http-transport.test.ts',  // Integration test - uses programmatic skip (describeIfCanRunIntegration)
     '/tests/performance/streamable-http-performance.test.ts',  // Performance test - requires HTTP server (run separately)
-    '/tests/unit/client/component-library-v2.test.tsx',  // Migrated to Playwright E2E (tests/e2e/component-library.spec.ts)
     '\\.manual\\.ts$',  // Custom-runner tests (not Jest-compatible)
     '\\.md$'  // Exclude markdown files from test execution
   ],

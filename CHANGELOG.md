@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.17] - 2025-11-07
+
+### Fixed
+
+#### Beta Test Feedback - Error Messages & Documentation (HIGH Priority)
+- **Improved**: Static resource error messages now clearly explain compile-time vs runtime distinction
+  - Error message shows the difference between `value` field (compile-time literals only) and `returns` field (runtime data)
+  - Provides actionable solutions with code examples for both approaches
+  - Helps developers understand why variables can't be used with static resources
+  - Addresses Issue #1 from beta test feedback
+- **Improved**: HTTP transport documentation with complete endpoint reference
+  - Added comprehensive HTTP Endpoints Reference table with all methods, purposes, and headers
+  - Added step-by-step cURL testing examples for session initialization, tool calls, and SSE streaming
+  - Fixed missing information that prevented users from testing HTTP API
+  - Addresses Issue #4 from beta test feedback
+- **Improved**: AST parser warning messages with specific guidance
+  - Generic "unsupported type" warnings now list common causes (IntersectionType, conditional types, mapped types)
+  - Provides concrete solutions for each case
+  - Addresses Issue #2 from beta test feedback
+- **Improved**: Naming convention error messages with clear explanation
+  - Error now explains why both snake_case (protocol) and camelCase (implementation) names are needed
+  - Shows the automatic conversion that framework performs
+  - Provides fix example showing exact method rename needed
+  - Addresses Issue #3 from beta test feedback
+- **New Files**:
+  - `tests/unit/handlers/static-resource-error.test.ts` - Red→green test for improved static resource errors
+- **Modified Files**:
+  - `src/handlers/resource-handler.ts:107-145` - Enhanced static resource error with actionable guidance
+  - `src/core/schema-generator.ts:364-378` - Enhanced AST parser warnings with specific causes
+  - `src/server/adapter.ts:270-285` - Enhanced naming convention error with clear explanation
+  - `docs/guides/QUICK_START.md:265-318` - Added "Resources: Static vs Dynamic" section with clear guidance
+  - `docs/guides/TRANSPORT.md:82-183` - Added HTTP Endpoints Reference table and cURL testing examples
+  - `docs/guides/NAMING_CONVENTIONS.md:17-45` - Added "Why Two Different Names?" explanation section
+
+#### Test Infrastructure Fixes (MEDIUM Priority)
+- **Fixed**: Pre-existing test failure in resource-uri-template.test.ts
+  - Fixed TypeScript type errors with HandlerContext.metadata property access
+  - Changed from dot notation (`metadata.params`) to bracket notation (`metadata['params']`)
+  - All 14 resource URI template tests now passing
+- **Fixed**: Jest compatibility with import.meta.url in production code
+  - Implemented conditional eval workaround for TypeScript detector module
+  - Only executes eval in production ESM context (not in Jest tests)
+  - Uses hardcoded literal string with comprehensive security audit
+  - Industry-standard solution from ts-jest community
+  - All 1785 unit tests passing across 74 test suites
+- **Modified Files**:
+  - `tests/unit/resource-uri-template.test.ts:41,61,91,254,286,298,318,334` - Use bracket notation for metadata access
+  - `src/core/typescript-detector.ts:14-33` - Added conditional eval with security documentation
+
+### Removed
+
+#### Deprecated Decorator API Cleanup
+- **Removed**: Decorator API support (deprecated in v4.0.0)
+  - Removed `reflect-metadata` dependency from package.json
+  - Removed `experimentalDecorators` and `emitDecoratorMetadata` from tsconfig.json
+  - Removed `import 'reflect-metadata'` from src/cli/run.ts
+  - Interface API and Builder API are the recommended approaches
+- **Removed**: Deprecated test files
+  - `tests/unit/interface-api.test.ts` - Superseded by tests/unit/interface-api/*.test.ts
+  - `tests/unit/client/component-library-v2.test.tsx` - Migrated to Playwright E2E
+  - `tests/router-integration.manual.ts` - Used deprecated Decorator API
+- **Modified Files**:
+  - `package.json:119-127` - Removed reflect-metadata dependency
+  - `tsconfig.json:3-6` - Removed decorator compiler options
+  - `src/cli/run.ts:1-6` - Removed reflect-metadata import
+  - `src/cli/bundle-runner.ts:152` - Removed reflect-metadata import
+  - `jest.config.js:37-58` - Removed references to deleted test files
+
+### Documentation
+
+#### Enhanced User Guidance
+- **Added**: Comprehensive "Resources: Static vs Dynamic" section to Quick Start guide
+  - Clear examples showing when to use `value` vs `returns` field
+  - "When to Use Which" decision matrix
+  - Common mistakes and how to avoid them
+- **Added**: "Why Two Different Names?" section to Naming Conventions guide
+  - Explains the distinction between MCP protocol names and TypeScript implementation names
+  - Shows how framework automatically converts between formats
+  - Reduces confusion for new users
+
 ## [4.0.16] - 2025-11-07
 
 ### Fixed

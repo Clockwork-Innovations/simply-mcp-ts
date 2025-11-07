@@ -22,8 +22,23 @@ export function registerStaticResource(
 
   if (data === undefined) {
     throw new Error(
-      `Static resource "${uri}" is missing literal data. ` +
-      `Add a 'value' field with literal data to the interface definition.`
+      `Static resource "${uri}" is missing literal data.\n\n` +
+      `Static resources with 'value' field can only contain compile-time literal data ` +
+      `(strings, numbers, inline objects). They cannot reference variables or computed values.\n\n` +
+      `Solutions:\n` +
+      `  1. Use inline literal data in the interface:\n` +
+      `     interface ${resource.interfaceName || 'MyResource'} extends IResource {\n` +
+      `       uri: '${uri}';\n` +
+      `       value: { version: '1.0.0', data: [1, 2, 3] };  // ← Literal values only\n` +
+      `     }\n\n` +
+      `  2. Use a dynamic resource instead (RECOMMENDED for variable data):\n` +
+      `     interface ${resource.interfaceName || 'MyResource'} extends IResource {\n` +
+      `       uri: '${uri}';\n` +
+      `       returns: { version: string; data: number[] };  // ← Use 'returns' instead of 'value'\n` +
+      `     }\n` +
+      `     // Then implement on your server class:\n` +
+      `     ${resource.methodName || 'myResource'}: ResourceHelper<${resource.interfaceName || 'MyResource'}> = async () => MY_DATA;\n\n` +
+      `Hint: If your data is a const/variable, use 'returns' instead of 'value'.`
     );
   }
 

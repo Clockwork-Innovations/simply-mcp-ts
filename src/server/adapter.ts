@@ -805,8 +805,14 @@ async function registerTool(
     // Show snake_case warning if applicable
     if (hasSnakeCaseMethod) {
       errorMessage +=
-        `⚠️  Common Mistake: Found method "${snakeCaseMethodName}" but expected "${methodName}"\n` +
-        `   Tool names use snake_case, but method names must use camelCase!\n\n`;
+        `⚠️  Common Mistake: Found method "${snakeCaseMethodName}" but expected "${methodName}"\n\n` +
+        `   Naming Convention Rules:\n` +
+        `   • Tool/Prompt names (in interface): snake_case (e.g., 'get_weather')\n` +
+        `   • Method names (in class): camelCase (e.g., getWeather)\n` +
+        `   • Framework automatically converts between formats\n\n` +
+        `   Fix: Rename your method:\n` +
+        `   - Change: ${snakeCaseMethodName}: ${tool.interfaceName} = ...\n` +
+        `   - To:     ${methodName}: ${tool.interfaceName} = ...\n\n`;
     }
 
     // Show all available methods

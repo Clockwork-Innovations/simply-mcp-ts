@@ -167,6 +167,182 @@ eventSource.onerror = (error) => {
 };
 ```
 
+### HTTP Endpoints Reference
+
+Simply-MCP's HTTP Stateful transport exposes the following endpoints:
+
+| Method | Endpoint | Purpose | Headers Required | Response |
+|--------|----------|---------|------------------|----------|
+| `POST` | `/mcp` | Initialize session or send JSON-RPC request | `Content-Type: application/json` | JSON response + `Mcp-Session-Id` header (on init) |
+| `GET` | `/mcp` | Open SSE stream for real-time events | `Mcp-Session-Id`, `Accept: text/event-stream` | SSE stream (text/event-stream) |
+| `DELETE` | `/mcp` | Terminate session and cleanup resources | `Mcp-Session-Id` | 204 No Content |
+
+**Request/Response Flow:**
+
+```
+1. Initialize Session
+   POST /mcp
+   Body: { "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {...} }
+   Response: 200 OK + Header: Mcp-Session-Id: <session-id>
+
+2. Call Tools/Read Resources
+   POST /mcp
+   Header: Mcp-Session-Id: <session-id>
+   Body: { "jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {...} }
+   Response: 200 OK + JSON-RPC result
+
+3. Stream Events (Optional)
+   GET /mcp?sessionId=<session-id>
+   Header: Accept: text/event-stream
+   Header: Mcp-Session-Id: <session-id>
+   Response: SSE stream (keeps connection open)
+
+4. Terminate Session
+   DELETE /mcp
+   Header: Mcp-Session-Id: <session-id>
+   Response: 204 No Content
+```
+
+**Important Notes:**
+- All requests after initialization **must** include the `Mcp-Session-Id` header
+- Session IDs are UUIDs (e.g., `abc123-def456-ghi789`)
+- The SSE endpoint (`GET /mcp`) streams events in real-time and keeps the connection open
+- Sessions timeout after inactivity (configurable, default varies by implementation)
+
+### Testing with cURL (Quick Start)
+
+These examples show how to test your MCP HTTP server using cURL:
+
+**Step 1: Start your server**
+```bash
+npx simply-mcp run server.ts --http --port 3000
+```
+
+**Step 2: Initialize session and capture session ID**
+```bash
+# Send initialize request
+curl -i -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {},
+      "clientInfo": {"name": "curl-client", "version": "1.0"}
+    }
+  }'
+
+# Response includes session ID in header:
+# HTTP/1.1 200 OK
+# Mcp-Session-Id: abc123-def456-ghi789
+# Content-Type: text/event-stream
+#
+# event: message
+# data: {"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05",...}}
+```
+
+**Step 3: Extract session ID and call tools**
+```bash
+# Set session ID (from response header above)
+export SESSION_ID="abc123-def456-ghi789"
+
+# List available tools
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }'
+
+# Call a specific tool
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "your_tool_name",
+      "arguments": {"param1": "value1"}
+    }
+  }'
+```
+
+**Step 4: Read resources**
+```bash
+# List available resources
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "resources/list",
+    "params": {}
+  }'
+
+# Read a specific resource
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "resources/read",
+    "params": {"uri": "config://app"}
+  }'
+```
+
+**Step 5: Terminate session**
+```bash
+curl -X DELETE http://localhost:3000/mcp \
+  -H "Mcp-Session-Id: $SESSION_ID"
+
+# Response: 204 No Content
+```
+
+**Complete test script:**
+```bash
+#!/bin/bash
+# save as test-mcp-http.sh
+
+BASE_URL="http://localhost:3000"
+
+# Initialize and capture session ID
+echo "1. Initializing session..."
+RESPONSE=$(curl -s -i -X POST $BASE_URL/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}')
+
+SESSION_ID=$(echo "$RESPONSE" | grep -i "Mcp-Session-Id:" | cut -d' ' -f2 | tr -d '\r')
+echo "Session ID: $SESSION_ID"
+
+# List tools
+echo -e "\n2. Listing tools..."
+curl -s -X POST $BASE_URL/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | jq
+
+# Call a tool
+echo -e "\n3. Calling tool..."
+curl -s -X POST $BASE_URL/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"your_tool","arguments":{}}}' | jq
+
+# Cleanup
+echo -e "\n4. Terminating session..."
+curl -s -X DELETE $BASE_URL/mcp -H "Mcp-Session-Id: $SESSION_ID"
+echo "Done!"
+```
+
 ### Architecture (Stateful)
 
 ```

@@ -3,7 +3,6 @@
  * Auto-detects API style and runs the appropriate adapter
  */
 
-import 'reflect-metadata';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve, dirname, extname } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';

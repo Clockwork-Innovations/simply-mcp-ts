@@ -128,6 +128,34 @@ The MCP protocol identifies resources by URI. When a client requests a resource,
 
 ---
 
+## Why Two Different Names?
+
+A common question from new users: "Why do I need to specify the name in both places?"
+
+**Answer:** You're specifying names in TWO different contexts:
+
+1. **Interface `name` field** = The MCP protocol name (what clients see)
+   - Must follow MCP protocol conventions (snake_case for tools/prompts)
+   - This is the "public API" name that clients use
+   - Example: `name: 'get_weather'`
+
+2. **Class method name** = Your TypeScript implementation
+   - Must follow JavaScript/TypeScript conventions (camelCase)
+   - This is your internal implementation
+   - Example: `getWeather: GetWeatherTool = ...`
+
+**The framework automatically converts between them!**
+
+```typescript
+// MCP Client sends:
+{ "method": "tools/call", "params": { "name": "get_weather" } }
+
+// Framework converts "get_weather" → "getWeather"
+
+// Your method is called:
+getWeather({ city: "NYC" })
+```
+
 ## Mental Model
 
 Think of it this way:

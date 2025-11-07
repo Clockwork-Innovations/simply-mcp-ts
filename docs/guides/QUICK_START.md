@@ -294,20 +294,34 @@ interface ContextPrompt extends IPrompt {
   };
 }
 
-// Static Resource: No implementation needed (has value)
+// ══════════════════════════════════════════════════════════════════════
+// RESOURCES: Static vs Dynamic
+// ══════════════════════════════════════════════════════════════════════
+
+// 1. Static Resource: Compile-time literal data ONLY
+//    ✅ Use 'value' field with inline literal values
+//    ❌ CANNOT reference variables or constants
 interface ConfigResource extends IResource {
   uri: 'config://app';
   name: 'Config';
   mimeType: 'application/json';
-  value: { version: '1.0.0' };
+  value: { version: '1.0.0', env: 'prod' };  // ← Must be inline literal data
 }
 
-// Dynamic Resource: Needs implementation (has returns)
+// ❌ WRONG: Static resources cannot reference variables
+// interface BadResource extends IResource {
+//   uri: 'config://bad';
+//   value: typeof MY_CONSTANT;  // ← ERROR: Can't reference variables!
+// }
+
+// 2. Dynamic Resource: Runtime data (RECOMMENDED for most use cases)
+//    ✅ Use 'returns' field with type definition
+//    ✅ CAN reference variables, fetch data, compute values
 interface StatsResource extends IResource {
   uri: 'stats://data';
   name: 'Stats';
   mimeType: 'application/json';
-  returns: { count: number };
+  returns: { count: number };  // ← Type definition, not literal data
 }
 
 // Implementation
@@ -333,12 +347,17 @@ export default class MyServer {
   };
 
   // ❌ Static resource - no implementation needed
-  // Framework serves value field directly
+  // Framework serves value field directly (compile-time literal data)
 
-  // ✅ Dynamic resource - implement with URI as property name
+  // ✅ Dynamic resource - implement with runtime data
+  // Use this pattern when you need to reference variables/constants:
   'stats://data': StatsResource = async () => ({
-    count: 42
+    count: this.getActiveUsers()  // ← Can call methods, access variables, etc.
   });
+
+  private getActiveUsers(): number {
+    return 42;  // Your actual data logic here
+  }
 }
 ```
 
@@ -349,6 +368,56 @@ export default class MyServer {
 - ✅ **All prompts** - Always required (no static prompts)
 - ✅ **Dynamic resources** - With `returns` field
 - ❌ **Static resources** - With `value` field (auto-handled)
+
+### Resource Pattern: When to Use Which
+
+**Use Static Resources (`value` field) when:**
+- ✅ Data is small and can be written inline (< 20 lines)
+- ✅ Data never changes (true constants)
+- ✅ You want compile-time validation of the data structure
+
+```typescript
+// Good use case for static resource
+interface SmallConfigResource extends IResource {
+  uri: 'config://flags';
+  value: { enableFeatureX: true, maxRetries: 3 };
+}
+```
+
+**Use Dynamic Resources (`returns` field) when:**
+- ✅ Data comes from a variable/constant (MOST COMMON)
+- ✅ Data needs computation or fetching
+- ✅ Data changes at runtime
+- ✅ Data is large or complex
+
+```typescript
+const TYPE_CHART = { /* 100+ lines of data */ };
+
+// Good use case for dynamic resource
+interface TypeChartResource extends IResource {
+  uri: 'pokemon://type-chart';
+  returns: typeof TYPE_CHART;  // ← Reference to const
+}
+
+export default class Server {
+  'pokemon://type-chart': TypeChartResource = async () => TYPE_CHART;
+}
+```
+
+**⚠️ Common Mistake:**
+```typescript
+// ❌ WRONG: Can't reference variables in static resource
+interface BadResource extends IResource {
+  uri: 'data://bad';
+  value: MY_CONSTANT;  // ERROR: Must be inline literal!
+}
+
+// ✅ RIGHT: Use dynamic resource instead
+interface GoodResource extends IResource {
+  uri: 'data://good';
+  returns: typeof MY_CONSTANT;
+}
+```
 
 ### How Auto-Discovery Works
 

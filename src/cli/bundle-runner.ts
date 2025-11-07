@@ -149,7 +149,6 @@ export async function runPackageBundle(
         port: number,
         verbose: boolean
       ) => {
-        await import('reflect-metadata');
         const { loadInterfaceServer } = await import('../server/adapter.js');
         const { startServer, displayServerInfo } = await import('./adapter-utils.js');
 

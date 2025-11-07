@@ -38,7 +38,7 @@ describe('Resource URI Template - Integration', () => {
       description: 'Get information about a Pokemon',
       mimeType: 'application/json',
       content: (context) => {
-        const params = (context?.metadata?.params as Record<string, string>) || {};
+        const params = (context?.metadata?.['params'] as Record<string, string>) || {};
         return JSON.stringify({ pokemon: params.name, level: 50 });
       },
     };
@@ -57,7 +57,7 @@ describe('Resource URI Template - Integration', () => {
       description: 'Access API endpoints',
       mimeType: 'application/json',
       content: (context) => {
-        const params = (context?.metadata?.params as Record<string, string>) || {};
+        const params = (context?.metadata?.['params'] as Record<string, string>) || {};
         return JSON.stringify({
           version: params.version,
           endpoint: params.endpoint,
@@ -88,7 +88,7 @@ describe('Resource URI Template - Integration', () => {
       description: 'Any other Pokemon',
       mimeType: 'application/json',
       content: (context) => {
-        const params = (context?.metadata?.params as Record<string, string>) || {};
+        const params = (context?.metadata?.['params'] as Record<string, string>) || {};
         return JSON.stringify({ name: params.name, type: 'Unknown' });
       },
     });
@@ -251,7 +251,7 @@ describe('Resource URI Template - Real-world Examples', () => {
       description: 'Get Pokemon details by name',
       mimeType: 'application/json',
       content: (context) => {
-        const params = (context?.metadata?.params as Record<string, string>) || {};
+        const params = (context?.metadata?.['params'] as Record<string, string>) || {};
         return JSON.stringify({
           name: params.name,
           level: 50,
@@ -283,7 +283,7 @@ describe('Resource URI Template - Real-world Examples', () => {
       description: 'Get user by ID',
       mimeType: 'application/json',
       content: (context) => {
-        const params = (context?.metadata?.params as Record<string, string>) || {};
+        const params = (context?.metadata?.['params'] as Record<string, string>) || {};
         return JSON.stringify({ id: params.id, name: 'User' });
       },
     });
@@ -295,7 +295,7 @@ describe('Resource URI Template - Real-world Examples', () => {
       description: 'Get specific post by user',
       mimeType: 'application/json',
       content: (context) => {
-        const params = (context?.metadata?.params as Record<string, string>) || {};
+        const params = (context?.metadata?.['params'] as Record<string, string>) || {};
         return JSON.stringify({
           userId: params.userId,
           postId: params.postId,
@@ -315,7 +315,7 @@ describe('Resource URI Template - Real-world Examples', () => {
       description: 'Access files by path',
       mimeType: 'text/plain',
       content: (context) => {
-        const params = (context?.metadata?.params as Record<string, string>) || {};
+        const params = (context?.metadata?.['params'] as Record<string, string>) || {};
         return `File content for: ${params.path}`;
       },
     });
@@ -331,7 +331,7 @@ describe('Resource URI Template - Real-world Examples', () => {
       description: 'Access tenant-specific data',
       mimeType: 'application/json',
       content: (context) => {
-        const params = (context?.metadata?.params as Record<string, string>) || {};
+        const params = (context?.metadata?.['params'] as Record<string, string>) || {};
         return JSON.stringify({
           tenant: params.tenantId,
           data: params.dataId,
