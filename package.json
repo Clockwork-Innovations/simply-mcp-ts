@@ -18,6 +18,16 @@
       "import": "./dist/src/client/index.js",
       "default": "./dist/src/client/index.js"
     },
+    "./server/parser": {
+      "types": "./dist/src/server/parser.d.ts",
+      "import": "./dist/src/server/parser.js",
+      "default": "./dist/src/server/parser.js"
+    },
+    "./server/compiler/types": {
+      "types": "./dist/src/server/compiler/types.d.ts",
+      "import": "./dist/src/server/compiler/types.js",
+      "default": "./dist/src/server/compiler/types.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
@@ -181,7 +191,8 @@
     "@types/ioredis": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24",
-    "@types/react": "^19.2.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
     "@types/supertest": "^6.0.3",
     "@types/ws": "^8.18.1",
     "@types/yargs": "^17.0.33",

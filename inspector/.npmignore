@@ -1,0 +1,47 @@
+# Source files
+*.ts
+!*.d.ts
+tsconfig*.json
+
+# Tests
+tests/
+test-*.ts
+*.test.ts
+*.spec.ts
+playwright.config.ts
+playwright-report/
+test-results/
+
+# Development files
+.next/cache/
+.next/dev/
+.next/types/
+node_modules/
+.env
+.env.*
+*.log
+
+# Build artifacts that shouldn't be published
+tmp/
+coverage/
+
+# Documentation that's not needed in npm
+docs/
+*.md
+!README.md
+
+# Config files
+.eslintrc*
+.prettierrc*
+eslint.config.*
+components.json
+
+# Git
+.git*
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

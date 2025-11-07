@@ -26,3 +26,8 @@ export * from './hooks/index.js';
 
 // Re-export for convenience
 export { useMCPTool, MCPProvider } from './hooks/index.js';
+
+// Export UI resource rendering components and utilities
+export { default as UIResourceRenderer } from './UIResourceRenderer.js';
+export { isUIResource } from './ui-utils.js';
+export type { UIResourceContent, UIActionResult, UIAction } from './ui-types.js';

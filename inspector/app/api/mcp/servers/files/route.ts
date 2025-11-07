@@ -4,9 +4,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
-// Import from local node_modules/simply-mcp
-import { parseInterfaceFile } from '../../../../../node_modules/simply-mcp/dist/src/server/parser.js';
-import type { ParsedServer } from '../../../../../node_modules/simply-mcp/dist/src/server/compiler/types.js';
+// Import from simply-mcp package
+import { parseInterfaceFile } from 'simply-mcp/server/parser';
+import type { ParsedServer } from 'simply-mcp/server/compiler/types';
 
 export interface ServerFile {
   path: string;
