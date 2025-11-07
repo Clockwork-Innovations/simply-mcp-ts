@@ -22,22 +22,23 @@ try {
     process.exit(1);
   }
 
-  // Copy .next/static to standalone/.next/static
+  // Copy .next/static to standalone/inspector/.next/static
+  // (Next.js standalone creates a directory structure mirroring the monorepo)
   const staticSource = join(rootDir, '.next/static');
-  const staticDest = join(standaloneDir, '.next/static');
+  const staticDest = join(standaloneDir, 'inspector', '.next', 'static');
 
   if (existsSync(staticSource)) {
-    console.log('  Copying .next/static...');
+    console.log('  Copying .next/static to standalone/inspector/.next/static...');
     mkdirSync(dirname(staticDest), { recursive: true });
     cpSync(staticSource, staticDest, { recursive: true });
   }
 
-  // Copy public directory to standalone/public
+  // Copy public directory to standalone/inspector/public
   const publicSource = join(rootDir, 'public');
-  const publicDest = join(standaloneDir, 'public');
+  const publicDest = join(standaloneDir, 'inspector', 'public');
 
   if (existsSync(publicSource)) {
-    console.log('  Copying public directory...');
+    console.log('  Copying public directory to standalone/inspector/public...');
     cpSync(publicSource, publicDest, { recursive: true });
   }
 
