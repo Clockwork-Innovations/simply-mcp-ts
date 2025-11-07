@@ -7,28 +7,7 @@
 
 import type * as ts from 'typescript';
 import { z, ZodTypeAny } from 'zod';
-
-/**
- * Lazy-loaded TypeScript module
- */
-let TypeScript: typeof ts | undefined;
-
-/**
- * Ensure TypeScript is loaded
- */
-function ensureTypeScript(): typeof ts {
-  if (!TypeScript) {
-    try {
-      TypeScript = require('typescript');
-    } catch (error) {
-      throw new Error(
-        'TypeScript is required but is not installed. ' +
-        'Install it with: npm install --save-dev typescript'
-      );
-    }
-  }
-  return TypeScript;
-}
+import { ensureTypeScript } from './typescript-detector.js';
 
 /**
  * JSDoc validation tags that can be applied to parameters

@@ -94,7 +94,8 @@ async function runInterfaceAdapter(
   useHttpStateless: boolean,
   port: number,
   verbose: boolean = false,
-  uiWatch: boolean = false
+  uiWatch: boolean = false,
+  useWebSocket: boolean = false
 ): Promise<void> {
   // Import interface adapter
   const { loadInterfaceServer } = await import('../server/adapter.js');
@@ -115,7 +116,25 @@ async function runInterfaceAdapter(
     });
 
     displayServerInfo(server);
-    await startServer(server, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
+
+    // Determine transport type for startServer
+    if (useWebSocket) {
+      // Start with WebSocket transport
+      await server.start({
+        transport: 'websocket',
+        port,
+        stateful: true, // WebSocket is always stateful
+      });
+
+      console.error(`[Adapter] Server running with WebSocket transport on ws://localhost:${port}`);
+      if (verbose) {
+        console.error('[Adapter] Transport: WebSocket');
+        console.error(`[Adapter] Port: ${port}`);
+      }
+    } else {
+      // Use existing HTTP/stdio logic
+      await startServer(server, { useHttp: useHttp || useHttpStateless, port, verbose, stateful: !useHttpStateless });
+    }
   } catch (error) {
     console.error('[RunCommand] Failed to run interface server:', error);
     if (error instanceof Error && error.stack && verbose) {
@@ -300,6 +319,7 @@ async function spawnWithInspector(
   scriptArgs.push(...files);
 
   if (argv.config) scriptArgs.push('--config', argv.config);
+  if (argv.transport) scriptArgs.push('--transport', argv.transport);
   if (argv.http) scriptArgs.push('--http');
   if (argv['http-stateless']) scriptArgs.push('--http-stateless');
   if (argv.port) scriptArgs.push('--port', String(argv.port));
@@ -386,12 +406,17 @@ export const runCommand: CommandModule = {
         type: 'string',
       })
       .option('http', {
-        describe: 'Use HTTP transport instead of stdio',
+        describe: 'Use HTTP transport instead of stdio (deprecated: use --transport http)',
         type: 'boolean',
       })
       .option('http-stateless', {
-        describe: 'Use HTTP transport in stateless mode (no session management)',
+        describe: 'Use HTTP transport in stateless mode (no session management) (deprecated: use --transport http-stateless)',
         type: 'boolean',
+      })
+      .option('transport', {
+        describe: 'Specify transport mode (stdio is default, http for stateful, http-stateless for stateless, ws for WebSocket)',
+        type: 'string',
+        choices: ['stdio', 'http', 'http-stateless', 'ws'] as const,
       })
       .option('port', {
         describe: 'Port for HTTP server',
@@ -538,6 +563,7 @@ export const runCommand: CommandModule = {
 
       // Pass through all flags
       if (argv.config) scriptArgs.push('--config', argv.config);
+      if (argv.transport) scriptArgs.push('--transport', argv.transport);
       if (argv.http) scriptArgs.push('--http');
       if (argv['http-stateless']) scriptArgs.push('--http-stateless');
       if (argv.port) scriptArgs.push('--port', String(argv.port));
@@ -632,6 +658,50 @@ export const runCommand: CommandModule = {
       let useHttp = mergedOptions.http ?? false;
       let useHttpStateless = argv['http-stateless'] as boolean;
 
+      // Handle --transport flag (new recommended way)
+      const transport = argv.transport as string | undefined;
+      let useWebSocket = false;
+      if (transport) {
+        // Validate transport value (yargs should handle this, but double-check)
+        if (transport !== 'stdio' && transport !== 'http' && transport !== 'http-stateless' && transport !== 'ws') {
+          console.error('[RunCommand] Error: Invalid transport value');
+          console.error('');
+          console.error('Valid transport options:');
+          console.error('  --transport stdio           Use stdio transport (default)');
+          console.error('  --transport http            Use HTTP transport (stateful)');
+          console.error('  --transport http-stateless  Use HTTP transport (stateless)');
+          console.error('  --transport ws              Use WebSocket transport');
+          console.error('');
+          process.exit(1);
+        }
+
+        // Set flags based on transport value
+        if (transport === 'stdio') {
+          useHttp = false;
+          useHttpStateless = false;
+          useWebSocket = false;
+        } else if (transport === 'http') {
+          useHttp = true;
+          useHttpStateless = false;
+          useWebSocket = false;
+        } else if (transport === 'http-stateless') {
+          useHttp = true;
+          useHttpStateless = true;
+          useWebSocket = false;
+        } else if (transport === 'ws') {
+          useHttp = false;
+          useHttpStateless = false;
+          useWebSocket = true;
+        }
+
+        // Warn if conflicting flags are used
+        if (argv.http || argv['http-stateless']) {
+          console.error('[RunCommand] Warning: Both --transport and --http/--http-stateless flags provided');
+          console.error('[RunCommand] Using --transport value, ignoring --http/--http-stateless');
+          console.error('');
+        }
+      }
+
       // Determine port: CLI flag > environment variable > default
       let port = mergedOptions.port ?? 3000;
       if (!mergedOptions.port && process.env.PORT) {
@@ -641,10 +711,11 @@ export const runCommand: CommandModule = {
         }
       }
 
-      // Validate mutually exclusive flags
-      if (useHttp && useHttpStateless) {
+      // Validate mutually exclusive flags (only when using old flags, not --transport)
+      if (!transport && argv.http && argv['http-stateless']) {
         console.error('[RunCommand] Error: Cannot use both --http and --http-stateless');
         console.error('[RunCommand] Use --http for stateful mode or --http-stateless for stateless mode');
+        console.error('[RunCommand] Or use the new --transport flag: --transport http or --transport http-stateless');
         process.exit(1);
       }
 
@@ -663,10 +734,17 @@ export const runCommand: CommandModule = {
       const inspectBrk = argv['inspect-brk'] as boolean;
       const inspectPort = argv['inspect-port'] as number;
 
-      // Multi-server mode requires HTTP transport
-      if (files.length > 1 && !useHttp) {
+      // Multi-server mode requires HTTP transport (not WebSocket or stdio)
+      if (files.length > 1 && !useHttp && !useWebSocket) {
         console.error('[RunCommand] Multi-server mode detected, enabling HTTP transport automatically');
         useHttp = true;
+      }
+
+      // WebSocket doesn't support multi-server mode yet
+      if (files.length > 1 && useWebSocket) {
+        console.error('[RunCommand] Error: WebSocket transport is not yet supported with multi-server mode');
+        console.error('[RunCommand] Please use HTTP transport for multi-server mode');
+        process.exit(1);
       }
 
       // Show config info in verbose mode
@@ -748,8 +826,9 @@ export const runCommand: CommandModule = {
         const absolutePath = resolve(process.cwd(), filePath);
         console.error('[Adapter] Loading interface server from:', filePath);
         // Also output transport info early
-        console.error(`[Adapter] Transport: ${useHttp ? 'HTTP' : 'STDIO'}`);
-        if (useHttp) {
+        const transportType = useWebSocket ? 'WebSocket' : (useHttp ? 'HTTP' : 'STDIO');
+        console.error(`[Adapter] Transport: ${transportType}`);
+        if (useHttp || useWebSocket) {
           console.error(`[Adapter] Port: ${port}`);
         }
       }
@@ -774,7 +853,7 @@ export const runCommand: CommandModule = {
       if (dryRun) {
         const jsonOutput = argv.json as boolean;
         const { runDryRun } = await import('./dry-run.js');
-        await runDryRun(filePath, 'interface', useHttp, port, jsonOutput);
+        await runDryRun(filePath, 'interface', useHttp, port, jsonOutput, useWebSocket);
         return;
       }
 
@@ -786,7 +865,7 @@ export const runCommand: CommandModule = {
       }
 
       // Run interface adapter
-      await runInterfaceAdapter(filePath, useHttp, useHttpStateless, port, verbose, uiWatch);
+      await runInterfaceAdapter(filePath, useHttp, useHttpStateless, port, verbose, uiWatch, useWebSocket);
     } catch (error) {
       console.error('[RunCommand] Error:', error);
       process.exit(2);

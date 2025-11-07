@@ -19,30 +19,10 @@ import { parseInterfaceFile, type ParseResult, type ParsedTool } from './parser.
 import { typeNodeToZodSchema, generateSchemaFromTypeString } from '../core/schema-generator.js';
 
 /**
- * Lazy-loaded TypeScript module
- * Only imported when interface-driven API features are actually used
+ * Import TypeScript detection utility
+ * Provides robust multi-method detection across package managers
  */
-let TypeScript: typeof ts | undefined;
-
-/**
- * Ensure TypeScript is loaded
- * @throws Error if TypeScript is not installed
- */
-function ensureTypeScript(): typeof ts {
-  if (!TypeScript) {
-    try {
-      TypeScript = require('typescript');
-    } catch (error) {
-      throw new Error(
-        'TypeScript is required for interface-driven API but is not installed. ' +
-        'Install it with: npm install --save-dev typescript\n' +
-        'Note: TypeScript is a peer dependency for simply-mcp. ' +
-        'It\'s only needed if you use the interface-driven API (IServer, ITools, etc.).'
-      );
-    }
-  }
-  return TypeScript;
-}
+import { ensureTypeScript } from '../core/typescript-detector.js';
 
 import { registerPrompts } from '../handlers/prompt-handler.js';
 import { registerResources } from '../handlers/resource-handler.js';
@@ -566,6 +546,111 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
 }
 
 /**
+ * Helper: Calculate Levenshtein distance between two strings
+ * Used for "did you mean" suggestions
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
+}
+
+/**
+ * Helper: Generate all naming variations for a tool name
+ * Returns variations in different naming conventions
+ */
+function getNamingVariations(toolName: string): string[] {
+  const variations: string[] = [];
+
+  // Original name
+  variations.push(toolName);
+
+  // snake_case (if not already)
+  if (!toolName.includes('_')) {
+    const snakeCase = toolName
+      .replace(/([A-Z])/g, '_$1')
+      .toLowerCase()
+      .replace(/^_/, '')
+      .replace(/-/g, '_');
+    if (snakeCase !== toolName) {
+      variations.push(snakeCase);
+    }
+  }
+
+  // camelCase
+  const camelCase = toolName
+    .replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase())
+    .replace(/^[A-Z]/, match => match.toLowerCase());
+  if (camelCase !== toolName) {
+    variations.push(camelCase);
+  }
+
+  // PascalCase
+  const pascalCase = toolName
+    .replace(/[-_]([a-z])/g, (_, letter) => letter.toUpperCase())
+    .replace(/^[a-z]/, match => match.toUpperCase());
+  if (pascalCase !== toolName && pascalCase !== camelCase) {
+    variations.push(pascalCase);
+  }
+
+  // kebab-case
+  const kebabCase = toolName
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/[_\s]+/g, '-')
+    .toLowerCase();
+  if (kebabCase !== toolName) {
+    variations.push(kebabCase);
+  }
+
+  // Remove duplicates
+  return [...new Set(variations)];
+}
+
+/**
+ * Helper: Find "did you mean" suggestions based on string similarity
+ * Returns up to 3 suggestions sorted by similarity
+ */
+function findDidYouMeanSuggestions(
+  targetMethod: string,
+  availableMethods: string[],
+  maxSuggestions: number = 3
+): string[] {
+  const suggestions = availableMethods
+    .map(method => ({
+      method,
+      distance: levenshteinDistance(targetMethod.toLowerCase(), method.toLowerCase())
+    }))
+    .filter(({ distance }) => distance <= Math.max(5, targetMethod.length / 2)) // Only suggest if reasonably similar
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, maxSuggestions)
+    .map(({ method }) => method);
+
+  return suggestions;
+}
+
+/**
  * Register a tool with the MCP server
  */
 async function registerTool(
@@ -624,20 +709,44 @@ async function registerTool(
   }
 
   // Handle statically analyzed tools (original behavior)
-  // Check if method exists on server instance
-  const method = serverInstance[methodName];
+  // Check if method exists on server instance - try naming variations automatically
 
+  // Generate all possible naming variations for the method name
+  const possibleMethodNames = getNamingVariations(methodName);
+
+  // Try exact match first (prefer explicit naming)
+  let method = serverInstance[methodName];
+  let foundMethodName = methodName;
+
+  // If exact match not found, try naming variations
+  if (!method) {
+    for (const variationName of possibleMethodNames) {
+      if (variationName !== methodName && serverInstance[variationName]) {
+        method = serverInstance[variationName];
+        foundMethodName = variationName;
+        break;
+      }
+    }
+  }
+
+  // If still not found after trying all variations, show enhanced error
   if (!method) {
     // Get available methods for helpful error message
-    const availableMethods = Object.keys(serverInstance)
-      .filter(key => typeof serverInstance[key] === 'function')
+    const availableMethodNames = Object.keys(serverInstance)
+      .filter(key => typeof serverInstance[key] === 'function');
+
+    const availableMethods = availableMethodNames
       .map(key => `  - ${key}`)
       .join('\n');
+
+    // Find "did you mean" suggestions
+    const didYouMeanSuggestions = findDidYouMeanSuggestions(methodName, availableMethodNames);
 
     // Check if there's a snake_case version that might be the issue
     const snakeCaseMethodName = name.replace(/-/g, '_');
     const hasSnakeCaseMethod = serverInstance[snakeCaseMethodName];
 
+    // Build comprehensive error message
     let errorMessage =
       `❌ Tool "${name}" requires method "${methodName}" but it was not found on server class.\n\n` +
       `Expected pattern:\n` +
@@ -649,20 +758,51 @@ async function registerTool(
       `    ${methodName}: ${tool.interfaceName} = async (params) => { ... };  // ← Method (camelCase)\n` +
       `  }\n\n`;
 
+    // Show naming variations that were tried
+    if (possibleMethodNames.length > 1) {
+      errorMessage +=
+        `🔤 Tried these naming variations automatically:\n` +
+        possibleMethodNames.map(v => `  - ${v}`).join('\n') + '\n\n';
+    }
+
+    // Show "did you mean" suggestions
+    if (didYouMeanSuggestions.length > 0) {
+      errorMessage +=
+        `💡 Did you mean one of these?\n` +
+        didYouMeanSuggestions.map(s => `  - ${s}`).join('\n') + '\n\n';
+    }
+
+    // Show snake_case warning if applicable
     if (hasSnakeCaseMethod) {
       errorMessage +=
         `⚠️  Common Mistake: Found method "${snakeCaseMethodName}" but expected "${methodName}"\n` +
         `   Tool names use snake_case, but method names must use camelCase!\n\n`;
     }
 
+    // Show all available methods
     if (availableMethods) {
-      errorMessage += `Available methods on your class:\n${availableMethods}\n\n`;
+      errorMessage += `📋 Available methods on your class:\n${availableMethods}\n\n`;
     }
 
+    // Add troubleshooting link
     errorMessage +=
+      `🔧 Troubleshooting Guide: https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/TROUBLESHOOTING.md#method-not-found\n` +
       `📚 Documentation: https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/INTERFACE_API_REFERENCE.md`;
 
     throw new Error(errorMessage);
+  }
+
+  // Warn if snake_case method was used (encourage JavaScript conventions)
+  if (foundMethodName !== methodName && foundMethodName.includes('_')) {
+    // Import snakeToCamel for the suggestion
+    const { snakeToCamel } = await import('./parser.js');
+    const camelCaseSuggestion = snakeToCamel(foundMethodName);
+
+    console.warn(
+      `\n⚠️  [simply-mcp] Tool "${name}" matched method "${foundMethodName}".\n` +
+      `   Consider renaming to "${camelCaseSuggestion}" for JavaScript naming conventions.\n` +
+      `   (Both will work, but camelCase is preferred)\n`
+    );
   }
 
   if (typeof method !== 'function') {

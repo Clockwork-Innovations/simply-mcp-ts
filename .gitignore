@@ -54,6 +54,10 @@ claude.md
 .agents/
 **/.agents/
 
+# Dev scripts and tools (not for production)
+/dev/
+.cache/
+
 # MCP configuration files (may contain API keys/secrets)
 .mcp.json
 *.mcp.json

@@ -8,6 +8,44 @@ Get started with Simply MCP in 5 minutes.
 npm install simply-mcp
 ```
 
+## Understanding Simply MCP's Type-Driven Approach
+
+Simply MCP uses a **pure interface-driven API** - there's no `McpServer` class to import or instantiate. Everything is defined through TypeScript interfaces.
+
+### What to Import
+
+```typescript
+// ✅ CORRECT - Import type interfaces only
+import type { IServer, ITool, IParam, IPrompt, IResource } from 'simply-mcp';
+
+// These are TypeScript interfaces, NOT runtime classes:
+// - IServer: Server configuration interface
+// - ITool: Tool definition interface
+// - IParam: Parameter definition interface
+// - IPrompt: Prompt definition interface
+// - IResource: Resource definition interface
+```
+
+### What NOT to Import
+
+```typescript
+// ❌ INCORRECT - These don't exist!
+import { McpServer } from 'simply-mcp';           // No such export
+import { createServer } from 'simply-mcp';        // No such export
+import { BuildMCPServer } from 'simply-mcp';      // Internal only (v4.0+)
+```
+
+### How It Works
+
+Simply MCP uses **AST (Abstract Syntax Tree) parsing** to read your interface definitions directly from source code. When you run your server:
+
+1. The CLI parses your TypeScript file
+2. Extracts interface definitions (ITool, IPrompt, IResource)
+3. Generates MCP protocol schemas automatically
+4. Registers your implementations
+
+**Key Insight:** You're not building a server object - you're declaring a server structure through interfaces, and Simply MCP builds the runtime for you.
+
 ## Your First Server
 
 Simply MCP uses pure TypeScript interfaces - the cleanest way to define MCP servers:
@@ -52,19 +90,104 @@ export default class CalculatorService {
 
 ## Run Your Server
 
+Simply MCP supports multiple transport modes for different use cases.
+
+### Transport Modes
+
 ```bash
-# Run with stdio (default)
+# STDIO (default) - Standard input/output
 npx simply-mcp run server.ts
 
-# Run with HTTP
-npx simply-mcp run server.ts --http --port 3000
+# HTTP (stateful) - HTTP with session management and SSE
+npx simply-mcp run server.ts --transport http --port 3000
+
+# HTTP (stateless) - Serverless-ready (AWS Lambda, Vercel)
+npx simply-mcp run server.ts --transport http-stateless --port 3000
+
+# WebSocket - Real-time bidirectional communication
+npx simply-mcp run server.ts --transport ws --port 8080
 
 # Watch mode (auto-restart on changes)
 npx simply-mcp run server.ts --watch
 
-# Validate without running
+# Validate without running (recommended during development)
 npx simply-mcp run server.ts --dry-run
 ```
+
+**Legacy flags (still supported):**
+```bash
+# These still work but --transport is now preferred
+npx simply-mcp run server.ts --http --port 3000
+npx simply-mcp run server.ts --http-stateless --port 3000
+```
+
+### Testing Your Server
+
+**Option 1: MCP Inspector (Recommended)**
+
+The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is the official testing tool for MCP servers:
+
+```bash
+# Install MCP Inspector globally
+npm install -g @modelcontextprotocol/inspector
+
+# Test your server
+mcp-inspector npx simply-mcp run server.ts
+```
+
+The Inspector provides:
+- Interactive UI for testing all MCP primitives
+- Tool execution with parameter input
+- Resource browsing
+- Prompt testing
+- Real-time protocol message inspection
+
+**Option 2: Command Line Testing (HTTP/WebSocket)**
+
+For HTTP or WebSocket transports, you can test with curl:
+
+```bash
+# Start server in HTTP mode
+npx simply-mcp run server.ts --transport http --port 3000
+
+# List available tools
+curl http://localhost:3000/tools/list
+
+# Call a tool (HTTP)
+curl -X POST http://localhost:3000/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "greet",
+    "arguments": {
+      "name": "Alice"
+    }
+  }'
+
+# List resources
+curl http://localhost:3000/resources/list
+
+# Get a resource
+curl http://localhost:3000/resources/read?uri=config://app
+```
+
+**Option 3: Integration in Claude Desktop**
+
+For production testing, configure your server in Claude Desktop:
+
+1. Add to `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["simply-mcp", "run", "/path/to/server.ts"]
+    }
+  }
+}
+```
+
+2. Restart Claude Desktop
+3. Your tools will appear in Claude's tool list
 
 ## Complete Server Example
 
@@ -323,9 +446,9 @@ See [API Reference - Type Coercion](./API_REFERENCE.md#type-coercion) for detail
 
 Simply MCP supports optional patterns to reduce boilerplate even more:
 
-### 1. Tool Name Inference
+### 1. Tool Name Inference & Auto-Conversion
 
-Tool names can be inferred from method names - no explicit `name` needed:
+Tool names can be inferred from method names, and Simply MCP **automatically converts between snake_case and camelCase**:
 
 ```typescript
 // Define parameter first
@@ -334,9 +457,9 @@ interface LocationParam extends IParam {
   description: 'Location to get weather for';
 }
 
-// ✅ Option A: Explicit name (traditional)
+// ✅ Option A: Explicit name with snake_case (MCP convention)
 interface GetWeatherTool extends ITool {
-  name: 'get_weather';
+  name: 'get_weather';  // snake_case for MCP protocol
   description: 'Get weather data';
   params: { location: LocationParam };
   result: { weather: string };
@@ -351,12 +474,43 @@ interface GetWeatherTool extends ITool {
 }
 
 export default class WeatherServer {
+  // ✅ All three implementations work automatically!
+
+  // Option 1: camelCase (JavaScript convention) - RECOMMENDED
   getWeather: GetWeatherTool = async (params) => {
-    // Method name 'getWeather' → tool name 'get_weather' automatically
+    return { weather: 'sunny' };
+  };
+
+  // Option 2: snake_case (matches tool name)
+  get_weather: GetWeatherTool = async (params) => {
+    return { weather: 'sunny' };
+  };
+
+  // Option 3: PascalCase (also supported)
+  GetWeather: GetWeatherTool = async (params) => {
     return { weather: 'sunny' };
   };
 }
 ```
+
+**How Auto-Conversion Works:**
+
+- Tool name `get_weather` automatically matches methods: `get_weather`, `getWeather`, `GetWeather`
+- Tool name `getWeather` automatically matches methods: `getWeather`, `get_weather`, `GetWeather`
+- No more naming confusion - use the convention you prefer!
+- Exact matches take precedence if multiple variations exist
+
+**Example Error (Before Auto-Conversion):**
+```
+❌ Tool "get_weather" requires method "getWeather" but "get_weather" was found
+```
+
+**Now (With Auto-Conversion v4.0+):**
+```
+✅ Both work automatically! Use whichever naming style you prefer.
+```
+
+**See:** [Issue #20](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues/20) for implementation details.
 
 ### 2. Semantic Resource Names
 
@@ -714,6 +868,185 @@ See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
 const apiKey = process.env.API_KEY;
 ```
 
+---
+
+## Common Commands Reference
+
+Quick reference for frequently used Simply MCP commands.
+
+### Development Commands
+
+```bash
+# Validate server without running
+npx simply-mcp run server.ts --dry-run
+
+# Run server with stdio (default)
+npx simply-mcp run server.ts
+
+# Run with watch mode (auto-restart on changes)
+npx simply-mcp run server.ts --watch
+
+# Run with verbose logging
+npx simply-mcp run server.ts --verbose
+```
+
+### Transport Commands
+
+```bash
+# STDIO transport (default)
+npx simply-mcp run server.ts --transport stdio
+
+# HTTP transport (stateful with sessions)
+npx simply-mcp run server.ts --transport http --port 3000
+
+# HTTP transport (stateless for serverless)
+npx simply-mcp run server.ts --transport http-stateless --port 3000
+
+# WebSocket transport
+npx simply-mcp run server.ts --transport ws --port 8080
+
+# Custom host binding
+npx simply-mcp run server.ts --transport http --host 0.0.0.0 --port 3000
+```
+
+### Testing Commands
+
+```bash
+# Test with MCP Inspector (STDIO)
+mcp-inspector npx simply-mcp run server.ts
+
+# Test with MCP Inspector (HTTP)
+npx simply-mcp run server.ts --transport http --port 3000
+# Then open Inspector at http://localhost:3000
+
+# List available tools (HTTP)
+curl http://localhost:3000/tools/list
+
+# Call a tool (HTTP)
+curl -X POST http://localhost:3000/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my_tool", "arguments": {"param": "value"}}'
+
+# List resources (HTTP)
+curl http://localhost:3000/resources/list
+
+# Get a resource (HTTP)
+curl "http://localhost:3000/resources/read?uri=my://resource"
+
+# List prompts (HTTP)
+curl http://localhost:3000/prompts/list
+
+# Get a prompt (HTTP)
+curl -X POST http://localhost:3000/prompts/get \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my_prompt", "arguments": {"arg": "value"}}'
+```
+
+### Debugging Commands
+
+```bash
+# Dry-run with detailed output
+npx simply-mcp run server.ts --dry-run --verbose
+
+# Run with debug logging
+DEBUG=simply-mcp:* npx simply-mcp run server.ts
+
+# Check TypeScript compilation
+npx tsx --check server.ts
+
+# Validate all examples
+npm run test:examples
+```
+
+### Build & Bundle Commands
+
+```bash
+# Bundle server for distribution
+npx simplymcp bundle server.ts -o dist/server.js
+
+# Bundle with minification
+npx simplymcp bundle server.ts -o dist/server.js --minify
+
+# Bundle with source maps
+npx simplymcp bundle server.ts -o dist/server.js --sourcemap
+
+# Check bundle size
+ls -lh dist/server.js
+```
+
+### UI Development Commands
+
+```bash
+# Run with UI watch mode
+npx simply-mcp run server.ts --ui-watch
+
+# Run with custom watch debounce (milliseconds)
+npx simply-mcp run server.ts --ui-watch --ui-watch-debounce 500
+
+# Run with verbose UI logging
+npx simply-mcp run server.ts --ui-watch --ui-watch-verbose
+```
+
+### Package Management
+
+```bash
+# Install Simply MCP
+npm install simply-mcp
+
+# Install with optional dependencies
+npm install simply-mcp express cors chokidar esbuild
+
+# Update to latest version
+npm install simply-mcp@latest
+
+# Check installed version
+npm list simply-mcp
+
+# View package info
+npm info simply-mcp
+```
+
+### Common Flag Combinations
+
+```bash
+# Development: Watch + Verbose + HTTP
+npx simply-mcp run server.ts --watch --verbose --transport http --port 3000
+
+# Production: HTTP with custom binding
+npx simply-mcp run server.ts --transport http --host 0.0.0.0 --port 8080
+
+# UI Development: Watch + UI Watch + Verbose
+npx simply-mcp run server.ts --watch --ui-watch --ui-watch-verbose --transport http
+
+# Testing: Dry-run + Verbose
+npx simply-mcp run server.ts --dry-run --verbose
+```
+
+### Environment Variables
+
+```bash
+# Set environment variables
+export API_KEY=your-key-here
+export PORT=3000
+npx simply-mcp run server.ts
+
+# Or inline
+API_KEY=your-key PORT=3000 npx simply-mcp run server.ts
+
+# Use .env files
+npm install dotenv
+# Add require('dotenv').config() to your server
+```
+
+### Quick Tips
+
+- Use `--dry-run` frequently during development to catch errors early
+- Use `--watch` for faster iteration during development
+- Use `--transport http` for easier testing with curl/Postman
+- Use `--verbose` when debugging issues
+- The `--transport` flag is preferred over `--http` and `--http-stateless` (legacy)
+- All transport flags are mutually exclusive - use only one
+
 ## Need Help?
 
 - **[CLI Basics](./CLI_BASICS.md)** - All CLI commands and options
@@ -723,46 +1056,231 @@ const apiKey = process.env.API_KEY;
 
 ## Troubleshooting
 
+This section covers common issues and their solutions. For more help, see [GitHub Issues](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues).
+
+### Installation Issues
+
 **"Cannot find module 'simply-mcp'"**
+
+Solution:
 ```bash
 npm install simply-mcp
 ```
 
-**Example doesn't run**
-```bash
-# Install dependencies
-npm install
+**"Cannot find module 'typescript'"**
 
-# Run with tsx (TypeScript execution)
-npx tsx examples/interface-minimal.ts
+Simply MCP uses lazy-loading for TypeScript. If you see this warning but your server works, it's likely a false positive (see Issue #22).
+
+Solution:
+```bash
+# Install TypeScript as dev dependency
+npm install --save-dev typescript
+
+# Verify installation
+npm list typescript
 ```
 
-**"Parameter uses inline IParam intersection" error**
+If TypeScript is installed but warnings persist, this is a known false positive that can be safely ignored. The framework will work correctly.
+
+**See:** [Issue #22](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues/22) for details.
+
+### Import Errors
+
+**"McpServer is not exported from 'simply-mcp'"**
+
+Simply MCP uses a pure interface-driven API. There is no `McpServer` class.
+
+Solution:
+```typescript
+// ❌ INCORRECT
+import { McpServer } from 'simply-mcp';
+
+// ✅ CORRECT
+import type { IServer, ITool, IParam } from 'simply-mcp';
+```
+
+**See:** [Understanding Simply MCP's Type-Driven Approach](#understanding-simply-mcps-type-driven-approach) section above.
+
+### CLI Flag Issues
+
+**"Unknown argument: transport"**
+
+The `--transport` flag was added in v4.0. Make sure you're using the latest version.
+
+Solution:
+```bash
+# Update to latest version
+npm install simply-mcp@latest
+
+# Use --transport flag (v4.0+)
+npx simply-mcp run server.ts --transport http
+
+# Or use legacy flags (still supported)
+npx simply-mcp run server.ts --http
+```
+
+**Available transport options:**
+- `--transport stdio` (default)
+- `--transport http` (stateful)
+- `--transport http-stateless` (serverless)
+- `--transport ws` (WebSocket)
+
+**See:** [Issue #22](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues/22) for implementation details.
+
+### Tool Implementation Issues
+
+**"Tool 'get_weather' requires method 'getWeather' but 'get_weather' was found"**
+
+This error occurred in versions before v4.0. Auto-naming conversion now handles this automatically.
+
+Solution (v4.0+):
+```typescript
+// ✅ Both work automatically!
+interface GetWeatherTool extends ITool {
+  name: 'get_weather';
+  // ...
+}
+
+export default class Server {
+  // Option 1: camelCase (recommended)
+  getWeather: GetWeatherTool = async () => { ... };
+
+  // Option 2: snake_case (also works)
+  get_weather: GetWeatherTool = async () => { ... };
+}
+```
+
+If you're still on v3.x, update to v4.0 or use camelCase method names.
+
+**See:** [Issue #20](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues/20) for auto-conversion feature.
+
+### Parameter Definition Issues
+
+**"Parameter uses inline IParam intersection"**
 
 This means you're using `& IParam` inline instead of a separate interface:
 
+Solution:
 ```typescript
 // ❌ BROKEN - Causes validation error
-params: {
-  count: { type: 'number'; description: '...' } & IParam;
+interface MyTool extends ITool {
+  params: {
+    count: { type: 'number'; description: '...' } & IParam;
+  };
 }
 
-// ✅ FIXED - Use separate interface
+// ✅ FIXED - Use separate interface extending IParam
 interface CountParam extends IParam {
   type: 'number';
   description: '...';
 }
 
-params: {
-  count: CountParam;
+interface MyTool extends ITool {
+  params: {
+    count: CountParam;
+  };
 }
 ```
 
-See [Parameter Best Practices](#parameter-best-practices) above for details.
+**Why this matters:**
+- Inline types bypass AST parsing
+- Type coercion won't work (numbers received as strings)
+- Missing validation
 
-**Want to see how X works?**
+**See:** [Parameter Best Practices](#parameter-best-practices) section above.
 
-Check the `examples/` directory or search the documentation!
+### TypeScript Warnings
+
+**TypeScript shows structural type errors but server works**
+
+Simply MCP uses AST parsing to read interfaces directly. TypeScript's structural type checking will show warnings, but these are expected.
+
+Solution:
+```bash
+# ✅ Use dry-run for validation
+npx simply-mcp run server.ts --dry-run
+
+# ❌ Don't use tsc (shows expected structural warnings)
+tsc --noEmit
+```
+
+**Why warnings occur:**
+- Interfaces define metadata (name, description, params, result)
+- Implementations are callable functions
+- TypeScript sees structural mismatch (expected behavior)
+
+These warnings are **normal and can be safely ignored**. The framework reads your interface definitions via AST, not TypeScript's type system.
+
+**See:** [TypeScript Type Checking](#typescript-type-checking) section above.
+
+### Runtime Issues
+
+**Tool receives string instead of number for parameters**
+
+This happens when parameters don't extend `IParam` or use inline types.
+
+Solution:
+```typescript
+// ❌ BROKEN - No type coercion
+interface MyTool extends ITool {
+  params: {
+    count: number;  // Inline primitive type
+  };
+}
+
+// ✅ FIXED - Proper IParam interface
+interface CountParam extends IParam {
+  type: 'number';
+  description: 'Item count';
+}
+
+interface MyTool extends ITool {
+  params: {
+    count: CountParam;
+  };
+}
+```
+
+Simply MCP automatically coerces types when using IParam interfaces:
+- `"42"` → `42` (number)
+- `"true"` → `true` (boolean)
+
+### Testing Issues
+
+**MCP Inspector can't connect to server**
+
+Make sure the server is running and you're using the correct transport:
+
+Solution:
+```bash
+# For STDIO (default)
+mcp-inspector npx simply-mcp run server.ts
+
+# For HTTP
+npx simply-mcp run server.ts --transport http --port 3000
+# Then connect Inspector to http://localhost:3000
+```
+
+**curl returns "Cannot GET /tools/list"**
+
+HTTP endpoints are different in stateful vs stateless mode:
+
+Solution:
+```bash
+# Stateful HTTP (v4.0+)
+curl http://localhost:3000/tools/list
+
+# Stateless HTTP (v4.0+)
+curl http://localhost:3000/v1/tools
+```
+
+### Still Having Issues?
+
+1. **Check examples:** Browse `/examples` for working code
+2. **Run dry-run:** `npx simply-mcp run server.ts --dry-run`
+3. **Check version:** `npm list simply-mcp`
+4. **Search issues:** [GitHub Issues](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues)
+5. **Ask for help:** [GitHub Discussions](https://github.com/Clockwork-Innovations/simply-mcp-ts/discussions)
 
 ---
 

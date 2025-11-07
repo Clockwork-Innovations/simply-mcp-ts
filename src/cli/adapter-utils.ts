@@ -32,7 +32,7 @@ export interface StartOptions extends AdapterOptions {
  * Options for displaying server information
  */
 export interface DisplayOptions {
-  transport: 'stdio' | 'http';
+  transport: 'stdio' | 'http' | 'websocket';
   port?: number;
   verbose?: boolean;
 }
@@ -185,9 +185,11 @@ export function displayServerInfo(
   // Display additional transport information if options provided
   if (options) {
     if (options.verbose) {
-      console.error(`[Adapter] Transport: ${options.transport.toUpperCase()}`);
-      if (options.transport === 'http' && options.port) {
-        console.error(`[Adapter] HTTP Port: ${options.port}`);
+      const transportLabel = options.transport === 'websocket' ? 'WebSocket' : options.transport.toUpperCase();
+      console.error(`[Adapter] Transport: ${transportLabel}`);
+      if ((options.transport === 'http' || options.transport === 'websocket') && options.port) {
+        const portLabel = options.transport === 'websocket' ? 'WebSocket Port' : 'HTTP Port';
+        console.error(`[Adapter] ${portLabel}: ${options.port}`);
       }
     }
   }

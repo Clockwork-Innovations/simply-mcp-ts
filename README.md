@@ -103,13 +103,23 @@ The dry-run validates your interface definitions and catches configuration error
 ### Run Your Server
 
 ```bash
+# STDIO transport (default)
 npx simply-mcp run server.ts
+
+# HTTP transport (stateful with sessions)
+npx simply-mcp run server.ts --transport http --port 3000
+
+# HTTP transport (stateless for serverless)
+npx simply-mcp run server.ts --transport http-stateless --port 3000
+
+# WebSocket transport
+npx simply-mcp run server.ts --transport ws --port 8080
 ```
 
 That's it! Your MCP server is running with full type safety and zero boilerplate.
 
 **Next Steps:**
-- 📘 [Quick Start Guide](./docs/guides/QUICK_START.md) - Detailed tutorial
+- 📘 [Quick Start Guide](./docs/guides/QUICK_START.md) - Detailed tutorial with testing & troubleshooting
 - 📘 [Features Guide](./docs/guides/FEATURES.md) - Tools, prompts, resources
 - 📘 [API Reference](./docs/guides/API_REFERENCE.md) - Complete API documentation
 

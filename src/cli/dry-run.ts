@@ -83,7 +83,7 @@ export interface DryRunResult {
   tools: Array<{ name?: string; description?: string; methodName?: string }>;
   prompts: Array<{ name: string; description?: string }>;
   resources: Array<{ name: string; description?: string }>;
-  transport: 'stdio' | 'http';
+  transport: 'stdio' | 'http' | 'websocket';
   portConfig: number;
   warnings: string[];
   errors: string[];
@@ -298,7 +298,7 @@ function validatePromptInterfaces(
 /**
  * Perform dry-run for interface API style
  */
-async function dryRunInterface(filePath: string, useHttp: boolean, port: number): Promise<DryRunResult> {
+async function dryRunInterface(filePath: string, useHttp: boolean, port: number, useWebSocket: boolean = false): Promise<DryRunResult> {
   const errors: string[] = [];
   const warnings: string[] = [];
   const tools: Array<{ name?: string; description?: string; methodName?: string }> = [];
@@ -334,7 +334,7 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
     }
 
     // Extract server config (including transport/port/stateful from IServer)
-    let fileTransport: 'stdio' | 'http' | undefined;
+    let fileTransport: 'stdio' | 'http' | 'websocket' | undefined;
     let filePort: number | undefined;
 
     if (parsed.server) {
@@ -352,7 +352,7 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
     validateServerConfig(serverConfig.name, serverConfig.version, serverConfig.description, errors, warnings);
 
     // Determine final transport (CLI flag overrides file config)
-    const finalTransport = useHttp ? 'http' : (fileTransport || 'stdio');
+    const finalTransport = useWebSocket ? 'websocket' : (useHttp ? 'http' : (fileTransport || 'stdio'));
     // Port priority: CLI --port > file port > default 3000
     const finalPort = port !== 3000 ? port : (filePort || 3000);
 
@@ -496,8 +496,8 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number)
       }
     }
 
-    // Validate port if HTTP is used
-    if (finalTransport === 'http') {
+    // Validate port if HTTP or WebSocket is used
+    if (finalTransport === 'http' || finalTransport === 'websocket') {
       validatePort(finalPort, errors);
     }
 
@@ -553,7 +553,7 @@ async function displayDryRunResult(result: DryRunResult): Promise<void> {
   // Transport
   console.log('Transport:');
   console.log(`  Type: ${result.transport}`);
-  if (result.transport === 'http') {
+  if (result.transport === 'http' || result.transport === 'websocket') {
     console.log(`  Port: ${result.portConfig}`);
   } else {
     console.log('  Port: N/A (stdio mode)');
@@ -735,12 +735,13 @@ export async function runDryRun(
   style: APIStyle,
   useHttp: boolean,
   port: number,
-  jsonOutput: boolean = false
+  jsonOutput: boolean = false,
+  useWebSocket: boolean = false
 ): Promise<void> {
   let result: DryRunResult;
 
   // Perform dry-run for interface API
-  result = await dryRunInterface(filePath, useHttp, port);
+  result = await dryRunInterface(filePath, useHttp, port, useWebSocket);
 
   // Output results
   if (jsonOutput) {
