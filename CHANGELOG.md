@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.2] - 2025-11-06
+
+### Fixed
+- **TypeScript Compilation**: Fixed compilation error in MCPProvider where hookError callback was called with incorrect arguments
+  - Changed callback invocation to pass both `error` and `toolName` arguments
+  - Fixes: `src/client/hooks/MCPProvider.tsx:221`
+  - The onError callback signature requires: `(error: Error, toolName: string) => void`
+
+## [4.0.1] - 2025-11-06
+
+### Fixed
+- **CI/CD**: Added missing `secret-scan.sh` script required by GitHub Actions release workflow
+  - Script is required by `.github/workflows/release.yml` for pre-release validation
+  - Added 197-line security scanning script to prevent API key leaks
+  - Updated `.gitignore` to allow committing this security script
+
+- **Dependencies**: Moved type packages to devDependencies
+  - Moved `@types/bcrypt` from dependencies to devDependencies
+  - Moved `@types/ioredis` from dependencies to devDependencies
+  - These types are not exported in the public API and should not be runtime dependencies
+
+## [Unreleased]
+
 ### Added
 
 #### MCP UI Adapter Layer - React Hooks
