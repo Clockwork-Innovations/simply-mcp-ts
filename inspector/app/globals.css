@@ -118,7 +118,7 @@
 
   /* Form Elements */
   input {
-    @apply text-black pl-4 mb-8;
+    @apply pl-4 mb-8;
   }
 
   button {

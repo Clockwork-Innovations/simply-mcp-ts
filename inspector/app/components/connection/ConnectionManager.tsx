@@ -35,12 +35,15 @@ export function ConnectionManager() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In browser context, we get a File object, but we need the path
-      // For a local file picker, we'd use the webkitRelativePath or similar
-      // For now, we'll use the name and let the user adjust if needed
-      const path = (e.target as any).value;
-      if (path) {
-        setServerPath(path);
+      // Try to get the real file path from various sources
+      const filePath =
+        (file as any).path ||  // Electron/Node environment
+        (file as any).webkitRelativePath ||  // Webkit relative path
+        (e.target as any).value ||  // Input value (will be fakepath in browsers)
+        file.name;  // Fallback to just the filename
+
+      if (filePath) {
+        setServerPath(filePath);
       }
     }
   };
