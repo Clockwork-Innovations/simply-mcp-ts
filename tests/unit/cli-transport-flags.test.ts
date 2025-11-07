@@ -135,16 +135,30 @@ describe('CLI Transport Flags', () => {
       });
 
       let stderr = '';
+      let stdout = '';
       proc.stderr.on('data', (data) => {
         stderr += data.toString();
       });
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
 
-      // Wait for server to start
-      await sleep(2000);
+      // Wait for server to start (look for port in output)
+      await new Promise<void>((resolve) => {
+        const checkOutput = () => {
+          if (stderr.includes('3101') || stdout.includes('3101')) {
+            resolve();
+          }
+        };
+        proc.stderr.on('data', checkOutput);
+        proc.stdout.on('data', checkOutput);
+        setTimeout(() => resolve(), 5000);
+      });
 
       // Check that HTTP server started in stateless mode
+      const output = stderr + stdout;
       expect(stderr).not.toContain('Invalid transport');
-      expect(stderr).toContain('3101'); // Should mention the port
+      expect(output).toContain('3101'); // Should mention the port
 
       // Cleanup
       proc.kill();
@@ -159,16 +173,30 @@ describe('CLI Transport Flags', () => {
       });
 
       let stderr = '';
+      let stdout = '';
       proc.stderr.on('data', (data) => {
         stderr += data.toString();
       });
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
 
-      // Wait for server to start
-      await sleep(2000);
+      // Wait for server to start (look for port in output)
+      await new Promise<void>((resolve) => {
+        const checkOutput = () => {
+          if (stderr.includes('3102') || stdout.includes('3102')) {
+            resolve();
+          }
+        };
+        proc.stderr.on('data', checkOutput);
+        proc.stdout.on('data', checkOutput);
+        setTimeout(() => resolve(), 5000);
+      });
 
       // Check that WebSocket server started
+      const output = stderr + stdout;
       expect(stderr).not.toContain('Invalid transport');
-      expect(stderr).toContain('3102'); // Should mention the port
+      expect(output).toContain('3102'); // Should mention the port
 
       // Cleanup
       proc.kill();
@@ -187,15 +215,17 @@ describe('CLI Transport Flags', () => {
         stderr += data.toString();
       });
 
-      // Wait for error
-      await sleep(2000);
+      // Wait for process to exit (yargs will exit on validation error)
+      await new Promise<void>((resolve) => {
+        proc.on('exit', () => resolve());
+        setTimeout(() => {
+          proc.kill();
+          resolve();
+        }, 5000);
+      });
 
       // Should error with invalid choice message
       expect(stderr).toMatch(/Invalid values|Unknown or unexpected option|choices/i);
-
-      // Cleanup
-      proc.kill();
-      await sleep(500);
     }, 10000);
   });
 
@@ -208,16 +238,30 @@ describe('CLI Transport Flags', () => {
       });
 
       let stderr = '';
+      let stdout = '';
       proc.stderr.on('data', (data) => {
         stderr += data.toString();
       });
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
 
-      // Wait for server to start
-      await sleep(2000);
+      // Wait for server to start (look for port in output)
+      await new Promise<void>((resolve) => {
+        const checkOutput = () => {
+          if (stderr.includes('3103') || stdout.includes('3103')) {
+            resolve();
+          }
+        };
+        proc.stderr.on('data', checkOutput);
+        proc.stdout.on('data', checkOutput);
+        setTimeout(() => resolve(), 5000);
+      });
 
       // Check that HTTP server started
+      const output = stderr + stdout;
       expect(stderr).not.toContain('Unknown option');
-      expect(stderr).toContain('3103'); // Should mention the port
+      expect(output).toContain('3103'); // Should mention the port
 
       // Cleanup
       proc.kill();
@@ -232,16 +276,30 @@ describe('CLI Transport Flags', () => {
       });
 
       let stderr = '';
+      let stdout = '';
       proc.stderr.on('data', (data) => {
         stderr += data.toString();
       });
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
 
-      // Wait for server to start
-      await sleep(2000);
+      // Wait for server to start (look for port in output)
+      await new Promise<void>((resolve) => {
+        const checkOutput = () => {
+          if (stderr.includes('3104') || stdout.includes('3104')) {
+            resolve();
+          }
+        };
+        proc.stderr.on('data', checkOutput);
+        proc.stdout.on('data', checkOutput);
+        setTimeout(() => resolve(), 5000);
+      });
 
       // Check that HTTP server started
+      const output = stderr + stdout;
       expect(stderr).not.toContain('Unknown option');
-      expect(stderr).toContain('3104'); // Should mention the port
+      expect(output).toContain('3104'); // Should mention the port
 
       // Cleanup
       proc.kill();

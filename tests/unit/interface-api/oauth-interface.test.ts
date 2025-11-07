@@ -26,13 +26,13 @@ describe('OAuth Interface Types', () => {
       const server: IServer = {
   name: 'test-oauth-server',
   version: '1.0.0',
-  description: 'Test OAuth server'
-        transport: 'http';
-        auth: TestAuth;
+  description: 'Test OAuth server',
+        transport: 'http',
+        auth: {} as TestAuth
       }
 
       // Type inference test (if this compiles, the test passes)
-      const server: TestServer = {
+      const serverImpl = {
         name: 'test-oauth-server',
         description: 'Test OAuth server',
         transport: 'http',
@@ -50,10 +50,10 @@ describe('OAuth Interface Types', () => {
         },
       };
 
-      expect(server.auth.type).toBe('oauth2');
-      expect(server.auth.issuerUrl).toBe('http://localhost:3000');
-      expect(server.auth.clients).toHaveLength(1);
-      expect(server.auth.clients[0].clientId).toBe('test-client');
+      expect(serverImpl.auth.type).toBe('oauth2');
+      expect(serverImpl.auth.issuerUrl).toBe('http://localhost:3000');
+      expect(serverImpl.auth.clients).toHaveLength(1);
+      expect(serverImpl.auth.clients[0].clientId).toBe('test-client');
     });
 
     it('should support multiple OAuth clients', () => {

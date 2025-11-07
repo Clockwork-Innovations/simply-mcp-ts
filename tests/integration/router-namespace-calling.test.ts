@@ -85,8 +85,8 @@ describe('Router Namespace Calling Verification', () => {
       const server: IServer = {
   name: 'namespace-test-server',
   version: '1.0.0',
-  description: 'Namespace calling test server'
-        flattenRouters: false;  // CRITICAL: Hide router tools
+  description: 'Namespace calling test server',
+        flattenRouters: false  // CRITICAL: Hide router tools
       }
 
       export default class TestService {
@@ -223,8 +223,8 @@ describe('Router Namespace Calling Verification', () => {
       const server: IServer = {
   name: 'flatten-true-server',
   version: '1.0.0',
-  description: 'Flatten true server'
-        flattenRouters: true;  // Show all tools
+  description: 'Flatten true server',
+        flattenRouters: true  // Show all tools
       }
 
       export default class TestService {

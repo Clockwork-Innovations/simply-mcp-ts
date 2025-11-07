@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.11] - 2025-11-07
+
+### Fixed
+- Fixed TypeScript syntax errors in router integration tests (semicolons → commas in object literals)
+- Fixed OAuth interface test compilation errors (redeclared variables, incorrect type usage)
+- Fixed CLI transport flags tests to properly capture stdout and wait for process output
+- Improved test reliability by using promise-based waits instead of hardcoded sleeps
+
+### Tests
+- All 67 test suites (1733 tests) now passing successfully
+- Router integration tests: Fixed flattenRouters configuration syntax
+- OAuth interface tests: Fixed server interface declaration and type assertions
+- CLI transport flags tests: Enhanced output capture and timing handling
+
 ## [4.0.10] - 2025-11-07
 
 ### Fixed

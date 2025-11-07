@@ -213,8 +213,8 @@ describe('Router Integration Tests', () => {
         const server: IServer = {
   name: 'flatten-false-server',
   version: '1.0.0',
-  description: 'Flatten false server'
-          flattenRouters: false;
+  description: 'Flatten false server',
+          flattenRouters: false
         }
 
         export default class TestService {
@@ -258,8 +258,8 @@ describe('Router Integration Tests', () => {
         const server: IServer = {
   name: 'flatten-true-server',
   version: '1.0.0',
-  description: 'Flatten true server'
-          flattenRouters: true;
+  description: 'Flatten true server',
+          flattenRouters: true
         }
 
         export default class TestService {
