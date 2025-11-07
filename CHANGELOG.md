@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.6] - 2025-11-07
+
+### Added
+- Bare interface detection for tools, prompts, and resources (Issue #36)
+- Support for `const greet: GreetTool` pattern without `ToolHelper<>` wrapper
+- Zero-boilerplate interface-based API as documented in README
+- `isBareInterface` flag to `DiscoveredImplementation` type for pattern distinction
+
+### Fixed
+- README Quick Start example now works as written
+- Error messages now show both bare interface and ToolHelper patterns
+- AST compiler detects implementations using direct interface type annotations
+
+### Changed
+- Validation error messages updated to suggest both implementation patterns
+- Pattern detection prioritizes ToolHelper for backward compatibility
+
+### Technical Details
+- Enhanced `discovery.ts` with `isBareInterfacePattern()` detection function
+- Added bare interface detection to class property scanning
+- Updated validation compiler to recognize both patterns
+- 45 comprehensive tests covering all bare interface scenarios
+- Pattern matching: `/^(\w+)(Tool|Prompt|Resource)$/`
+
+### Notes
+- **No breaking changes** - all existing ToolHelper code continues to work
+- Both patterns (`greet: GreetTool` and `greet: ToolHelper<GreetTool>`) are supported
+- Pattern detection prioritizes ToolHelper when both could match
+- Backward compatibility maintained with existing implementations
+
 ## [4.0.4] - 2025-11-06
 
 ### Added

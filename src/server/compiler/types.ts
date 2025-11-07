@@ -185,6 +185,8 @@ export interface DiscoveredImplementation {
   kind: 'const' | 'class-property';
   /** If class property, the class name */
   className?: string;
+  /** Whether this was detected as a bare interface (e.g., const x: XTool) vs ToolHelper wrapper */
+  isBareInterface?: boolean;
 }
 
 /**

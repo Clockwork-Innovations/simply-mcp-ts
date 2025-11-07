@@ -30,7 +30,9 @@ export function validateImplementations(result: ParseResult): void {
       const exampleName = tool.methodName; // camelCase version
       errors.push(
         `Tool '${tool.interfaceName}' defined but not implemented.\n` +
-        `  Add: const ${exampleName}: ToolHelper<${tool.interfaceName}> = async (params) => { ... }`
+        `  Add one of:\n` +
+        `    • Bare interface: const ${exampleName}: ${tool.interfaceName} = async (params) => { ... }\n` +
+        `    • Helper wrapper: const ${exampleName}: ToolHelper<${tool.interfaceName}> = async (params) => { ... }`
       );
     }
   }
@@ -44,7 +46,9 @@ export function validateImplementations(result: ParseResult): void {
       const exampleName = prompt.methodName;
       errors.push(
         `Prompt '${prompt.interfaceName}' defined but not implemented.\n` +
-        `  Add: const ${exampleName}: PromptHelper<${prompt.interfaceName}> = async (args) => { ... }`
+        `  Add one of:\n` +
+        `    • Bare interface: const ${exampleName}: ${prompt.interfaceName} = async (args) => { ... }\n` +
+        `    • Helper wrapper: const ${exampleName}: PromptHelper<${prompt.interfaceName}> = async (args) => { ... }`
       );
     }
   }
@@ -60,7 +64,9 @@ export function validateImplementations(result: ParseResult): void {
         const exampleName = resource.methodName;
         errors.push(
           `Resource '${resource.interfaceName}' defined but not implemented.\n` +
-          `  Add: const ${exampleName}: ResourceHelper<${resource.interfaceName}> = async () => { ... }`
+          `  Add one of:\n` +
+          `    • Bare interface: const ${exampleName}: ${resource.interfaceName} = async () => { ... }\n` +
+          `    • Helper wrapper: const ${exampleName}: ResourceHelper<${resource.interfaceName}> = async () => { ... }`
         );
       }
     }

@@ -29,7 +29,8 @@ export function discoverConstServer(node: ts.Node, sourceFile: ts.SourceFile): t
 
 /**
  * Discover const implementations
- * Pattern: const add: ToolHelper<AddTool> = async (params) => { ... }
+ * Pattern 1 (preferred): const add: ToolHelper<AddTool> = async (params) => { ... }
+ * Pattern 2 (bare interface): const add: AddTool = async (params) => { ... }
  */
 export function discoverConstImplementation(node: ts.Node, sourceFile: ts.SourceFile): DiscoveredImplementation | null {
   if (!ts.isVariableStatement(node)) return null;
@@ -39,7 +40,7 @@ export function discoverConstImplementation(node: ts.Node, sourceFile: ts.Source
 
     const typeText = declaration.type.getText(sourceFile);
 
-    // Check for ToolHelper<X>, PromptHelper<X>, ResourceHelper<X>
+    // Check for ToolHelper<X>, PromptHelper<X>, ResourceHelper<X> (Pattern 1 - CHECKED FIRST)
     const helperMatch = typeText.match(/^(Tool|Prompt|Resource)Helper<(\w+)>$/);
     if (helperMatch) {
       const [, helper, interfaceName] = helperMatch;
@@ -51,6 +52,27 @@ export function discoverConstImplementation(node: ts.Node, sourceFile: ts.Source
         kind: 'const'
       };
     }
+
+    // Fallback: Check for bare interface pattern (Pattern 2 - ONLY IF PATTERN 1 FAILS)
+    // Match: XTool, XPrompt, XResource where X is any identifier
+    if (ts.isTypeReferenceNode(declaration.type)) {
+      const interfaceName = declaration.type.typeName.getText(sourceFile);
+      const bareMatch = interfaceName.match(/^(\w+)(Tool|Prompt|Resource)$/);
+
+      if (bareMatch) {
+        const [, , suffix] = bareMatch;
+        // Infer helperType from the suffix
+        const helperType = `${suffix}Helper` as 'ToolHelper' | 'PromptHelper' | 'ResourceHelper';
+
+        return {
+          name: declaration.name.getText(sourceFile),
+          helperType,
+          interfaceName,
+          kind: 'const',
+          isBareInterface: true  // Mark as bare interface detection
+        };
+      }
+    }
   }
 
   return null;
@@ -58,7 +80,8 @@ export function discoverConstImplementation(node: ts.Node, sourceFile: ts.Source
 
 /**
  * Discover class property implementations
- * Pattern: class C { getWeather: ToolHelper<GetWeatherTool> = async (params) => { ... } }
+ * Pattern 1 (preferred): class C { getWeather: ToolHelper<GetWeatherTool> = async (params) => { ... } }
+ * Pattern 2 (bare interface): class C { getWeather: GetWeatherTool = async (params) => { ... } }
  */
 export function discoverClassImplementations(node: ts.ClassDeclaration, sourceFile: ts.SourceFile): DiscoveredImplementation[] {
   const implementations: DiscoveredImplementation[] = [];
@@ -71,6 +94,8 @@ export function discoverClassImplementations(node: ts.ClassDeclaration, sourceFi
     if (!member.type) continue;
 
     const typeText = member.type.getText(sourceFile);
+
+    // Check for ToolHelper<X>, PromptHelper<X>, ResourceHelper<X> (Pattern 1 - CHECKED FIRST)
     const helperMatch = typeText.match(/^(Tool|Prompt|Resource)Helper<(\w+)>$/);
 
     if (helperMatch) {
@@ -83,6 +108,26 @@ export function discoverClassImplementations(node: ts.ClassDeclaration, sourceFi
         kind: 'class-property',
         className
       });
+    } else if (ts.isTypeReferenceNode(member.type)) {
+      // Fallback: Check for bare interface pattern (Pattern 2 - ONLY IF PATTERN 1 FAILS)
+      // Match: XTool, XPrompt, XResource where X is any identifier
+      const interfaceName = member.type.typeName.getText(sourceFile);
+      const bareMatch = interfaceName.match(/^(\w+)(Tool|Prompt|Resource)$/);
+
+      if (bareMatch) {
+        const [, , suffix] = bareMatch;
+        // Infer helperType from the suffix
+        const helperType = `${suffix}Helper` as 'ToolHelper' | 'PromptHelper' | 'ResourceHelper';
+
+        implementations.push({
+          name: member.name.getText(sourceFile),
+          helperType,
+          interfaceName,
+          kind: 'class-property',
+          className,
+          isBareInterface: true  // Mark as bare interface detection
+        });
+      }
     }
   }
 
