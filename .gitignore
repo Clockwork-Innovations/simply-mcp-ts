@@ -89,6 +89,15 @@ REPORT.md
 REPORT.html
 *.test.log
 
+# Agent-generated reports and summaries (debugging artifacts)
+*VALIDATION_REPORT*.md
+*VALIDATION_SUMMARY*.md
+*_FIXES_SUMMARY.md
+*_FIX_COMPLETE.md
+*_FIX_SUMMARY.md
+**/*VALIDATION*.md
+**/*SUMMARY*.md
+
 # Playwright E2E test artifacts
 test-results/
 playwright-report/
