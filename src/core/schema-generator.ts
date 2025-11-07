@@ -5,8 +5,30 @@
  * Supports JSDoc validation tags (@min, @max, @minLength, @maxLength, @pattern, @format, etc.)
  */
 
-import * as ts from 'typescript';
+import type * as ts from 'typescript';
 import { z, ZodTypeAny } from 'zod';
+
+/**
+ * Lazy-loaded TypeScript module
+ */
+let TypeScript: typeof ts | undefined;
+
+/**
+ * Ensure TypeScript is loaded
+ */
+function ensureTypeScript(): typeof ts {
+  if (!TypeScript) {
+    try {
+      TypeScript = require('typescript');
+    } catch (error) {
+      throw new Error(
+        'TypeScript is required but is not installed. ' +
+        'Install it with: npm install --save-dev typescript'
+      );
+    }
+  }
+  return TypeScript;
+}
 
 /**
  * JSDoc validation tags that can be applied to parameters
@@ -75,6 +97,9 @@ function extractIParamProperties(
   sourceFile: ts.SourceFile,
   checker?: ts.TypeChecker
 ): IParamExtractResult | null {
+  // Lazy-load TypeScript
+  const ts = ensureTypeScript();
+
   if (!checker) {
     return null;
   }
@@ -505,6 +530,9 @@ function extractIParamProperties(
  * Extract JSDoc validation tags from a TypeScript node
  */
 export function extractValidationTags(node: ts.Node, sourceFile: ts.SourceFile): ValidationTags {
+  // Lazy-load TypeScript
+  const ts = ensureTypeScript();
+
   const tags: ValidationTags = {};
   const jsDocTags = ts.getJSDocTags(node);
 
@@ -558,6 +586,9 @@ export function typeNodeToZodSchema(
   validationTags?: ValidationTags,
   checker?: ts.TypeChecker
 ): ZodTypeAny {
+  // Lazy-load TypeScript
+  const ts = ensureTypeScript();
+
   const tags = validationTags || {};
 
   // Handle union types with undefined (optional types like `string | undefined`)
@@ -833,6 +864,9 @@ function typeLiteralToZodSchema(
   sourceFile: ts.SourceFile,
   checker?: ts.TypeChecker
 ): z.ZodObject<any> {
+  // Lazy-load TypeScript
+  const ts = ensureTypeScript();
+
   const shape: Record<string, ZodTypeAny> = {};
 
   for (const member of typeLiteral.members) {
