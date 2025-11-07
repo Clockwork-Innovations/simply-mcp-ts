@@ -2,6 +2,7 @@
 // POST /api/mcp/connect - Connect to MCP server with universal transport support
 
 import { NextRequest, NextResponse } from 'next/server';
+import { existsSync } from 'fs';
 import { setMCPClient, clearMCPClient, isConnected } from '../server-instance';
 import { UniversalMCPClient, type ConnectionConfig } from '../universal-mcp-client';
 
@@ -23,6 +24,28 @@ export async function POST(request: NextRequest) {
       if (!config.serverPath) {
         return NextResponse.json(
           { success: false, error: 'serverPath is required for stdio transport' },
+          { status: 400 }
+        );
+      }
+
+      // Validate file exists
+      if (!existsSync(config.serverPath)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Server file not found: ${config.serverPath}\n\nPlease check that the file path is correct and the file exists.`
+          },
+          { status: 400 }
+        );
+      }
+
+      // Validate file extension
+      if (!config.serverPath.match(/\.(ts|js|mjs|cjs)$/)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Invalid server file: ${config.serverPath}\n\nServer must be a .ts, .js, .mjs, or .cjs file.`
+          },
           { status: 400 }
         );
       }

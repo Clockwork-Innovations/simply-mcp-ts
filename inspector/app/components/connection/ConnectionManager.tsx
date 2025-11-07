@@ -1,28 +1,49 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMCPConnection } from '@/hooks/useMCPConnection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FolderOpen } from 'lucide-react';
 
 type TransportType = 'stdio' | 'http-stateful' | 'http-stateless';
 
 export function ConnectionManager() {
   const { connectionState, serverInfo, error, isConnecting, connect, disconnect } = useMCPConnection();
 
+  // File picker ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Transport configuration
   const [transportType, setTransportType] = useState<TransportType>('stdio');
-  const [serverPath, setServerPath] = useState('/mnt/Shared/cs-projects/simply-mcp-ts/examples/interface-test-harness-demo.ts');
+  const [serverPath, setServerPath] = useState('');
   const [serverUrl, setServerUrl] = useState('http://localhost:3000/mcp');
 
   // Authentication configuration
   const [useAuth, setUseAuth] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [apiKeyHeader, setApiKeyHeader] = useState('x-api-key');
+
+  // File picker handler
+  const handleFilePick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In browser context, we get a File object, but we need the path
+      // For a local file picker, we'd use the webkitRelativePath or similar
+      // For now, we'll use the name and let the user adjust if needed
+      const path = (e.target as any).value;
+      if (path) {
+        setServerPath(path);
+      }
+    }
+  };
 
   const handleConnect = async () => {
     // Build connection config based on transport type
@@ -146,14 +167,34 @@ export function ConnectionManager() {
           {transportType === 'stdio' ? (
             <div>
               <Label htmlFor="serverPath">Server Path</Label>
-              <Input
-                id="serverPath"
-                type="text"
-                placeholder="/path/to/server.ts"
-                value={serverPath}
-                onChange={(e) => setServerPath(e.target.value)}
-                disabled={connectionState === 'connected' || isConnecting}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="serverPath"
+                  type="text"
+                  placeholder="/path/to/server.ts"
+                  value={serverPath}
+                  onChange={(e) => setServerPath(e.target.value)}
+                  disabled={connectionState === 'connected' || isConnecting}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleFilePick}
+                  disabled={connectionState === 'connected' || isConnecting}
+                  title="Browse for server file"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".ts,.js"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Path to TypeScript server file (will run via simply-mcp CLI)
               </p>

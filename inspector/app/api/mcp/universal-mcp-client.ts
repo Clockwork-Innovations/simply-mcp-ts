@@ -267,11 +267,22 @@ export class UniversalMCPClient {
   }
 
   private createStdioTransport(config: StdioConnectionConfig): Transport {
-    // Use local simply-mcp v4 CLI directly (not npm v3.4)
-    // Direct node execution guarantees we use the local development version
-    const command = 'node';
-    const localCliPath = '/mnt/Shared/cs-projects/simply-mcp-ts/dist/src/cli/run-bin.js';
-    const args = [localCliPath, 'run', config.serverPath, ...(config.args || [])];
+    // Support local CLI path for development via SIMPLY_MCP_CLI_PATH environment variable
+    // Falls back to npx simply-mcp for production
+    const localCliPath = process.env.SIMPLY_MCP_CLI_PATH;
+
+    let command: string;
+    let args: string[];
+
+    if (localCliPath) {
+      // Development mode: use local CLI directly
+      command = 'node';
+      args = [localCliPath, 'run', config.serverPath, ...(config.args || [])];
+    } else {
+      // Production mode: use npx to run simply-mcp package
+      command = 'npx';
+      args = ['simply-mcp', 'run', config.serverPath, ...(config.args || [])];
+    }
 
     return new StdioClientTransport({
       command,

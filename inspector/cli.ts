@@ -4,15 +4,21 @@
  * Launch a web-based inspector for exploring MCP servers
  */
 
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-import { createServer as createNetServer } from 'net';
-import { createServer } from 'http';
+// Load environment variables from .env file
+import { config as dotenvConfig } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load .env from inspector root directory (one level up from dist/)
+dotenvConfig({ path: join(__dirname, '..', '.env') });
+
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import { createServer as createNetServer } from 'net';
+import { createServer } from 'http';
 
 /**
  * Check if a port is available
@@ -113,7 +119,7 @@ const argv = await yargs(hideBin(process.argv))
   })
   .help('h')
   .alias('h', 'help')
-  .version('0.1.0')
+  .version('0.3.0')
   .alias('v', 'version')
   .example('$0', 'Start inspector on port 3000 (or next available)')
   .example('$0 --port 8080', 'Start inspector on port 8080')
