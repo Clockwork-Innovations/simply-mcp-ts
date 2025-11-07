@@ -103,7 +103,8 @@ export function compileInterfaceFile(filePath: string): ParseResult {
           interfaceName: 'IServer',
           name: serverData.name || 'unknown',
           version: serverData.version || '1.0.0',
-          description: serverData.description
+          description: serverData.description,
+          flattenRouters: serverData.flattenRouters
         };
       }
     }
