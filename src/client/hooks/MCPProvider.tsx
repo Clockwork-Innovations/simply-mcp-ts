@@ -218,7 +218,7 @@ export function useMergedOptions(
 
     merged.onError = (error: Error) => {
       contextError?.(error, toolName);
-      hookError?.(error);
+      hookError?.(error, toolName);
     };
   }
 
