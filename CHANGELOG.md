@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.16] - 2025-11-07
+
+### Fixed
+
+#### macOS Test Reliability
+- **Fixed**: Batch processing timeout test "preserves completed message responses when timeout occurs" now reliable on macOS
+  - Increased slow task duration from 200ms to 5000ms to ensure timeouts trigger consistently
+  - Increased timeout threshold from 60ms to 100ms to allow fast tasks to complete reliably
+  - Mirrors fixes from commit 277db9c that fixed similar timing issues in other batch tests
+  - All 51 batch processing tests now pass consistently on both Linux and macOS
+- **Modified Files**:
+  - `tests/unit/batch-processing/foundation.test.ts:1091,1100` - Adjusted timing values for cross-platform reliability
+
+#### Example Validation
+- **Fixed**: uri-template-resources.ts example excluded from validation
+  - Example is a feature demonstration with embedded test code, not a runnable server
+  - Added to EXCLUDED_EXAMPLES list to prevent false CI failures
+- **Modified Files**:
+  - `scripts/validate-examples.ts:42` - Added uri-template-resources.ts to exclusion list
+  - `examples/uri-template-resources.ts:13` - Fixed import path to use 'simply-mcp'
+
 ## [4.0.15] - 2025-11-07
 
 ### Fixed

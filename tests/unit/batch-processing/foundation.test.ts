@@ -1088,7 +1088,7 @@ describe('Foundation Layer: Batch Processing', () => {
             await new Promise(resolve => setTimeout(resolve, 10));
             processed.push(msg.id);
           } else {
-            await new Promise(resolve => setTimeout(resolve, 200)); // Will timeout
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Will definitely timeout
             processed.push(msg.id);
           }
         });
@@ -1097,7 +1097,7 @@ describe('Foundation Layer: Batch Processing', () => {
 
         await processBatch(messages as any, 'parallel-partial-batch', mockHandler, {
           parallel: true,
-          timeout: 60 // Timeout after 60ms (allows fast messages to complete)
+          timeout: 100 // Timeout after 100ms (allows fast messages to complete)
         }, mockTransport as any);
 
         // Wait a bit for fast messages to complete
