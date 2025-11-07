@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.9] - 2025-11-07
+
+### Fixed
+- Removed deprecated decorators import from CI package validation test
+- Fixed CI test failures caused by importing non-existent decorators module
+
+### Changed
+- Package validation now only tests current Interface-driven API exports
+
 ## [4.0.8] - 2025-11-07
 
 ### Fixed
