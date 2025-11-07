@@ -12,6 +12,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import path from 'path';
 
 // ============================================================================
 // Connection Configuration Types
@@ -266,9 +267,11 @@ export class UniversalMCPClient {
   }
 
   private createStdioTransport(config: StdioConnectionConfig): Transport {
-    // Use simply-mcp CLI to run the server
-    const command = 'npx';
-    const args = ['simply-mcp', 'run', config.serverPath, ...(config.args || [])];
+    // Use local simply-mcp v4 CLI directly (not npm v3.4)
+    // Direct node execution guarantees we use the local development version
+    const command = 'node';
+    const localCliPath = '/mnt/Shared/cs-projects/simply-mcp-ts/dist/src/cli/run-bin.js';
+    const args = [localCliPath, 'run', config.serverPath, ...(config.args || [])];
 
     return new StdioClientTransport({
       command,

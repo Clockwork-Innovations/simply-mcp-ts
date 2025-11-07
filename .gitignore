@@ -88,3 +88,13 @@ TEST-REPORT-*.md
 REPORT.md
 REPORT.html
 *.test.log
+
+# Playwright E2E test artifacts
+test-results/
+playwright-report/
+mcp-interpreter/test-results/
+mcp-interpreter/playwright-report/
+**/test-results/
+**/playwright-report/
+*.webm
+**/trace.zip
