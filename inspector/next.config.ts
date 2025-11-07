@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for self-contained deployment
+  output: 'standalone',
+
   // Disable caching in development to prevent stale code issues
   async headers() {
     return [

@@ -24,6 +24,10 @@ node_modules/
 # Build artifacts that shouldn't be published
 tmp/
 coverage/
+dist/tsconfig.cli.tsbuildinfo
+
+# Source map files (optional, can be removed to reduce package size)
+*.map
 
 # Documentation that's not needed in npm
 docs/

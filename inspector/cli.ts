@@ -6,8 +6,8 @@
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { spawn } from 'child_process';
-import { createServer } from 'net';
+import { createServer as createNetServer } from 'net';
+import { createServer } from 'http';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -19,7 +19,7 @@ const __dirname = dirname(__filename);
  */
 async function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
-    const server = createServer();
+    const server = createNetServer();
     server.once('error', () => resolve(false));
     server.once('listening', () => {
       server.close();
@@ -43,7 +43,7 @@ async function findAvailablePort(startPort: number, maxAttempts = 10): Promise<n
 }
 
 /**
- * Start the Next.js inspector server
+ * Start the Next.js inspector server using standalone build
  */
 async function startInspector(port?: number) {
   const defaultPort = 3000;
@@ -70,43 +70,34 @@ async function startInspector(port?: number) {
   console.log(`📍 Open http://localhost:${finalPort} in your browser`);
   console.log('');
 
-  // Determine the Next.js directory
-  // In production (after npm install), this will be in node_modules/simply-mcp-inspector/dist/
-  // The .next build will be at node_modules/simply-mcp-inspector/.next/
-  const nextDir = join(__dirname, '..');
+  // The standalone server is in .next/standalone/inspector/
+  // __dirname is dist/ after build, so go up one level to find .next
+  const standaloneDir = join(__dirname, '..', '.next', 'standalone', 'inspector');
+  const serverPath = join(standaloneDir, 'server.js');
 
-  // Start Next.js server
-  const child = spawn('npx', ['next', 'start', '-p', String(finalPort)], {
-    cwd: nextDir,
-    stdio: 'inherit',
-    shell: true,
-    env: {
-      ...process.env,
-      PORT: String(finalPort),
-    },
-  });
+  // Set environment variables for Next.js standalone server
+  process.env.PORT = String(finalPort);
+  process.env.HOSTNAME = '0.0.0.0';
 
-  child.on('error', (err) => {
+  try {
+    // Import and run the standalone server
+    const server = await import(serverPath);
+
+    console.log(`✅ Inspector running at http://localhost:${finalPort}`);
+    console.log('Press Ctrl+C to stop\n');
+  } catch (err: any) {
     console.error('❌ Failed to start inspector:', err.message);
+    console.error('\nMake sure the inspector package was built correctly.');
     process.exit(1);
-  });
-
-  child.on('exit', (code) => {
-    if (code !== 0 && code !== null) {
-      console.error(`❌ Inspector exited with code ${code}`);
-      process.exit(code);
-    }
-  });
+  }
 
   // Handle termination signals
   process.on('SIGINT', () => {
     console.log('\n👋 Shutting down inspector...');
-    child.kill('SIGINT');
     process.exit(0);
   });
 
   process.on('SIGTERM', () => {
-    child.kill('SIGTERM');
     process.exit(0);
   });
 }

@@ -198,10 +198,11 @@ git push origin v2.5.0
 
 ## 5. Publish NPM (`publish-npm.yml`)
 
-**Purpose**: Manual NPM publish with custom dist-tag
+**Purpose**: Manual NPM publish with custom dist-tag (main package only)
 
 **Triggers**:
 - Manual workflow dispatch
+- Release published (excluding inspector releases)
 
 **Inputs**:
 - `tag` (required): NPM dist-tag (e.g., `latest`, `beta`, `next`)
@@ -227,6 +228,54 @@ gh workflow run publish-npm.yml -f tag=beta
 - Promote beta to latest
 
 **Warning**: This doesn't update package.json or create releases. Use for tag management only.
+
+---
+
+## 6. Publish Inspector (`publish-inspector.yml`)
+
+**Purpose**: Publish `simply-mcp-inspector` package to NPM
+
+**Triggers**:
+- GitHub release with tag starting with `inspector-v*`
+- Manual workflow dispatch
+
+**Inputs** (manual trigger only):
+- `tag` (optional): NPM dist-tag (default: `latest`)
+
+**Jobs**:
+1. **Build Main Package**
+   - Build `simply-mcp` (required dependency)
+
+2. **Build Inspector**
+   - Install inspector dependencies
+   - Build Next.js app
+   - Build CLI
+
+3. **Publish**
+   - Determine dist-tag from version
+   - Publish to NPM with provenance
+   - Create summary
+
+**Usage**:
+```bash
+# Via GitHub Release (recommended)
+gh release create inspector-v0.1.1 \
+  --title "Inspector v0.1.1" \
+  --notes "Release notes"
+
+# Via manual trigger
+gh workflow run publish-inspector.yml -f tag=latest
+
+# First-time manual publish
+cd inspector
+npm publish --access public
+```
+
+**Important Notes**:
+- Inspector is a **separate package** from `simply-mcp`
+- Uses peer dependency on `simply-mcp ^4.0.0`
+- Main package must be built first (dependency)
+- Tag format: `inspector-v0.1.0` (not `v0.1.0`)
 
 ---
 
@@ -449,7 +498,8 @@ gh run rerun <run-id> --job <job-id>
 ├── validate-package.yml      # Package validation
 ├── pre-release.yml          # Beta/RC releases
 ├── release.yml              # Stable releases
-├── publish-npm.yml          # Manual NPM publish
+├── publish-npm.yml          # Manual NPM publish (main package only)
+├── publish-inspector.yml    # Inspector package publish
 └── README.md                # This file
 ```
 
@@ -465,6 +515,7 @@ gh run rerun <run-id> --job <job-id>
 
 ## Quick Reference
 
+### Main Package (simply-mcp)
 ```bash
 # Check workflow status
 gh run list --limit 10
@@ -476,13 +527,28 @@ gh workflow run pre-release.yml -f version=2.5.0-beta.2 -f tag=beta
 gh workflow run validate-package.yml -f version=2.5.0-beta.2
 
 # Create stable release (via tag)
-git tag v2.5.0 && git push origin v2.5.0
+git tag v4.0.6 && git push origin v4.0.6
 
 # View logs
 gh run view <run-id> --log
 
 # Cancel run
 gh run cancel <run-id>
+```
+
+### Inspector Package (simply-mcp-inspector)
+```bash
+# Publish inspector via GitHub release (automatic)
+gh release create inspector-v0.1.1 \
+  --title "Inspector v0.1.1" \
+  --notes "Bug fixes and improvements"
+
+# Or trigger manually
+gh workflow run publish-inspector.yml -f tag=latest
+
+# Manual publish (first time or troubleshooting)
+cd inspector
+npm publish --access public
 ```
 
 ---
