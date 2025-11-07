@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp-inspector",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Web-based inspector for exploring and testing Model Context Protocol (MCP) servers",
   "private": false,
   "type": "module",
