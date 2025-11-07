@@ -12,11 +12,38 @@
 import { pathToFileURL } from 'url';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
-import ts from 'typescript';
+import type ts from 'typescript';
 import { BuildMCPServer } from './builder-server.js';
 import { InterfaceServer } from './interface-server.js';
 import { parseInterfaceFile, type ParseResult, type ParsedTool } from './parser.js';
 import { typeNodeToZodSchema, generateSchemaFromTypeString } from '../core/schema-generator.js';
+
+/**
+ * Lazy-loaded TypeScript module
+ * Only imported when interface-driven API features are actually used
+ */
+let TypeScript: typeof ts | undefined;
+
+/**
+ * Ensure TypeScript is loaded
+ * @throws Error if TypeScript is not installed
+ */
+function ensureTypeScript(): typeof ts {
+  if (!TypeScript) {
+    try {
+      TypeScript = require('typescript');
+    } catch (error) {
+      throw new Error(
+        'TypeScript is required for interface-driven API but is not installed. ' +
+        'Install it with: npm install --save-dev typescript\n' +
+        'Note: TypeScript is a peer dependency for simply-mcp. ' +
+        'It\'s only needed if you use the interface-driven API (IServer, ITools, etc.).'
+      );
+    }
+  }
+  return TypeScript;
+}
+
 import { registerPrompts } from '../handlers/prompt-handler.js';
 import { registerResources } from '../handlers/resource-handler.js';
 import { registerCompletions } from '../handlers/completion-handler.js';
@@ -673,6 +700,9 @@ function generateSchema(tool: ParsedTool, filePath: string): z.ZodTypeAny {
   // If we have the AST node, use it for accurate schema generation
   if (tool.paramsNode) {
     try {
+      // Lazy-load TypeScript only when needed
+      const ts = ensureTypeScript();
+
       // Create a TypeChecker for resolving IParam interfaces
       const compilerOptions: ts.CompilerOptions = {
         target: ts.ScriptTarget.Latest,
