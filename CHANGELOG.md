@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.19] - 2025-11-08
+
+### Fixed
+
+#### CRITICAL: TypeScript Detection in Production ESM Context
+- **Fixed**: Production `import.meta.url` failure that broke all published package users
+  - Root cause: Using `eval('import.meta.url')` instead of direct `import.meta.url` reference
+  - `import.meta` is a lexical binding that cannot be accessed through `eval()`, even in valid ESM contexts
+  - This bug went undetected because:
+    - Jest tests use CommonJS `require` path (early return before eval)
+    - Development with tsx provides global `require` (same early return)
+    - Published package users were first to hit pure ESM path
+  - Fixed by removing `eval()` wrapper and using direct `import.meta.url` reference
+  - Matches industry standard patterns (ts-node, tsx, esbuild all use direct references)
+- **Impact**: Unblocks all v4.0.18 users who saw "Cannot use 'import.meta' outside a module" errors
+- **Severity**: CRITICAL - Broke interface-driven API schema generation in production
+- **Testing**:
+  - Unit tests: 1802 passed (Jest compatibility maintained)
+  - Production simulation test: Created and passing (pure ESM context)
+  - Pre-release validation: 26/26 tests passed
+- **Modified Files**:
+  - `src/core/typescript-detector.ts:38-54` - Removed `eval()`, use direct `import.meta.url`
+  - `tests/manual/test-esm-detector.mjs` - New production ESM test for future prevention
+
+**Upgrade Impact**: Users on v4.0.18 should upgrade immediately to v4.0.19 to restore schema generation functionality.
+
 ## [4.0.18] - 2025-11-08
 
 ### Fixed

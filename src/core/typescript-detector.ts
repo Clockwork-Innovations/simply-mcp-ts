@@ -35,21 +35,21 @@ function getRequire() {
     return _require;
   }
 
-  // Production ESM: create require from import.meta.url
-  // Wrapped in try-catch to handle edge cases where import.meta might not be available
-  // (e.g., bundled code, certain test runners)
+  // Production ESM: use direct import.meta.url reference
+  // This line is never reached in Jest (which provides global require above)
   try {
-    // eslint-disable-next-line no-eval
-    _require = createRequire(eval('import.meta.url'));
+    _require = createRequire(import.meta.url);
     return _require;
   } catch (error) {
+    // This should never happen in a proper ESM context, but provide helpful error if it does
     throw new Error(
-      'TypeScript detector requires a module context with either CommonJS require or ESM import.meta.\n' +
-      `Current context: require=${typeof require}, error=${error instanceof Error ? error.message : String(error)}\n` +
-      'If you see "Cannot use import.meta outside a module", ensure:\n' +
-      '1. Your package.json has "type": "module"\n' +
-      '2. Jest is configured with ts-jest-mock-import-meta transformer\n' +
-      '3. The code is not being executed in an incompatible bundled context'
+      'Failed to create require function in ESM context.\n' +
+      `Error: ${error instanceof Error ? error.message : String(error)}\n\n` +
+      'This usually means:\n' +
+      '1. The code is running in an incompatible bundled context\n' +
+      '2. Node.js version is too old (requires Node.js >=14.0.0 for import.meta)\n' +
+      '3. The package is not properly installed as an ES module\n\n' +
+      'Please file an issue at: https://github.com/Clockwork-Innovations/simply-mcp-ts/issues'
     );
   }
 }
