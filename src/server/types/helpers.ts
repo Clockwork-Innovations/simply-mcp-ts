@@ -338,11 +338,59 @@ export type PromptHelper<T extends { args: any }> =
  *   };
  * };
  * ```
+ *
+ * @example Parameterized Resource (v4.1+)
+ * ```typescript
+ * interface UserResource extends IResource {
+ *   uri: 'api://users/{userId}';
+ *   name: 'User by ID';
+ *   mimeType: 'application/json';
+ *   params: {
+ *     userId: { type: 'string'; description: 'User ID'; required: true };
+ *   };
+ *   returns: { id: string; name: string };
+ * }
+ *
+ * // Handler receives params as first argument (like tools!)
+ * const apiUsersUserId: ResourceHelper<UserResource> = async (params) => {
+ *   return { id: params.userId, name: 'John Doe' };
+ * };
+ * ```
+ *
+ * @example With Database Context
+ * ```typescript
+ * interface UserResource extends IResource {
+ *   uri: 'db://users/{userId}';
+ *   params: {
+ *     userId: { type: 'string'; required: true };
+ *   };
+ *   database: { uri: 'file:./users.db' };
+ *   returns: User;
+ * }
+ *
+ * // Handler receives params first, context second
+ * const dbUsersUserId: ResourceHelper<UserResource> = async (params, context) => {
+ *   const db = context?.db;
+ *   if (!db) throw new Error('Database not configured');
+ *   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(params.userId);
+ *   return user;
+ * };
+ * ```
  */
 export type ResourceHelper<T> =
-  T extends { result: any }
-    ? () => Promise<T['result']> | T['result']
-    : () => Promise<any> | any;
+  // Resources with params field - pass params as first argument, context as second (matches tool pattern)
+  T extends { params: any; returns: any }
+    ? (params: InferParams<T>, context?: import('../../types/handler.js').HandlerContext) =>
+        Promise<T['returns']> | T['returns']
+    // Resources with returns field but no params - just context optional
+    : T extends { returns: any }
+      ? (context?: import('../../types/handler.js').HandlerContext) =>
+          Promise<T['returns']> | T['returns']
+      // Legacy resources with result field (backward compatibility)
+      : T extends { result: any }
+        ? () => Promise<T['result']> | T['result']
+        // Fallback
+        : () => Promise<any> | any;
 
 /**
  * Completion implementation helper type

@@ -80,7 +80,7 @@ export function registerDynamicResource(
   resource: ParsedResource,
   dbManager?: DatabaseManager
 ): void {
-  const { uri, name, description, mimeType, methodName, database } = resource;
+  const { uri, name, description, mimeType, methodName, database, params } = resource;
 
   // Phase 2.2: Try semantic method name with naming variations, then fallback to URI
   // This allows flexible naming conventions and both semantic/URI-based patterns:
@@ -161,8 +161,11 @@ export function registerDynamicResource(
     name: name || uri,
     description: description || `Resource: ${uri}`,
     mimeType: mimeType || 'application/json',
-    content: () => {
-      // Build context object
+    content: (passedContext?: any) => {
+      // Extract params from passed context (if provided by builder-server)
+      const extractedParams = passedContext?.metadata?.params || {};
+
+      // Build resource context object
       const context: ResourceContext = {};
 
       // If resource has database config and database manager is provided, create connection
@@ -177,8 +180,25 @@ export function registerDynamicResource(
         }
       }
 
-      // Call the method on the server instance with context
-      return method.call(serverInstance, context);
+      // Add other context fields from passed context (logger, mcp, batch, capabilities, etc.)
+      if (passedContext) {
+        if (passedContext.logger) context.logger = passedContext.logger;
+        if (passedContext.mcp) context.mcp = passedContext.mcp;
+        if (passedContext.batch) context.batch = passedContext.batch;
+        if (passedContext.sample) context.sample = passedContext.sample;
+        if (passedContext.readResource) context.readResource = passedContext.readResource;
+        if (passedContext.elicitInput) context.elicitInput = passedContext.elicitInput;
+        if (passedContext.listRoots) context.listRoots = passedContext.listRoots;
+      }
+
+      // Call the method with params first (if resource has params), context second
+      // This matches the tool pattern: handler(params, context)
+      if (params && Object.keys(extractedParams).length > 0) {
+        return method.call(serverInstance, extractedParams, context);
+      } else {
+        // No params - pass context only (backward compatible)
+        return method.call(serverInstance, context);
+      }
     },
   });
 }

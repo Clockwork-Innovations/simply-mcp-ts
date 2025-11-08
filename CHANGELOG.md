@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.21] - 2025-11-08
+
+### Fixed
+
+#### CRITICAL: Resource URI Template Parameters Not Passed to Handlers
+- **Fixed**: URI template parameters (e.g., `{name}` in `pokemon://{name}`) were not being passed to resource handlers
+  - Root cause: `src/handlers/resource-handler.ts:164` - content function defined as `() => {...}` instead of `(context) => {...}`, causing passed context with params to be silently ignored
+  - Impact: All resources with URI template parameters received empty params object `{}`
+  - Fix: Updated resource handler to accept passed context and extract params from `context.metadata.params`
+
+### Enhanced
+
+#### Resource Interface Redesign - Match Tool Pattern
+- **Improved**: Resources now follow the same pattern as tools - params passed as first argument
+  - **OLD (broken)**: `'pokemon://{name}': Resource = async (context) => { const name = context?.metadata?.params?.name; }`
+  - **NEW (clean)**: `'pokemon://{name}': Resource = async (params) => { return findPokemon(params.name); }`
+- **Added**: `params` field to IResource interface for type-safe parameter definitions
+  - Define reusable param interfaces: `interface NameParam extends IParam { type: 'string'; description: 'Name'; required: true; }`
+  - Use in resources: `params: { name: NameParam }`
+- **Added**: ResourceHelper type now infers params type and passes as first argument
+  - Resources with params: `(params, context?) => T`
+  - Resources without params: `(context?) => T` (backward compatible)
+- **Consistency**: Resources now match tool pattern (params first, context second)
+
+### Added
+- **Tests**: 11 new unit tests for resource parameter passing (all passing)
+- **Example**: `examples/uri-template-resources-typed.ts` - demonstrates new type-safe pattern
+- **Documentation**: Updated IResource interface docs with clean param definition examples
+
+### Impact
+This is a **critical bug fix** that makes URI template resources functional while also improving the API design. The new pattern is cleaner, type-safe, and consistent with tools.
+
+**Backward Compatibility**: Resources without params continue to work (context-only signature). The old `context?.metadata?.params` pattern still works but is deprecated in favor of the new params-first pattern.
+
+**Modified Files:**
+- `src/handlers/resource-handler.ts` - Accept context, extract params, pass as first argument
+- `src/server/types/resource.ts` - Added params field to IResource
+- `src/server/types/helpers.ts` - Updated ResourceHelper type for params support
+- `src/server/compiler/types.ts` - Added params to ParsedResource
+- `src/server/compiler/compilers/resource-compiler.ts` - Extract params field during compilation
+- `examples/uri-template-resources-typed.ts` - New example (added)
+- `tests/unit/resource-params-handler.test.ts` - New tests (added)
+
+**Testing:**
+- Integration tests: 3/3 passed (Pokedex example)
+- Unit tests: 11/11 passed (new resource params tests)
+- Full test suite: All tests passing ✅
+- No breaking changes for resources without params
+
 ## [4.0.20] - 2025-11-08
 
 ### Fixed

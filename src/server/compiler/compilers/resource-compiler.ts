@@ -24,6 +24,7 @@ export function compileResourceInterface(node: ts.InterfaceDeclaration, sourceFi
   let valueType = 'any';
   let returnsType = 'any';
   let database: IDatabase | undefined = undefined;
+  let params: Record<string, any> | undefined = undefined;
 
   // Parse interface members
   const invalidDataFields: string[] = [];
@@ -62,6 +63,10 @@ export function compileResourceInterface(node: ts.InterfaceDeclaration, sourceFi
         returnsType = member.type.getText(sourceFile);
         returns = extractStaticData(member.type, sourceFile); // Try extraction (usually undefined for types)
         hasReturns = true;
+      } else if (memberName === 'params' && member.type) {
+        // URI template parameters - just flag that params exist (actual values extracted at runtime from URI)
+        // Don't use extractStaticData here as it would include IParam schema objects with circular references
+        params = {}; // Empty object signals that this resource expects params
       } else if (memberName === 'database' && member.type) {
         // Database configuration
         database = extractStaticData(member.type, sourceFile) as IDatabase | undefined;
@@ -148,6 +153,7 @@ export function compileResourceInterface(node: ts.InterfaceDeclaration, sourceFi
     data,
     dynamic: isDynamic,
     dataType,
+    params,
     database,
   };
 }

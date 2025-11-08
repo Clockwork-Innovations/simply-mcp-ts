@@ -77,6 +77,8 @@ export interface ParsedResource {
   dynamic: boolean;
   /** Data type information */
   dataType: string;
+  /** URI template parameters (if resource has params field) */
+  params?: Record<string, any>;
   /** Database configuration (if resource uses database) */
   database?: IDatabase;
 }

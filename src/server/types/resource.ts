@@ -165,6 +165,41 @@ export interface ResourceContext {
   db?: any;
 
   /**
+   * Logger instance for handler output
+   */
+  logger?: any;
+
+  /**
+   * MCP-specific context (server, session, request info)
+   */
+  mcp?: any;
+
+  /**
+   * Batch context if current request is part of a batch
+   */
+  batch?: any;
+
+  /**
+   * Request an LLM completion from the client (if client supports sampling capability)
+   */
+  sample?: any;
+
+  /**
+   * Read another resource by URI
+   */
+  readResource?: any;
+
+  /**
+   * Request user input from the client (if client supports elicitation capability)
+   */
+  elicitInput?: any;
+
+  /**
+   * List available roots (if client supports roots capability)
+   */
+  listRoots?: any;
+
+  /**
    * Future: Security context for authentication/authorization
    * Planned for v4.2
    */
@@ -320,6 +355,73 @@ export interface IResource<T = any> {
    * ```
    */
   returns?: T;
+
+  /**
+   * Optional URI template parameters for dynamic resources.
+   * Define parameters that can be extracted from URI templates (e.g., `/users/{userId}`).
+   * Parameters are passed to the handler function as the first argument for type-safe access.
+   *
+   * When params is specified, your resource handler will receive:
+   * 1. First argument: Typed params object with extracted values
+   * 2. Second argument: Optional context object
+   *
+   * @example Recommended: Reusable Param Interfaces
+   * ```typescript
+   * import type { IParam } from 'simply-mcp';
+   *
+   * // Define reusable param interfaces
+   * interface UserIdParam extends IParam {
+   *   type: 'string';
+   *   description: 'User ID';
+   *   required: true;
+   * }
+   *
+   * interface UserResource extends IResource {
+   *   uri: 'api://users/{userId}';
+   *   params: {
+   *     userId: UserIdParam;  // Clean, typed, reusable!
+   *   };
+   *   returns: { id: string; name: string };
+   * }
+   *
+   * // Handler receives params as first argument
+   * 'api://users/{userId}': UserResource = async (params) => {
+   *   return { id: params.userId, name: 'John Doe' };
+   * };
+   * ```
+   *
+   * @example Multiple Parameters
+   * ```typescript
+   * interface ApiVersionParam extends IParam {
+   *   type: 'string';
+   *   description: 'API version';
+   *   required: true;
+   * }
+   *
+   * interface ApiResource extends IResource {
+   *   uri: 'api://v{version}/users/{userId}';
+   *   params: {
+   *     version: ApiVersionParam;
+   *     userId: UserIdParam;  // Reuse from above
+   *   };
+   *   returns: User;
+   * }
+   *
+   * 'api://v{version}/users/{userId}': ApiResource = async (params) => {
+   *   return fetchUser(params.version, params.userId);
+   * };
+   * ```
+   *
+   * @example Quick Inline (Less Verbose, but Loses Documentation)
+   * ```typescript
+   * interface UserResource extends IResource {
+   *   params: {
+   *     userId: { type: 'string' };  // Works but no description
+   *   };
+   * }
+   * ```
+   */
+  params?: Record<string, any>;
 
   /**
    * Optional database configuration for resources that need database access.
