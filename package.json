@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp",
-  "version": "4.0.22",
+  "version": "4.0.23",
   "description": "Type-safe TypeScript framework for building Model Context Protocol (MCP) servers with pure interface-driven API",
   "private": false,
   "type": "module",

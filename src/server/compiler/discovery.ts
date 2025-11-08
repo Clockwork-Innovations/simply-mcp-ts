@@ -6,7 +6,7 @@
  */
 
 import * as ts from 'typescript';
-import type { DiscoveredImplementation, DiscoveredInstance, ParseResult } from './types.js';
+import type { DiscoveredImplementation, DiscoveredInstance, DiscoveredRouterProperty, ParseResult } from './types.js';
 
 /**
  * Discover const server definition
@@ -151,6 +151,44 @@ export function discoverClassImplementations(node: ts.ClassDeclaration, sourceFi
   }
 
   return implementations;
+}
+
+/**
+ * Discover router properties in a class
+ * Pattern: class C { battleRouter!: BattleRouter; }
+ *
+ * This discovers class properties that are typed with router interfaces,
+ * allowing them to be matched to parsed router interfaces later.
+ */
+export function discoverClassRouterProperties(node: ts.ClassDeclaration, sourceFile: ts.SourceFile, knownRouterInterfaces: Set<string>): DiscoveredRouterProperty[] {
+  const routerProperties: DiscoveredRouterProperty[] = [];
+  const className = node.name?.text;
+
+  if (!className) return routerProperties;
+
+  for (const member of node.members) {
+    if (!ts.isPropertyDeclaration(member)) continue;
+    if (!member.type) continue;
+
+    // Get property name
+    const propertyName = member.name.getText(sourceFile);
+
+    // Check if the type is a TypeReferenceNode (interface reference)
+    if (ts.isTypeReferenceNode(member.type)) {
+      const interfaceName = member.type.typeName.getText(sourceFile);
+
+      // Check if this interface is a known router interface
+      if (knownRouterInterfaces.has(interfaceName)) {
+        routerProperties.push({
+          propertyName,
+          interfaceName,
+          className
+        });
+      }
+    }
+  }
+
+  return routerProperties;
 }
 
 /**

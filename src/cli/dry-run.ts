@@ -9,36 +9,94 @@ import type { APIStyle } from './run.js';
 import { getNamingVariations } from '../server/compiler/utils.js';
 
 /**
+ * Preprocess TypeScript source code to handle edge cases
+ * Strips 'as const' from type positions in interfaces (invalid syntax but commonly attempted)
+ */
+function preprocessTypeScript(sourceCode: string): string {
+  // Strip 'as const' from type positions within interfaces/types
+  // Pattern: matches type definitions like "prop: Type as const;" or "prop: [...] as const;"
+  // This is invalid TypeScript syntax but users may write it accidentally
+  return sourceCode.replace(
+    /(\s+\w+\s*:\s*(?:readonly\s+)?(?:\[[\w\s,.\[\]]+\]|[\w.<>|&()\s]+))\s+as\s+const\s*;/g,
+    '$1;'
+  );
+}
+
+/**
  * Dynamically load TypeScript file
  * If tsx is loaded as Node loader, use direct import for decorator support
  * Otherwise use tsImport API
+ *
+ * Preprocesses files to handle common syntax issues like 'as const' in type positions
  */
 async function loadTypeScriptFile(absolutePath: string): Promise<any> {
-  // Check if tsx is loaded as Node loader (via --import tsx)
-  const tsxLoaded = process.execArgv.some(arg => arg.includes('tsx') || arg.includes('--import tsx'));
+  // Preprocess the file to handle edge cases
+  const { readFile, writeFile, unlink } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
 
-  if (tsxLoaded) {
-    // tsx is loaded as loader, use direct import for full decorator support
-    const fileUrl = pathToFileURL(absolutePath).href;
-    return await import(fileUrl);
+  let sourceCode: string;
+  try {
+    sourceCode = await readFile(absolutePath, 'utf-8');
+  } catch (error) {
+    throw new Error(`Failed to read file: ${absolutePath}`);
   }
 
-  // Fallback to tsImport API (for backwards compatibility)
+  // Preprocess to strip invalid 'as const' from type positions
+  const processedCode = preprocessTypeScript(sourceCode);
+
+  // If code was modified, use a temporary file for loading
+  let fileToLoad = absolutePath;
+  let tempFile: string | null = null;
+
+  if (processedCode !== sourceCode) {
+    // Create temp file with preprocessed code
+    const tempFileName = `simplymcp-preprocessed-${Date.now()}-${Math.random().toString(36).slice(2)}.ts`;
+    tempFile = join(tmpdir(), tempFileName);
+    await writeFile(tempFile, processedCode, 'utf-8');
+    fileToLoad = tempFile;
+  }
+
   try {
-    const { tsImport } = await import('tsx/esm/api');
-    return await tsImport(absolutePath, import.meta.url);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Cannot find module')) {
-      console.error('Error: tsx package is required to load TypeScript files');
-      console.error('');
-      console.error('Solutions:');
-      console.error('  1. Install tsx: npm install tsx');
-      console.error('  2. Use bundled output: simplymcp bundle ' + absolutePath);
-      console.error('  3. Compile to .js first: tsc ' + absolutePath);
-      console.error('');
-      process.exit(1);
+    // Check if tsx is loaded as Node loader (via --import tsx)
+    const tsxLoaded = process.execArgv.some(arg => arg.includes('tsx') || arg.includes('--import tsx'));
+
+    let module: any;
+
+    if (tsxLoaded) {
+      // tsx is loaded as loader, use direct import for full decorator support
+      const fileUrl = pathToFileURL(fileToLoad).href;
+      module = await import(fileUrl);
+    } else {
+      // Fallback to tsImport API (for backwards compatibility)
+      try {
+        const { tsImport } = await import('tsx/esm/api');
+        module = await tsImport(fileToLoad, import.meta.url);
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Cannot find module')) {
+          console.error('Error: tsx package is required to load TypeScript files');
+          console.error('');
+          console.error('Solutions:');
+          console.error('  1. Install tsx: npm install tsx');
+          console.error('  2. Use bundled output: simplymcp bundle ' + absolutePath);
+          console.error('  3. Compile to .js first: tsc ' + absolutePath);
+          console.error('');
+          process.exit(1);
+        }
+        throw error;
+      }
     }
-    throw error;
+
+    return module;
+  } finally {
+    // Clean up temp file if created
+    if (tempFile) {
+      try {
+        await unlink(tempFile);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
   }
 }
 
@@ -84,6 +142,8 @@ export interface DryRunResult {
   tools: Array<{ name?: string; description?: string; methodName?: string }>;
   prompts: Array<{ name: string; description?: string }>;
   resources: Array<{ name: string; description?: string }>;
+  routers?: Array<{ name?: string; description?: string; propertyName: string; tools: string[] }>;
+  server?: { flattenRouters?: boolean };
   transport: 'stdio' | 'http' | 'websocket';
   portConfig: number;
   warnings: string[];
@@ -529,6 +589,8 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
       tools,
       prompts,
       resources,
+      routers: parsed.routers,
+      server: parsed.server,
       transport: finalTransport,
       portConfig: finalPort,
       warnings,
@@ -583,19 +645,39 @@ async function displayDryRunResult(result: DryRunResult): Promise<void> {
 
   // Capabilities
   console.log('Capabilities:');
-  console.log(`  Tools: ${result.tools.length}`);
 
-  if (result.tools.length > 0) {
+  // Count routers as tools when flattenRouters is false
+  const routerCount = result.routers?.length || 0;
+  const flattenRouters = result.server?.flattenRouters ?? true; // Default to true if not specified
+  const toolCount = !flattenRouters && routerCount > 0
+    ? routerCount // Show only routers
+    : result.tools.length; // Show all tools
+
+  console.log(`  Tools: ${toolCount}`);
+
+  if (toolCount > 0) {
     // Import camelToSnake for name inference
     const { camelToSnake } = await import('../server/parser.js');
 
-    for (const tool of result.tools.slice(0, 10)) {
-      // Phase 2.1: Infer tool name from method name if not explicit
-      const toolName = tool.name || (tool.methodName ? camelToSnake(tool.methodName) : 'unnamed');
-      console.log(`    - ${toolName}: ${tool.description || '(no description)'}`);
-    }
-    if (result.tools.length > 10) {
-      console.log(`    ... and ${result.tools.length - 10} more`);
+    // If we have routers and not flattening, show routers instead of tools
+    if (result.routers && result.routers.length > 0 && !flattenRouters) {
+      for (const router of result.routers.slice(0, 10)) {
+        const routerName = router.name || router.propertyName;
+        console.log(`    - ${routerName}: ${router.description || '(no description)'} [router with ${router.tools.length} tools]`);
+      }
+      if (result.routers.length > 10) {
+        console.log(`    ... and ${result.routers.length - 10} more`);
+      }
+    } else {
+      // Show individual tools
+      for (const tool of result.tools.slice(0, 10)) {
+        // Phase 2.1: Infer tool name from method name if not explicit
+        const toolName = tool.name || (tool.methodName ? camelToSnake(tool.methodName) : 'unnamed');
+        console.log(`    - ${toolName}: ${tool.description || '(no description)'}`);
+      }
+      if (result.tools.length > 10) {
+        console.log(`    ... and ${result.tools.length - 10} more`);
+      }
     }
   }
 

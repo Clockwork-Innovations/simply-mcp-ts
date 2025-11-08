@@ -14,6 +14,7 @@ import {
   discoverConstImplementation,
   discoverClassImplementations,
   discoverClassInstance,
+  discoverClassRouterProperties,
   linkImplementationsToInterfaces
 } from './discovery.js';
 import { validateImplementations } from './validation-compiler.js';
@@ -44,9 +45,26 @@ import { compileAuthInterface } from './compilers/auth-compiler.js';
  * @param filePath - Path to TypeScript file to compile
  * @returns ParseResult with all discovered and compiled interfaces
  */
+/**
+ * Preprocess TypeScript source code to handle edge cases
+ * Strips 'as const' from type positions in interfaces (invalid syntax)
+ */
+function preprocessSource(sourceCode: string): string {
+  // Strip 'as const' from type positions within interfaces
+  // Pattern: matches type definitions like "prop: Type as const;" in interfaces
+  // This is invalid TypeScript but users may write it accidentally
+  return sourceCode.replace(
+    /(\s+\w+\s*:\s*(?:readonly\s+)?(?:\[[\w\s,.\[\]]+\]|[\w.<>]+))\s+as\s+const\s*;/g,
+    '$1;'
+  );
+}
+
 export function compileInterfaceFile(filePath: string): ParseResult {
   const absolutePath = resolve(filePath);
-  const sourceCode = readFileSync(absolutePath, 'utf-8');
+  let sourceCode = readFileSync(absolutePath, 'utf-8');
+
+  // Preprocess source to handle edge cases like 'as const' in type positions
+  sourceCode = preprocessSource(sourceCode);
 
   // Create a TypeScript program
   const sourceFile = ts.createSourceFile(
@@ -70,6 +88,7 @@ export function compileInterfaceFile(filePath: string): ParseResult {
     validationErrors: [],
     implementations: [],
     instances: [],
+    routerProperties: [],
   };
 
   // Store auth interfaces by name for resolution
@@ -240,6 +259,36 @@ export function compileInterfaceFile(filePath: string): ParseResult {
   }
 
   visit(sourceFile);
+
+  // Second pass: Discover router properties in classes
+  // This must happen AFTER all router interfaces have been parsed
+  if (result.routers.length > 0) {
+    const knownRouterInterfaces = new Set(result.routers.map(r => r.interfaceName));
+
+    // Visit all class declarations again to discover router properties
+    function discoverRouters(node: ts.Node) {
+      if (ts.isClassDeclaration(node)) {
+        const routerProps = discoverClassRouterProperties(node, sourceFile, knownRouterInterfaces);
+        result.routerProperties!.push(...routerProps);
+      }
+      ts.forEachChild(node, discoverRouters);
+    }
+
+    discoverRouters(sourceFile);
+  }
+
+  // Match router properties to router interfaces
+  // This updates the propertyName field in routers based on discovered class properties
+  if (result.routerProperties && result.routerProperties.length > 0) {
+    for (const routerProp of result.routerProperties) {
+      // Find the router interface that matches this property's type
+      const router = result.routers.find(r => r.interfaceName === routerProp.interfaceName);
+      if (router) {
+        // Update the router's propertyName to match the actual class property
+        router.propertyName = routerProp.propertyName;
+      }
+    }
+  }
 
   // Link implementations to interfaces (v4 auto-discovery)
   linkImplementationsToInterfaces(result);

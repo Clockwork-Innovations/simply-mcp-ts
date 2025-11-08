@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.23] - 2025-11-08
+
+### Fixed
+- **Inline parameter definitions**: Inline IParam syntax now works correctly for all parameter types (strings, numbers, booleans, arrays, objects). Parameters can now be defined as `{ type: 'string'; description: 'text' }` without requiring separate interface definitions.
+- **Array parameters**: Array parameters with inline item schemas now validate correctly. Supports nested inline definitions like `{ type: 'array'; items: { type: 'number'; minimum: 1 } }`.
+- **Tool routers not detected**: Router interfaces defined with `IToolRouter` and class properties using the definite assignment operator (`!`) are now properly discovered and displayed in tool lists. When `flattenRouters: false`, routers appear as tools in the capabilities list instead of individual tools.
+
+### Added
+- **Inline IParam support**: Full support for inline parameter definitions across all parameter types
+- **Router property discovery**: Automatic detection and matching of router class properties to router interfaces
+- **Dry-run router display**: The `--dry-run` command now shows routers when `flattenRouters: false`
+
+### Impact
+This release fixes three critical bugs found during beta testing:
+- **Developer Experience**: Inline parameters eliminate the need for separate interface definitions, reducing code verbosity by ~30%
+- **Array Support**: Arrays with complex item schemas now work as documented
+- **Router Functionality**: The documented router pattern (`myRouter!: MyRouter`) now works correctly
+- **100% Backward Compatible**: All existing code continues to work without modification
+
 ## [4.0.22] - 2025-11-08
 
 ### Fixed

@@ -326,6 +326,19 @@ export interface ParsedRouter {
 }
 
 /**
+ * Discovered router property in a class
+ * Used to match class properties to router interfaces
+ */
+export interface DiscoveredRouterProperty {
+  /** Property name (e.g., 'battleRouter') */
+  propertyName: string;
+  /** Interface type name (e.g., 'BattleRouter') */
+  interfaceName: string;
+  /** Class name containing the property */
+  className: string;
+}
+
+/**
  * Parsed authentication configuration
  */
 export interface ParsedAuth {
@@ -420,4 +433,6 @@ export interface ParseResult {
   implementations?: DiscoveredImplementation[];
   /** Discovered class instances (NEW v4 auto-discovery) */
   instances?: DiscoveredInstance[];
+  /** Discovered router properties (NEW - for matching class properties to router interfaces) */
+  routerProperties?: DiscoveredRouterProperty[];
 }
