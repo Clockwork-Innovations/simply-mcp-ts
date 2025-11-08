@@ -36,9 +36,22 @@ function getRequire() {
   }
 
   // Production ESM: create require from import.meta.url
-  // eslint-disable-next-line no-eval
-  _require = createRequire(eval('import.meta.url'));
-  return _require;
+  // Wrapped in try-catch to handle edge cases where import.meta might not be available
+  // (e.g., bundled code, certain test runners)
+  try {
+    // eslint-disable-next-line no-eval
+    _require = createRequire(eval('import.meta.url'));
+    return _require;
+  } catch (error) {
+    throw new Error(
+      'TypeScript detector requires a module context with either CommonJS require or ESM import.meta.\n' +
+      `Current context: require=${typeof require}, error=${error instanceof Error ? error.message : String(error)}\n` +
+      'If you see "Cannot use import.meta outside a module", ensure:\n' +
+      '1. Your package.json has "type": "module"\n' +
+      '2. Jest is configured with ts-jest-mock-import-meta transformer\n' +
+      '3. The code is not being executed in an incompatible bundled context'
+    );
+  }
 }
 
 /**
@@ -135,8 +148,9 @@ function detectPackageManager(): 'npm' | 'pnpm' | 'yarn' | 'unknown' {
     const { join } = path;
 
     // Check for lock files in current directory and parent directories
+    // Search up to 10 levels (increased from 5) to handle deeper project structures
     let currentDir = process.cwd();
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       if (existsSync(join(currentDir, 'pnpm-lock.yaml'))) {
         return 'pnpm';
       }
@@ -152,8 +166,20 @@ function detectPackageManager(): 'npm' | 'pnpm' | 'yarn' | 'unknown' {
       currentDir = parentDir;
     }
 
+    // Fallback: check npm_execpath environment variable set by npm/yarn/pnpm
+    if (process.env.npm_execpath) {
+      if (process.env.npm_execpath.includes('pnpm')) return 'pnpm';
+      if (process.env.npm_execpath.includes('yarn')) return 'yarn';
+      return 'npm'; // Default for npm
+    }
+
     return 'unknown';
-  } catch {
+  } catch (error) {
+    // Log specific error for debugging but don't fail
+    if (error instanceof Error) {
+      console.warn(`[Package Manager Detection] Failed: ${error.message}`);
+    }
+
     return 'unknown';
   }
 }

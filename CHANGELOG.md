@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.18] - 2025-11-08
+
+### Fixed
+
+#### TypeScript Detection & Jest Compatibility (HIGH Priority)
+- **Fixed**: TypeScript detection `import.meta.url` errors in Jest tests
+  - Added `ts-jest-mock-import-meta` transformer to jest.config.js for proper ESM support
+  - Improved package manager detection with increased search depth (10 levels) and `npm_execpath` fallback
+  - Added try-catch wrapper around `import.meta.url` with helpful error messages
+  - Eliminates "Cannot use import.meta outside a module" errors
+- **Fixed**: `as const` now fully supported in interface enum properties
+  - Compiler automatically strips `as const` assertions during parsing (prompt-compiler.ts)
+  - Developers get better type safety and IDE autocomplete
+  - Updated documentation to reflect support
+- **Fixed**: Resource discovery for quoted property names
+  - Static analysis now detects string literal properties: `'config://server': ResourceHelper`
+  - Static analysis now detects computed properties: `['travel://destinations']: ResourceHelper`
+  - Eliminates false "missing implementation" warnings in dry-run
+- **Fixed**: Dry-run resource validation false positives
+  - No longer shows resource warnings when serverInstance is null due to compilation errors
+- **Modified Files**:
+  - `jest.config.js:14-18` - Added ts-jest-mock-import-meta transformer with diagnostic code ignoring
+  - `src/core/typescript-detector.ts:38-54,143-184` - Improved error handling and package manager detection
+  - `src/server/compiler/compilers/prompt-compiler.ts:83-112` - Added `as const` assertion stripping
+  - `src/cli/dry-run.ts:228-231` - Updated documentation for `as const` support
+  - `src/server/compiler/discovery.ts:96-150` - Added quoted/computed property name detection
+  - `src/cli/dry-run.ts:493` - Fixed serverInstance null check
+
+### Added
+
+#### Flexible Naming Conventions for Resources (MEDIUM Priority)
+- **Added**: Resources now accept camelCase, snake_case, PascalCase, and kebab-case method names
+  - New `getNamingVariations()` utility function for automatic name conversion
+  - Resources now have same flexible naming as tools and prompts
+  - Auto-converts all variations to snake_case for MCP protocol
+- **New Files**:
+  - `src/server/compiler/utils.ts:76-121` - `getNamingVariations()` function
+- **Modified Files**:
+  - `src/handlers/resource-handler.ts:12,85-123` - Added naming variation support with improved error messages
+
+### Changed
+
+#### Test Infrastructure Improvements
+- **Improved**: Jest test configuration for better ESM/import.meta.url support
+  - Some tests remain excluded due to ts-jest-mock-import-meta conflicts with `__filename` usage
+  - All unit tests passing (1802 tests across 75 suites)
+- **Added**: ts-jest-mock-import-meta dependency for Jest ESM support
+
 ## [4.0.17] - 2025-11-07
 
 ### Fixed

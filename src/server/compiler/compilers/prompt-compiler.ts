@@ -82,9 +82,16 @@ export function compilePromptInterface(
                     }
                   } else if (fieldName === 'enum') {
                     // Extract enum values from tuple type (interface literals) or array literal (runtime values)
-                    if (ts.isTupleTypeNode(argField.type)) {
+                    // Handle `as const` assertion by unwrapping it
+                    let enumType = argField.type;
+                    if (ts.isAsExpression(enumType) || ts.isTypeAssertionExpression(enumType)) {
+                      // Strip 'as const' or other type assertions to get the underlying array/tuple
+                      enumType = (enumType as ts.AsExpression).expression as any;
+                    }
+
+                    if (ts.isTupleTypeNode(enumType)) {
                       // Tuple type: enum: ['a', 'b'] in interface
-                      argMetadata.enum = argField.type.elements
+                      argMetadata.enum = enumType.elements
                         .map(elem => {
                           const elementType = ts.isNamedTupleMember(elem) ? elem.type : elem;
                           if (ts.isLiteralTypeNode(elementType)) {
@@ -96,9 +103,9 @@ export function compilePromptInterface(
                           return null;
                         })
                         .filter((val): val is string => val !== null);
-                    } else if (ts.isArrayLiteralExpression(argField.type)) {
+                    } else if (ts.isArrayLiteralExpression(enumType)) {
                       // Array literal: enum: ['a', 'b'] (less common in interfaces)
-                      argMetadata.enum = argField.type.elements
+                      argMetadata.enum = enumType.elements
                         .filter(ts.isStringLiteral)
                         .map(elem => elem.text);
                     }

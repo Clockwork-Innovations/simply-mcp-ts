@@ -9,6 +9,7 @@ import type { ParsedResource } from '../server/parser.js';
 import type { BuildMCPServer } from '../server/builder-server.js';
 import type { DatabaseManager } from '../core/database-manager.js';
 import type { ResourceContext } from '../server/interface-types.js';
+import { getNamingVariations } from '../server/compiler/utils.js';
 
 /**
  * Register a static resource with the MCP server
@@ -81,21 +82,42 @@ export function registerDynamicResource(
 ): void {
   const { uri, name, description, mimeType, methodName, database } = resource;
 
-  // Phase 2.2: Try semantic method name first, then fallback to URI
-  // This allows both patterns:
-  // 1. Semantic: userStats: Resource = async () => {...}
+  // Phase 2.2: Try semantic method name with naming variations, then fallback to URI
+  // This allows flexible naming conventions and both semantic/URI-based patterns:
+  // 1. Semantic (any case): userStats / user_stats / UserStats = async () => {...}
   // 2. URI-based: 'stats://users': Resource = async () => {...}
-  let method = serverInstance[methodName];  // Try semantic name first
+  let method = serverInstance[methodName];  // Try semantic name first (exact match)
+  let foundVariation: string | null = null;
+
   if (!method) {
-    method = serverInstance[uri];  // Fallback to URI as property name
+    // Try naming variations of methodName
+    const variations = getNamingVariations(methodName);
+    for (const variation of variations) {
+      if (serverInstance[variation]) {
+        method = serverInstance[variation];
+        foundVariation = variation;
+        break;
+      }
+    }
   }
 
   if (!method) {
+    method = serverInstance[uri];  // Fallback to URI as property name
+    if (method) {
+      foundVariation = uri;
+    }
+  }
+
+  if (!method) {
+    // Generate helpful error message with naming variation suggestions
+    const variations = getNamingVariations(methodName).slice(0, 3);  // Show top 3 variations
+    const variationExamples = variations.map(v => `  - ${v}: ${resource.interfaceName} = async () => {...}`).join('\n');
+
     throw new Error(
-      `Dynamic resource "${uri}" (with 'returns' field) requires implementation but was not found on server class.\n` +
+      `Dynamic resource "${uri}" (with 'returns' field) requires implementation but was not found on server class.\n\n` +
       `Expected pattern (choose one):\n` +
-      `  1. Semantic name: ${methodName}: ${resource.interfaceName} = async () => {...}\n` +
-      `  2. URI property: '${uri}': ${resource.interfaceName} = async () => {...}\n` +
+      `  1. Semantic name (any of these naming conventions):\n${variationExamples}\n` +
+      `  2. URI property: '${uri}': ${resource.interfaceName} = async () => {...}\n\n` +
       `Hint: Resources with 'returns' field need a runtime implementation.`
     );
   }

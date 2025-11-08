@@ -226,11 +226,9 @@ function validatePromptInterfaces(
           }
 
           // Validation Rule 3: Enum arrays
-          // NOTE: Do NOT use 'as const' on enum arrays - it causes LiteralType errors at runtime.
-          // The parsed enum values can't tell us if 'as const' was used, so we can't validate this
-          // at dry-run time. Instead, rely on runtime errors to catch this issue.
-          // Documentation: See PROMPTS.md "Important: Don't Use `as const` on Enums"
-          // This is left as a user responsibility to follow best practices.
+          // NOTE: `as const` is now fully supported on enum arrays for better type safety.
+          // The compiler automatically strips the `as const` assertion during parsing,
+          // so developers can use it for improved IDE autocomplete and type inference.
 
           // Validation Rule 4: Empty argument definition (info)
           // Only show info for truly empty arguments (no fields at all)
@@ -491,7 +489,8 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
 
       // Check if dynamic resources have implementation
       // Only warn if the resource is dynamic AND no implementation exists
-      if (resource.dynamic) {
+      // Skip validation if serverInstance failed to load (null due to compilation errors)
+      if (resource.dynamic && serverInstance !== null) {
         // Phase 2.2: Check both semantic name and URI property
         const hasSemanticImpl = serverInstance && serverInstance[resource.methodName] !== undefined &&
                                 typeof serverInstance[resource.methodName] === 'function';

@@ -93,6 +93,25 @@ export function discoverClassImplementations(node: ts.ClassDeclaration, sourceFi
     if (!ts.isPropertyDeclaration(member)) continue;
     if (!member.type) continue;
 
+    // Extract property name, handling quoted/computed properties
+    let propertyName: string;
+    if (ts.isStringLiteral(member.name)) {
+      // String literal property: 'config://server'
+      propertyName = member.name.text;
+    } else if (ts.isComputedPropertyName(member.name)) {
+      // Computed property: ['travel://destinations']
+      const expr = member.name.expression;
+      if (ts.isStringLiteral(expr)) {
+        propertyName = expr.text;
+      } else {
+        // Skip non-string computed properties
+        continue;
+      }
+    } else {
+      // Regular identifier: getWeather
+      propertyName = member.name.getText(sourceFile);
+    }
+
     const typeText = member.type.getText(sourceFile);
 
     // Check for ToolHelper<X>, PromptHelper<X>, ResourceHelper<X> (Pattern 1 - CHECKED FIRST)
@@ -102,7 +121,7 @@ export function discoverClassImplementations(node: ts.ClassDeclaration, sourceFi
       const [, helper, interfaceName] = helperMatch;
 
       implementations.push({
-        name: member.name.getText(sourceFile),
+        name: propertyName,
         helperType: `${helper}Helper` as any,
         interfaceName,
         kind: 'class-property',
@@ -120,7 +139,7 @@ export function discoverClassImplementations(node: ts.ClassDeclaration, sourceFi
         const helperType = `${suffix}Helper` as 'ToolHelper' | 'PromptHelper' | 'ResourceHelper';
 
         implementations.push({
-          name: member.name.getText(sourceFile),
+          name: propertyName,
           helperType,
           interfaceName,
           kind: 'class-property',

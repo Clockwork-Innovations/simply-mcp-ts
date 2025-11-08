@@ -11,6 +11,12 @@ export default {
       'ts-jest',
       {
         useESM: true,
+        diagnostics: {
+          ignoreCodes: [1343] // Required for ts-jest-mock-import-meta to work
+        },
+        astTransformers: {
+          before: ['ts-jest-mock-import-meta']
+        },
         tsconfig: {
           module: 'ES2020',
           moduleResolution: 'node',
@@ -42,14 +48,14 @@ export default {
     '/tests/unit/interface-api/subscriptions.test.ts',  // Custom runner (use tsx to run standalone)
     '/tests/unit/interface-api/prompt-message-arrays.test.ts',  // Custom runner (use tsx to run standalone)
     '/tests/unit/interface-api/prompt-simple-messages.test.ts',  // Custom runner (use tsx to run standalone)
-    '/tests/unit/type-coercion.test.ts',  // Uses loadInterfaceServer (requires import.meta.url workaround)
-    '/tests/unit/validation/inline-iparam.test.ts',  // Uses parseInterfaceFile (requires import.meta.url workaround)
-    '/tests/unit/interface-api/auto-export.test.ts',  // Uses import.meta.url (requires workaround)
-    '/tests/unit/interface-api/object-resource.test.ts',  // Uses import.meta.url (requires workaround)
-    '/tests/unit/interface-api/static-resource.test.ts',  // Uses import.meta.url (requires workaround)
+    '/tests/unit/type-coercion.test.ts',  // ts-jest-mock-import-meta conflicts with __filename usage
+    '/tests/unit/validation/inline-iparam.test.ts',  // Type errors + ts-jest-mock-import-meta conflicts
+    '/tests/unit/interface-api/auto-export.test.ts',  // ts-jest-mock-import-meta conflicts with __filename usage
+    '/tests/unit/interface-api/object-resource.test.ts',  // ts-jest-mock-import-meta conflicts with __filename usage
+    '/tests/unit/interface-api/static-resource.test.ts',  // ts-jest-mock-import-meta conflicts with __filename usage
+    '/tests/unit/ui-watch-manager.test.ts',  // ts-jest-mock-import-meta conflicts with __filename usage
+    '/tests/unit/dependency-extractor.test.ts',  // ts-jest-mock-import-meta conflicts with __filename usage
     '/tests/unit/interface-api/database-resource.test.ts',  // Fixture has TypeScript type errors with IServer interface
-    '/tests/unit/ui-watch-manager.test.ts',  // Uses import.meta.url (requires workaround)
-    '/tests/unit/dependency-extractor.test.ts',  // Uses import.meta.url (requires workaround)
     '/examples/nextjs-mcp-ui/',  // Incomplete experimental UI feature
     // Note: The following tests use programmatic capability detection and will skip automatically if environment doesn't support them.
     // They are still excluded here to avoid timeout issues in CI/limited environments:
