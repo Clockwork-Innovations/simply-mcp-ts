@@ -6,6 +6,7 @@
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { APIStyle } from './run.js';
+import { getNamingVariations } from '../server/compiler/utils.js';
 
 /**
  * Dynamically load TypeScript file
@@ -203,8 +204,8 @@ function validatePromptInterfaces(
     if (!prompt.argsMetadata) {
       promptErrors.push({
         severity: 'error',
-        message: `Prompt '${prompt.name}' missing required 'args' field`,
-        fix: `Add args: { argName: {} } or args: {} for no args`,
+        message: `Prompt '${prompt.name}' missing required 'args' or 'arguments' field`,
+        fix: `Add args: { argName: {} } or args: {} for no args (both 'args' and 'arguments' are supported)`,
       });
     } else {
       // Validate individual arguments
@@ -251,12 +252,18 @@ function validatePromptInterfaces(
     }
 
     // Validation Rule 5: Missing implementation method
-    if (serverInstance && !serverInstance[prompt.methodName]) {
-      promptErrors.push({
-        severity: 'error',
-        message: `Prompt '${prompt.name}' has no implementation method`,
-        fix: `Add ${prompt.methodName}: ${prompt.interfaceName} = (args) => { ... }`,
-      });
+    // Check all naming variations (snake_case, camelCase, etc.) for AI-friendliness
+    if (serverInstance) {
+      const namingVariations = getNamingVariations(prompt.name);
+      const hasImplementation = namingVariations.some(variation => serverInstance[variation]);
+
+      if (!hasImplementation) {
+        promptErrors.push({
+          severity: 'error',
+          message: `Prompt '${prompt.name}' has no implementation method`,
+          fix: `Add ${prompt.methodName}: ${prompt.interfaceName} = (args) => { ... } (or use ${prompt.name} for snake_case)`,
+        });
+      }
     }
 
     // Add to results if there are any issues
@@ -492,8 +499,12 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
       // Skip validation if serverInstance failed to load (null due to compilation errors)
       if (resource.dynamic && serverInstance !== null) {
         // Phase 2.2: Check both semantic name and URI property
-        const hasSemanticImpl = serverInstance && serverInstance[resource.methodName] !== undefined &&
-                                typeof serverInstance[resource.methodName] === 'function';
+        // Check all naming variations for AI-friendliness
+        const namingVariations = getNamingVariations(resource.name);
+        const hasSemanticImpl = namingVariations.some(variation =>
+          serverInstance && serverInstance[variation] !== undefined &&
+          typeof serverInstance[variation] === 'function'
+        );
         const hasUriImpl = serverInstance && serverInstance[resource.uri] !== undefined &&
                           typeof serverInstance[resource.uri] === 'function';
         const hasImplementation = hasSemanticImpl || hasUriImpl;

@@ -36,8 +36,9 @@ export function compilePromptInterface(
         if (ts.isStringLiteral(literal)) {
           description = literal.text;
         }
-      } else if (memberName === 'args' && member.type && ts.isTypeLiteralNode(member.type)) {
-        // Parse args metadata: Record<string, IPromptArgument>
+      } else if ((memberName === 'args' || memberName === 'arguments') && member.type && ts.isTypeLiteralNode(member.type)) {
+        // Parse args/arguments metadata: Record<string, IPromptArgument>
+        // Note: Accept both 'args' and 'arguments' for AI-friendliness
         // Note: Defaults are applied in the handler layer:
         //   - type defaults to 'string'
         //   - required defaults to true
@@ -46,6 +47,12 @@ export function compilePromptInterface(
           if (ts.isPropertySignature(argMember) && argMember.name && argMember.type) {
             const argName = argMember.name.getText(sourceFile);
             const argMetadata: { description?: string; required?: boolean; type?: string; enum?: string[] } = {};
+
+            // Check if the property is optional (has ? modifier)
+            const isOptional = argMember.questionToken !== undefined;
+            if (isOptional) {
+              argMetadata.required = false;
+            }
 
             // Parse IPromptArgument fields
             if (ts.isTypeLiteralNode(argMember.type)) {

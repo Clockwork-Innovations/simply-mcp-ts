@@ -166,9 +166,6 @@
     "terser": {
       "optional": true
     },
-    "tsx": {
-      "optional": true
-    },
     "typescript": {
       "optional": true
     }
