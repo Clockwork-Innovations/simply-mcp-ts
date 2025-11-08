@@ -152,7 +152,7 @@ describe('Resource Params Handler - Runtime Behavior', () => {
   test('context is passed as second argument when resource has params', async () => {
     const mockParams = { userId: '456' };
     const mockContext = {
-      logger: { info: jest.fn() },
+      logger: { info: () => {} },
       mcp: { server: { name: 'test' } },
     };
 
@@ -177,7 +177,7 @@ describe('Resource Params Handler - Runtime Behavior', () => {
 
   test('backward compatibility - resources without params get context only', async () => {
     const mockContext = {
-      logger: { info: jest.fn() },
+      logger: { info: () => {} },
     };
 
     interface StatsResource extends IResource {

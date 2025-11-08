@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.22] - 2025-11-08
+
+### Fixed
+- **Tests**: Fixed test failures in resource-params-handler.test.ts caused by missing jest imports
+  - Replaced `jest.fn()` with simple mock functions
+  - All tests now passing (1813/1813) ✅
+
 ## [4.0.21] - 2025-11-08
 
 ### Fixed
