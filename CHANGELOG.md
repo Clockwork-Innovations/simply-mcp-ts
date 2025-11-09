@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.3] - 2025-11-08
+
+### Added
+
+- **Comprehensive Dual-Pattern Documentation**: Enhanced documentation to clarify when to use `ToolHelper`/`PromptHelper`/`ResourceHelper` vs bare interface pattern
+  - Added "Choosing Your Pattern" section to README.md with comparison table showing ToolHelper (works with strict TypeScript) vs Bare Interface (requires strict: false)
+  - Added 100+ line "Troubleshooting TypeScript Errors" section to CONST_PATTERNS.md covering 4 common problems and solutions
+  - Created `examples/troubleshooting/typescript-errors.ts` demonstrating 6 common TypeScript errors and fixes
+  - Created `examples/troubleshooting/pattern-migration.ts` with complete migration guide from bare interface to helper types
+  - Added troubleshooting warnings and @see cross-references to ITool, IPrompt, and IResource interface JSDoc
+
+### Changed
+
+- **Enhanced Helper Types JSDoc**: Improved ToolHelper, PromptHelper, and ResourceHelper type definitions with:
+  - "Why use Helper?" sections listing benefits (automatic type inference, strict mode support, IDE autocomplete)
+  - Before/after migration examples showing pattern upgrade
+  - Cross-reference links to troubleshooting documentation
+- **Updated Main Package JSDoc** (`src/index.ts`): Added both const pattern (recommended) and class pattern examples, both using ToolHelper
+- **Updated README.md Class Pattern Example**: Changed from bare interface to ToolHelper pattern for consistency
+
+### Impact
+
+- Developers now have clear guidance on when to use each pattern
+- TypeScript errors guide users toward ToolHelper solution
+- Both patterns fully supported and documented (backward compatible)
+- Better developer experience with comprehensive troubleshooting resources
+- No breaking changes - existing bare interface code continues to work
+
 ## [4.1.2] - 2025-11-08
 
 ### Added
