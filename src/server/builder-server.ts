@@ -884,8 +884,12 @@ export class BuildMCPServer {
    * Assign tools to a router
    * Tools can be assigned to multiple routers.
    *
+   * **Nested Routers (v4.1.2+):** You can also assign routers to other routers.
+   * When a router name is provided in the toolNames array, all of that child
+   * router's tools are automatically expanded and added to the parent router.
+   *
    * @param routerName Name of the router
-   * @param toolNames Array of tool names to assign
+   * @param toolNames Array of tool names (or router names for nesting) to assign
    * @returns this for chaining
    */
   assignTools(routerName: string, toolNames: string[]): this {
@@ -946,22 +950,27 @@ export class BuildMCPServer {
         );
       }
 
-      // Don't allow assigning routers to routers
+      // Handle nested routers (v4.1.2+): expand child router tools
       if (this.routers.has(toolName)) {
-        throw new Error(
-          `Cannot assign router '${toolName}' to router '${routerName}'\n\n` +
-          `What went wrong:\n` +
-          `  You attempted to assign a router to another router.\n\n` +
-          `To fix:\n` +
-          `  Only assign regular tools to routers, not other routers.\n\n` +
-          `Tip: Routers can only contain regular tools, not other routers.`
-        );
+        // This is a child router - recursively expand its tools
+        const childRouterTools = this.routerToTools.get(toolName);
+        if (childRouterTools && childRouterTools.size > 0) {
+          // Add all tools from the child router to the parent router
+          toolNames.push(...Array.from(childRouterTools));
+        }
+        // Don't add the router itself to the parent's tool list
+        continue;
       }
     }
 
     // Update mappings
     const routerTools = this.routerToTools.get(routerName)!;
     for (const toolName of toolNames) {
+      // Skip routers (already expanded above)
+      if (this.routers.has(toolName)) {
+        continue;
+      }
+
       // Add to routerToTools
       routerTools.add(toolName);
 

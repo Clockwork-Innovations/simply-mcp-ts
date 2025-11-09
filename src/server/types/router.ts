@@ -177,21 +177,46 @@ export interface IToolRouter {
   description: string;
 
   /**
-   * Array of tool interface types to include in this router
+   * Array of tool and/or router interface types to include in this router
    *
-   * Reference the ITool interface types directly (not string names).
-   * Tools can be assigned to multiple routers.
+   * Reference ITool or IToolRouter interface types directly (not string names).
+   * Tools and routers can be assigned to multiple parent routers.
    *
-   * The parser will automatically extract tool names from the interface types.
+   * **Nested Routers (v4.1.2+):** You can include other routers in the tools array
+   * for hierarchical organization. When a parent router is called, it returns all
+   * tools from both direct tool references and nested child routers.
    *
-   * @example
+   * The parser will automatically extract tool/router names from the interface types.
+   *
+   * @example Basic Router with Tools
    * ```typescript
    * interface WeatherRouter extends IToolRouter {
-   *   tools: [GetWeatherTool, GetForecastTool];  // Reference interfaces directly
+   *   description: 'Weather tools';
+   *   tools: [GetWeatherTool, GetForecastTool];  // Reference tool interfaces
+   * }
+   * ```
+   *
+   * @example Nested Routers
+   * ```typescript
+   * // Child routers
+   * interface CurrentWeatherRouter extends IToolRouter {
+   *   description: 'Current weather tools';
+   *   tools: [GetWeatherTool, GetConditionsTool];
+   * }
+   *
+   * interface ForecastRouter extends IToolRouter {
+   *   description: 'Forecast tools';
+   *   tools: [GetForecastTool, GetHourlyTool];
+   * }
+   *
+   * // Parent router nesting child routers
+   * interface WeatherRouter extends IToolRouter {
+   *   description: 'All weather tools';
+   *   tools: [CurrentWeatherRouter, ForecastRouter, GetAlertsTool];  // Mix of routers and tools!
    * }
    * ```
    */
-  tools: readonly ITool[];
+  tools: readonly (ITool | IToolRouter)[];
 
   /**
    * Optional metadata for router customization

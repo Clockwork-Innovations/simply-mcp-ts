@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.2] - 2025-11-08
+
+### Added
+
+- **Nested Router Support**: Routers can now contain other routers as tools, enabling hierarchical organization for better configurability and greater depth of available tools. When a parent router references a child router in its `tools` array, all tools from the child router are automatically expanded and included in the parent router.
+  - Update `IToolRouter.tools` to accept both `ITool` and `IToolRouter` interface types
+  - Router expansion happens automatically in `assignTools()` method
+  - Supports unlimited nesting depth (e.g., Level1 → Level2 → Level3 → Tools)
+  - Comprehensive test coverage with 2 integration tests demonstrating mixed tools/routers and deep nesting scenarios
+
+### Changed
+
+- **IToolRouter Interface**: `tools` property now accepts `readonly (ITool | IToolRouter)[]` instead of just `readonly ITool[]` to support nested routers
+
+### Impact
+
+- Routers are now more flexible and can be organized hierarchically
+- Existing routers continue to work without changes (backward compatible)
+- New organizational patterns enabled for complex MCP servers
+
 ## [4.1.1] - 2025-11-08
 
 ### Fixed

@@ -741,4 +741,170 @@ const config: ConfigResource = async () => ({ contents: [] });
       expect(result.routerProperties).toHaveLength(0);
     });
   });
+
+  describe('Nested Routers (v4.1.2+)', () => {
+    it('should support mixed tools and routers in parent router', async () => {
+      const content = `
+import type { IServer, ITool, IToolRouter, IParam } from '../../../src/index.js';
+
+const server: IServer = {
+  name: 'mixed-router-server',
+  version: '1.0.0',
+  description: 'Server with mixed router content'
+};
+
+interface StringParam extends IParam {
+  type: 'string';
+  description: 'String parameter';
+}
+
+interface DirectTool extends ITool {
+  name: 'direct_tool';
+  description: 'Direct tool in parent';
+  params: { value: StringParam };
+  result: string;
+}
+
+interface ChildTool extends ITool {
+  name: 'child_tool';
+  description: 'Child tool';
+  params: { value: StringParam };
+  result: string;
+}
+
+interface ChildRouter extends IToolRouter {
+  name: 'child_router';
+  description: 'Child router';
+  tools: [ChildTool];
+}
+
+interface MixedRouter extends IToolRouter {
+  name: 'mixed_router';
+  description: 'Router with both direct tools and nested router';
+  tools: [DirectTool, ChildRouter];  // Mix of tools and routers!
+}
+
+const direct_tool: DirectTool = async ({ value }) => \`Direct: \${value}\`;
+const child_tool: ChildTool = async ({ value }) => \`Child: \${value}\`;
+
+const childRouter: ChildRouter = {
+  name: 'child_router',
+  description: 'Child router',
+  tools: ['child_tool']
+};
+
+const mixedRouter: MixedRouter = {
+  name: 'mixed_router',
+  description: 'Router with both direct tools and nested router',
+  tools: ['direct_tool', 'child_router']
+};
+`;
+
+      const filePath = createTestFile('mixed-router.ts', content);
+      const result = compileInterfaceFile(filePath);
+
+      // Should compile successfully
+      expect(result.validationErrors).toEqual([]);
+
+      // Should have all tools
+      expect(result.tools).toHaveLength(2);
+      expect(result.implementations).toHaveLength(2);
+
+      // Should have both routers
+      expect(result.routers).toHaveLength(2);
+
+      // Mixed router should reference both tool and router
+      const mixedRouter = result.routers.find(r => r.interfaceName === 'MixedRouter');
+      expect(mixedRouter).toBeDefined();
+      expect(mixedRouter!.tools).toEqual(['DirectTool', 'ChildRouter']);
+    });
+
+    it('should support deep nesting (3 levels)', async () => {
+      const content = `
+import type { IServer, ITool, IToolRouter, IParam } from '../../../src/index.js';
+
+const server: IServer = {
+  name: 'deep-nested-server',
+  version: '1.0.0',
+  description: 'Server with deeply nested routers'
+};
+
+interface StringParam extends IParam {
+  type: 'string';
+  description: 'String parameter';
+}
+
+interface LeafTool extends ITool {
+  name: 'leaf_tool';
+  description: 'Deepest tool';
+  params: { value: StringParam };
+  result: string;
+}
+
+interface Level3Router extends IToolRouter {
+  name: 'level_3_router';
+  description: 'Deepest router';
+  tools: [LeafTool];
+}
+
+interface Level2Router extends IToolRouter {
+  name: 'level_2_router';
+  description: 'Middle router';
+  tools: [Level3Router];
+}
+
+interface Level1Router extends IToolRouter {
+  name: 'level_1_router';
+  description: 'Top-level router';
+  tools: [Level2Router];
+}
+
+const leaf_tool: LeafTool = async ({ value }) => \`Leaf: \${value}\`;
+
+const level3Router: Level3Router = {
+  name: 'level_3_router',
+  description: 'Deepest router',
+  tools: ['leaf_tool']
+};
+
+const level2Router: Level2Router = {
+  name: 'level_2_router',
+  description: 'Middle router',
+  tools: ['level_3_router']
+};
+
+const level1Router: Level1Router = {
+  name: 'level_1_router',
+  description: 'Top-level router',
+  tools: ['level_2_router']
+};
+`;
+
+      const filePath = createTestFile('deep-nested.ts', content);
+      const result = compileInterfaceFile(filePath);
+
+      // Should compile successfully
+      expect(result.validationErrors).toEqual([]);
+
+      // Should have the leaf tool
+      expect(result.tools).toHaveLength(1);
+      expect(result.implementations).toHaveLength(1);
+
+      // Should have all 3 levels of routers
+      expect(result.routers).toHaveLength(3);
+
+      // Each level should reference the next
+      const level1 = result.routers.find(r => r.interfaceName === 'Level1Router');
+      expect(level1).toBeDefined();
+      expect(level1!.tools).toEqual(['Level2Router']);
+
+      const level2 = result.routers.find(r => r.interfaceName === 'Level2Router');
+      expect(level2).toBeDefined();
+      expect(level2!.tools).toEqual(['Level3Router']);
+
+      const level3 = result.routers.find(r => r.interfaceName === 'Level3Router');
+      expect(level3).toBeDefined();
+      expect(level3!.tools).toEqual(['LeafTool']);
+    });
+  });
 });
