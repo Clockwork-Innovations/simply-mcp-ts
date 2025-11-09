@@ -88,6 +88,80 @@ export default class CalculatorService {
 }
 ```
 
+## API Patterns: Class vs Const
+
+Simply MCP supports two API patterns for implementing servers: **class-based** (shown above) and **const-based** (v4.0+). Both are fully supported and can be mixed.
+
+### Const-Based Pattern (v4.0+)
+
+The const-based pattern provides a simpler, more functional approach with less boilerplate:
+
+```typescript
+// server.ts
+import type { ITool, IParam, IServer, ToolHelper } from 'simply-mcp';
+
+// Same parameter and tool interfaces as before
+interface AParam extends IParam {
+  type: 'number';
+  description: 'First number to add';
+}
+
+interface BParam extends IParam {
+  type: 'number';
+  description: 'Second number to add';
+}
+
+interface AddTool extends ITool {
+  name: 'add';
+  description: 'Add two numbers';
+  params: { a: AParam; b: BParam };
+  result: { sum: number };
+}
+
+// Server configuration (same)
+const server: IServer = {
+  name: 'calculator',
+  version: '1.0.0',
+  description: 'A simple calculator server'
+};
+
+// Implement tool as const with ToolHelper
+const add: ToolHelper<AddTool> = async (params) => ({
+  sum: params.a + params.b
+});
+
+// Export const implementations
+export { server, add };
+```
+
+**Benefits of const pattern:**
+- Less boilerplate (no class declaration)
+- Simpler syntax (direct const assignments)
+- Functional programming style
+- Better type inference with helper types
+- Easier to test individual functions
+
+### When to Use Each Pattern
+
+**Use const pattern when:**
+- Tools are stateless (no shared state)
+- Simple, pure functions
+- Prefer functional programming style
+- Starting a new project
+
+**Use class pattern when:**
+- Need shared state (`this.something`)
+- Complex initialization logic
+- Multiple tools share data
+- Existing class-based codebase
+
+**Mix both patterns:**
+- Const for simple stateless tools
+- Class for complex stateful operations
+- Best of both worlds!
+
+See the [Const Patterns Guide](./CONST_PATTERNS.md) for complete reference and examples.
+
 ## Run Your Server
 
 Simply MCP supports multiple transport modes for different use cases.
@@ -720,19 +794,33 @@ interface DashboardUI extends IUI {
   uri: 'ui://dashboard/main';
   name: 'Dashboard';
   description: 'Interactive dashboard';
-  html: string;
-  css: string;
+  source: string;  // HTML content, URL, or file path
   tools: ['refresh_data'];  // Tool allowlist for security
 }
 
 export default class Server {
   dashboard: DashboardUI = {
-    html: `
+    source: `
       <div id="app">
         <h1>My Dashboard</h1>
         <button onclick="refreshData()">Refresh</button>
         <div id="data"></div>
       </div>
+
+      <style>
+        #app {
+          font-family: system-ui;
+          padding: 20px;
+        }
+        button {
+          background: #007bff;
+          color: white;
+          padding: 10px 20px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+      </style>
 
       <script>
         async function refreshData() {
@@ -758,24 +846,21 @@ export default class Server {
           });
         }
       </script>
-    `,
-    css: `
-      #app {
-        font-family: system-ui;
-        padding: 20px;
-      }
-      button {
-        background: #007bff;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
     `
   };
 }
 ```
+
+**`source` Field Options:**
+
+The `source` field accepts multiple formats for maximum flexibility:
+
+1. **Inline HTML** - Complete HTML document as a string (shown above)
+2. **External URL** - `source: 'https://analytics.example.com/dashboard'`
+3. **File Path** - `source: './components/Dashboard.tsx'` (React/JSX files)
+4. **Folder** - `source: './ui/dashboard/'` (auto-bundles all files)
+
+All formats support automatic bundling, hot reload in development, and the MCP UI postMessage protocol.
 
 ### SDK API Example
 

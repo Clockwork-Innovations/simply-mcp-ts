@@ -10,7 +10,7 @@ import { snakeToCamel } from '../utils.js';
 
 export function compileSubscriptionInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFile): ParsedSubscription | null {
   const interfaceName = node.name.text;
-  let name = interfaceName; // Use interface name as identifier
+  let name = interfaceName; // Default to interface name, will be overridden if 'name' property exists
   let uri = '';
   let description = '';
   let hasHandler = false;
@@ -20,7 +20,12 @@ export function compileSubscriptionInterface(node: ts.InterfaceDeclaration, sour
     if (ts.isPropertySignature(member) && member.name) {
       const memberName = member.name.getText(sourceFile);
 
-      if (memberName === 'uri' && member.type && ts.isLiteralTypeNode(member.type)) {
+      if (memberName === 'name' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          name = literal.text;
+        }
+      } else if (memberName === 'uri' && member.type && ts.isLiteralTypeNode(member.type)) {
         const literal = member.type.literal;
         if (ts.isStringLiteral(literal)) {
           uri = literal.text;

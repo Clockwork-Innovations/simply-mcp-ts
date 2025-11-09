@@ -272,7 +272,7 @@ export function validateBundleOptions(options: Partial<BundleOptions>): void {
 
   // Validate format if specified
   if (options.format !== undefined) {
-    const validFormats = ['single-file', 'standalone', 'executable', 'esm', 'cjs'];
+    const validFormats = ['single-file', 'standalone', 'executable', 'esm', 'cjs', 'tar.gz', 'zip'];
     if (!validFormats.includes(options.format)) {
       throw new Error(`Invalid format: ${options.format}. Must be one of: ${validFormats.join(', ')}`);
     }

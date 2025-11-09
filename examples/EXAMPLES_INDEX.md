@@ -188,8 +188,11 @@ npx simply-mcp run examples/interface-minimal.ts --dry-run
 # Create single executable
 npx simplymcp bundle examples/interface-minimal.ts -o my-server.js
 
-# Create package bundle
-npx simplymcp bundle examples/interface-minimal.ts -f package -o ./my-bundle
+# Create tar.gz archive bundle
+npx simplymcp bundle examples/interface-minimal.ts -f tar.gz -o ./my-bundle
+
+# Create zip archive bundle
+npx simplymcp bundle examples/interface-minimal.ts -f zip -o ./my-bundle
 ```
 
 ## Learning Path

@@ -4,7 +4,9 @@
  */
 
 import type * as esbuildType from 'esbuild';
-import { stat, readFile, chmod, writeFile } from 'fs/promises';
+import { stat, readFile, chmod, writeFile, mkdtemp, rm } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join, basename, dirname } from 'path';
 import { BundleOptions, BundleResult, BundleError, BundleMetadata } from '../features/dependencies/bundle-types';
 import { detectEntryPoint } from './entry-detector.js';
 import { resolveDependencies, getBuiltinModules } from '../features/dependencies/dependency-resolver.js';
@@ -12,6 +14,8 @@ import { formatOutput } from './output-formatter.js';
 import { createStandaloneBundle } from './formatters/standalone-formatter.js';
 import { handleSourceMap } from './formatters/sourcemap-handler.js';
 import { startWatch } from './formatters/watch-manager.js';
+import { createArchive } from './archiver.js';
+import { generateManifest, writeManifest } from './bundle-manifest.js';
 
 /**
  * Bundle a SimplyMCP server using esbuild
@@ -90,7 +94,7 @@ export async function bundle(options: BundleOptions): Promise<BundleResult> {
       options.onProgress('Building bundle configuration...');
     }
 
-    const esbuildConfig = buildEsbuildConfig(options, entry, deps);
+    const { config: esbuildConfig, outfile: esbuildOutfile } = buildEsbuildConfig(options, entry, deps);
 
     // 4. Handle watch mode - delegate to watch-manager
     if (options.watch) {
@@ -149,7 +153,24 @@ export async function bundle(options: BundleOptions): Promise<BundleResult> {
       }
     }
 
-    // 7. Route to appropriate formatter based on format (Feature 4.2)
+    // 7. Extract warnings
+    if (result.warnings.length > 0) {
+      warnings.push(...result.warnings.map(w => formatEsbuildMessage(w)));
+    }
+
+    // 8. Build metadata (needed for archive formats)
+    const metadata: BundleMetadata = {
+      entry,
+      moduleCount: result.metafile ? Object.keys(result.metafile.inputs).length : 0,
+      dependencies: Object.keys(deps.dependencies),
+      external: [
+        ...deps.nativeModules,
+        ...(options.external || []),
+      ],
+      nativeModules: deps.nativeModules,
+    };
+
+    // 9. Route to appropriate formatter based on format (Feature 4.2)
     let outputPath = options.output;
     let outputSize = 0;
 
@@ -181,27 +202,29 @@ export async function bundle(options: BundleOptions): Promise<BundleResult> {
       });
       outputPath = standaloneResult.outputDir;
       outputSize = await getDirectorySize(standaloneResult.files);
+    } else if (options.format === 'tar.gz' || options.format === 'zip') {
+      // Archive formats: tar.gz and zip
+      if (options.onProgress) {
+        options.onProgress(`Creating ${options.format} archive...`);
+      }
+
+      const archiveResult = await createArchiveBundle({
+        result,
+        metadata,
+        format: options.format,
+        outputPath: options.output,
+        basePath,
+        deps,
+        onProgress: options.onProgress,
+        esbuildOutfile,
+      });
+
+      outputPath = archiveResult.outputPath;
+      outputSize = archiveResult.size;
     } else {
       // Single-file, esm, or cjs format - already handled by esbuild
       outputSize = await getOutputSize(options.output);
     }
-
-    // 8. Extract warnings
-    if (result.warnings.length > 0) {
-      warnings.push(...result.warnings.map(w => formatEsbuildMessage(w)));
-    }
-
-    // 9. Build metadata
-    const metadata: BundleMetadata = {
-      entry,
-      moduleCount: result.metafile ? Object.keys(result.metafile.inputs).length : 0,
-      dependencies: Object.keys(deps.dependencies),
-      external: [
-        ...deps.nativeModules,
-        ...(options.external || []),
-      ],
-      nativeModules: deps.nativeModules,
-    };
 
     // 10. Return successful result
     const duration = Date.now() - startTime;
@@ -251,7 +274,7 @@ function buildEsbuildConfig(
   options: BundleOptions,
   entry: string,
   deps: any
-): esbuildType.BuildOptions {
+): { config: esbuildType.BuildOptions; outfile: string } {
   const format = options.format || 'single-file';
 
   // Handle external dependencies based on format
@@ -264,7 +287,7 @@ function buildEsbuildConfig(
       throw new Error(
         `Cannot create single-file bundle: native modules detected (${deps.nativeModules.join(', ')}). ` +
         `Native modules cannot be bundled into a single file. ` +
-        `Please use 'standalone' format instead, which supports native modules.`
+        `Please use 'standalone', 'tar.gz', or 'zip' format instead, which support native modules.`
       );
     }
 
@@ -275,6 +298,16 @@ function buildEsbuildConfig(
     ];
 
     // Don't add shebang via banner - we'll add it post-build to avoid duplication
+    banner = options.banner ? { js: options.banner } : undefined;
+  } else if (format === 'tar.gz' || format === 'zip') {
+    // For archive formats: externalize builtins and native modules
+    // Bundle all other dependencies into server.js
+    external = [
+      ...getBuiltinModules(), // Always external
+      ...deps.nativeModules,  // Native modules must be external (installed via package.json)
+      ...(options.external || []),
+    ];
+
     banner = options.banner ? { js: options.banner } : undefined;
   } else {
     // For other formats: externalize builtins, native modules, and user-specified
@@ -288,29 +321,42 @@ function buildEsbuildConfig(
   }
 
   // For standalone format, if output is a directory, write to bundle.js inside it
+  // For archive formats, use a temporary file that will be included in the archive
   // This ensures esbuild has a valid file path
   let outfile = options.output;
   if (format === 'standalone' && !options.output.endsWith('.js')) {
     outfile = options.output + '/bundle.js';
+  } else if (format === 'tar.gz' || format === 'zip') {
+    // For archives, write to the specified output path (will be read and moved to archive)
+    // Ensure it has .js extension for esbuild
+    if (!options.output.endsWith('.js') && !options.output.endsWith('.tar.gz') && !options.output.endsWith('.zip')) {
+      outfile = options.output + '.js';
+    } else if (options.output.endsWith('.tar.gz') || options.output.endsWith('.zip')) {
+      // Replace archive extension with .js for temporary build
+      outfile = options.output.replace(/\.(tar\.gz|zip)$/, '.js');
+    }
   }
 
   return {
-    entryPoints: [entry],
-    bundle: true,
-    platform: options.platform || 'node',
-    target: options.target || 'node20',
-    format: getEsbuildFormat(format),
+    config: {
+      entryPoints: [entry],
+      bundle: true,
+      platform: options.platform || 'node',
+      target: options.target || 'node20',
+      format: getEsbuildFormat(format),
+      outfile,
+      minify: options.minify !== false, // Default to true
+      sourcemap: options.sourcemap || false,
+      external: external,
+      treeShaking: options.treeShake !== false, // Default to true
+      metafile: true,
+      logLevel: 'warning',
+      mainFields: ['module', 'main'],
+      conditions: ['node', 'import', 'require'],
+      banner: banner,
+      footer: options.footer ? { js: options.footer } : undefined,
+    },
     outfile,
-    minify: options.minify !== false, // Default to true
-    sourcemap: options.sourcemap || false,
-    external: external,
-    treeShaking: options.treeShake !== false, // Default to true
-    metafile: true,
-    logLevel: 'warning',
-    mainFields: ['module', 'main'],
-    conditions: ['node', 'import', 'require'],
-    banner: banner,
-    footer: options.footer ? { js: options.footer } : undefined,
   };
 }
 
@@ -323,6 +369,10 @@ function getEsbuildFormat(format: string): esbuildType.Format {
       return 'esm';
     case 'cjs':
       return 'cjs';
+    case 'tar.gz':
+    case 'zip':
+      // Archive formats use ESM for better compatibility with dynamic imports
+      return 'esm';
     case 'single-file':
     case 'standalone':
     case 'executable':
@@ -472,6 +522,174 @@ function formatSize(bytes: number): string {
  */
 export async function stopWatch(context: esbuildType.BuildContext): Promise<void> {
   await context.dispose();
+}
+
+/**
+ * Create archive bundle (tar.gz or zip)
+ * Creates a temporary directory with bundle contents, generates manifest,
+ * and creates the archive
+ */
+async function createArchiveBundle(params: {
+  result: esbuildType.BuildResult;
+  metadata: BundleMetadata;
+  format: 'tar.gz' | 'zip';
+  outputPath: string;
+  esbuildOutfile: string;
+  basePath: string;
+  deps: any;
+  onProgress?: (message: string) => void;
+}): Promise<{ outputPath: string; size: number }> {
+  const { result, metadata, format, outputPath, esbuildOutfile, basePath, deps, onProgress } = params;
+
+  // Create temporary directory for bundle contents
+  const tempDir = await mkdtemp(join(tmpdir(), 'simplemcp-bundle-'));
+
+  try {
+    // 1. Write compiled server.js from esbuild output
+    if (onProgress) {
+      onProgress('Writing compiled server code...');
+    }
+
+    const serverJsPath = join(tempDir, 'server.js');
+    if (result.outputFiles && result.outputFiles.length > 0) {
+      // When using write: false, output is in outputFiles
+      await writeFile(serverJsPath, result.outputFiles[0].contents);
+    } else {
+      // When using write: true (default), read from disk
+      // Use the esbuild outfile path
+      const compiledCode = await readFile(esbuildOutfile, 'utf-8');
+      await writeFile(serverJsPath, compiledCode);
+    }
+
+    // 2. Read package.json for server metadata (if it exists)
+    if (onProgress) {
+      onProgress('Reading server metadata...');
+    }
+
+    let serverName = basename(metadata.entry, '.ts').replace(/\.js$/, '');
+    let serverVersion = '1.0.0';
+    let serverDescription: string | undefined;
+
+    try {
+      const packageJsonPath = join(basePath, 'package.json');
+      const packageJsonContent = await readFile(packageJsonPath, 'utf-8');
+      const packageJson = JSON.parse(packageJsonContent);
+
+      if (packageJson.name) {
+        serverName = packageJson.name;
+      }
+      if (packageJson.version) {
+        serverVersion = packageJson.version;
+      }
+      if (packageJson.description) {
+        serverDescription = packageJson.description;
+      }
+    } catch (error) {
+      // package.json doesn't exist or is invalid, use defaults
+      if (onProgress) {
+        onProgress('No package.json found, using default metadata');
+      }
+    }
+
+    // 3. Generate and write bundle manifest
+    if (onProgress) {
+      onProgress('Generating bundle manifest...');
+    }
+
+    const manifest = generateManifest(
+      {
+        name: serverName,
+        version: serverVersion,
+        description: serverDescription,
+      },
+      metadata.nativeModules,
+      'server.js'
+    );
+
+    await writeManifest(tempDir, manifest);
+
+    // 4. Create package.json for native dependencies (if needed)
+    if (metadata.nativeModules.length > 0) {
+      if (onProgress) {
+        onProgress('Creating package.json for native dependencies...');
+      }
+
+      const bundlePackageJson = {
+        name: serverName,
+        version: serverVersion,
+        description: serverDescription,
+        private: true,
+        dependencies: metadata.nativeModules.reduce((acc, dep) => {
+          // Use the version from resolved dependencies if available
+          acc[dep] = deps.dependencies[dep] || 'latest';
+          return acc;
+        }, {} as Record<string, string>),
+      };
+
+      await writeFile(
+        join(tempDir, 'package.json'),
+        JSON.stringify(bundlePackageJson, null, 2),
+        'utf-8'
+      );
+    }
+
+    // 5. Determine archive output path
+    // If outputPath doesn't have the correct extension, add it
+    let archivePath = outputPath;
+    if (format === 'tar.gz' && !outputPath.endsWith('.tar.gz')) {
+      archivePath = outputPath.replace(/\.[^.]*$/, '') + '.tar.gz';
+    } else if (format === 'zip' && !outputPath.endsWith('.zip')) {
+      archivePath = outputPath.replace(/\.[^.]*$/, '') + '.zip';
+    }
+
+    // Ensure output directory exists
+    const archiveDir = dirname(archivePath);
+    try {
+      await stat(archiveDir);
+    } catch {
+      throw new Error(`Output directory does not exist: ${archiveDir}`);
+    }
+
+    // 6. Create the archive
+    if (onProgress) {
+      onProgress(`Creating ${format} archive...`);
+    }
+
+    await createArchive({
+      format,
+      sourceDir: tempDir,
+      outputPath: archivePath,
+    });
+
+    // 7. Get archive size
+    const archiveSize = await getOutputSize(archivePath);
+
+    if (onProgress) {
+      onProgress(`Archive created: ${archivePath} (${formatSize(archiveSize)})`);
+    }
+
+    // 8. Clean up temporary esbuild output file if it's different from final archive
+    if (esbuildOutfile !== archivePath) {
+      try {
+        await rm(esbuildOutfile, { force: true });
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+
+    return {
+      outputPath: archivePath,
+      size: archiveSize,
+    };
+  } finally {
+    // Clean up temporary directory
+    try {
+      await rm(tempDir, { recursive: true, force: true });
+    } catch (error) {
+      // Ignore cleanup errors
+      console.warn(`Failed to clean up temporary directory ${tempDir}:`, error);
+    }
+  }
 }
 
 /**

@@ -119,10 +119,8 @@ export function compileRouterInterface(node: ts.InterfaceDeclaration, sourceFile
     return null;
   }
 
-  if (tools.length === 0) {
-    console.warn(`Router ${interfaceName}: tools array must not be empty`);
-    return null;
-  }
+  // Allow empty tools arrays (useful for placeholder/template routers)
+  // Users may want to define router structure before adding tools
 
   // Generate property name from interface name
   // WeatherRouter -> weatherRouter

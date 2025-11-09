@@ -15,7 +15,18 @@ import {
   discoverClassImplementations,
   discoverClassInstance,
   discoverClassRouterProperties,
-  linkImplementationsToInterfaces
+  discoverConstUI,
+  discoverClassUIImplementations,
+  discoverConstRouter,
+  discoverConstCompletion,
+  discoverConstRoots,
+  discoverConstSubscription,
+  linkImplementationsToInterfaces,
+  linkUIsToInterfaces,
+  linkRoutersToInterfaces,
+  linkCompletionsToInterfaces,
+  linkRootsToInterfaces,
+  linkSubscriptionsToInterfaces
 } from './discovery.js';
 import { validateImplementations } from './validation-compiler.js';
 import { compileToolInterface } from './compilers/tool-compiler.js';
@@ -89,6 +100,11 @@ export function compileInterfaceFile(filePath: string): ParseResult {
     implementations: [],
     instances: [],
     routerProperties: [],
+    discoveredUIs: [],
+    discoveredRouters: [],
+    discoveredCompletions: [],
+    discoveredRoots: [],
+    discoveredSubscriptions: [],
   };
 
   // Store auth interfaces by name for resolution
@@ -103,6 +119,8 @@ export function compileInterfaceFile(filePath: string): ParseResult {
       const initializer = constServer.initializer;
       if (initializer && ts.isObjectLiteralExpression(initializer)) {
         const serverData: any = {};
+        let inlineAuth: ParsedAuth | undefined;
+
         for (const prop of initializer.properties) {
           if (ts.isPropertyAssignment(prop)) {
             const name = prop.name.getText(sourceFile);
@@ -114,6 +132,9 @@ export function compileInterfaceFile(filePath: string): ParseResult {
               serverData[name] = true;
             } else if (ts.isToken(value) && value.kind === ts.SyntaxKind.FalseKeyword) {
               serverData[name] = false;
+            } else if (name === 'auth' && ts.isObjectLiteralExpression(value)) {
+              // Parse inline auth object from const server
+              inlineAuth = parseConstServerAuth(value, sourceFile);
             }
           }
         }
@@ -123,7 +144,8 @@ export function compileInterfaceFile(filePath: string): ParseResult {
           name: serverData.name || 'unknown',
           version: serverData.version || '1.0.0',
           description: serverData.description,
-          flattenRouters: serverData.flattenRouters
+          flattenRouters: serverData.flattenRouters,
+          auth: inlineAuth
         };
       }
     }
@@ -132,6 +154,36 @@ export function compileInterfaceFile(filePath: string): ParseResult {
     const constImpl = discoverConstImplementation(node, sourceFile);
     if (constImpl) {
       result.implementations!.push(constImpl);
+    }
+
+    // NEW v4: Discover const UI implementations
+    const constUI = discoverConstUI(node, sourceFile);
+    if (constUI) {
+      result.discoveredUIs!.push(constUI);
+    }
+
+    // NEW v4: Discover const router implementations
+    const constRouter = discoverConstRouter(node, sourceFile);
+    if (constRouter) {
+      result.discoveredRouters!.push(constRouter);
+    }
+
+    // NEW v4: Discover const completion implementations
+    const constCompletion = discoverConstCompletion(node, sourceFile);
+    if (constCompletion) {
+      result.discoveredCompletions!.push(constCompletion);
+    }
+
+    // NEW v4: Discover const roots implementations
+    const constRoots = discoverConstRoots(node, sourceFile);
+    if (constRoots) {
+      result.discoveredRoots!.push(constRoots);
+    }
+
+    // NEW v4: Discover const subscription implementations
+    const constSubscription = discoverConstSubscription(node, sourceFile);
+    if (constSubscription) {
+      result.discoveredSubscriptions!.push(constSubscription);
     }
 
     // NEW v4: Discover class instantiations
@@ -203,6 +255,10 @@ export function compileInterfaceFile(filePath: string): ParseResult {
       // NEW v4: Discover class property implementations
       const classImpls = discoverClassImplementations(node, sourceFile);
       result.implementations!.push(...classImpls);
+
+      // NEW v4: Discover class property UI implementations
+      const classUIs = discoverClassUIImplementations(node, sourceFile);
+      result.discoveredUIs!.push(...classUIs);
 
       const modifiers = node.modifiers ? Array.from(node.modifiers) : [];
       const hasDefaultExport = modifiers.some((mod: ts.Node) => mod.kind === ts.SyntaxKind.DefaultKeyword);
@@ -277,24 +333,235 @@ export function compileInterfaceFile(filePath: string): ParseResult {
     discoverRouters(sourceFile);
   }
 
+  // Link implementations to interfaces (v4 auto-discovery)
+  linkImplementationsToInterfaces(result);
+
+  // Link discovered UIs to interfaces (v4 const UI discovery)
+  linkUIsToInterfaces(result);
+
+  // Link discovered routers to interfaces (v4 const router discovery)
+  // IMPORTANT: This must happen BEFORE matching router properties
+  // so we can check if a router already has constName set
+  linkRoutersToInterfaces(result, sourceFile);
+
+  // Link discovered completions to interfaces (v4 const completion discovery)
+  linkCompletionsToInterfaces(result, sourceFile);
+
+  // Link discovered roots to interfaces (v4 const roots discovery)
+  linkRootsToInterfaces(result, sourceFile);
+
+  // Link discovered subscriptions to interfaces (v4 const subscription discovery)
+  linkSubscriptionsToInterfaces(result, sourceFile);
+
   // Match router properties to router interfaces
   // This updates the propertyName field in routers based on discovered class properties
+  // Only set propertyName if constName is not already set (they are mutually exclusive)
   if (result.routerProperties && result.routerProperties.length > 0) {
     for (const routerProp of result.routerProperties) {
       // Find the router interface that matches this property's type
       const router = result.routers.find(r => r.interfaceName === routerProp.interfaceName);
-      if (router) {
-        // Update the router's propertyName to match the actual class property
+      if (router && !router.constName) {
+        // Only set propertyName if this is NOT a const router
+        // Const routers have constName set, class routers have propertyName set
         router.propertyName = routerProp.propertyName;
       }
     }
   }
 
-  // Link implementations to interfaces (v4 auto-discovery)
-  linkImplementationsToInterfaces(result);
-
   // Validate implementations (Phase 2B: Auto-discovery validation)
   validateImplementations(result);
 
   return result;
+}
+
+/**
+ * Parse inline auth object from const server object literal
+ * Handles runtime values in const servers (not compile-time types)
+ * Example: const server: IServer = { auth: { type: 'apiKey', keys: [...] } }
+ */
+function parseConstServerAuth(authObj: ts.ObjectLiteralExpression, sourceFile: ts.SourceFile): ParsedAuth | null {
+  let authType: 'apiKey' | 'oauth2' | 'database' | 'custom' | undefined;
+
+  // API Key fields
+  let headerName: string | undefined;
+  let allowAnonymous: boolean | undefined;
+  let keys: Array<{ name: string; key: string; permissions: string[] }> | undefined;
+
+  // OAuth2 fields
+  let issuerUrl: string | undefined;
+  let clients: Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> | undefined;
+  let tokenExpiration: number | undefined;
+  let refreshTokenExpiration: number | undefined;
+  let codeExpiration: number | undefined;
+
+  for (const prop of authObj.properties) {
+    if (ts.isPropertyAssignment(prop)) {
+      const propName = prop.name.getText(sourceFile);
+      const value = prop.initializer;
+
+      if (propName === 'type' && ts.isStringLiteral(value)) {
+        const typeVal = value.text;
+        if (typeVal === 'apiKey' || typeVal === 'oauth2' || typeVal === 'database' || typeVal === 'custom') {
+          authType = typeVal;
+        }
+      }
+      // API Key fields
+      else if (propName === 'headerName' && ts.isStringLiteral(value)) {
+        headerName = value.text;
+      } else if (propName === 'allowAnonymous') {
+        if (value.kind === ts.SyntaxKind.TrueKeyword) {
+          allowAnonymous = true;
+        } else if (value.kind === ts.SyntaxKind.FalseKeyword) {
+          allowAnonymous = false;
+        }
+      } else if (propName === 'keys' && ts.isArrayLiteralExpression(value)) {
+        keys = [];
+        for (const element of value.elements) {
+          if (ts.isObjectLiteralExpression(element)) {
+            const keyConfig = parseConstKeyConfig(element, sourceFile);
+            if (keyConfig) {
+              keys.push(keyConfig);
+            }
+          }
+        }
+      }
+      // OAuth2 fields
+      else if (propName === 'issuerUrl' && ts.isStringLiteral(value)) {
+        issuerUrl = value.text;
+      } else if (propName === 'clients' && ts.isArrayLiteralExpression(value)) {
+        clients = parseConstOAuthClients(value, sourceFile);
+      } else if (propName === 'tokenExpiration' && ts.isNumericLiteral(value)) {
+        tokenExpiration = parseInt(value.text, 10);
+      } else if (propName === 'refreshTokenExpiration' && ts.isNumericLiteral(value)) {
+        refreshTokenExpiration = parseInt(value.text, 10);
+      } else if (propName === 'codeExpiration' && ts.isNumericLiteral(value)) {
+        codeExpiration = parseInt(value.text, 10);
+      }
+    }
+  }
+
+  if (!authType) {
+    console.warn('Inline auth object in const server missing required "type" property');
+    return null;
+  }
+
+  return {
+    type: authType,
+    interfaceName: 'InlineAuth',
+    // API Key fields
+    headerName,
+    keys,
+    allowAnonymous,
+    // OAuth2 fields
+    issuerUrl,
+    clients,
+    tokenExpiration,
+    refreshTokenExpiration,
+    codeExpiration
+  };
+}
+
+/**
+ * Parse a single key config from const server auth
+ */
+function parseConstKeyConfig(
+  keyObj: ts.ObjectLiteralExpression,
+  sourceFile: ts.SourceFile
+): { name: string; key: string; permissions: string[] } | null {
+  let name = '';
+  let key = '';
+  let permissions: string[] = [];
+
+  for (const prop of keyObj.properties) {
+    if (ts.isPropertyAssignment(prop)) {
+      const propName = prop.name.getText(sourceFile);
+      const value = prop.initializer;
+
+      if (propName === 'name' && ts.isStringLiteral(value)) {
+        name = value.text;
+      } else if (propName === 'key' && ts.isStringLiteral(value)) {
+        key = value.text;
+      } else if (propName === 'permissions' && ts.isArrayLiteralExpression(value)) {
+        for (const element of value.elements) {
+          if (ts.isStringLiteral(element)) {
+            permissions.push(element.text);
+          }
+        }
+      }
+    }
+  }
+
+  if (!name || !key || permissions.length === 0) {
+    return null;
+  }
+
+  return { name, key, permissions };
+}
+
+/**
+ * Parse OAuth2 clients array from const server auth
+ */
+function parseConstOAuthClients(
+  clientsArray: ts.ArrayLiteralExpression,
+  sourceFile: ts.SourceFile
+): Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> | undefined {
+  const clients: Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> = [];
+
+  for (const element of clientsArray.elements) {
+    if (ts.isObjectLiteralExpression(element)) {
+      const clientConfig = parseConstOAuthClientConfig(element, sourceFile);
+      if (clientConfig) {
+        clients.push(clientConfig);
+      }
+    }
+  }
+
+  return clients.length > 0 ? clients : undefined;
+}
+
+/**
+ * Parse a single OAuth2 client config from const server auth
+ */
+function parseConstOAuthClientConfig(
+  clientObj: ts.ObjectLiteralExpression,
+  sourceFile: ts.SourceFile
+): { clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string } | null {
+  let clientId = '';
+  let clientSecret = '';
+  let redirectUris: string[] = [];
+  let scopes: string[] = [];
+  let name: string | undefined;
+
+  for (const prop of clientObj.properties) {
+    if (ts.isPropertyAssignment(prop)) {
+      const propName = prop.name.getText(sourceFile);
+      const value = prop.initializer;
+
+      if (propName === 'clientId' && ts.isStringLiteral(value)) {
+        clientId = value.text;
+      } else if (propName === 'clientSecret' && ts.isStringLiteral(value)) {
+        clientSecret = value.text;
+      } else if (propName === 'name' && ts.isStringLiteral(value)) {
+        name = value.text;
+      } else if (propName === 'redirectUris' && ts.isArrayLiteralExpression(value)) {
+        for (const element of value.elements) {
+          if (ts.isStringLiteral(element)) {
+            redirectUris.push(element.text);
+          }
+        }
+      } else if (propName === 'scopes' && ts.isArrayLiteralExpression(value)) {
+        for (const element of value.elements) {
+          if (ts.isStringLiteral(element)) {
+            scopes.push(element.text);
+          }
+        }
+      }
+    }
+  }
+
+  if (!clientId || !clientSecret || redirectUris.length === 0 || scopes.length === 0) {
+    return null;
+  }
+
+  return { clientId, clientSecret, redirectUris, scopes, name };
 }

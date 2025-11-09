@@ -187,6 +187,14 @@ function extractInlineIParamProperties(
 
       // Handle requiredProperties array
       if (propertyName === 'requiredProperties' && typeFieldValue === 'object') {
+        if (member.type && ts.isTupleTypeNode(member.type)) {
+          // Extract string literals from tuple type: ['prop1', 'prop2']
+          for (const element of member.type.elements) {
+            if (ts.isLiteralTypeNode(element) && ts.isStringLiteral(element.literal)) {
+              requiredPropertiesList.push(element.literal.text);
+            }
+          }
+        }
         continue;
       }
 
@@ -518,10 +526,16 @@ function extractIParamProperties(
         continue;
       }
 
-      // Handle requiredProperties array (stored as ValidationTag for now)
+      // Handle requiredProperties array
       if (propertyName === 'requiredProperties' && typeFieldValue === 'object') {
-        // Note: This is typically an array literal, which is complex to extract from types
-        // We'll handle it in the tags for now
+        if (member.type && ts.isTupleTypeNode(member.type)) {
+          // Extract string literals from tuple type: ['prop1', 'prop2']
+          for (const element of member.type.elements) {
+            if (ts.isLiteralTypeNode(element) && ts.isStringLiteral(element.literal)) {
+              requiredPropertiesList.push(element.literal.text);
+            }
+          }
+        }
         continue;
       }
 
@@ -892,9 +906,16 @@ export function typeNodeToZodSchema(
       if (iparamInfo.typeField === 'object' && iparamInfo.properties) {
         // Recursively process object properties
         const shape: Record<string, ZodTypeAny> = {};
+        const requiredProps = iparamInfo.requiredProperties || [];
 
         for (const [propName, propTypeNode] of Object.entries(iparamInfo.properties)) {
-          const propSchema = typeNodeToZodSchema(propTypeNode, sourceFile, undefined, checker);
+          let propSchema = typeNodeToZodSchema(propTypeNode, sourceFile, undefined, checker);
+
+          // Make property optional if it's not in the required list
+          if (requiredProps.length > 0 && !requiredProps.includes(propName)) {
+            propSchema = propSchema.optional();
+          }
+
           shape[propName] = propSchema;
         }
 

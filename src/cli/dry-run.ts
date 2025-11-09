@@ -142,10 +142,16 @@ export interface DryRunResult {
   tools: Array<{ name?: string; description?: string; methodName?: string }>;
   prompts: Array<{ name: string; description?: string }>;
   resources: Array<{ name: string; description?: string }>;
+  uis: Array<{ uri: string; name: string; description?: string }>;
   routers?: Array<{ name?: string; description?: string; propertyName: string; tools: string[] }>;
   server?: { flattenRouters?: boolean };
   transport: 'stdio' | 'http' | 'websocket';
   portConfig: number;
+  auth?: {
+    type: 'apiKey' | 'oauth2';
+    configured: boolean;
+    details?: string;
+  };
   warnings: string[];
   errors: string[];
   promptValidation?: PromptValidationResult[];
@@ -369,6 +375,7 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
   const tools: Array<{ name?: string; description?: string; methodName?: string }> = [];
   const prompts: Array<{ name: string; description?: string }> = [];
   const resources: Array<{ name: string; description?: string }> = [];
+  const uis: Array<{ uri: string; name: string; description?: string }> = [];
 
   let serverConfig = {
     name: '',
@@ -401,6 +408,7 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
     // Extract server config (including transport/port/stateful from IServer)
     let fileTransport: 'stdio' | 'http' | 'websocket' | undefined;
     let filePort: number | undefined;
+    let authInfo: { type: 'apiKey' | 'oauth2'; configured: boolean; details?: string } | undefined;
 
     if (parsed.server) {
       serverConfig = {
@@ -411,6 +419,37 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
       };
       fileTransport = parsed.server.transport;
       filePort = parsed.server.port;
+
+      // Extract authentication configuration
+      if (parsed.server.auth) {
+        const authType = parsed.server.auth.type;
+        if (authType === 'apiKey') {
+          const hasKeys = !!(parsed.server.auth.keys && parsed.server.auth.keys.length > 0);
+          const headerName = parsed.server.auth.headerName || 'x-api-key';
+          authInfo = {
+            type: 'apiKey',
+            configured: hasKeys,
+            details: hasKeys
+              ? `Header: ${headerName}, Keys: ${parsed.server.auth.keys!.length}`
+              : 'Missing API keys array'
+          };
+          if (!hasKeys) {
+            errors.push('API Key authentication is configured but missing required keys array');
+          }
+        } else if (authType === 'oauth2') {
+          const hasClients = !!(parsed.server.auth.clients && parsed.server.auth.clients.length > 0);
+          authInfo = {
+            type: 'oauth2',
+            configured: hasClients,
+            details: hasClients
+              ? `Clients: ${parsed.server.auth.clients!.length}, Issuer: ${parsed.server.auth.issuerUrl || 'not set'}`
+              : 'Missing OAuth clients array'
+          };
+          if (!hasClients) {
+            errors.push('OAuth authentication is configured but missing required clients array');
+          }
+        }
+      }
     }
 
     // Validate server config
@@ -577,6 +616,20 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
       }
     }
 
+    // Extract UI metadata with URIs, names, and descriptions
+    for (const ui of parsed.uis) {
+      uis.push({
+        uri: ui.uri,
+        name: ui.name,
+        description: ui.description || undefined,
+      });
+
+      // Warn if UI has no description
+      if (!ui.description) {
+        warnings.push(`UI '${ui.uri}' has no description. Add a description field to improve documentation.`);
+      }
+    }
+
     // Validate port if HTTP or WebSocket is used
     if (finalTransport === 'http' || finalTransport === 'websocket') {
       validatePort(finalPort, errors);
@@ -589,10 +642,12 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
       tools,
       prompts,
       resources,
+      uis,
       routers: parsed.routers,
       server: parsed.server,
       transport: finalTransport,
       portConfig: finalPort,
+      auth: authInfo,
       warnings,
       errors,
       promptValidation,
@@ -606,6 +661,7 @@ async function dryRunInterface(filePath: string, useHttp: boolean, port: number,
       tools,
       prompts,
       resources,
+      uis,
       transport: useHttp ? 'http' : 'stdio',
       portConfig: port,
       warnings,
@@ -640,6 +696,16 @@ async function displayDryRunResult(result: DryRunResult): Promise<void> {
     console.log(`  Port: ${result.portConfig}`);
   } else {
     console.log('  Port: N/A (stdio mode)');
+  }
+
+  // Authentication
+  if (result.auth) {
+    console.log(`  Authentication: ${result.auth.type} ${result.auth.configured ? '✓' : '✗ (misconfigured)'}`);
+    if (result.auth.details) {
+      console.log(`    ${result.auth.details}`);
+    }
+  } else {
+    console.log('  Authentication: None');
   }
   console.log('');
 
@@ -698,6 +764,16 @@ async function displayDryRunResult(result: DryRunResult): Promise<void> {
     }
     if (result.resources.length > 5) {
       console.log(`    ... and ${result.resources.length - 5} more`);
+    }
+  }
+
+  console.log(`  UI Resources: ${result.uis.length}`);
+  if (result.uis.length > 0) {
+    for (const ui of result.uis.slice(0, 5)) {
+      console.log(`    - ${ui.uri} (${ui.name}): ${ui.description || '(no description)'}`);
+    }
+    if (result.uis.length > 5) {
+      console.log(`    ... and ${result.uis.length - 5} more`);
     }
   }
   console.log('');

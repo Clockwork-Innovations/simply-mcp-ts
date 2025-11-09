@@ -61,9 +61,13 @@ npm install simply-mcp
 
 ### Create Your First Server
 
+Simply MCP supports two API patterns: **const-based** (simpler, functional) and **class-based** (traditional). Both are fully supported.
+
+**Const Pattern (Recommended for new projects):**
+
 ```typescript
 // server.ts
-import type { ITool, IParam, IServer } from 'simply-mcp';
+import type { ITool, IParam, IServer, ToolHelper } from 'simply-mcp';
 
 // 1. Configure your server
 const server: IServer = {
@@ -86,11 +90,34 @@ interface GreetTool extends ITool {
   result: string;
 }
 
-// 4. Implement the server
+// 4. Implement tool as const
+const greet: ToolHelper<GreetTool> = async (params) => `Hello, ${params.name}!`;
+
+// 5. Export implementations
+export { server, greet };
+```
+
+**Class Pattern (Alternative - same interfaces):**
+
+```typescript
+// 4. Implement the server as class
 export default class Server {
   greet: GreetTool = async (params) => `Hello, ${params.name}!`;
 }
 ```
+
+**Why const pattern?**
+- Less boilerplate (no class declaration)
+- Simpler syntax (direct assignments)
+- Functional programming style
+- Better type inference
+
+**When to use class?**
+- Need shared state (`this.counter`, `this.db`)
+- Complex initialization logic
+- Multiple tools sharing data
+
+See [Const Patterns Guide](./docs/guides/CONST_PATTERNS.md) for complete reference.
 
 ### Validate Your Server
 

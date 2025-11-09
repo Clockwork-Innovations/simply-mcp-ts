@@ -561,8 +561,16 @@ export const runCommand: CommandModule = {
     console.error('[DEBUG:RUN] Parsed files array:', JSON.stringify(files));
 
     // Validate file extensions - reject non-code files
+    // Allow TypeScript, JavaScript, and archive bundles (.tar.gz, .tgz, .zip)
     const invalidFiles = files.filter((f: string) => {
-      const ext = extname(f).toLowerCase();
+      const fileLower = f.toLowerCase();
+      const ext = extname(fileLower);
+
+      // Check for archive bundles first (.tar.gz requires special handling)
+      const isArchive = /\.(tar\.gz|tgz|zip)$/i.test(f);
+      if (isArchive) return false;
+
+      // Check for regular code files
       return !['.ts', '.js', '.mts', '.mjs', '.cts', '.cjs'].includes(ext);
     });
 
@@ -574,9 +582,10 @@ export const runCommand: CommandModule = {
         console.error(`  - ${f} (${extname(f)})`);
       });
       console.error('');
-      console.error('Simply MCP only supports TypeScript and JavaScript files:');
+      console.error('Simply MCP supports:');
       console.error('  - TypeScript: .ts, .mts, .cts');
       console.error('  - JavaScript: .js, .mjs, .cjs');
+      console.error('  - Archive bundles: .tar.gz, .tgz, .zip');
       console.error('');
       console.error('If you\'re trying to run examples from documentation:');
       console.error('  1. Extract the code from the markdown file');
@@ -848,16 +857,18 @@ export const runCommand: CommandModule = {
       // Single server mode
       const filePath = resolvedFiles[0];
 
-      // Check if this is a package bundle
+      // Check if this is a package bundle or archive
       const { isPackageBundle, runPackageBundle } = await import('./package-detector.js').then(async (m) => ({
         isPackageBundle: m.isPackageBundle,
         runPackageBundle: (await import('./bundle-runner.js')).runPackageBundle
       }));
 
-      const isBundle = await isPackageBundle(filePath);
+      // Detect archives (.tar.gz, .tgz, .zip) - bundle-runner handles extraction
+      const isArchive = /\.(tar\.gz|tgz|zip)$/i.test(filePath);
+      const isBundle = isArchive || await isPackageBundle(filePath);
 
       if (isBundle) {
-        // Run as package bundle (always interface style)
+        // Run as package bundle or archive (always interface style)
         await runPackageBundle(filePath, {
           http: useHttp,
           httpStateless: useHttpStateless,

@@ -205,7 +205,12 @@ async function fileExists(path: string): Promise<boolean> {
 }
 
 /**
- * Create package bundle programmatically (used by bundle command with --format package)
+ * @deprecated This function has been removed. Use the bundle command instead:
+ *   npx simply-mcp bundle server.ts --format tar.gz --output bundle.tar.gz
+ *   npx simply-mcp bundle server.ts --format zip --output bundle.zip
+ *
+ * The old 'package' format created source bundles. The new archive formats
+ * create pre-compiled, portable bundles that are faster to distribute and run.
  */
 export async function createPackageBundleFromEntry(options: {
   from: string;
@@ -215,83 +220,16 @@ export async function createPackageBundleFromEntry(options: {
   description?: string;
   author?: string;
 }): Promise<void> {
-  // Validate source file
-  const sourcePath = resolve(process.cwd(), options.from);
-
-  if (!(await fileExists(sourcePath))) {
-    throw new Error(`Source file not found: ${options.from}`);
-  }
-
-  const ext = extname(sourcePath);
-  if (ext !== '.ts' && ext !== '.js') {
-    throw new Error(`Source file must be .ts or .js, got: ${ext}`);
-  }
-
-  // Validate output directory
-  const outputPath = resolve(process.cwd(), options.output);
-
-  if (await directoryExists(outputPath)) {
-    throw new Error(`Output directory already exists: ${options.output}`);
-  }
-
-  console.log(`Source:  ${sourcePath}`);
-  console.log(`Output:  ${outputPath}`);
-  console.log(`Name:    ${options.name}`);
-  console.log(`Version: ${options.version}\n`);
-
-  // Detect dependencies
-  console.log('Analyzing dependencies...');
-  const dependencies = await detectDependencies(sourcePath);
-  console.log(`Found ${Object.keys(dependencies).length} dependencies\n`);
-
-  // Create output directory structure
-  console.log('Creating directory structure...');
-  await mkdir(outputPath, { recursive: true });
-  await mkdir(join(outputPath, 'src'), { recursive: true });
-
-  // Copy source file
-  console.log('Copying source file...');
-  const targetServerPath = join(outputPath, 'src', 'server.ts');
-  await copyFile(sourcePath, targetServerPath);
-
-  // Generate package.json
-  console.log('Generating package.json...');
-  const packageJson = generatePackageJson({
-    name: options.name,
-    version: options.version,
-    description: options.description,
-    author: options.author,
-    dependencies,
-  });
-  await writeFile(join(outputPath, 'package.json'), packageJson);
-
-  // Generate README.md
-  console.log('Generating README.md...');
-  const readme = generateReadme({
-    name: options.name,
-    description: options.description,
-  });
-  await writeFile(join(outputPath, 'README.md'), readme);
-
-  // Generate .env.example
-  console.log('Generating .env.example...');
-  const envExample = generateEnvExample();
-  await writeFile(join(outputPath, '.env.example'), envExample);
-
-  // Success!
-  console.log('\n✓ Package bundle created successfully!\n');
-  console.log('Bundle structure:');
-  console.log(`  ${options.output}/`);
-  console.log(`  ├── package.json`);
-  console.log(`  ├── README.md`);
-  console.log(`  ├── .env.example`);
-  console.log(`  └── src/`);
-  console.log(`      └── server.ts\n`);
-
-  console.log('Next steps:');
-  console.log(`  1. cd ${options.output}`);
-  console.log(`  2. npm install`);
-  console.log(`  3. npx simply-mcp run .\n`);
+  throw new Error(
+    'The create-bundle command has been deprecated and removed.\n\n' +
+    'Please use the bundle command with archive formats instead:\n' +
+    `  npx simply-mcp bundle ${options.from} --format tar.gz --output ${options.output}.tar.gz\n` +
+    `  npx simply-mcp bundle ${options.from} --format zip --output ${options.output}.zip\n\n` +
+    'The new archive formats create pre-compiled, portable bundles that are:\n' +
+    '  - Faster to distribute (single file)\n' +
+    '  - Faster to run (no TypeScript compilation needed)\n' +
+    '  - Self-contained (includes manifest and dependencies)'
+  );
 }
 
 /**

@@ -504,3 +504,60 @@ export type CompletionHelper<T extends { name: string; description: string }> =
  */
 export type RootsHelper<T extends { name: string; description: string }> =
   () => Promise<Array<{ uri: string; name?: string }>> | Array<{ uri: string; name?: string }>;
+
+/**
+ * Server implementation helper type
+ *
+ * Use this type to create const-based server implementations with full type safety.
+ * This is a convenience type for consistency with other helper types.
+ *
+ * @template T - Server interface extending IServer
+ *
+ * @example Basic Server
+ * ```typescript
+ * import type { IServer, ServerHelper } from 'simply-mcp';
+ *
+ * interface MyServer extends IServer {
+ *   name: 'my-server';
+ *   version: '1.0.0';
+ *   description: 'My MCP server';
+ * }
+ *
+ * const server: ServerHelper<MyServer> = {
+ *   name: 'my-server',
+ *   version: '1.0.0',
+ *   description: 'My MCP server'
+ * };
+ * ```
+ *
+ * @example With Auth
+ * ```typescript
+ * interface SecureServer extends IServer {
+ *   name: 'secure-server';
+ *   version: '1.0.0';
+ *   description: 'Secure server with auth';
+ *   auth: {
+ *     type: 'apiKey';
+ *     headerName: 'X-API-Key';
+ *     keys: Array<{ name: string; key: string; permissions: string[] }>;
+ *   };
+ * }
+ *
+ * const server: ServerHelper<SecureServer> = {
+ *   name: 'secure-server',
+ *   version: '1.0.0',
+ *   description: 'Secure server with auth',
+ *   auth: {
+ *     type: 'apiKey',
+ *     headerName: 'X-API-Key',
+ *     keys: [
+ *       { name: 'admin', key: 'secret123', permissions: ['read', 'write'] }
+ *     ]
+ *   }
+ * };
+ * ```
+ *
+ * Note: The server const pattern is already supported by the framework.
+ * This helper type is provided for consistency with other helper types.
+ */
+export type ServerHelper<T extends import('../interface-types.js').IServer> = T;

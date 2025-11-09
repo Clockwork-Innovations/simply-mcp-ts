@@ -55,7 +55,7 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
       .option('format', {
         alias: 'f',
         describe: 'Output format',
-        choices: ['single-file', 'standalone', 'package', 'esm', 'cjs'] as const,
+        choices: ['single-file', 'standalone', 'tar.gz', 'zip', 'esm', 'cjs'] as const,
         default: 'single-file' as const,
       })
       .option('minify', {
@@ -141,7 +141,8 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
       .example('$0 bundle -o dist/server.js', 'Auto-detect entry and bundle')
       .example('$0 bundle server.ts -o dist/server.js', 'Bundle with custom output')
       .example('$0 bundle server.ts -f standalone', 'Create standalone distribution')
-      .example('$0 bundle server.ts -f package', 'Create package bundle (npm package)')
+      .example('$0 bundle server.ts -f tar.gz', 'Create tar.gz archive bundle')
+      .example('$0 bundle server.ts -f zip', 'Create zip archive bundle')
       .example('$0 bundle server.ts -f esm', 'Create ESM bundle')
       .example('$0 bundle server.ts -w --watch-restart', 'Watch mode with auto-restart')
       .example('$0 bundle server.ts --assets data.json,config.yaml', 'Bundle with asset files');
@@ -149,27 +150,7 @@ export const bundleCommand: CommandModule<{}, BundleArgs> = {
 
   handler: async (argv: ArgumentsCamelCase<BundleArgs>) => {
     try {
-      // Handle package format by delegating to create-bundle command
-      if (argv.format === 'package') {
-        const { basename } = await import('node:path');
-        const { createPackageBundleFromEntry } = await import('./create-bundle.js');
-
-        const entry = argv.entry || await detectEntryPoint(undefined, process.cwd());
-        const outputDir = argv.output || './dist/bundle';
-        const name = basename(entry, '.ts').replace(/\.(ts|js)$/, '');
-
-        console.log('SimplyMCP Package Bundle Creator');
-        console.log('=================================\n');
-
-        await createPackageBundleFromEntry({
-          from: entry,
-          output: outputDir,
-          name: name,
-          version: '1.0.0',
-        });
-
-        return;
-      }
+      // Archive formats (tar.gz, zip) are now handled by the main bundler
 
       // Load config file
       const config = await loadConfig(argv.config);

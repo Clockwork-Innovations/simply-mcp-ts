@@ -177,9 +177,17 @@ export function schemaToZod(schema: Schema): ZodTypeAny {
     case 'object':
       const objSchema = schema as ObjectSchema;
       const shape: Record<string, ZodTypeAny> = {};
+      const requiredProps = objSchema.required || [];
 
       for (const [key, propSchema] of Object.entries(objSchema.properties)) {
-        shape[key] = schemaToZod(propSchema);
+        let propZodSchema = schemaToZod(propSchema);
+
+        // Make property optional if it's not in the required list
+        if (requiredProps.length > 0 && !requiredProps.includes(key)) {
+          propZodSchema = propZodSchema.optional();
+        }
+
+        shape[key] = propZodSchema;
       }
 
       zodSchema = z.object(shape);

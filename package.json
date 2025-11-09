@@ -1,6 +1,6 @@
 {
   "name": "simply-mcp",
-  "version": "4.0.23",
+  "version": "4.1.0",
   "description": "Type-safe TypeScript framework for building Model Context Protocol (MCP) servers with pure interface-driven API",
   "private": false,
   "type": "module",
@@ -118,8 +118,11 @@
   "dependencies": {
     "@babel/standalone": "^7.23.0",
     "@modelcontextprotocol/sdk": "^1.19.1",
+    "archiver": "^7.0.1",
     "bcrypt": "^6.0.0",
     "ioredis": "^5.8.2",
+    "tar-stream": "^3.1.7",
+    "unzipper": "^0.12.3",
     "ws": "^8.18.3",
     "yargs": "^18.0.0",
     "zod": "^3.25.76",

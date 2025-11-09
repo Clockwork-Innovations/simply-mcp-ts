@@ -24,6 +24,7 @@ export function compileServerInterface(
   let stateful: boolean | undefined;
   let flattenRouters: boolean | undefined;
   let authInterfaceName: string | undefined;
+  let auth: ParsedAuth | undefined;
   let websocketConfig: { port?: number; heartbeatInterval?: number; heartbeatTimeout?: number; maxMessageSize?: number } | undefined;
 
   // Parse interface members
@@ -116,9 +117,18 @@ export function compileServerInterface(
             flattenRouters = false;
           }
         }
-      } else if (memberName === 'auth' && member.type && ts.isTypeReferenceNode(member.type)) {
-        // Extract interface name being referenced
-        authInterfaceName = member.type.typeName.getText(sourceFile);
+      } else if (memberName === 'auth') {
+        // Handle both type reference (interface) and inline object literal
+        if (member.type && ts.isTypeReferenceNode(member.type)) {
+          // Pattern 1: Reference to an auth interface
+          // Example: auth: AdminAuth
+          authInterfaceName = member.type.typeName.getText(sourceFile);
+        } else if (member.type && ts.isTypeLiteralNode(member.type)) {
+          // Pattern 2: Inline auth object
+          // Example: auth: { type: 'apiKey'; keys: [...]; }
+          // Parse inline auth directly using compileAuthInterface logic
+          auth = parseInlineAuthObject(member.type, sourceFile);
+        }
       }
     }
   }
@@ -152,9 +162,8 @@ export function compileServerInterface(
     }
   }
 
-  // Resolve auth interface if referenced
-  let auth: ParsedAuth | undefined;
-  if (authInterfaceName) {
+  // Resolve auth interface if referenced (only if not already set by inline auth)
+  if (authInterfaceName && !auth) {
     auth = authInterfaces.get(authInterfaceName);
     if (!auth) {
       console.warn(`Auth interface ${authInterfaceName} not found or not parsed yet`);
@@ -173,6 +182,263 @@ export function compileServerInterface(
     flattenRouters,
     auth,
   };
+}
+
+/**
+ * Parse inline auth object from type literal node
+ * Handles inline auth objects in server definitions
+ * Example: auth: { type: 'apiKey'; keys: [...]; }
+ */
+function parseInlineAuthObject(typeNode: ts.TypeLiteralNode, sourceFile: ts.SourceFile): ParsedAuth | null {
+  let authType: 'apiKey' | 'oauth2' | 'database' | 'custom' | undefined;
+
+  // API Key fields
+  let headerName: string | undefined;
+  let allowAnonymous: boolean | undefined;
+  let keys: Array<{ name: string; key: string; permissions: string[] }> | undefined;
+
+  // OAuth2 fields
+  let issuerUrl: string | undefined;
+  let clients: Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> | undefined;
+  let tokenExpiration: number | undefined;
+  let refreshTokenExpiration: number | undefined;
+  let codeExpiration: number | undefined;
+
+  // Parse type literal members (same logic as compileAuthInterface)
+  for (const member of typeNode.members) {
+    if (ts.isPropertySignature(member) && member.name) {
+      const memberName = member.name.getText(sourceFile);
+
+      if (memberName === 'type' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          const value = literal.text;
+          if (value === 'apiKey' || value === 'oauth2' || value === 'database' || value === 'custom') {
+            authType = value;
+          }
+        }
+      }
+      // API Key fields
+      else if (memberName === 'headerName' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          headerName = literal.text;
+        }
+      } else if (memberName === 'allowAnonymous' && member.type) {
+        if (member.type.kind === ts.SyntaxKind.TrueKeyword) {
+          allowAnonymous = true;
+        } else if (member.type.kind === ts.SyntaxKind.FalseKeyword) {
+          allowAnonymous = false;
+        } else if (ts.isLiteralTypeNode(member.type)) {
+          const literal = member.type.literal;
+          if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+            allowAnonymous = true;
+          } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+            allowAnonymous = false;
+          }
+        }
+      } else if (memberName === 'keys' && member.type) {
+        keys = parseKeysArray(member.type, sourceFile);
+      }
+      // OAuth2 fields
+      else if (memberName === 'issuerUrl' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          issuerUrl = literal.text;
+        }
+      } else if (memberName === 'clients' && member.type) {
+        clients = parseOAuthClientsArray(member.type, sourceFile);
+      } else if (memberName === 'tokenExpiration' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isNumericLiteral(literal)) {
+          tokenExpiration = parseInt(literal.text, 10);
+        }
+      } else if (memberName === 'refreshTokenExpiration' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isNumericLiteral(literal)) {
+          refreshTokenExpiration = parseInt(literal.text, 10);
+        }
+      } else if (memberName === 'codeExpiration' && member.type && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isNumericLiteral(literal)) {
+          codeExpiration = parseInt(literal.text, 10);
+        }
+      }
+    }
+  }
+
+  if (!authType) {
+    console.warn('Inline auth object missing required "type" property');
+    return null;
+  }
+
+  return {
+    type: authType,
+    interfaceName: 'InlineAuth', // Mark as inline
+    headerName,
+    keys,
+    allowAnonymous,
+    issuerUrl,
+    clients,
+    tokenExpiration,
+    refreshTokenExpiration,
+    codeExpiration,
+  };
+}
+
+/**
+ * Helper functions imported from auth-compiler.ts logic
+ * These parse array fields in auth objects
+ */
+function parseKeysArray(
+  typeNode: ts.TypeNode,
+  sourceFile: ts.SourceFile
+): Array<{ name: string; key: string; permissions: string[] }> | undefined {
+  if (!ts.isTupleTypeNode(typeNode)) {
+    return undefined;
+  }
+
+  const keys: Array<{ name: string; key: string; permissions: string[] }> = [];
+
+  for (const element of typeNode.elements) {
+    const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+
+    if (ts.isTypeLiteralNode(elementType)) {
+      const keyConfig = parseKeyConfig(elementType, sourceFile);
+      if (keyConfig) {
+        keys.push(keyConfig);
+      }
+    }
+  }
+
+  return keys.length > 0 ? keys : undefined;
+}
+
+function parseKeyConfig(
+  typeNode: ts.TypeLiteralNode,
+  sourceFile: ts.SourceFile
+): { name: string; key: string; permissions: string[] } | null {
+  let name = '';
+  let key = '';
+  let permissions: string[] = [];
+
+  for (const member of typeNode.members) {
+    if (ts.isPropertySignature(member) && member.name && member.type) {
+      const memberName = member.name.getText(sourceFile);
+
+      if (memberName === 'name' && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          name = literal.text;
+        }
+      } else if (memberName === 'key' && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          key = literal.text;
+        }
+      } else if (memberName === 'permissions' && ts.isTupleTypeNode(member.type)) {
+        for (const element of member.type.elements) {
+          const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+          if (ts.isLiteralTypeNode(elementType)) {
+            const literal = elementType.literal;
+            if (ts.isStringLiteral(literal)) {
+              permissions.push(literal.text);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (!name || !key || permissions.length === 0) {
+    return null;
+  }
+
+  return { name, key, permissions };
+}
+
+function parseOAuthClientsArray(
+  typeNode: ts.TypeNode,
+  sourceFile: ts.SourceFile
+): Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> | undefined {
+  if (!ts.isTupleTypeNode(typeNode)) {
+    return undefined;
+  }
+
+  const clients: Array<{ clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string }> = [];
+
+  for (const element of typeNode.elements) {
+    const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+
+    if (ts.isTypeLiteralNode(elementType)) {
+      const clientConfig = parseOAuthClientConfig(elementType, sourceFile);
+      if (clientConfig) {
+        clients.push(clientConfig);
+      }
+    }
+  }
+
+  return clients.length > 0 ? clients : undefined;
+}
+
+function parseOAuthClientConfig(
+  typeNode: ts.TypeLiteralNode,
+  sourceFile: ts.SourceFile
+): { clientId: string; clientSecret: string; redirectUris: string[]; scopes: string[]; name?: string } | null {
+  let clientId = '';
+  let clientSecret = '';
+  let redirectUris: string[] = [];
+  let scopes: string[] = [];
+  let name: string | undefined;
+
+  for (const member of typeNode.members) {
+    if (ts.isPropertySignature(member) && member.name && member.type) {
+      const memberName = member.name.getText(sourceFile);
+
+      if (memberName === 'clientId' && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          clientId = literal.text;
+        }
+      } else if (memberName === 'clientSecret' && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          clientSecret = literal.text;
+        }
+      } else if (memberName === 'name' && ts.isLiteralTypeNode(member.type)) {
+        const literal = member.type.literal;
+        if (ts.isStringLiteral(literal)) {
+          name = literal.text;
+        }
+      } else if (memberName === 'redirectUris' && ts.isTupleTypeNode(member.type)) {
+        for (const element of member.type.elements) {
+          const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+          if (ts.isLiteralTypeNode(elementType)) {
+            const literal = elementType.literal;
+            if (ts.isStringLiteral(literal)) {
+              redirectUris.push(literal.text);
+            }
+          }
+        }
+      } else if (memberName === 'scopes' && ts.isTupleTypeNode(member.type)) {
+        for (const element of member.type.elements) {
+          const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+          if (ts.isLiteralTypeNode(elementType)) {
+            const literal = elementType.literal;
+            if (ts.isStringLiteral(literal)) {
+              scopes.push(literal.text);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (!clientId || !clientSecret || redirectUris.length === 0 || scopes.length === 0) {
+    return null;
+  }
+
+  return { clientId, clientSecret, redirectUris, scopes, name };
 }
 
 /**

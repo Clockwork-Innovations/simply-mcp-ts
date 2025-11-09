@@ -131,6 +131,8 @@ export interface ParsedRoots {
   name: string;
   /** Description */
   description: string;
+  /** Const variable name that provides implementation (if using const pattern) */
+  constName?: string;
 }
 
 /**
@@ -149,6 +151,8 @@ export interface ParsedSubscription {
   hasHandler: boolean;
   /** Expected method name (uses URI as method name) */
   methodName: string;
+  /** Const variable name that provides implementation (if using const pattern) */
+  constName?: string;
 }
 
 /**
@@ -171,6 +175,8 @@ export interface ParsedCompletion {
   argType: string;
   /** Suggestions type information */
   suggestionsType: string;
+  /** Const variable name that provides implementation (if using const pattern) */
+  constName?: string;
 }
 
 /**
@@ -234,6 +240,12 @@ export interface ParsedUI {
   methodName?: string;
   /** Data type information */
   dataType: string;
+
+  // NEW v4: Const-based UI discovery
+  /** Const variable name that provides implementation (if using const pattern) */
+  constName?: string;
+  /** Class property name that provides implementation (if using class property pattern) */
+  propertyName?: string;
 
   // Feature Layer fields
   /** Path to HTML file */
@@ -323,6 +335,8 @@ export interface ParsedRouter {
     order?: number;
     [key: string]: unknown;
   };
+  /** Const variable name that provides implementation (if using const pattern) */
+  constName?: string;
 }
 
 /**
@@ -336,6 +350,76 @@ export interface DiscoveredRouterProperty {
   interfaceName: string;
   /** Class name containing the property */
   className: string;
+}
+
+/**
+ * Discovered const UI implementation (NEW v4 const UI discovery)
+ */
+export interface DiscoveredUI {
+  /** Variable name (e.g., 'dashboard') */
+  name: string;
+  /** Interface name (e.g., 'DashboardUI') */
+  interfaceName: string;
+  /** Whether this is a const or class property */
+  kind: 'const' | 'class-property';
+  /** If class property, the class name */
+  className?: string;
+}
+
+/**
+ * Discovered const router implementation (NEW v4 const router discovery)
+ */
+export interface DiscoveredRouter {
+  /** Variable name (e.g., 'weatherRouter') */
+  name: string;
+  /** Interface name (e.g., 'WeatherRouter' or 'IToolRouter') */
+  interfaceName: string;
+  /** Whether this is a const or class property */
+  kind: 'const' | 'class-property';
+  /** If class property, the class name */
+  className?: string;
+}
+
+/**
+ * Discovered const completion implementation (NEW v4 const completion discovery)
+ */
+export interface DiscoveredCompletion {
+  /** Variable name (e.g., 'cityComplete') */
+  name: string;
+  /** Interface name (e.g., 'CityCompletion' or 'ICompletion') */
+  interfaceName: string;
+  /** Whether this is a const or class property */
+  kind: 'const' | 'class-property';
+  /** If class property, the class name */
+  className?: string;
+}
+
+/**
+ * Discovered const roots implementation (NEW v4 const roots discovery)
+ */
+export interface DiscoveredRoots {
+  /** Variable name (e.g., 'projectRoots') */
+  name: string;
+  /** Interface name (e.g., 'ProjectRoots' or 'IRoots') */
+  interfaceName: string;
+  /** Whether this is a const or class property */
+  kind: 'const' | 'class-property';
+  /** If class property, the class name */
+  className?: string;
+}
+
+/**
+ * Discovered const subscription implementation (NEW v4 const subscription discovery)
+ */
+export interface DiscoveredSubscription {
+  /** Variable name (e.g., 'configSubscription') */
+  name: string;
+  /** Interface name (e.g., 'ConfigSubscription' or 'ISubscription') */
+  interfaceName: string;
+  /** Whether this is a const or class property */
+  kind: 'const' | 'class-property';
+  /** If class property, the class name */
+  className?: string;
 }
 
 /**
@@ -435,4 +519,14 @@ export interface ParseResult {
   instances?: DiscoveredInstance[];
   /** Discovered router properties (NEW - for matching class properties to router interfaces) */
   routerProperties?: DiscoveredRouterProperty[];
+  /** Discovered UI implementations (NEW v4 const UI discovery) */
+  discoveredUIs?: DiscoveredUI[];
+  /** Discovered router implementations (NEW v4 const router discovery) */
+  discoveredRouters?: DiscoveredRouter[];
+  /** Discovered completion implementations (NEW v4 const completion discovery) */
+  discoveredCompletions?: DiscoveredCompletion[];
+  /** Discovered roots implementations (NEW v4 const roots discovery) */
+  discoveredRoots?: DiscoveredRoots[];
+  /** Discovered subscription implementations (NEW v4 const subscription discovery) */
+  discoveredSubscriptions?: DiscoveredSubscription[];
 }
