@@ -196,7 +196,7 @@ echo ""
 echo -e "${BOLD}Checking Source Files (optional for debugging)...${NC}"
 
 validate "src/ directory exists" "test -d src" "WARNING"
-validate "Source files included in package" "node -e 'const p=require(\"./package.json\"); if(!p.files.some(f=>f.includes(\"src\"))) process.exit(1)'" "WARNING"
+validate "Source files NOT included in package" "node -e 'const p=require(\"./package.json\"); if(p.files.some(f=>f.includes(\"src\"))) process.exit(1)'" "WARNING"
 
 # Check 12: TypeScript Configuration
 echo ""

@@ -43,10 +43,12 @@ export class PackageResolver {
   private cache = new Map<string, PackageResolution>();
   private baseDir: string;
   private cdnBase: string;
+  private forceCDN: boolean;
 
   constructor(options: ResolverOptions = {}) {
     this.baseDir = options.baseDir || process.cwd();
     this.cdnBase = options.cdnBase || 'https://unpkg.com';
+    this.forceCDN = options.forceCDN || false;
   }
 
   /**
@@ -58,6 +60,13 @@ export class PackageResolver {
     // Check cache
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
+    }
+
+    // If forceCDN is true, skip local lookup
+    if (this.forceCDN) {
+      const cdnResolution = this.resolveCDN(packageName, version);
+      this.cache.set(cacheKey, cdnResolution);
+      return cdnResolution;
     }
 
     // Try local first

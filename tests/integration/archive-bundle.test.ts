@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { createArchive } from '../../src/core/archiver.js';
 import { extractArchive } from '../../src/core/extractor.js';
 import { generateManifest, writeManifest, readManifest } from '../../src/core/bundle-manifest.js';
@@ -566,7 +566,7 @@ describe('Archive Bundle Integration Tests', () => {
       expect(cachePath.startsWith(CACHE_DIR)).toBe(true);
 
       // Should use hash of absolute path (resolve to get the actual absolute path)
-      const absoluteArchivePath = require('path').resolve(archivePath);
+      const absoluteArchivePath = resolve(archivePath);
       const hash = crypto
         .createHash('sha256')
         .update(absoluteArchivePath)

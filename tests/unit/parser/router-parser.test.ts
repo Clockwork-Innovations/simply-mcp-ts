@@ -208,7 +208,7 @@ describe('Router Parser', () => {
       expect(result.routers).toHaveLength(0);
     });
 
-    it('should return null for router with empty tools array', () => {
+    it('should allow router with empty tools array (placeholder routers)', () => {
       const content = `
         import type { IToolRouter } from 'simply-mcp';
 
@@ -222,7 +222,9 @@ describe('Router Parser', () => {
       const filePath = createTestFile('empty-tools.ts', content);
       const result = parseInterfaceFile(filePath);
 
-      expect(result.routers).toHaveLength(0);
+      expect(result.routers).toHaveLength(1);
+      expect(result.routers[0].name).toBe('empty_router');
+      expect(result.routers[0].tools).toEqual([]);
     });
 
     it('should handle router without generic type parameter', () => {
