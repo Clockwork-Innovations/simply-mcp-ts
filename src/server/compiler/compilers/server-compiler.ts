@@ -26,6 +26,7 @@ export function compileServerInterface(
   let authInterfaceName: string | undefined;
   let auth: ParsedAuth | undefined;
   let websocketConfig: { port?: number; heartbeatInterval?: number; heartbeatTimeout?: number; maxMessageSize?: number } | undefined;
+  let codeExecutionConfig: { mode?: string; timeout?: number; captureOutput?: boolean; allowedLanguages?: string[]; language?: string; introspectTools?: boolean } | undefined;
 
   // Parse interface members
   for (const member of node.members) {
@@ -129,6 +130,65 @@ export function compileServerInterface(
           // Parse inline auth directly using compileAuthInterface logic
           auth = parseInlineAuthObject(member.type, sourceFile);
         }
+      } else if (memberName === 'codeExecution' && member.type && ts.isTypeLiteralNode(member.type)) {
+        // Parse codeExecution config object
+        codeExecutionConfig = {};
+        for (const prop of member.type.members) {
+          if (ts.isPropertySignature(prop) && prop.name) {
+            const propName = prop.name.getText(sourceFile);
+            if (prop.type && ts.isLiteralTypeNode(prop.type)) {
+              const propLiteral = prop.type.literal;
+              if (ts.isNumericLiteral(propLiteral)) {
+                const value = parseInt(propLiteral.text, 10);
+                if (propName === 'timeout') codeExecutionConfig.timeout = value;
+              } else if (ts.isStringLiteral(propLiteral)) {
+                const value = propLiteral.text;
+                if (propName === 'mode') codeExecutionConfig.mode = value;
+                else if (propName === 'language') (codeExecutionConfig as any).language = value;
+              }
+            } else if (prop.type && propName === 'introspectTools') {
+              // Handle boolean values for introspectTools
+              if (prop.type.kind === ts.SyntaxKind.TrueKeyword) {
+                (codeExecutionConfig as any).introspectTools = true;
+              } else if (prop.type.kind === ts.SyntaxKind.FalseKeyword) {
+                (codeExecutionConfig as any).introspectTools = false;
+              } else if (ts.isLiteralTypeNode(prop.type)) {
+                const literal = prop.type.literal;
+                if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+                  (codeExecutionConfig as any).introspectTools = true;
+                } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+                  (codeExecutionConfig as any).introspectTools = false;
+                }
+              }
+            } else if (prop.type && propName === 'captureOutput') {
+              // Handle boolean values for captureOutput
+              if (prop.type.kind === ts.SyntaxKind.TrueKeyword) {
+                codeExecutionConfig.captureOutput = true;
+              } else if (prop.type.kind === ts.SyntaxKind.FalseKeyword) {
+                codeExecutionConfig.captureOutput = false;
+              } else if (ts.isLiteralTypeNode(prop.type)) {
+                const literal = prop.type.literal;
+                if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+                  codeExecutionConfig.captureOutput = true;
+                } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+                  codeExecutionConfig.captureOutput = false;
+                }
+              }
+            } else if (prop.type && propName === 'allowedLanguages' && ts.isTupleTypeNode(prop.type)) {
+              // Parse allowedLanguages array
+              codeExecutionConfig.allowedLanguages = [];
+              for (const element of prop.type.elements) {
+                const elementType = ts.isNamedTupleMember(element) ? element.type : element;
+                if (ts.isLiteralTypeNode(elementType)) {
+                  const literal = elementType.literal;
+                  if (ts.isStringLiteral(literal)) {
+                    codeExecutionConfig.allowedLanguages.push(literal.text);
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -181,6 +241,7 @@ export function compileServerInterface(
     websocket: websocketConfig,
     flattenRouters,
     auth,
+    codeExecution: codeExecutionConfig as any,
   };
 }
 

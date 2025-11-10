@@ -120,6 +120,7 @@ export function compileInterfaceFile(filePath: string): ParseResult {
       if (initializer && ts.isObjectLiteralExpression(initializer)) {
         const serverData: any = {};
         let inlineAuth: ParsedAuth | undefined;
+        let codeExecutionConfig: any = undefined;
 
         for (const prop of initializer.properties) {
           if (ts.isPropertyAssignment(prop)) {
@@ -135,6 +136,9 @@ export function compileInterfaceFile(filePath: string): ParseResult {
             } else if (name === 'auth' && ts.isObjectLiteralExpression(value)) {
               // Parse inline auth object from const server
               inlineAuth = parseConstServerAuth(value, sourceFile);
+            } else if (name === 'codeExecution' && ts.isObjectLiteralExpression(value)) {
+              // Parse inline codeExecution config from const server
+              codeExecutionConfig = parseConstCodeExecutionConfig(value, sourceFile);
             }
           }
         }
@@ -145,7 +149,8 @@ export function compileInterfaceFile(filePath: string): ParseResult {
           version: serverData.version || '1.0.0',
           description: serverData.description,
           flattenRouters: serverData.flattenRouters,
-          auth: inlineAuth
+          auth: inlineAuth,
+          codeExecution: codeExecutionConfig
         };
       }
     }
@@ -564,4 +569,52 @@ function parseConstOAuthClientConfig(
   }
 
   return { clientId, clientSecret, redirectUris, scopes, name };
+}
+
+/**
+ * Parse inline codeExecution config from const server object literal
+ * Handles runtime values in const servers (not compile-time types)
+ * Example: const server: IServer = { codeExecution: { mode: 'vm', timeout: 5000 } }
+ */
+function parseConstCodeExecutionConfig(
+  codeExecObj: ts.ObjectLiteralExpression,
+  sourceFile: ts.SourceFile
+): { mode?: string; timeout?: number; captureOutput?: boolean; allowedLanguages?: string[]; language?: string; introspectTools?: boolean } | undefined {
+  const config: { mode?: string; timeout?: number; captureOutput?: boolean; allowedLanguages?: string[]; language?: string; introspectTools?: boolean } = {};
+
+  for (const prop of codeExecObj.properties) {
+    if (ts.isPropertyAssignment(prop)) {
+      const propName = prop.name.getText(sourceFile);
+      const value = prop.initializer;
+
+      if (propName === 'mode' && ts.isStringLiteral(value)) {
+        config.mode = value.text;
+      } else if (propName === 'language' && ts.isStringLiteral(value)) {
+        config.language = value.text;
+      } else if (propName === 'timeout' && ts.isNumericLiteral(value)) {
+        config.timeout = parseInt(value.text, 10);
+      } else if (propName === 'captureOutput') {
+        if (value.kind === ts.SyntaxKind.TrueKeyword) {
+          config.captureOutput = true;
+        } else if (value.kind === ts.SyntaxKind.FalseKeyword) {
+          config.captureOutput = false;
+        }
+      } else if (propName === 'introspectTools') {
+        if (value.kind === ts.SyntaxKind.TrueKeyword) {
+          config.introspectTools = true;
+        } else if (value.kind === ts.SyntaxKind.FalseKeyword) {
+          config.introspectTools = false;
+        }
+      } else if (propName === 'allowedLanguages' && ts.isArrayLiteralExpression(value)) {
+        config.allowedLanguages = [];
+        for (const element of value.elements) {
+          if (ts.isStringLiteral(element)) {
+            config.allowedLanguages.push(element.text);
+          }
+        }
+      }
+    }
+  }
+
+  return config;
 }

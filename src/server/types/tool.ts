@@ -117,8 +117,14 @@ export interface IToolAnnotations {
  *
  * Parameters use IParam interfaces for rich validation and documentation.
  *
+ * **⚠️ Troubleshooting TypeScript Errors:**
+ * If you get "Type 'X' is not assignable" errors, use `ToolHelper<YourTool>` for automatic type inference.
+ *
  * @template TParams - Parameter object type
  * @template TResult - Return value type
+ *
+ * @see {@link ToolHelper} - Type-safe implementation helper that provides full type inference
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/CONST_PATTERNS.md#troubleshooting-typescript-errors|Troubleshooting Guide}
  *
  * @example Simple Tool
  * ```typescript

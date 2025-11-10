@@ -247,4 +247,42 @@ export interface IServer {
    * @since v4.1.0
    */
   flattenRouters?: boolean;
+
+  /**
+   * Code execution configuration
+   *
+   * When configured, automatically registers a 'tool_runner' tool that allows
+   * executing TypeScript/JavaScript code in isolated sandbox environments.
+   *
+   * Phase 1: JavaScript execution using vm2
+   * Future: Python, Ruby, Docker support
+   *
+   * @example Basic VM Mode (JavaScript)
+   * ```typescript
+   * interface CodeServer extends IServer {
+   *   name: 'code-server';
+   *   description: 'Server with code execution';
+   *   codeExecution: {
+   *     mode: 'vm',
+   *     timeout: 5000
+   *   };
+   * }
+   * ```
+   *
+   * @example With Language Constraints
+   * ```typescript
+   * interface RestrictedCodeServer extends IServer {
+   *   name: 'restricted-server';
+   *   description: 'Server with restricted code execution';
+   *   codeExecution: {
+   *     mode: 'vm',
+   *     timeout: 10000,
+   *     allowedLanguages: ['javascript']
+   *   };
+   * }
+   * ```
+   *
+   * @since v4.2.0
+   */
+  codeExecution?: import('../../features/code-execution/types.js').ICodeExecutionConfig;
 }

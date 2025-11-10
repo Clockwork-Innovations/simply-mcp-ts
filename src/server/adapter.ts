@@ -483,6 +483,59 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     }
   }
 
+  // Step 7.7: Register code execution tool (if configured)
+  // Check both parsed server config and runtime server const
+  const codeExecutionConfig = parseResult.server?.codeExecution || module.server?.codeExecution;
+
+  if (codeExecutionConfig) {
+    try {
+      // Lazy import code execution feature
+      const { createToolRunnerTool, getToolRunnerToolMetadata } = await import('../features/code-execution/tool-runner-tool.js');
+
+      // Create tool handler
+      const toolHandler = createToolRunnerTool(codeExecutionConfig);
+
+      // Get tool metadata with dynamic description based on available tools
+      const metadata = getToolRunnerToolMetadata(
+        buildServer.getTools(),
+        codeExecutionConfig.introspectTools ?? true
+      );
+
+      // Generate Zod schema for tool_runner params
+      const toolRunnerSchema = z.object({
+        language: z.enum(['javascript', 'typescript'], {
+          description: 'Programming language to execute'
+        }),
+        code: z.string({
+          description: 'Code to execute'
+        }).min(1),
+        timeout: z.number({
+          description: 'Optional timeout in milliseconds (overrides server config)'
+        }).int().positive().optional(),
+      });
+
+      // Register the tool
+      buildServer.addTool({
+        name: metadata.name,
+        description: metadata.description,
+        parameters: toolRunnerSchema,
+        execute: async (args) => {
+          // Call the tool handler
+          const result = await toolHandler(args as any);
+          // Return result as JSON string for MCP serialization
+          return JSON.stringify(result, null, 2);
+        },
+        annotations: metadata.annotations,
+      });
+
+      if (verbose) {
+        console.log(`[Interface Adapter] Registered code execution tool (mode: ${codeExecutionConfig.mode || 'vm'})`);
+      }
+    } catch (error: any) {
+      console.warn(`[Interface Adapter] Failed to register code execution tool: ${error.message}`);
+    }
+  }
+
   // Step 8: Log detected protocol features (when not silent)
   if (verbose) {
     if (parseResult.samplings.length > 0) {

@@ -493,6 +493,8 @@ export interface ParsedServer {
   auth?: ParsedAuth;
   /** Control visibility of router-assigned tools */
   flattenRouters?: boolean;
+  /** Code execution configuration */
+  codeExecution?: import('../../features/code-execution/types.js').ICodeExecutionConfig;
 }
 
 /**

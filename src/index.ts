@@ -3,9 +3,9 @@
  *
  * A comprehensive MCP server framework using the Interface-driven API.
  *
- * @example Interface-Driven API
+ * @example Const Pattern (Recommended)
  * ```typescript
- * import type { ITool, IServer } from 'simply-mcp';
+ * import type { ITool, IServer, ToolHelper } from 'simply-mcp';
  *
  * interface GreetTool extends ITool {
  *   name: 'greet';
@@ -14,15 +14,36 @@
  *   result: string;
  * }
  *
- * interface MyServerInterface extends IServer {
- *   name: 'my-server';
- *   version: '1.0.0';
+ * const server: IServer = {
+ *   name: 'my-server',
+ *   version: '1.0.0'
+ * };
+ *
+ * const greet: ToolHelper<GreetTool> = async (params) => `Hello, ${params.name}!`;
+ *
+ * export { server, greet };
+ * ```
+ *
+ * @example Class Pattern (Alternative)
+ * ```typescript
+ * import type { ITool, IServer, ToolHelper } from 'simply-mcp';
+ *
+ * interface GreetTool extends ITool {
+ *   name: 'greet';
+ *   description: 'Greet a user';
+ *   params: { name: string };
+ *   result: string;
  * }
  *
- * export default class MyServer implements MyServerInterface {
- *   greet: GreetTool = async (params) => `Hello, ${params.name}!`;
+ * export default class MyServer implements IServer {
+ *   name = 'my-server';
+ *   version = '1.0.0';
+ *   greet: ToolHelper<GreetTool> = async (params) => `Hello, ${params.name}!`;
  * }
  * ```
+ *
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/CONST_PATTERNS.md|Const Patterns Guide}
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/CONST_PATTERNS.md#troubleshooting-typescript-errors|Troubleshooting TypeScript Errors}
  */
 
 // ============================================================================

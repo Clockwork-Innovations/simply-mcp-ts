@@ -110,7 +110,27 @@ export type InferParams<T extends { params: any }> = {
  * It automatically infers parameter types from your tool interface and validates
  * the return type.
  *
+ * **Why use ToolHelper?**
+ * - ✅ Automatic type inference for params and return values
+ * - ✅ Works with strict TypeScript mode (`strict: true`)
+ * - ✅ Handles optional parameters automatically
+ * - ✅ Full IDE autocomplete support
+ * - ✅ Catches type errors at compile time
+ *
+ * **Migration from bare interface:**
+ * ```typescript
+ * // Before (works with strict: false only)
+ * const myTool: MyToolInterface = async (params) => { ... }
+ *
+ * // After (works with strict: true)
+ * const myTool: ToolHelper<MyToolInterface> = async (params) => { ... }
+ * ```
+ *
  * @template T - Tool interface extending ITool with params and result
+ *
+ * @see {@link ITool} - Base interface for tool metadata
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/CONST_PATTERNS.md#troubleshooting-typescript-errors|Troubleshooting Guide}
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/examples/troubleshooting/pattern-migration.ts|Migration Example}
  *
  * @example Simple Tool
  * ```typescript
@@ -204,10 +224,28 @@ export type InferPromptArgs<T extends { args: any }> = {
  * Use this type to create const-based prompt implementations with full type safety.
  * It automatically infers argument types from your prompt interface.
  *
+ * **Why use PromptHelper?**
+ * - ✅ Automatic type inference for arguments
+ * - ✅ Works with strict TypeScript mode (`strict: true`)
+ * - ✅ Handles optional arguments automatically
+ * - ✅ Full IDE autocomplete support
+ *
  * **Context Parameter:** Optional HandlerContext provides access to logging, permissions,
  * and other runtime services. Consistent with ToolHelper and ResourceHelper patterns.
  *
+ * **Migration from bare interface:**
+ * ```typescript
+ * // Before (works with strict: false only)
+ * const myPrompt: MyPromptInterface = (args) => { ... }
+ *
+ * // After (works with strict: true)
+ * const myPrompt: PromptHelper<MyPromptInterface> = (args) => { ... }
+ * ```
+ *
  * @template T - Prompt interface with args field
+ *
+ * @see {@link IPrompt} - Base interface for prompt metadata
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/CONST_PATTERNS.md#troubleshooting-typescript-errors|Troubleshooting Guide}
  *
  * @example Simple Prompt
  * ```typescript
@@ -287,7 +325,25 @@ export type PromptHelper<T extends { args: any }> =
  * Use this type to create const-based resource implementations with full type safety.
  * It validates the return type matches your resource interface.
  *
+ * **Why use ResourceHelper?**
+ * - ✅ Automatic type validation for return values
+ * - ✅ Works with strict TypeScript mode (`strict: true`)
+ * - ✅ Full IDE autocomplete support
+ * - ✅ Catches type errors at compile time
+ *
+ * **Migration from bare interface:**
+ * ```typescript
+ * // Before (works with strict: false only)
+ * const myResource: MyResourceInterface = async () => { ... }
+ *
+ * // After (works with strict: true)
+ * const myResource: ResourceHelper<MyResourceInterface> = async () => { ... }
+ * ```
+ *
  * @template T - Resource interface
+ *
+ * @see {@link IResource} - Base interface for resource metadata
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/CONST_PATTERNS.md#troubleshooting-typescript-errors|Troubleshooting Guide}
  *
  * @example Static Resource
  * ```typescript

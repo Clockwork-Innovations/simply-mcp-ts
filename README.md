@@ -102,7 +102,7 @@ export { server, greet };
 ```typescript
 // 4. Implement the server as class
 export default class Server {
-  greet: GreetTool = async (params) => `Hello, ${params.name}!`;
+  greet: ToolHelper<GreetTool> = async (params) => `Hello, ${params.name}!`;
 }
 ```
 
@@ -118,6 +118,47 @@ export default class Server {
 - Multiple tools sharing data
 
 See [Const Patterns Guide](./docs/guides/CONST_PATTERNS.md) for complete reference.
+
+## Choosing Your Pattern: ToolHelper vs Bare Interface
+
+Simply-MCP supports **two equally valid patterns** for implementing tools, prompts, and resources:
+
+| Pattern | Best For | Type Safety | TypeScript Strictness |
+|---------|----------|-------------|----------------------|
+| **ToolHelper** | Maximum type safety, complex params | Full inference | Works with `strict: true` |
+| **Bare Interface** | Simple tools, quick prototypes | Manual typing | Requires `strict: false` |
+
+### When to use ToolHelper?
+
+✅ Use `ToolHelper<T>` when:
+- You encounter TypeScript errors with bare interface pattern
+- Complex parameter types with nested objects
+- Need automatic type inference for params and return types
+- Team prefers explicit typing
+- Working in strict TypeScript mode
+
+```typescript
+const greet: ToolHelper<GreetTool> = async (params) => {
+  return `Hello, ${params.name}!`;  // ✅ params.name typed automatically
+};
+```
+
+### When to use bare interface?
+
+✅ Use bare interface when:
+- Simple tools with basic params (strings, numbers, booleans)
+- Quick prototypes or examples
+- Familiar with manual typing
+- Minimal boilerplate preferred
+- Working in relaxed TypeScript mode
+
+```typescript
+const greet: GreetTool = async (params) => {
+  return `Hello, ${params.name}!`;  // ⚠️ params type must match manually
+};
+```
+
+**Troubleshooting:** If you get TypeScript errors like `"Type 'X' is not assignable to type 'Y'"`, use the ToolHelper pattern for automatic type inference. See [Const Patterns Guide](./docs/guides/CONST_PATTERNS.md#troubleshooting-typescript-errors) for detailed troubleshooting.
 
 ### Validate Your Server
 

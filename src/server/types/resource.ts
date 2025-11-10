@@ -223,8 +223,14 @@ export interface ResourceContext {
  * - Use `returns` for dynamic resources (type definition, requires implementation)
  * - Having both or neither will cause validation errors
  *
+ * **⚠️ Troubleshooting TypeScript Errors:**
+ * If you get "Type 'X' is not assignable" errors, use `ResourceHelper<YourResource>` for automatic type inference.
+ *
  * **Type Guards:** Use `isStaticResource()` or `isDynamicResource()` to check resource type
  * **Validation:** Use `validateResource()` to ensure only one field is present
+ *
+ * @see {@link ResourceHelper} - Type-safe implementation helper that provides full type inference
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/CONST_PATTERNS.md#troubleshooting-typescript-errors|Troubleshooting Guide}
  *
  * **Static Resources** - Use `value` field with literal data (no implementation needed):
  * @example

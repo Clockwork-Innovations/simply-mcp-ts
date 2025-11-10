@@ -62,6 +62,12 @@ export type InferArgs<TArguments extends Record<string, IPromptArgument>> = {
  * Prompts are implemented using the PromptHelper type with const-based pattern.
  * The interface defines metadata only - name, description, and arguments.
  *
+ * **⚠️ Troubleshooting TypeScript Errors:**
+ * If you get "Type 'X' is not assignable" errors, use `PromptHelper<YourPrompt>` for automatic type inference.
+ *
+ * @see {@link PromptHelper} - Type-safe implementation helper that provides full type inference
+ * @see {@link https://github.com/Clockwork-Innovations/simply-mcp-ts/blob/main/docs/guides/CONST_PATTERNS.md#troubleshooting-typescript-errors|Troubleshooting Guide}
+ *
  * @example Pattern 1: Simple String Return
  * ```typescript
  * interface GreetingPrompt extends IPrompt {

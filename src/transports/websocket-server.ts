@@ -160,12 +160,51 @@ export class WebSocketServerTransport implements Transport {
 
   // Transport interface implementation
   async start(): Promise<void> {
+    // The WebSocketServer starts listening in the constructor.
+    // We need to ensure it's fully ready before resolving.
+
+    // First, check if already fully listening
+    const address = this.wss.address();
+
+    // If address() returns a valid object (not null), the server is listening
+    if (address !== null && typeof address === 'object') {
+      console.log(`[WebSocket] Server already listening on port ${this.options.port}`);
+      return Promise.resolve();
+    }
+
+    // Server is not yet listening - wait for the 'listening' event
+    // Note: This should only happen if start() is called very quickly after construction
     return new Promise((resolve, reject) => {
-      this.wss.once('listening', () => {
+      const onListening = () => {
         console.log(`[WebSocket] Server listening on port ${this.options.port}`);
+        cleanup();
         resolve();
+      };
+
+      const onError = (error: Error) => {
+        console.error('[WebSocket] Server error during startup:', error);
+        cleanup();
+        reject(error);
+      };
+
+      const cleanup = () => {
+        this.wss.removeListener('listening', onListening);
+        this.wss.removeListener('error', onError);
+      };
+
+      this.wss.once('listening', onListening);
+      this.wss.once('error', onError);
+
+      // Double-check after attaching listeners (in case event fired between check and listener setup)
+      // Use setImmediate to ensure we check after the current event loop tick
+      setImmediate(() => {
+        const currentAddress = this.wss.address();
+        if (currentAddress !== null && typeof currentAddress === 'object') {
+          console.log(`[WebSocket] Server became ready while setting up listeners on port ${this.options.port}`);
+          cleanup();
+          resolve();
+        }
       });
-      this.wss.once('error', reject);
     });
   }
 

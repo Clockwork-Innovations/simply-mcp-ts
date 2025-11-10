@@ -826,6 +826,126 @@ See [examples/const-patterns/mixed-patterns.ts](../../examples/const-patterns/mi
 
 ---
 
+## Troubleshooting TypeScript Errors
+
+### Problem 1: "Type 'X' is not assignable to type 'Y'"
+
+**Symptom:**
+```typescript
+interface AddTool extends ITool {
+  params: { a: NumberParam; b: NumberParam };
+  result: number;
+}
+
+const add: AddTool = async (params) => {  // ❌ Type error!
+  return params.a + params.b;
+};
+```
+
+**Error Message:**
+```
+error TS2322: Type '(params: any) => Promise<number>' is not assignable to type 'AddTool'
+```
+
+**Solution:** Use `ToolHelper` for automatic type inference:
+```typescript
+const add: ToolHelper<AddTool> = async (params) => {  // ✅ Works!
+  return params.a + params.b;  // params.a and params.b are typed as number
+};
+```
+
+**Why?** `ToolHelper` automatically:
+1. Infers `params` type from `AddTool['params']`
+2. Handles optional parameters (`required: false`)
+3. Maps IParam types to TypeScript types (NumberParam → number)
+4. Validates return type matches `AddTool['result']`
+
+---
+
+### Problem 2: "Property 'x' does not exist on type 'Y'"
+
+**Symptom:**
+```typescript
+const greet: GreetTool = async (params) => {
+  return `Hello, ${params.name}!`;  // ❌ Property 'name' does not exist
+};
+```
+
+**Solution:** Use `ToolHelper` wrapper:
+```typescript
+const greet: ToolHelper<GreetTool> = async (params) => {
+  return `Hello, ${params.name}!`;  // ✅ Works! 'name' is inferred from GreetTool
+};
+```
+
+---
+
+### Problem 3: Implicit 'any' errors in strict mode
+
+**Symptom:**
+```typescript
+const process: ProcessTool = async (params) => {  // ❌ Parameter 'params' implicitly has an 'any' type
+  return { status: 'ok' };
+};
+```
+
+**Solution:** Use helper types that provide full type inference:
+```typescript
+const process: ToolHelper<ProcessTool> = async (params) => {  // ✅ No implicit any!
+  return { status: 'ok' };
+};
+```
+
+---
+
+### Problem 4: Complex nested parameter types
+
+**Symptom:**
+```typescript
+interface ComplexTool extends ITool {
+  params: {
+    user: ObjectParam<{
+      name: StringParam;
+      tags: ArrayParam<StringParam>;
+    }>;
+  };
+  result: string;
+}
+
+// Hard to type manually
+const complex: ComplexTool = async (params) => {
+  // What's the type of params.user? params.user.tags?
+};
+```
+
+**Solution:** `ToolHelper` handles nested types automatically:
+```typescript
+const complex: ToolHelper<ComplexTool> = async (params) => {
+  // params.user is typed as { name: string; tags: string[] }
+  console.log(params.user.name);     // ✅ string
+  console.log(params.user.tags[0]);  // ✅ string
+  return 'processed';
+};
+```
+
+---
+
+### Pattern Comparison: When to use each?
+
+| Pattern | Best For | Type Safety | Strictness |
+|---------|----------|-------------|------------|
+| **ToolHelper** | Max type safety, complex params | Full inference | Works with `strict: true` |
+| **Bare Interface** | Simple tools, quick prototypes | Manual typing | Requires `strict: false` |
+
+**Recommendation:** Use `ToolHelper`, `PromptHelper`, and `ResourceHelper` for all new code unless you're:
+- Building quick prototypes
+- Using simple parameter types (string, number, boolean)
+- Working in a codebase with `strict: false`
+
+See [examples/troubleshooting/](../../examples/troubleshooting/) for complete working examples.
+
+---
+
 ## Best Practices
 
 ### 1. Use Named Exports
