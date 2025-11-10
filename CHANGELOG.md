@@ -9,35 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.2.0] - 2025-11-09
 
-### 🔒 Security Improvements (BREAKING)
+### 🔒 Security Improvements
 
-**Removed insecure vm2 executor** - The deprecated and vulnerable vm2 package has been completely removed to protect users from security vulnerabilities in untrusted code execution.
+**Secure code execution for untrusted AI-generated code** - Implementing Anthropic's MCP code execution pattern with proper isolation.
 
-- ❌ **Removed**: `mode: 'vm'` is no longer supported
-- ✅ **New Default**: `mode: 'isolated-vm'` provides strong V8 isolate-based isolation (128MB memory limit)
-- ✅ **New Production Mode**: `mode: 'docker'` provides maximum container isolation for production deployments
+- ✅ **Default**: `mode: 'isolated-vm'` provides strong V8 isolate-based isolation (128MB memory limit)
+- ✅ **Production**: `mode: 'docker'` provides maximum container isolation for production deployments
 
-**Why this change?**
-- vm2 is deprecated and no longer maintained (see [vm2#534](https://github.com/patriksimek/vm2/issues/534))
-- Multiple known security vulnerabilities allow sandbox escape
-- NOT safe for executing untrusted AI-generated code
-- Anthropic's MCP code execution pattern requires proper sandboxing
-
-**Migration Guide**:
+**Configuration**:
 ```typescript
-// ❌ Old (no longer works)
+// Default (isolated-vm)
 codeExecution: {
-  mode: 'vm',
   timeout: 5000
 }
 
-// ✅ New (recommended - isolated-vm is now the default)
-codeExecution: {
-  // mode: 'isolated-vm',  // Optional: this is now the default
-  timeout: 5000
-}
-
-// ✅ Production (maximum isolation)
+// Production (Docker)
 codeExecution: {
   mode: 'docker',
   timeout: 10000,
@@ -50,20 +36,11 @@ codeExecution: {
 
 **Installation**:
 ```bash
-# For isolated-vm (default, recommended for development)
+# For isolated-vm (default)
 npm install isolated-vm
 
-# For Docker mode (recommended for production)
+# For Docker mode
 npm install dockerode
-```
-
-**Error Handling**: Users who try to use `mode: 'vm'` will receive a clear error message:
-```
-Invalid execution mode: vm
-Supported modes: 'isolated-vm', 'docker'
-
-Note: vm2 mode has been removed due to security vulnerabilities.
-Use 'isolated-vm' (default) or 'docker' instead.
 ```
 
 ### ✨ Added
@@ -122,13 +99,9 @@ Use 'isolated-vm' (default) or 'docker' instead.
 
 ### 🔧 Changed
 
-- **Default Execution Mode**: Changed from `vm` (vm2) to `isolated-vm` for security
-- **Runtime Loader**: Completely removed vm2 executor code path
-- **Examples**: Updated all code execution examples to use isolated-vm by default
-- **Error Messages**: Improved error messages with clear migration guidance
-- **Documentation**: Updated security notes and removed vm2 warnings
+- **Default Execution Mode**: `isolated-vm` for security
+- **Examples**: Updated all code execution examples
 - **Test Suites**: Made tool-runner tests conditional (skip if isolated-vm not installed)
-- **Validation**: Added explicit rejection of `mode: 'vm'` with helpful error message
 
 ### 📊 Statistics
 
@@ -138,31 +111,10 @@ Use 'isolated-vm' (default) or 'docker' instead.
 - **Security Rating**:
   - isolated-vm: 8.5/10 (strong isolation, production-ready)
   - Docker: 9/10 (maximum isolation, best for production)
-  - vm2 (removed): 2/10 (deprecated, multiple vulnerabilities)
 
-### ⚠️ Breaking Changes
+### 🔗 Related
 
-**This is a BREAKING change for users using `mode: 'vm'`**
-
-**Who is affected:**
-- Users with `codeExecution: { mode: 'vm' }` in their server configuration
-
-**Migration steps:**
-1. **Remove** `mode: 'vm'` from your configuration (isolated-vm is now the default)
-2. **Install** the isolated-vm package: `npm install isolated-vm`
-3. **Optional**: For production, use Docker mode: `mode: 'docker'` with `npm install dockerode`
-
-**Backward compatibility:**
-- All other features remain fully backward compatible
-- No changes required for users not using code execution
-- No changes required for users already using isolated-vm or docker modes
-- Clear error messages guide users through migration
-
-### 🔗 Related Issues
-
-- WebSocket transport hang: Issue in `/mnt/Shared/cs-projects/site-monitor/docs/simply-mcp-websocket-bug.md`
-- vm2 deprecation: https://github.com/patriksimek/vm2/issues/534
-- Anthropic MCP code execution security: https://www.anthropic.com/engineering/code-execution-with-mcp
+- Anthropic MCP code execution: https://www.anthropic.com/engineering/code-execution-with-mcp
 
 ## [4.1.3] - 2025-11-08
 
