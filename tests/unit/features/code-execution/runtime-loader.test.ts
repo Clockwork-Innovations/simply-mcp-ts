@@ -302,14 +302,13 @@ describe('validateConfig', () => {
   });
 
   describe('Invalid Mode', () => {
-    test('should reject vm mode (removed for security)', () => {
+    test('should reject vm mode', () => {
       const config: ICodeExecutionConfig = {
         mode: 'vm' as any,
         timeout: 5000,
       };
 
       expect(() => validateConfig(config)).toThrow('Invalid execution mode: vm');
-      expect(() => validateConfig(config)).toThrow('vm2 mode has been removed due to security vulnerabilities');
     });
 
     test('should reject invalid mode', () => {

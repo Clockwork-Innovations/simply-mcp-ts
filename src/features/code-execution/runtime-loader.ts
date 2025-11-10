@@ -134,11 +134,10 @@ export async function createExecutor(config: ICodeExecutionConfig): Promise<IExe
 export function validateConfig(config: ICodeExecutionConfig): void {
   // Validate mode
   if (config.mode && !['isolated-vm', 'docker'].includes(config.mode)) {
-    const mode = config.mode as string; // Cast to check runtime value
+    const mode = config.mode as string;
     throw new Error(
       `Invalid execution mode: ${mode}\n` +
-      `Supported modes: 'isolated-vm', 'docker'\n` +
-      (mode === 'vm' ? `\nNote: vm2 mode has been removed due to security vulnerabilities.\nUse 'isolated-vm' (default) or 'docker' instead.` : '')
+      `Supported modes: 'isolated-vm', 'docker'`
     );
   }
 
