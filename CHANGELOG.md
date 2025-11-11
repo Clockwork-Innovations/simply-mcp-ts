@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.1] - 2025-11-11
+
+### 🐛 Bug Fixes
+
+- **Zip Extractor Race Condition**: Fixed race condition in zip archive extraction where the extraction Promise would resolve before all file write streams completed. The extractor now properly tracks pending write operations and only resolves when both parsing is complete AND all files are written to disk. This fixes intermittent test failures and ensures reliable zip extraction in production. (src/core/extractor.ts:224)
+
 ## [4.3.0] - 2025-11-10
 
 ### ✨ New Features
