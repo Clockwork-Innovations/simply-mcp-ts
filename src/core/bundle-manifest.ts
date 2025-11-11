@@ -9,6 +9,46 @@ import { readFile, writeFile } from 'fs/promises';
 import { join, dirname } from 'path';
 
 /**
+ * Parameter schema metadata for a tool
+ */
+export interface ParameterSchema {
+  /** Parameter type (string, number, boolean, object, array) */
+  type: string;
+  /** Human-readable description of the parameter */
+  description?: string;
+  /** Whether this parameter is required */
+  required?: boolean;
+  /** Minimum value (for number types) */
+  min?: number;
+  /** Maximum value (for number types) */
+  max?: number;
+  /** Minimum length (for string types) */
+  minLength?: number;
+  /** Maximum length (for string types) */
+  maxLength?: number;
+  /** Regex pattern (for string types) */
+  pattern?: string;
+  /** Allowed enum values */
+  enum?: any[];
+  /** Schema for nested object properties (for object types) */
+  properties?: Record<string, ParameterSchema>;
+  /** Schema for array items (for array types) */
+  items?: ParameterSchema;
+}
+
+/**
+ * Tool schema metadata
+ */
+export interface ToolSchema {
+  /** Tool description */
+  description?: string;
+  /** Parameter definitions for this tool */
+  parameters: {
+    [paramName: string]: ParameterSchema;
+  };
+}
+
+/**
  * Bundle manifest structure stored in bundle.json
  * Contains metadata about an archived MCP server bundle
  */
@@ -27,6 +67,10 @@ export interface BundleManifest {
   createdAt: string;
   /** Version of simply-mcp that created this bundle */
   simplyMcpVersion: string;
+  /** Tool parameter schemas extracted from AST during bundling */
+  toolSchemas?: {
+    [toolName: string]: ToolSchema;
+  };
 }
 
 /**

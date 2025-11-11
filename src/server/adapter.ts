@@ -30,6 +30,9 @@ import { registerCompletions } from '../handlers/completion-handler.js';
 import { DatabaseManager } from '../core/database-manager.js';
 import type { UIWatchModeConfig } from '../types/config';
 import { z } from 'zod';
+import { readManifest, type BundleManifest } from '../core/bundle-manifest.js';
+import { dirname, join, basename } from 'path';
+import { readFile } from 'fs/promises';
 
 /**
  * Options for loading an interface-driven server
@@ -61,6 +64,36 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
 
   if (verbose) {
     console.log(`[Interface Adapter] Parsing file: ${filePath}`);
+  }
+
+  // Step 0: Try to load bundle manifest or schemas file (for bundled servers with tool schemas)
+  let bundleManifest: BundleManifest | undefined;
+  try {
+    // First try to load from bundle.json (archive bundles)
+    const fileDir = dirname(resolve(filePath));
+    bundleManifest = await readManifest(fileDir);
+    if (verbose && bundleManifest.toolSchemas) {
+      console.log(`[Interface Adapter] Loaded tool schemas for ${Object.keys(bundleManifest.toolSchemas).length} tool(s) from bundle manifest`);
+    }
+  } catch (error) {
+    // No bundle.json found - try loading from .schemas.json sidecar (single-file bundles)
+    try {
+      const schemasPath = resolve(filePath).replace(/\.js$/, '.schemas.json');
+      const schemasContent = await readFile(schemasPath, 'utf-8');
+      const schemasData = JSON.parse(schemasContent);
+
+      if (schemasData.toolSchemas) {
+        // Create a minimal manifest-like object with just the schemas
+        bundleManifest = { toolSchemas: schemasData.toolSchemas } as any;
+
+        if (verbose) {
+          console.log(`[Interface Adapter] Loaded tool schemas for ${Object.keys(schemasData.toolSchemas).length} tool(s) from ${basename(schemasPath)}`);
+        }
+      }
+    } catch (schemasError) {
+      // No schemas file found - this is normal for non-bundled servers
+      // Silently continue without schemas
+    }
   }
 
   // Step 1: Parse the TypeScript file to discover interfaces
@@ -99,6 +132,13 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
 
   const module = await import(moduleUrl);
   let ServerClass = module.default;
+
+  // Handle CommonJS bundles: When importing CommonJS as ESM, the actual export is at module.default.default
+  // This happens because esbuild bundles to CommonJS format (module.exports = ...)
+  // but the adapter uses ES module import() which wraps CommonJS exports
+  if (ServerClass && typeof ServerClass === 'object' && ServerClass.default) {
+    ServerClass = ServerClass.default;
+  }
 
   // If no default export, try named exports
   if (!ServerClass && parseResult.className) {
@@ -209,6 +249,39 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     if (verbose) {
       console.log(`[Interface Adapter] Found ${toolsToRegister.length} runtime tool(s): ${toolsToRegister.map(t => t.name).join(', ')}`);
     }
+  } else if (toolsToRegister.length === 0) {
+    // Second fallback: For bundled servers, do runtime reflection on instance properties
+    // This catches cases where static analysis fails (JS bundles) and no tools array exists
+    if (verbose) {
+      console.log('[Interface Adapter] No tools found, trying runtime reflection on server instance properties');
+    }
+
+    const reflectedTools: any[] = [];
+    const reservedProps = ['name', 'version', 'description', 'constructor', 'tools', 'prompts', 'resources'];
+
+    for (const key of Object.keys(serverInstance)) {
+      if (reservedProps.includes(key)) continue;
+
+      const value = serverInstance[key];
+      if (typeof value === 'function') {
+        reflectedTools.push({
+          name: key,
+          methodName: key,
+          description: `Tool: ${key}`,
+          paramsType: 'any',
+          paramsNode: undefined,
+          interfaceName: 'ITool',
+          isReflectedTool: true, // Flag to indicate this came from reflection (not isRuntimeTool!)
+        });
+      }
+    }
+
+    if (reflectedTools.length > 0) {
+      toolsToRegister = reflectedTools;
+      if (verbose) {
+        console.log(`[Interface Adapter] Found ${reflectedTools.length} tool(s) via reflection: ${reflectedTools.map(t => t.name).join(', ')}`);
+      }
+    }
   } else if (verbose && toolsToRegister.length > 0) {
     console.log(`[Interface Adapter] Using ${toolsToRegister.length} statically analyzed tool(s)`);
   }
@@ -216,7 +289,7 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
   // Register all tools (static or runtime)
   // Note: BuildMCPServer handles flattenRouters filtering in listTools()
   for (const tool of toolsToRegister) {
-    await registerTool(buildServer, serverInstance, tool, filePath, verbose);
+    await registerTool(buildServer, serverInstance, tool, filePath, verbose, bundleManifest);
   }
 
   // Step 6: Register prompts (all prompts now require implementation)
@@ -728,7 +801,8 @@ async function registerTool(
   serverInstance: any,
   tool: ParsedTool | any, // Allow runtime tool objects
   filePath: string,
-  verbose?: boolean
+  verbose?: boolean,
+  bundleManifest?: BundleManifest
 ): Promise<{ warning?: { toolName: string; foundMethod: string; suggestion: string } }> {
   let { name, methodName, description, paramsNode, annotations } = tool;
 
@@ -776,6 +850,60 @@ async function registerTool(
     });
 
     return {}; // No naming warnings for runtime tools
+  }
+
+  // Handle reflected tools (from bundled servers via runtime reflection)
+  // These are interface-driven tools discovered via property enumeration
+  if (tool.isReflectedTool) {
+    if (verbose) {
+      console.log(`[Interface Adapter] Registering reflected tool: ${name}`);
+    }
+
+    // Get the method from the server instance
+    const method = serverInstance[methodName];
+
+    if (!method || typeof method !== 'function') {
+      throw new Error(
+        `Reflected tool "${name}" method "${methodName}" is not a function`
+      );
+    }
+
+    // Try to load schema from bundle manifest
+    let schema: z.ZodTypeAny = z.object({}).passthrough(); // Default fallback
+
+    if (bundleManifest?.toolSchemas && bundleManifest.toolSchemas[name]) {
+      const toolSchema = bundleManifest.toolSchemas[name];
+
+      if (verbose) {
+        console.log(`[Interface Adapter] Loading schema for reflected tool "${name}" from bundle manifest`);
+      }
+
+      // Build Zod schema from manifest metadata
+      schema = buildSchemaFromMetadata(toolSchema.parameters);
+
+      // Use description from manifest if available
+      if (toolSchema.description) {
+        description = toolSchema.description;
+      }
+    } else if (verbose) {
+      console.warn(
+        `[Interface Adapter] No schema metadata for reflected tool "${name}", using passthrough`
+      );
+    }
+
+    // Register the tool - interface-driven tools expect (params, helper) signature
+    server.addTool({
+      name,
+      description: description || `Tool: ${name}`,
+      parameters: schema,
+      execute: async (args, context) => {
+        // Call the method with both args and context (the "helper")
+        // Interface-driven tools expect: async (params, helper) => { ... }
+        return await method.call(serverInstance, args, context);
+      },
+    });
+
+    return {}; // No naming warnings for reflected tools
   }
 
   // Handle statically analyzed tools (original behavior)
@@ -901,9 +1029,10 @@ async function registerTool(
     name,
     description: description || `Tool: ${name}`,
     parameters: schema,
-    execute: async (args) => {
-      // Call the method on the server instance
-      return await method.call(serverInstance, args);
+    execute: async (args, context) => {
+      // Call the method on the server instance with both args and context
+      // Interface-driven tools expect: async (params, helper) => { ... }
+      return await method.call(serverInstance, args, context);
     },
     ...(annotations && { annotations }), // Include annotations if present
   });
@@ -985,6 +1114,138 @@ function generateSchema(tool: ParsedTool, filePath: string): z.ZodTypeAny {
 }
 
 /**
+ * Build a Zod schema from bundle manifest metadata
+ *
+ * Converts simple JSON parameter schemas back into Zod validation schemas
+ * Used for bundled servers where TypeScript type info is not available at runtime
+ */
+function buildSchemaFromMetadata(
+  parameters: Record<string, import('../core/bundle-manifest.js').ParameterSchema>
+): z.ZodTypeAny {
+  const schemaFields: Record<string, z.ZodTypeAny> = {};
+
+  for (const [paramName, paramSchema] of Object.entries(parameters)) {
+    // Build the field schema with all constraints
+    const fieldSchema = buildFieldSchema(paramSchema);
+    schemaFields[paramName] = fieldSchema;
+  }
+
+  // Use .strict() instead of .passthrough() to enforce exact schema match
+  return z.object(schemaFields).strict();
+}
+
+/**
+ * Build a Zod schema for a single field from parameter metadata
+ *
+ * Handles all parameter types and applies validation constraints
+ */
+function buildFieldSchema(
+  paramSchema: import('../core/bundle-manifest.js').ParameterSchema
+): z.ZodTypeAny {
+  let fieldSchema: z.ZodTypeAny;
+
+  // Build base schema based on type
+  switch (paramSchema.type) {
+    case 'string':
+      fieldSchema = z.string();
+
+      // Add string validations
+      if (paramSchema.minLength !== undefined) {
+        fieldSchema = (fieldSchema as z.ZodString).min(paramSchema.minLength);
+      }
+      if (paramSchema.maxLength !== undefined) {
+        fieldSchema = (fieldSchema as z.ZodString).max(paramSchema.maxLength);
+      }
+      if (paramSchema.pattern !== undefined) {
+        try {
+          fieldSchema = (fieldSchema as z.ZodString).regex(new RegExp(paramSchema.pattern));
+        } catch (error) {
+          console.warn(`[Schema Builder] Invalid regex pattern: ${paramSchema.pattern}`);
+        }
+      }
+      if (paramSchema.enum !== undefined && Array.isArray(paramSchema.enum)) {
+        // Handle enum as union of literals - ensure at least one value
+        if (paramSchema.enum.length > 0) {
+          fieldSchema = z.enum(paramSchema.enum as [string, ...string[]]);
+        }
+      }
+      break;
+
+    case 'number':
+      fieldSchema = z.number();
+
+      // Add number validations
+      if (paramSchema.min !== undefined) {
+        fieldSchema = (fieldSchema as z.ZodNumber).min(paramSchema.min);
+      }
+      if (paramSchema.max !== undefined) {
+        fieldSchema = (fieldSchema as z.ZodNumber).max(paramSchema.max);
+      }
+      break;
+
+    case 'integer':
+      fieldSchema = z.number().int();
+
+      // Add integer validations
+      if (paramSchema.min !== undefined) {
+        fieldSchema = (fieldSchema as z.ZodNumber).min(paramSchema.min);
+      }
+      if (paramSchema.max !== undefined) {
+        fieldSchema = (fieldSchema as z.ZodNumber).max(paramSchema.max);
+      }
+      break;
+
+    case 'boolean':
+      fieldSchema = z.boolean();
+      break;
+
+    case 'array':
+      // Support typed arrays with items schema
+      if (paramSchema.items) {
+        const itemSchema = buildFieldSchema(paramSchema.items);
+        fieldSchema = z.array(itemSchema);
+      } else {
+        // Generic array without item type
+        fieldSchema = z.array(z.any());
+      }
+      break;
+
+    case 'object':
+      // Support nested objects with properties
+      if (paramSchema.properties) {
+        const nestedFields: Record<string, z.ZodTypeAny> = {};
+        for (const [propName, propSchema] of Object.entries(paramSchema.properties)) {
+          nestedFields[propName] = buildFieldSchema(propSchema);
+        }
+        fieldSchema = z.object(nestedFields).strict();
+      } else {
+        // Generic object without properties
+        fieldSchema = z.object({}).strict();
+      }
+      break;
+
+    default:
+      // Fallback to any for unknown types
+      console.warn(`[Schema Builder] Unknown parameter type: ${paramSchema.type}, using z.any()`);
+      fieldSchema = z.any();
+      break;
+  }
+
+  // Add description if available (must be added before making optional)
+  if (paramSchema.description) {
+    fieldSchema = fieldSchema.describe(paramSchema.description);
+  }
+
+  // Handle optional/required logic
+  // If required is explicitly false or undefined, make the field optional
+  if (!paramSchema.required) {
+    fieldSchema = fieldSchema.optional();
+  }
+
+  return fieldSchema;
+}
+
+/**
  * Validate that a file uses the interface-driven API
  */
 export function isInterfaceFile(filePath: string): boolean {
@@ -996,3 +1257,6 @@ export function isInterfaceFile(filePath: string): boolean {
     return false;
   }
 }
+
+// Export for testing
+export { buildSchemaFromMetadata };

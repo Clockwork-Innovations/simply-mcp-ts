@@ -9,6 +9,8 @@ import * as ts from 'typescript';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import type { ParseResult, ParsedAuth } from './types.js';
+import { programBuilder } from './program-builder.js';
+import { implementsInterface, hasInterfaceShape } from './interface-checker.js';
 import {
   discoverConstServer,
   discoverConstImplementation,
@@ -77,7 +79,93 @@ export function compileInterfaceFile(filePath: string): ParseResult {
   // Preprocess source to handle edge cases like 'as const' in type positions
   sourceCode = preprocessSource(sourceCode);
 
-  // Create a TypeScript program
+  // Try program-based parsing first (with full type information and module resolution)
+  // Falls back to syntax-only parsing if program creation fails
+  try {
+    return parseWithProgram(absolutePath, sourceCode);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(
+      `Program-based parsing failed for ${absolutePath}, falling back to syntax-only parsing: ${errorMessage}`
+    );
+    return parseWithSyntaxOnly(absolutePath, sourceCode);
+  }
+}
+
+/**
+ * Parse TypeScript file using full program with type information.
+ *
+ * This approach:
+ * - Creates a TypeScript program with proper module resolution
+ * - Uses type checker for accurate interface detection
+ * - Can resolve imports and type aliases
+ * - More accurate than syntax-only parsing
+ *
+ * @param absolutePath - Absolute path to the TypeScript file
+ * @param sourceCode - The source code (unused but kept for API consistency)
+ * @returns ParseResult with all discovered interfaces
+ */
+function parseWithProgram(absolutePath: string, sourceCode: string): ParseResult {
+  // Create TypeScript program with type checker
+  // This may throw if the file has severe errors or missing dependencies
+  const { program, typeChecker, sourceFile } = programBuilder.createProgram(absolutePath);
+
+  const result: ParseResult = {
+    tools: [],
+    prompts: [],
+    resources: [],
+    samplings: [],
+    elicitations: [],
+    roots: [],
+    subscriptions: [],
+    completions: [],
+    uis: [],
+    routers: [],
+    validationErrors: [],
+    implementations: [],
+    instances: [],
+    routerProperties: [],
+    discoveredUIs: [],
+    discoveredRouters: [],
+    discoveredCompletions: [],
+    discoveredRoots: [],
+    discoveredSubscriptions: [],
+  };
+
+  // Store auth interfaces by name for resolution
+  const authInterfaces = new Map<string, ParsedAuth>();
+
+  // Visit all nodes in the source file
+  // We use the same discovery logic as syntax-only parsing for now
+  // In the future, we can enhance this to use type checker for better detection
+  function visit(node: ts.Node) {
+    visitNode(node, sourceFile, result, authInterfaces);
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Run post-processing steps
+  postProcessParseResult(result, sourceFile);
+
+  return result;
+}
+
+/**
+ * Parse TypeScript file using syntax-only parsing (no type information).
+ *
+ * This is the fallback approach:
+ * - Creates source file without full program
+ * - No type checker or module resolution
+ * - Faster but less accurate
+ * - Used when program creation fails or for bundled .js files
+ *
+ * @param absolutePath - Absolute path to the TypeScript file
+ * @param sourceCode - The source code to parse
+ * @returns ParseResult with all discovered interfaces
+ */
+function parseWithSyntaxOnly(absolutePath: string, sourceCode: string): ParseResult {
+  // Create a TypeScript source file (syntax-only, no type information)
   const sourceFile = ts.createSourceFile(
     absolutePath,
     sourceCode,
@@ -112,269 +200,14 @@ export function compileInterfaceFile(filePath: string): ParseResult {
 
   // Visit all nodes in the source file
   function visit(node: ts.Node) {
-    // NEW v4: Discover const server
-    const constServer = discoverConstServer(node, sourceFile);
-    if (constServer && !result.server) {
-      // Extract server metadata from object literal
-      const initializer = constServer.initializer;
-      if (initializer && ts.isObjectLiteralExpression(initializer)) {
-        const serverData: any = {};
-        let inlineAuth: ParsedAuth | undefined;
-        let codeExecutionConfig: any = undefined;
-
-        for (const prop of initializer.properties) {
-          if (ts.isPropertyAssignment(prop)) {
-            const name = prop.name.getText(sourceFile);
-            const value = prop.initializer;
-
-            if (ts.isStringLiteral(value) || ts.isNumericLiteral(value)) {
-              serverData[name] = value.text;
-            } else if (ts.isToken(value) && value.kind === ts.SyntaxKind.TrueKeyword) {
-              serverData[name] = true;
-            } else if (ts.isToken(value) && value.kind === ts.SyntaxKind.FalseKeyword) {
-              serverData[name] = false;
-            } else if (name === 'auth' && ts.isObjectLiteralExpression(value)) {
-              // Parse inline auth object from const server
-              inlineAuth = parseConstServerAuth(value, sourceFile);
-            } else if (name === 'codeExecution' && ts.isObjectLiteralExpression(value)) {
-              // Parse inline codeExecution config from const server
-              codeExecutionConfig = parseConstCodeExecutionConfig(value, sourceFile);
-            }
-          }
-        }
-
-        result.server = {
-          interfaceName: 'IServer',
-          name: serverData.name || 'unknown',
-          version: serverData.version || '1.0.0',
-          description: serverData.description,
-          flattenRouters: serverData.flattenRouters,
-          auth: inlineAuth,
-          codeExecution: codeExecutionConfig
-        };
-      }
-    }
-
-    // NEW v4: Discover const implementations
-    const constImpl = discoverConstImplementation(node, sourceFile);
-    if (constImpl) {
-      result.implementations!.push(constImpl);
-    }
-
-    // NEW v4: Discover const UI implementations
-    const constUI = discoverConstUI(node, sourceFile);
-    if (constUI) {
-      result.discoveredUIs!.push(constUI);
-    }
-
-    // NEW v4: Discover const router implementations
-    const constRouter = discoverConstRouter(node, sourceFile);
-    if (constRouter) {
-      result.discoveredRouters!.push(constRouter);
-    }
-
-    // NEW v4: Discover const completion implementations
-    const constCompletion = discoverConstCompletion(node, sourceFile);
-    if (constCompletion) {
-      result.discoveredCompletions!.push(constCompletion);
-    }
-
-    // NEW v4: Discover const roots implementations
-    const constRoots = discoverConstRoots(node, sourceFile);
-    if (constRoots) {
-      result.discoveredRoots!.push(constRoots);
-    }
-
-    // NEW v4: Discover const subscription implementations
-    const constSubscription = discoverConstSubscription(node, sourceFile);
-    if (constSubscription) {
-      result.discoveredSubscriptions!.push(constSubscription);
-    }
-
-    // NEW v4: Discover class instantiations
-    const instance = discoverClassInstance(node, sourceFile);
-    if (instance) {
-      result.instances!.push(instance);
-    }
-
-    // Compile interface declarations
-    if (ts.isInterfaceDeclaration(node)) {
-      const interfaceName = node.name.text;
-
-      // Check if it extends ITool, IPrompt, IResource, IServer, or IAuth types
-      if (node.heritageClauses) {
-        for (const clause of node.heritageClauses) {
-          for (const type of clause.types) {
-            const typeName = type.expression.getText(sourceFile);
-
-            if (typeName === 'ITool') {
-              const tool = compileToolInterface(node, sourceFile, result.validationErrors!);
-              if (tool) result.tools.push(tool);
-            } else if (typeName === 'IPrompt') {
-              const prompt = compilePromptInterface(node, sourceFile);
-              if (prompt) result.prompts.push(prompt);
-            } else if (typeName === 'IResource') {
-              const resource = compileResourceInterface(node, sourceFile);
-              if (resource) result.resources.push(resource);
-            } else if (typeName === 'ISampling') {
-              const sampling = compileSamplingInterface(node, sourceFile);
-              if (sampling) result.samplings.push(sampling);
-            } else if (typeName === 'IElicit') {
-              const elicit = compileElicitInterface(node, sourceFile);
-              if (elicit) result.elicitations.push(elicit);
-            } else if (typeName === 'IRoots') {
-              const roots = compileRootsInterface(node, sourceFile);
-              if (roots) result.roots.push(roots);
-            } else if (typeName === 'ISubscription') {
-              const subscription = compileSubscriptionInterface(node, sourceFile);
-              if (subscription) result.subscriptions.push(subscription);
-            } else if (typeName === 'ICompletion') {
-              const completion = compileCompletionInterface(node, sourceFile);
-              if (completion) result.completions.push(completion);
-            } else if (typeName === 'IUI') {
-              const ui = compileUIInterface(node, sourceFile);
-              if (ui) result.uis.push(ui);
-            } else if (typeName === 'IToolRouter' || typeName.startsWith('IToolRouter<')) {
-              const router = compileRouterInterface(node, sourceFile);
-              if (router) result.routers.push(router);
-            } else if (typeName === 'IServer') {
-              const server = compileServerInterface(node, sourceFile, authInterfaces);
-              if (server) result.server = server;
-            } else if (typeName === 'IAuth' || typeName === 'IApiKeyAuth') {
-              const auth = compileAuthInterface(node, sourceFile);
-              if (auth) authInterfaces.set(interfaceName, auth);
-            }
-          }
-        }
-      }
-    }
-
-    // Check for class declarations implementing IServer
-    if (ts.isClassDeclaration(node)) {
-      const className = node.name?.text;
-      if (!className) {
-        ts.forEachChild(node, visit);
-        return;
-      }
-
-      // NEW v4: Discover class property implementations
-      const classImpls = discoverClassImplementations(node, sourceFile);
-      result.implementations!.push(...classImpls);
-
-      // NEW v4: Discover class property UI implementations
-      const classUIs = discoverClassUIImplementations(node, sourceFile);
-      result.discoveredUIs!.push(...classUIs);
-
-      const modifiers = node.modifiers ? Array.from(node.modifiers) : [];
-      const hasDefaultExport = modifiers.some((mod: ts.Node) => mod.kind === ts.SyntaxKind.DefaultKeyword);
-      const hasExport = modifiers.some((mod: ts.Node) => mod.kind === ts.SyntaxKind.ExportKeyword);
-
-      // Priority 1: Explicit export default (backward compatible)
-      if (hasExport && hasDefaultExport) {
-        result.className = className;
-        if (result.server) {
-          result.server.className = className;
-        }
-
-        // Auto-instantiate export default classes
-        // Classes marked with `export default` are automatically treated as instantiated
-        // This eliminates the need for manual `const server = new Server()` boilerplate
-        const instanceName = className.charAt(0).toLowerCase() + className.slice(1);
-        result.instances!.push({
-          instanceName,
-          className,
-          isAutoInstantiated: true  // Mark as auto-instantiated for debugging
-        } as any);
-      }
-
-      // Priority 2: Class implements server interface
-      if (node.heritageClauses) {
-        for (const clause of node.heritageClauses) {
-          if (clause.token === ts.SyntaxKind.ImplementsKeyword) {
-            for (const type of clause.types) {
-              const typeName = type.expression.getText(sourceFile);
-              if (result.server && typeName === result.server.interfaceName) {
-                result.server.className = className;
-                if (!result.className) {
-                  result.className = className;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Priority 3: Auto-detect class by naming pattern (fallback)
-      if (!result.className && !hasDefaultExport) {
-        const isServerClass = /Server|Service|Impl|Handler|Provider|Manager$/i.test(className);
-        if (isServerClass) {
-          result.className = className;
-          if (result.server) {
-            result.server.className = className;
-          }
-        }
-      }
-    }
-
+    visitNode(node, sourceFile, result, authInterfaces);
     ts.forEachChild(node, visit);
   }
 
   visit(sourceFile);
 
-  // Second pass: Discover router properties in classes
-  // This must happen AFTER all router interfaces have been parsed
-  if (result.routers.length > 0) {
-    const knownRouterInterfaces = new Set(result.routers.map(r => r.interfaceName));
-
-    // Visit all class declarations again to discover router properties
-    function discoverRouters(node: ts.Node) {
-      if (ts.isClassDeclaration(node)) {
-        const routerProps = discoverClassRouterProperties(node, sourceFile, knownRouterInterfaces);
-        result.routerProperties!.push(...routerProps);
-      }
-      ts.forEachChild(node, discoverRouters);
-    }
-
-    discoverRouters(sourceFile);
-  }
-
-  // Link implementations to interfaces (v4 auto-discovery)
-  linkImplementationsToInterfaces(result);
-
-  // Link discovered UIs to interfaces (v4 const UI discovery)
-  linkUIsToInterfaces(result);
-
-  // Link discovered routers to interfaces (v4 const router discovery)
-  // IMPORTANT: This must happen BEFORE matching router properties
-  // so we can check if a router already has constName set
-  linkRoutersToInterfaces(result, sourceFile);
-
-  // Link discovered completions to interfaces (v4 const completion discovery)
-  linkCompletionsToInterfaces(result, sourceFile);
-
-  // Link discovered roots to interfaces (v4 const roots discovery)
-  linkRootsToInterfaces(result, sourceFile);
-
-  // Link discovered subscriptions to interfaces (v4 const subscription discovery)
-  linkSubscriptionsToInterfaces(result, sourceFile);
-
-  // Match router properties to router interfaces
-  // This updates the propertyName field in routers based on discovered class properties
-  // Only set propertyName if constName is not already set (they are mutually exclusive)
-  if (result.routerProperties && result.routerProperties.length > 0) {
-    for (const routerProp of result.routerProperties) {
-      // Find the router interface that matches this property's type
-      const router = result.routers.find(r => r.interfaceName === routerProp.interfaceName);
-      if (router && !router.constName) {
-        // Only set propertyName if this is NOT a const router
-        // Const routers have constName set, class routers have propertyName set
-        router.propertyName = routerProp.propertyName;
-      }
-    }
-  }
-
-  // Validate implementations (Phase 2B: Auto-discovery validation)
-  validateImplementations(result);
+  // Post-processing: link implementations, validate, etc.
+  postProcessParseResult(result, sourceFile);
 
   return result;
 }
@@ -617,4 +450,298 @@ function parseConstCodeExecutionConfig(
   }
 
   return config;
+}
+
+/**
+ * Common node visiting logic for both program-based and syntax-only parsing.
+ *
+ * This function contains all the discovery logic for:
+ * - Const servers
+ * - Const implementations (tools, prompts, resources, etc.)
+ * - Interface declarations
+ * - Class declarations
+ *
+ * @param node - The AST node to visit
+ * @param sourceFile - The source file being parsed
+ * @param result - The parse result to populate
+ * @param authInterfaces - Map to store auth interfaces
+ */
+function visitNode(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  result: ParseResult,
+  authInterfaces: Map<string, ParsedAuth>
+): void {
+  // NEW v4: Discover const server
+  const constServer = discoverConstServer(node, sourceFile);
+  if (constServer && !result.server) {
+    // Extract server metadata from object literal
+    const initializer = constServer.initializer;
+    if (initializer && ts.isObjectLiteralExpression(initializer)) {
+      const serverData: any = {};
+      let inlineAuth: ParsedAuth | undefined;
+      let codeExecutionConfig: any = undefined;
+
+      for (const prop of initializer.properties) {
+        if (ts.isPropertyAssignment(prop)) {
+          const name = prop.name.getText(sourceFile);
+          const value = prop.initializer;
+
+          if (ts.isStringLiteral(value) || ts.isNumericLiteral(value)) {
+            serverData[name] = value.text;
+          } else if (ts.isToken(value) && value.kind === ts.SyntaxKind.TrueKeyword) {
+            serverData[name] = true;
+          } else if (ts.isToken(value) && value.kind === ts.SyntaxKind.FalseKeyword) {
+            serverData[name] = false;
+          } else if (name === 'auth' && ts.isObjectLiteralExpression(value)) {
+            // Parse inline auth object from const server
+            inlineAuth = parseConstServerAuth(value, sourceFile);
+          } else if (name === 'codeExecution' && ts.isObjectLiteralExpression(value)) {
+            // Parse inline codeExecution config from const server
+            codeExecutionConfig = parseConstCodeExecutionConfig(value, sourceFile);
+          }
+        }
+      }
+
+      result.server = {
+        interfaceName: 'IServer',
+        name: serverData.name || 'unknown',
+        version: serverData.version || '1.0.0',
+        description: serverData.description,
+        flattenRouters: serverData.flattenRouters,
+        auth: inlineAuth,
+        codeExecution: codeExecutionConfig
+      };
+    }
+  }
+
+  // NEW v4: Discover const implementations
+  const constImpl = discoverConstImplementation(node, sourceFile);
+  if (constImpl) {
+    result.implementations!.push(constImpl);
+  }
+
+  // NEW v4: Discover const UI implementations
+  const constUI = discoverConstUI(node, sourceFile);
+  if (constUI) {
+    result.discoveredUIs!.push(constUI);
+  }
+
+  // NEW v4: Discover const router implementations
+  const constRouter = discoverConstRouter(node, sourceFile);
+  if (constRouter) {
+    result.discoveredRouters!.push(constRouter);
+  }
+
+  // NEW v4: Discover const completion implementations
+  const constCompletion = discoverConstCompletion(node, sourceFile);
+  if (constCompletion) {
+    result.discoveredCompletions!.push(constCompletion);
+  }
+
+  // NEW v4: Discover const roots implementations
+  const constRoots = discoverConstRoots(node, sourceFile);
+  if (constRoots) {
+    result.discoveredRoots!.push(constRoots);
+  }
+
+  // NEW v4: Discover const subscription implementations
+  const constSubscription = discoverConstSubscription(node, sourceFile);
+  if (constSubscription) {
+    result.discoveredSubscriptions!.push(constSubscription);
+  }
+
+  // NEW v4: Discover class instantiations
+  const instance = discoverClassInstance(node, sourceFile);
+  if (instance) {
+    result.instances!.push(instance);
+  }
+
+  // Compile interface declarations
+  if (ts.isInterfaceDeclaration(node)) {
+    const interfaceName = node.name.text;
+
+    // Check if it extends ITool, IPrompt, IResource, IServer, or IAuth types
+    if (node.heritageClauses) {
+      for (const clause of node.heritageClauses) {
+        for (const type of clause.types) {
+          const typeName = type.expression.getText(sourceFile);
+
+          if (typeName === 'ITool') {
+            const tool = compileToolInterface(node, sourceFile, result.validationErrors!);
+            if (tool) result.tools.push(tool);
+          } else if (typeName === 'IPrompt') {
+            const prompt = compilePromptInterface(node, sourceFile);
+            if (prompt) result.prompts.push(prompt);
+          } else if (typeName === 'IResource') {
+            const resource = compileResourceInterface(node, sourceFile);
+            if (resource) result.resources.push(resource);
+          } else if (typeName === 'ISampling') {
+            const sampling = compileSamplingInterface(node, sourceFile);
+            if (sampling) result.samplings.push(sampling);
+          } else if (typeName === 'IElicit') {
+            const elicit = compileElicitInterface(node, sourceFile);
+            if (elicit) result.elicitations.push(elicit);
+          } else if (typeName === 'IRoots') {
+            const roots = compileRootsInterface(node, sourceFile);
+            if (roots) result.roots.push(roots);
+          } else if (typeName === 'ISubscription') {
+            const subscription = compileSubscriptionInterface(node, sourceFile);
+            if (subscription) result.subscriptions.push(subscription);
+          } else if (typeName === 'ICompletion') {
+            const completion = compileCompletionInterface(node, sourceFile);
+            if (completion) result.completions.push(completion);
+          } else if (typeName === 'IUI') {
+            const ui = compileUIInterface(node, sourceFile);
+            if (ui) result.uis.push(ui);
+          } else if (typeName === 'IToolRouter' || typeName.startsWith('IToolRouter<')) {
+            const router = compileRouterInterface(node, sourceFile);
+            if (router) result.routers.push(router);
+          } else if (typeName === 'IServer') {
+            const server = compileServerInterface(node, sourceFile, authInterfaces);
+            if (server) result.server = server;
+          } else if (typeName === 'IAuth' || typeName === 'IApiKeyAuth') {
+            const auth = compileAuthInterface(node, sourceFile);
+            if (auth) authInterfaces.set(interfaceName, auth);
+          }
+        }
+      }
+    }
+  }
+
+  // Check for class declarations implementing IServer
+  if (ts.isClassDeclaration(node)) {
+    const className = node.name?.text;
+    if (!className) {
+      return;
+    }
+
+    // NEW v4: Discover class property implementations
+    const classImpls = discoverClassImplementations(node, sourceFile);
+    result.implementations!.push(...classImpls);
+
+    // NEW v4: Discover class property UI implementations
+    const classUIs = discoverClassUIImplementations(node, sourceFile);
+    result.discoveredUIs!.push(...classUIs);
+
+    const modifiers = node.modifiers ? Array.from(node.modifiers) : [];
+    const hasDefaultExport = modifiers.some((mod: ts.Node) => mod.kind === ts.SyntaxKind.DefaultKeyword);
+    const hasExport = modifiers.some((mod: ts.Node) => mod.kind === ts.SyntaxKind.ExportKeyword);
+
+    // Priority 1: Explicit export default (backward compatible)
+    if (hasExport && hasDefaultExport) {
+      result.className = className;
+      if (result.server) {
+        result.server.className = className;
+      }
+
+      // Auto-instantiate export default classes
+      // Classes marked with `export default` are automatically treated as instantiated
+      // This eliminates the need for manual `const server = new Server()` boilerplate
+      const instanceName = className.charAt(0).toLowerCase() + className.slice(1);
+      result.instances!.push({
+        instanceName,
+        className,
+        isAutoInstantiated: true  // Mark as auto-instantiated for debugging
+      } as any);
+    }
+
+    // Priority 2: Class implements server interface
+    if (node.heritageClauses) {
+      for (const clause of node.heritageClauses) {
+        if (clause.token === ts.SyntaxKind.ImplementsKeyword) {
+          for (const type of clause.types) {
+            const typeName = type.expression.getText(sourceFile);
+            if (result.server && typeName === result.server.interfaceName) {
+              result.server.className = className;
+              if (!result.className) {
+                result.className = className;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Priority 3: Auto-detect class by naming pattern (fallback)
+    if (!result.className && !hasDefaultExport) {
+      const isServerClass = /Server|Service|Impl|Handler|Provider|Manager$/i.test(className);
+      if (isServerClass) {
+        result.className = className;
+        if (result.server) {
+          result.server.className = className;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Post-processing logic after AST traversal.
+ *
+ * This function:
+ * - Discovers router properties in classes
+ * - Links implementations to interfaces
+ * - Links UIs, routers, completions, roots, subscriptions to interfaces
+ * - Matches router properties to router interfaces
+ * - Validates implementations
+ *
+ * @param result - The parse result to post-process
+ * @param sourceFile - The source file that was parsed
+ */
+function postProcessParseResult(result: ParseResult, sourceFile: ts.SourceFile): void {
+  // Second pass: Discover router properties in classes
+  // This must happen AFTER all router interfaces have been parsed
+  if (result.routers.length > 0) {
+    const knownRouterInterfaces = new Set(result.routers.map(r => r.interfaceName));
+
+    // Visit all class declarations again to discover router properties
+    function discoverRouters(node: ts.Node) {
+      if (ts.isClassDeclaration(node)) {
+        const routerProps = discoverClassRouterProperties(node, sourceFile, knownRouterInterfaces);
+        result.routerProperties!.push(...routerProps);
+      }
+      ts.forEachChild(node, discoverRouters);
+    }
+
+    discoverRouters(sourceFile);
+  }
+
+  // Link implementations to interfaces (v4 auto-discovery)
+  linkImplementationsToInterfaces(result);
+
+  // Link discovered UIs to interfaces (v4 const UI discovery)
+  linkUIsToInterfaces(result);
+
+  // Link discovered routers to interfaces (v4 const router discovery)
+  // IMPORTANT: This must happen BEFORE matching router properties
+  // so we can check if a router already has constName set
+  linkRoutersToInterfaces(result, sourceFile);
+
+  // Link discovered completions to interfaces (v4 const completion discovery)
+  linkCompletionsToInterfaces(result, sourceFile);
+
+  // Link discovered roots to interfaces (v4 const roots discovery)
+  linkRootsToInterfaces(result, sourceFile);
+
+  // Link discovered subscriptions to interfaces (v4 const subscription discovery)
+  linkSubscriptionsToInterfaces(result, sourceFile);
+
+  // Match router properties to router interfaces
+  // This updates the propertyName field in routers based on discovered class properties
+  // Only set propertyName if constName is not already set (they are mutually exclusive)
+  if (result.routerProperties && result.routerProperties.length > 0) {
+    for (const routerProp of result.routerProperties) {
+      // Find the router interface that matches this property's type
+      const router = result.routers.find(r => r.interfaceName === routerProp.interfaceName);
+      if (router && !router.constName) {
+        // Only set propertyName if this is NOT a const router
+        // Const routers have constName set, class routers have propertyName set
+        router.propertyName = routerProp.propertyName;
+      }
+    }
+  }
+
+  // Validate implementations (Phase 2B: Auto-discovery validation)
+  validateImplementations(result);
 }

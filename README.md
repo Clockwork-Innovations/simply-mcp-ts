@@ -119,6 +119,68 @@ export default class Server {
 
 See [Const Patterns Guide](./docs/guides/CONST_PATTERNS.md) for complete reference.
 
+### Advanced Parameter Types
+
+Simply MCP supports complex TypeScript types with automatic schema generation:
+
+**Nested Objects:**
+```typescript
+interface CreateUserTool extends ITool {
+  name: 'create_user';
+  params: {
+    user: {
+      name: string;
+      email: string;
+      address: {
+        street: string;
+        city: string;
+        zipCode?: string;  // Optional nested field
+      };
+    };
+  };
+}
+```
+
+**Typed Arrays:**
+```typescript
+interface ProcessItemsTool extends ITool {
+  name: 'process_items';
+  params: {
+    tags: string[];           // String array
+    scores: number[];         // Number array
+    items: Array<{            // Array of objects
+      id: string;
+      value: number;
+    }>;
+  };
+}
+```
+
+**Union Types (Enums):**
+```typescript
+interface SetStatusTool extends ITool {
+  name: 'set_status';
+  params: {
+    status: 'active' | 'inactive' | 'pending';  // Automatically becomes enum
+  };
+}
+```
+
+**JSDoc Descriptions:**
+```typescript
+interface MyTool extends ITool {
+  name: 'my_tool';
+  params: {
+    /** User's full name */
+    name: string;
+    /** User's age in years */
+    age: number;
+  };
+}
+```
+
+All these patterns work with **strict type validation** and automatic schema generation during bundling.
+
 ## Choosing Your Pattern: ToolHelper vs Bare Interface
 
 Simply-MCP supports **two equally valid patterns** for implementing tools, prompts, and resources:
@@ -190,6 +252,102 @@ That's it! Your MCP server is running with full type safety and zero boilerplate
 - 📘 [Quick Start Guide](./docs/guides/QUICK_START.md) - Detailed tutorial with testing & troubleshooting
 - 📘 [Features Guide](./docs/guides/FEATURES.md) - Tools, prompts, resources
 - 📘 [API Reference](./docs/guides/API_REFERENCE.md) - Complete API documentation
+
+---
+
+## Using with Claude CLI
+
+Simply MCP servers integrate seamlessly with Anthropic's Claude CLI using stdio transport. This allows you to use your MCP tools directly in Claude conversations.
+
+### Quick Setup
+
+**1. Bundle Your Server** (recommended for best startup time):
+
+```bash
+npx simply-mcp bundle src/my-server.ts -o dist/my-server.js
+```
+
+**2. Create MCP Configuration File**:
+
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": [
+        "node_modules/simply-mcp/dist/src/cli/index.js",
+        "run",
+        "dist/my-server.js"
+      ],
+      "env": {
+        "MCP_TIMEOUT": "30000"
+      }
+    }
+  }
+}
+```
+
+Save this as `mcp-config.json` in your project root.
+
+**3. Run Claude CLI with Your Server**:
+
+```bash
+# Set timeout environment variable
+export MCP_TIMEOUT=30000
+
+# Use Claude with your MCP server
+claude --mcp-config mcp-config.json "Use my-server to help me"
+```
+
+### Important Configuration Notes
+
+**Timeout Configuration:** Simply MCP servers take approximately 2 seconds to start up. The default MCP timeout is too short, so you must set `MCP_TIMEOUT=30000` (30 seconds) either:
+- As an environment variable: `export MCP_TIMEOUT=30000`
+- In the `env` section of your MCP config (as shown above)
+- Inline with your command: `MCP_TIMEOUT=30000 claude --mcp-config config.json "prompt"`
+
+**Bundling vs Direct TypeScript:** We strongly recommend bundling your server for production use with Claude CLI:
+- ✅ **Bundled** (`dist/my-server.js`): Fast startup, reliable, recommended
+- ⚠️ **TypeScript** (`src/my-server.ts`): Currently has loader issues, use bundled instead
+
+### Testing Your Setup
+
+Validate your configuration with a simple test:
+
+```bash
+# Test that your server starts correctly
+node node_modules/simply-mcp/dist/src/cli/index.js run dist/my-server.js --dry-run
+
+# Test with Claude CLI (non-interactive)
+MCP_TIMEOUT=30000 claude --print \
+  --model haiku \
+  --mcp-config mcp-config.json \
+  --strict-mcp-config \
+  --dangerously-skip-permissions \
+  "List available tools from my-server"
+```
+
+### Troubleshooting
+
+**"Connection timeout" or "Failed to connect to server"**
+- Increase timeout: `export MCP_TIMEOUT=30000` or add to config `env` section
+- Verify server starts manually: `node ... run dist/my-server.js --dry-run`
+
+**"Cannot find module" errors**
+- Use bundled servers (`dist/my-server.js`) instead of TypeScript sources
+- Ensure bundle exists: `ls dist/my-server.js`
+
+**Tools not appearing**
+- Check server validation: `npx simply-mcp run dist/my-server.js --dry-run`
+- Verify MCP config syntax is valid JSON
+- Try with `--strict-mcp-config` flag to isolate server issues
+
+**HTTP transport "Cannot POST /" or "Not Acceptable" errors**
+- stdio transport is recommended for Claude CLI (HTTP has additional configuration requirements)
+- If using HTTP: endpoint is `/mcp`, not `/`
+- Required header: `Accept: application/json, text/event-stream`
+
+See the [Quick Start Guide](./docs/guides/QUICK_START.md) for more detailed troubleshooting.
 
 ---
 
@@ -269,7 +427,7 @@ const server = new BuildMCPServer({
 
 **Performance:** 940 requests/second (parallel) vs 192 requests/second (sequential). Tools receive batch context for resource pooling optimization.
 
-**Learn More:** [Batch Processing Guide](./docs/guides/FEATURES.md#batch-processing) | [Example](./examples/interface-batch-requests.ts)
+**Learn More:** [Batch Processing Guide](./docs/guides/FEATURES.md#batch-processing)
 
 ---
 
@@ -302,31 +460,33 @@ const server = new BuildMCPServer({
 
 ## Examples
 
-Working examples using the Interface API:
+**Getting Started:**
+- **[bundle-test-server.ts](./examples/bundle-test-server.ts)** - Minimal interface-driven server (great starting point)
+- **[const-patterns/minimal-server.ts](./examples/const-patterns/minimal-server.ts)** - Complete const-based API patterns
+- **[const-patterns/all-primitives.ts](./examples/const-patterns/all-primitives.ts)** - All 10 MCP primitives as const
 
-**Basic Examples:**
-- **[interface-minimal.ts](./examples/interface-minimal.ts)** - Minimal server with basic tools
-- **[interface-advanced.ts](./examples/interface-advanced.ts)** - Advanced features (prompts, resources, validation)
-- **[interface-params.ts](./examples/interface-params.ts)** - Parameter validation examples
-- **[interface-audio-resource.ts](./examples/interface-audio-resource.ts)** - Audio resources with metadata (MP3, WAV, OGG, FLAC)
-
-**Protocol Features:**
-- **[interface-sampling.ts](./examples/interface-sampling.ts)** - LLM sampling integration
-- **[interface-elicitation.ts](./examples/interface-elicitation.ts)** - User input requests
-- **[interface-roots.ts](./examples/interface-roots.ts)** - Root directory discovery
-- **[interface-subscriptions.ts](./examples/interface-subscriptions.ts)** - Resource update notifications
-- **[interface-progress-messages.ts](./examples/interface-progress-messages.ts)** - Progress notifications with status messages
+**Transport Examples:**
+- **[interface-websocket.ts](./examples/interface-websocket.ts)** - WebSocket transport with real-time communication
+- **OAuth Examples** - See [examples/oauth-*.ts](./examples/) for in-memory, Redis, router, and scope enforcement patterns
 
 **UI Examples:**
-- **[interface-file-based-ui.ts](./examples/interface-file-based-ui.ts)** - External HTML/CSS/JS files
-- **[interface-react-dashboard.ts](./examples/interface-react-dashboard.ts)** - Full React dashboard
-- **[interface-production-optimized.ts](./examples/interface-production-optimized.ts)** - Production-ready
+- **[v4/01-minimal.ts](./examples/v4/01-minimal.ts)** - Inline HTML UI
+- **[v4/03-react-component.ts](./examples/v4/03-react-component.ts)** - React with JSX
+- **[v4/06-remote-dom.ts](./examples/v4/06-remote-dom.ts)** - Shopify Remote DOM integration
+- **[v4/07-with-tools.ts](./examples/v4/07-with-tools.ts)** - UI + tools combined
+- **[ui-with-hooks/](./examples/ui-with-hooks/)** - MCP UI adapter hooks with component libraries
 
-**Transport & Auth:**
-- **[interface-http-auth.ts](./examples/interface-http-auth.ts)** - HTTP server with authentication
-- **[interface-http-stateless.ts](./examples/interface-http-stateless.ts)** - Serverless-ready HTTP
+**Code Execution:**
+- **[v4/code-execution-server.ts](./examples/v4/code-execution-server.ts)** - Secure code execution with isolated-vm
+- **[v4/code-execution-docker-server.ts](./examples/v4/code-execution-docker-server.ts)** - Docker-based isolation
 
-**See:** [Examples Index](./examples/README.md) for complete list
+**Production Bundles:**
+- **[calculator-bundle/](./examples/calculator-bundle/)** - Complete bundled server with arithmetic operations
+- **[weather-bundle/](./examples/weather-bundle/)** - Weather services with forecasts and alerts
+
+**Troubleshooting:**
+- **[troubleshooting/pattern-migration.ts](./examples/troubleshooting/pattern-migration.ts)** - Migration guide
+- **[troubleshooting/typescript-errors.ts](./examples/troubleshooting/typescript-errors.ts)** - Common errors and solutions
 
 ---
 
@@ -340,7 +500,7 @@ A Next.js application demonstrating MCP client integration with visual interface
 - Sandboxed iframe support for UI resources with postMessage communication
 - Implementation of MCP UI adapter hooks
 
-**Location:** [mcp-interpreter/](./mcp-interpreter/)
+**Location:** [inspector/](./inspector/)
 
 **Use Cases:**
 - Testing your MCP servers during development
@@ -365,6 +525,25 @@ npm run test:unit:coverage
 **CI/CD Pipeline:**
 - ✅ Unit tests + Examples validation: **Required** (blocks PRs on failure)
 - ⚠️ Integration tests: Informational (non-blocking)
+
+### Pre-Release Testing
+
+Before releasing a new version, run manual tests with Claude CLI to catch regressions:
+
+```bash
+# Build the project
+npm run build
+
+# Run manual tests (requires Claude CLI installed)
+bash tests/manual/test-bundled-schemas-with-claude-cli.sh
+```
+
+These tests verify:
+- Bundled servers generate proper parameter schemas
+- Parameter validation works with real MCP clients
+- Both stdio and HTTP transports function correctly
+
+See [`tests/manual/README.md`](./tests/manual/README.md) for details.
 
 ---
 

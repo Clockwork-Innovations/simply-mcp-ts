@@ -304,9 +304,9 @@ clearDetectionCache();
 
 ## Further Reading
 
-- [PERFORMANCE_OPTIMIZATION_REPORT.md](../PERFORMANCE_OPTIMIZATION_REPORT.md) - Full technical report
-- [TASK6_PERFORMANCE_SUMMARY.md](../TASK6_PERFORMANCE_SUMMARY.md) - Implementation summary
-- [performance-cache.ts](../mcp/cli/performance-cache.ts) - Source code
+- [API Reference](./API_REFERENCE.md) - Complete API documentation
+- [FEATURES.md](./FEATURES.md) - Server features and capabilities
+- [BUNDLING.md](./BUNDLING.md) - Optimization through bundling
 
 ---
 

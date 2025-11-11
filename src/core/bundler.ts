@@ -16,6 +16,8 @@ import { handleSourceMap } from './formatters/sourcemap-handler.js';
 import { startWatch } from './formatters/watch-manager.js';
 import { createArchive } from './archiver.js';
 import { generateManifest, writeManifest } from './bundle-manifest.js';
+import { parseInterfaceFile } from '../server/parser.js';
+import { extractToolSchemas } from './schema-metadata-extractor.js';
 
 /**
  * Bundle a SimplyMCP server using esbuild
@@ -127,6 +129,9 @@ export async function bundle(options: BundleOptions): Promise<BundleResult> {
     // Post-process single-file bundles: add shebang and make executable
     if (options.format === 'single-file') {
       await addShebangAndMakeExecutable(options.output);
+
+      // Extract and save tool schemas for single-file bundles
+      await extractAndSaveSchemas(entry, options.output, options.onProgress);
     }
 
     // 6. Handle source maps (Feature 4.2)
@@ -591,7 +596,37 @@ async function createArchiveBundle(params: {
       }
     }
 
-    // 3. Generate and write bundle manifest
+    // 3. Extract tool schemas from source file (before bundling strips type info)
+    let toolSchemas: Record<string, any> | undefined;
+
+    if (onProgress) {
+      onProgress('Extracting tool schemas from AST...');
+    }
+
+    try {
+      // Parse the interface file to get AST nodes
+      const parseResult = parseInterfaceFile(metadata.entry);
+
+      // Extract schema metadata from parsed tools
+      if (parseResult.tools && parseResult.tools.length > 0) {
+        toolSchemas = extractToolSchemas(parseResult.tools, metadata.entry);
+
+        if (onProgress && Object.keys(toolSchemas).length > 0) {
+          onProgress(`Extracted schemas for ${Object.keys(toolSchemas).length} tool(s)`);
+        }
+      }
+    } catch (error) {
+      // Schema extraction is best-effort - don't fail the build if it doesn't work
+      if (onProgress) {
+        onProgress(
+          `Warning: Could not extract tool schemas: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    }
+
+    // 4. Generate and write bundle manifest
     if (onProgress) {
       onProgress('Generating bundle manifest...');
     }
@@ -606,9 +641,14 @@ async function createArchiveBundle(params: {
       'server.js'
     );
 
+    // Add tool schemas to manifest
+    if (toolSchemas && Object.keys(toolSchemas).length > 0) {
+      manifest.toolSchemas = toolSchemas;
+    }
+
     await writeManifest(tempDir, manifest);
 
-    // 4. Create package.json for native dependencies (if needed)
+    // 5. Create package.json for native dependencies (if needed)
     if (metadata.nativeModules.length > 0) {
       if (onProgress) {
         onProgress('Creating package.json for native dependencies...');
@@ -633,7 +673,7 @@ async function createArchiveBundle(params: {
       );
     }
 
-    // 5. Determine archive output path
+    // 6. Determine archive output path
     // If outputPath doesn't have the correct extension, add it
     let archivePath = outputPath;
     if (format === 'tar.gz' && !outputPath.endsWith('.tar.gz')) {
@@ -688,6 +728,52 @@ async function createArchiveBundle(params: {
     } catch (error) {
       // Ignore cleanup errors
       console.warn(`Failed to clean up temporary directory ${tempDir}:`, error);
+    }
+  }
+}
+
+/**
+ * Extract tool schemas and save them alongside a single-file bundle
+ *
+ * @param entryPath - Path to the original TypeScript entry file
+ * @param bundlePath - Path to the output bundle file
+ * @param onProgress - Optional progress callback
+ */
+async function extractAndSaveSchemas(
+  entryPath: string,
+  bundlePath: string,
+  onProgress?: (message: string) => void
+): Promise<void> {
+  try {
+    if (onProgress) {
+      onProgress('Extracting tool schemas from AST...');
+    }
+
+    // Parse the interface file to get AST nodes
+    const parseResult = parseInterfaceFile(entryPath);
+
+    // Extract schema metadata from parsed tools
+    if (parseResult.tools && parseResult.tools.length > 0) {
+      const toolSchemas = extractToolSchemas(parseResult.tools, entryPath);
+
+      if (Object.keys(toolSchemas).length > 0) {
+        // Write schemas to a sidecar .schemas.json file
+        const schemasPath = bundlePath.replace(/\.js$/, '.schemas.json');
+        await writeFile(schemasPath, JSON.stringify({ toolSchemas }, null, 2), 'utf-8');
+
+        if (onProgress) {
+          onProgress(`Extracted schemas for ${Object.keys(toolSchemas).length} tool(s) to ${basename(schemasPath)}`);
+        }
+      }
+    }
+  } catch (error) {
+    // Schema extraction is best-effort - don't fail the build if it doesn't work
+    if (onProgress) {
+      onProgress(
+        `Warning: Could not extract tool schemas: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 }

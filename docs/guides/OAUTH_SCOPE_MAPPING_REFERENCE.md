@@ -370,6 +370,6 @@ const oauthClient = {
 ## See Also
 
 - [OAuth 2.1 Specification](https://oauth.net/2.1/)
-- [Simply-MCP OAuth Guide](./OAUTH_GUIDE.md)
-- [Permission System Reference](./PERMISSIONS.md)
-- [Security Best Practices](./SECURITY.md)
+- [OAuth 2.1 Guide](./OAUTH2.md) - Complete OAuth documentation
+- [OAuth Migration Guide](./OAUTH_MIGRATION.md) - Upgrading to OAuth
+- [API Reference](./API_REFERENCE.md) - Authentication interfaces

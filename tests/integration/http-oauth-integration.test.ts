@@ -108,8 +108,8 @@ describe('HTTP OAuth Integration', () => {
     if (server) {
       await server.stop();
     }
-    // Give server time to clean up
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Give server more time to fully release the port
+    await new Promise(resolve => setTimeout(resolve, 2000));
   });
 
   // Test 1: OAuth metadata endpoint accessible

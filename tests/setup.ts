@@ -76,4 +76,19 @@ afterAll(() => {
  */
 afterEach(() => {
   jest.clearAllMocks();
+
+  // Clear TypeScript program cache to prevent memory leaks
+  // The program cache accumulates AST objects from all parsed files,
+  // which can cause OOM errors when running many tests sequentially
+  try {
+    const { programBuilder } = require('../src/server/compiler/program-builder.js');
+    programBuilder.clearCache();
+  } catch (error) {
+    // Silently ignore if programBuilder is not available (non-TypeScript tests)
+  }
+
+  // Force garbage collection if available (requires --expose-gc flag)
+  if (global.gc) {
+    global.gc();
+  }
 });

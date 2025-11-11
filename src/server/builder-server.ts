@@ -652,9 +652,6 @@ export class BuildMCPServer {
   private server?: Server;
   private httpServer?: any;
   private transports: Map<string, StreamableHTTPServerTransport> = new Map();
-  // Multi-client support: Store one Server instance per session
-  // Each session gets its own Server+Transport pair to avoid blocking on connect()
-  private servers: Map<string, Server> = new Map();
   private isRunning: boolean = false;
   private dependencies?: ParsedDependencies;
 
@@ -1381,19 +1378,7 @@ export class BuildMCPServer {
     }
     this.transports.clear();
 
-    // Multi-client fix: Close all session servers
-    const serverEntries = Array.from(this.servers.entries());
-    for (const [sessionId, sessionServer] of serverEntries) {
-      try {
-        console.log(`Closing server for session ${sessionId}`);
-        await sessionServer.close();
-      } catch (error) {
-        console.error(`Error closing server for session ${sessionId}:`, error);
-      }
-    }
-    this.servers.clear();
-
-    // Close the main server (used for stdio mode)
+    // Close the main server
     if (this.server) {
       await this.server.close();
     }
@@ -2136,61 +2121,6 @@ export class BuildMCPServer {
     });
   }
 
-  /**
-   * Create a new Server instance for a session
-   * This enables multi-client support by giving each session its own Server+Transport pair
-   *
-   * Background: The MCP SDK's Server.connect() method can only be called once per Server instance.
-   * Calling connect() a second time blocks because the server is already connected to a transport.
-   * Solution: Create a new Server instance for each session and register all handlers on it.
-   *
-   * @returns A new Server instance with all handlers registered
-   */
-  private createSessionServer(): Server {
-    // Create new server with same config as main server
-    const sessionServer = new Server(
-      {
-        name: this.options.name,
-        version: this.options.version,
-      },
-      {
-        capabilities: {
-          tools: this.tools.size > 0 ? {} : undefined,
-          prompts: this.prompts.size > 0 ? {} : undefined,
-          resources: this.resources.size > 0 ? {
-            subscribe: true,
-          } : undefined,
-          logging: this.options.capabilities?.logging ? {} : undefined,
-          roots: this.options.capabilities?.roots ? {
-            listChanged: true,
-          } : undefined,
-          completions: this.options.capabilities?.completions ? {} : undefined,
-        },
-      }
-    );
-
-    // Handle the 'initialized' notification from clients (MCP protocol requirement)
-    sessionServer.oninitialized = () => {
-      // Client has completed initialization handshake
-      // This is a standard MCP notification and requires no response
-      console.log('[BuildMCPServer] Session client initialization complete (received initialized notification)');
-    };
-
-    // Register all handlers on the session server
-    // We temporarily swap this.server to register handlers on the new server
-    const originalServer = this.server;
-    this.server = sessionServer;
-
-    this.registerToolHandlers();
-    this.registerPromptHandlers();
-    this.registerResourceHandlers();
-    this.registerSubscriptionHandlers();
-
-    // Restore the original server
-    this.server = originalServer;
-
-    return sessionServer;
-  }
 
   /**
    * Notify subscribers of a resource update
@@ -2603,8 +2533,6 @@ export class BuildMCPServer {
               if (sid && this.transports.has(sid)) {
                 console.log(`[BuildMCPServer] Transport closed for session ${sid}`);
                 this.transports.delete(sid);
-                // Multi-client fix: Clean up the server instance for this session
-                this.servers.delete(sid);
 
                 // Clean up subscriptions for this session
                 for (const [uri, subscribers] of this.subscriptions.entries()) {
@@ -2617,12 +2545,6 @@ export class BuildMCPServer {
               }
             };
 
-            // Multi-client fix: Create a NEW Server instance for this session
-            // The MCP SDK's Server.connect() can only be called once per Server.
-            // Calling connect() a second time on the same server blocks indefinitely.
-            // Solution: Create one Server per session, each with its own Transport.
-            const sessionServer = this.createSessionServer();
-
             // FOUNDATION LAYER: Add batch context wrapper BEFORE connecting
             // CRITICAL: Must wrap transport.onmessage BEFORE server.connect() sets it up
             // TODO: Implement wrapTransportForBatchContext for HTTP transport
@@ -2630,19 +2552,16 @@ export class BuildMCPServer {
             //   wrapTransportForBatchContext(transport, this.options.batching ?? {});
             // }
 
-            await sessionServer.connect(transport);
-
-            // Store the server so we can clean it up on session close
-            // Note: We store by sessionId which is set during connect()
-            if (transport.sessionId) {
-              this.servers.set(transport.sessionId, sessionServer);
+            // Use singleton server pattern: connect the main server to this new transport
+            // The MCP SDK supports one server connecting to multiple transports
+            if (!this.server) {
+              throw new Error('Server not initialized');
             }
+            await this.server.connect(transport);
 
-            // Use sessionContext to track session ID for this request
-            // This allows subscribe handlers to know which session is subscribing
-            await this.sessionContext.run(transport.sessionId || 'unknown', async () => {
-              await transport.handleRequest(req, res, req.body);
-            });
+            // Handle the request - no need for AsyncLocalStorage wrapper
+            // The transport is now connected to the server
+            await transport.handleRequest(req, res, req.body);
             return;
           } else {
             res.status(400).json({
@@ -2656,10 +2575,9 @@ export class BuildMCPServer {
             return;
           }
 
-          // Use sessionContext to track session ID for this request
-          await this.sessionContext.run(sessionId || 'unknown', async () => {
-            await transport.handleRequest(req, res, req.body);
-          });
+          // Handle the request with the existing transport
+          // The transport is already connected to the server from initialization
+          await transport.handleRequest(req, res, req.body);
         } catch (error) {
           console.error('[BuildMCPServer] Error handling MCP request:', error);
           if (!res.headersSent) {

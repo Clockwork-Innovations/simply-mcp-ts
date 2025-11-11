@@ -26,7 +26,7 @@ npx simply-mcp run server.ts --watch --watch-poll
 - Faster development iteration
 - See errors immediately
 
-See [WATCH_MODE_GUIDE.md](./WATCH_MODE_GUIDE.md) for complete details.
+See the Watch Mode section above for complete details.
 
 ---
 
@@ -53,7 +53,7 @@ npx simply-mcp run server.ts --dry-run --style decorator
 - Duplicate names
 - Port availability (with --http)
 
-See [DRY_RUN_GUIDE.md](./DRY_RUN_GUIDE.md) for complete details.
+See the Dry-Run Validation section above for complete details.
 
 ---
 
@@ -488,10 +488,10 @@ node --max-old-space-size=4096 server.ts
 ## See Also
 
 - [ERROR_HANDLING.md](./ERROR_HANDLING.md) - Error handling in code
-- [WATCH_MODE_GUIDE.md](./WATCH_MODE_GUIDE.md) - Watch mode details
-- [DRY_RUN_GUIDE.md](./DRY_RUN_GUIDE.md) - Validation details
-- [CLI_ADVANCED.md](./CLI_ADVANCED.md) - All CLI options
-- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Production debugging
+- Watch Mode - See "Development Tools" section above
+- Dry-Run Validation - See "Development Tools" section above
+- CLI Options - See examples throughout this guide
+- Production Debugging - See "Debugging in Production" section above
 
 ---
 

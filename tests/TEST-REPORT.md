@@ -1,7 +1,7 @@
 # MCP Framework - Transport Test Report
 
-**Generated:** 2025-11-08 22:07:56
-**Duration:** 34s
+**Generated:** 2025-11-10 16:55:59
+**Duration:** 32s
 
 ## Summary
 
@@ -14,10 +14,10 @@
 
 | Transport Type | Status | Duration |
 |----------------|--------|----------|
-| Stdio Transport | ✅ PASS | 3s |
+| Stdio Transport | ✅ PASS | 2s |
 | Stateless HTTP Transport | ✅ PASS | 8s |
 | Stateful HTTP Transport | ✅ PASS | 6s |
-| HTTP Modes (Stateful/Stateless) | ✅ PASS | 11s |
+| HTTP Modes (Stateful/Stateless) | ✅ PASS | 10s |
 
 ## Test Categories
 

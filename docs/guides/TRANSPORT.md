@@ -1550,8 +1550,8 @@ server.addTool({
 
 ## Related Guides
 
-- [Transport Overview](./TRANSPORT_OVERVIEW.md) - Transport comparison
-- [Stdio Transport](./TRANSPORT_STDIO.md) - Alternative transport
-- [Advanced Transports](./TRANSPORT_ADVANCED.md) - Multi-transport
-- [Deployment Guide](./DEPLOYMENT_GUIDE.md) - HTTP in production
+- [Configuration Guide](./CONFIGURATION.md) - Transport configuration options
+- [FEATURES.md](./FEATURES.md) - Core server features
+- [DEBUGGING.md](./DEBUGGING.md) - Debugging HTTP and STDIO transports
+- [BUNDLING.md](./BUNDLING.md) - Deployment packaging
 

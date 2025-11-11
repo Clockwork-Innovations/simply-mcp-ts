@@ -1893,7 +1893,7 @@ export default class Server {
 
 - [MCP UI Protocol Reference](./MCP_UI_PROTOCOL.md) - Complete protocol documentation
 - [MCP UI Migration Guide](./MCP_UI_MIGRATION.md) - Migrating from legacy formats
-- [UI Watch Mode Guide](./UI_WATCH_MODE.md) - Hot reload for UI development
+- [DEBUGGING.md](./DEBUGGING.md) - Watch mode and development tools
 - [Examples](../../examples/) - Working code examples
 
 ---

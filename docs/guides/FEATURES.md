@@ -1898,9 +1898,9 @@ manager.on('operations', (ops) => {
 
 ## See Also
 
-- [Remote DOM Guide](./REMOTE_DOM.md) - Comprehensive Remote DOM documentation
+- [Remote DOM Advanced](./REMOTE_DOM_ADVANCED.md) - Advanced Remote DOM patterns
+- [Remote DOM Troubleshooting](./REMOTE_DOM_TROUBLESHOOTING.md) - Debugging Remote DOM
 - [UI Resources](#ui-resources) - Server-side UI definition
-- [Example: v4/06-remote-dom.ts](../../examples/v4/06-remote-dom.ts) - Complete Remote DOM example
 - [API Reference - Remote DOM](./API_REFERENCE.md#remote-dom) - Full API documentation
 
 ---
@@ -2127,8 +2127,8 @@ Tracks:
 
 ## See Also
 
-- [UI Resources Guide](./UI_RESOURCES.md) - Comprehensive UI documentation
-- [Remote DOM Guide](./REMOTE_DOM.md) - Sandboxed UI execution
+- [MCP UI Protocol](./MCP_UI_PROTOCOL.md) - Complete UI protocol reference
+- [Remote DOM Advanced](./REMOTE_DOM_ADVANCED.md) - Advanced Remote DOM patterns
 - [Example: interface-ui-resource.ts](../../examples/interface-ui-resource.ts) - Working examples
 - [Example: v4/07-with-tools.ts](../../examples/v4/07-with-tools.ts) - Complete server with UI
 

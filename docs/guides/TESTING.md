@@ -122,7 +122,7 @@ lsof -i :3000
 ### Test Timeouts
 - Check system resources
 - Kill background processes
-- See CI_TEST_INTEGRATION_GUIDE.md for details
+- See [DEBUGGING.md](./DEBUGGING.md) for debugging tools
 
 ### Tarball Issues
 Integration tests expect a tarball. Create one with:
@@ -132,8 +132,7 @@ npm pack
 
 ## More Information
 
-See [CI_TEST_INTEGRATION_GUIDE.md](./CI_TEST_INTEGRATION_GUIDE.md) for:
-- Detailed workflow description
-- Test artifacts
-- Performance benchmarks
-- Troubleshooting guide
+For additional testing guidance:
+- [DEBUGGING.md](./DEBUGGING.md) - Debugging and development tools
+- [QUICK_START.md](./QUICK_START.md) - Getting started examples
+- [Examples Index](../../examples/EXAMPLES_INDEX.md) - Working code examples

@@ -11,6 +11,7 @@ export default {
       'ts-jest',
       {
         useESM: true,
+        isolatedModules: true, // Dramatically reduces memory usage by skipping type checking
         diagnostics: {
           ignoreCodes: [1343] // Required for ts-jest-mock-import-meta to work
         },
@@ -75,4 +76,5 @@ export default {
   verbose: true,
   testTimeout: 30000, // Increased from 10s to 30s for integration tests
   maxWorkers: 2, // Limit parallel workers to prevent resource exhaustion
+  workerIdleMemoryLimit: '1GB', // Restart workers when they exceed 1GB to prevent OOM
 };

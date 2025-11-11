@@ -7,7 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [4.2.0] - 2025-11-09
+## [4.3.0] - 2025-11-10
+
+### ✨ New Features
+
+#### 📦 Phase 2 Parameter Schema Support
+
+**Advanced TypeScript type support with automatic schema generation:**
+
+- **Nested Objects**: Full support for nested object parameters with property extraction
+  ```typescript
+  params: {
+    user: {
+      name: string;
+      address: { street: string; city: string; }
+    }
+  }
+  ```
+- **Typed Arrays**: Support for both `T[]` and `Array<T>` syntax with item type extraction
+  ```typescript
+  params: {
+    tags: string[];
+    items: Array<{ id: string; value: number; }>
+  }
+  ```
+- **Union Types as Enums**: Automatic conversion of string literal unions to enums
+  ```typescript
+  params: {
+    status: 'active' | 'inactive' | 'pending';  // → enum: ['active', 'inactive', 'pending']
+  }
+  ```
+- **JSDoc Descriptions**: Extract parameter descriptions from JSDoc comments
+  ```typescript
+  params: {
+    /** User's full name */
+    name: string;
+  }
+  ```
+
+**Implementation Details:**
+- Enhanced `ParameterSchema` interface with `properties` and `items` fields
+- New `schema-metadata-extractor.ts` module for AST-based type extraction
+- Recursive schema building for complex nested structures
+- Maintains strict validation mode for security
+- 100% backward compatible with Phase 1 schemas
+
+**Files Modified:**
+- `src/core/bundle-manifest.ts` - Added `properties` and `items` to ParameterSchema
+- `src/core/schema-metadata-extractor.ts` - NEW: Advanced type extraction (407 lines)
+- `src/server/adapter.ts` - Enhanced runtime schema builder
+
+**Testing:**
+- 33 comprehensive unit tests (24 runtime + 9 extraction)
+- 100% test pass rate
+- Zero regressions
+
+**Examples:**
+- `examples/interface-params.ts` - NEW: Comprehensive Phase 2 feature demonstrations
 
 ### 🔒 Security Improvements
 
@@ -42,6 +98,26 @@ npm install isolated-vm
 # For Docker mode
 npm install dockerode
 ```
+
+### 📚 Documentation Improvements
+
+**Comprehensive documentation audit and fixes:**
+
+- **Fixed 44 documentation issues** across README and docs/guides/
+- **Example File References**: Updated all 16+ missing example file references in README to point to actual existing files
+- **Broken Links**: Fixed 25 broken internal documentation links across 10 guide files
+  - DEBUGGING.md, TRANSPORT.md, CONFIGURATION.md, QUICK_START.md, BUNDLING.md
+  - API_REFERENCE.md, TESTING.md, OAUTH_SCOPE_MAPPING_REFERENCE.md, FEATURES.md, PERFORMANCE_GUIDE.md
+- **Directory References**: Fixed incorrect `mcp-interpreter/` reference (now correctly points to `inspector/`)
+- **Phase 2 Documentation**: Added new "Advanced Parameter Types" section in README with code examples for:
+  - Nested objects, typed arrays, union types, JSDoc descriptions
+- **New Example File**: Created `examples/interface-params.ts` with 5 comprehensive examples (260 lines)
+
+**Impact:**
+- Zero broken links in documentation
+- All example file references now valid
+- Clear documentation for Phase 2 parameter features
+- Improved user experience with accurate guides
 
 ### ✨ Added
 

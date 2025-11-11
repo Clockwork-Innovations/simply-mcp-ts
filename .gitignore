@@ -12,6 +12,7 @@ build/
 # Release artifacts
 /simply-mcp
 /simply-mcp-*.tgz
+*.tgz
 
 # Environment variables
 .env
@@ -42,6 +43,7 @@ tmp/
 temp/
 trash/
 *.tmp
+*.backup
 mcp/tests/TEST-REPORT.md
 
 # Claude Code files
@@ -96,6 +98,8 @@ TEST-REPORT-*.md
 REPORT.md
 REPORT.html
 *.test.log
+/test-*.ts
+!/tests/**
 
 # Agent-generated reports and summaries (debugging artifacts)
 *VALIDATION_REPORT*.md

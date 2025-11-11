@@ -780,9 +780,9 @@ For complete router documentation and environment-based configuration, see [Rout
 
 ## Next Steps
 
-- **Need more CLI options?** See [CLI_BASICS.md](./CLI_BASICS.md)
+- **Need more CLI options?** See examples throughout this guide and [QUICK_START.md](./QUICK_START.md)
 - **Organize tools?** See [ROUTER_TOOLS.md](./ROUTER_TOOLS.md)
-- **Deploy?** See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+- **Deploy?** See [BUNDLING.md](./BUNDLING.md) for deployment packaging
 - **Bundle?** See [BUNDLING.md](./BUNDLING.md)
 - **Debug?** See [DEBUGGING.md](./DEBUGGING.md)
 

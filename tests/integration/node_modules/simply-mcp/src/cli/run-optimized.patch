@@ -1,0 +1,189 @@
+--- a/mcp/cli/run.ts
++++ b/mcp/cli/run.ts
+@@ -3,7 +3,7 @@
+  * Auto-detects API style and runs the appropriate adapter
+  */
+
+-import { readFile } from 'node:fs/promises';
++import { readFile, stat } from 'node:fs/promises';
+ import { resolve } from 'node:path';
+ import { pathToFileURL } from 'node:url';
+ import type { CommandModule } from 'yargs';
+@@ -13,29 +13,94 @@ import type { CommandModule } from 'yargs';
+  */
+ export type APIStyle = 'decorator' | 'functional' | 'programmatic';
+
++/**
++ * Performance metrics for CLI operations
++ */
++interface PerformanceMetrics {
++  detection: number;
++  load: number;
++  total: number;
++}
++
++/**
++ * Detection cache entry
++ */
++interface CacheEntry {
++  style: APIStyle;
++  mtime: number;
++}
++
++/**
++ * In-memory cache for API style detection
++ * Maps file path -> { style, mtime }
++ */
++const detectionCache = new Map<string, CacheEntry>();
++
+ /**
+  * Detect the API style from a server file
+  * @param filePath Path to the server file
++ * @param verbose Enable verbose logging
+  * @returns Detected API style
+  */
+-export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
++export async function detectAPIStyle(filePath: string, verbose = false): Promise<APIStyle> {
++  const startTime = performance.now();
++
+   try {
++    // Get file stats for cache validation
++    const fileStats = await stat(filePath);
++    const cached = detectionCache.get(filePath);
++
++    // Check cache validity
++    if (cached && cached.mtime === fileStats.mtimeMs) {
++      const duration = performance.now() - startTime;
++      if (verbose) {
++        console.error(`[Perf] Cache hit for ${filePath}: ${duration.toFixed(2)}ms`);
++      }
++      return cached.style;
++    }
++
++    // Cache miss - read and detect
++    if (verbose && cached) {
++      console.error(`[Perf] Cache invalidated (file modified): ${filePath}`);
++    }
++
+     const content = await readFile(filePath, 'utf-8');
+-
+-    // Check for decorator API (highest priority)
+-    // Look for @MCPServer decorator
+-    if (/@MCPServer\s*\(/.test(content)) {
+-      return 'decorator';
++    const style = detectAPIStyleFromContent(content);
++
++    // Update cache
++    detectionCache.set(filePath, {
++      style,
++      mtime: fileStats.mtimeMs,
++    });
++
++    const duration = performance.now() - startTime;
++    if (verbose) {
++      console.error(`[Perf] Detection: ${duration.toFixed(2)}ms`);
+     }
+
+-    // Check for functional API (medium priority)
+-    // Look for defineMCP export
+-    if (/export\s+default\s+defineMCP\s*\(/.test(content)) {
+-      return 'functional';
+-    }
+-
+-    // Default to programmatic API (fallback)
+-    return 'programmatic';
++    return style;
+   } catch (error) {
+     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+       console.error(`Error: Server file not found: ${filePath}`);
+@@ -45,11 +110,29 @@ export async function detectAPIStyle(filePath: string): Promise<APIStyle> {
+   }
+ }
+
++/**
++ * Detect API style from file content (pure function for testing)
++ * @param content File content
++ * @returns Detected API style
++ */
++export function detectAPIStyleFromContent(content: string): APIStyle {
++  // Check for decorator API (highest priority)
++  if (/@MCPServer\s*\(/.test(content)) {
++    return 'decorator';
++  }
++
++  // Check for functional API (medium priority)
++  if (/export\s+default\s+defineMCP\s*\(/.test(content)) {
++    return 'functional';
++  }
++
++  // Default to programmatic API (fallback)
++  return 'programmatic';
++}
++
+ /**
+  * Run a server file with the functional API adapter
+  */
+ async function runFunctionalAdapter(
+   filePath: string,
+   useHttp: boolean,
+   port: number
+ ): Promise<void> {
+@@ -134,6 +217,7 @@ async function runFunctionalAdapter(
+ async function runDecoratorAdapter(
+   filePath: string,
+   useHttp: boolean,
+   port: number
+ ): Promise<void> {
+@@ -412,6 +496,7 @@ async function runDecoratorAdapter(
+ async function runProgrammaticAdapter(
+   filePath: string,
+   _useHttp: boolean,
+   _port: number
+ ): Promise<void> {
+@@ -499,13 +584,30 @@ export const runCommand: CommandModule = {
+   },
+   handler: async (argv: any) => {
++    const cliStartTime = performance.now();
+     const filePath = argv.file as string;
+     const useHttp = argv.http as boolean;
+     const port = argv.port as number;
+     const forceStyle = argv.style as APIStyle | undefined;
+     const verbose = argv.verbose as boolean;
+
+     try {
+       // Detect or use forced style
+-      const style = forceStyle || (await detectAPIStyle(filePath));
++      const detectionStart = performance.now();
++      const style = forceStyle || (await detectAPIStyle(filePath, verbose));
++      const detectionTime = performance.now() - detectionStart;
+
+       if (verbose) {
+         console.error(`[RunCommand] Detected API style: ${style}`);
+@@ -515,6 +617,7 @@ export const runCommand: CommandModule = {
+       }
+
+       // Run appropriate adapter
++      const loadStart = performance.now();
+       switch (style) {
+         case 'decorator':
+           await runDecoratorAdapter(filePath, useHttp, port);
+@@ -526,6 +629,19 @@ export const runCommand: CommandModule = {
+           await runProgrammaticAdapter(filePath, useHttp, port);
+           break;
+       }
++      const loadTime = performance.now() - loadStart;
++
++      // Display performance metrics if verbose
++      if (verbose) {
++        const totalTime = performance.now() - cliStartTime;
++        console.error('\n=== Performance Metrics ===');
++        console.error(`[Perf] Detection: ${detectionTime.toFixed(2)}ms`);
++        console.error(`[Perf] Load: ${loadTime.toFixed(2)}ms`);
++        console.error(`[Perf] Total: ${totalTime.toFixed(2)}ms`);
++        console.error('\n=== Performance Targets ===');
++        console.error(`[Perf] Detection < 50ms: ${detectionTime < 50 ? '✓' : '✗'} (${detectionTime.toFixed(2)}ms)`);
++        console.error(`[Perf] Total < 100ms: ${totalTime < 100 ? '✓' : '✗'} (${totalTime.toFixed(2)}ms)`);
++      }
+     } catch (error) {
+       console.error('[RunCommand] Error:', error);
+       process.exit(2);

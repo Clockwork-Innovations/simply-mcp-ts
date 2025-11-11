@@ -21,6 +21,7 @@ import {
   isTypeScriptEntry,
   isESMEntry,
 } from '../../src/core/entry-detector.js';
+import { programBuilder } from '../../src/server/compiler/program-builder.js';
 import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 
@@ -133,6 +134,8 @@ describe('Entry Detector - Unit Tests', () => {
 
   afterEach(async () => {
     await rm(TEMP_DIR, { recursive: true, force: true });
+    // Clear TypeScript program cache to prevent stale results between tests
+    programBuilder.clearCache();
   });
 
   // ========================================================================

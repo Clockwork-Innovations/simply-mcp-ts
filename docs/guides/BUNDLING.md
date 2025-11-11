@@ -897,4 +897,4 @@ node ./my-server.js
 For more information, see:
 - [Quick Start Guide](./QUICK_START.md)
 - [Configuration Guide](./CONFIGURATION.md)
-- [Deployment Guide](./DEPLOYMENT_GUIDE.md)
+- [Transport Guide](./TRANSPORT.md) - HTTP deployment options

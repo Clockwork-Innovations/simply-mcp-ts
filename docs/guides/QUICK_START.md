@@ -1066,7 +1066,7 @@ npx simplymcp bundle server.ts -o my-server.js
 ```
 
 **Deploy to production:**
-See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+See [BUNDLING.md](./BUNDLING.md) for packaging and [TRANSPORT.md](./TRANSPORT.md) for HTTP deployment
 
 **Add environment configuration:**
 ```typescript
@@ -1254,7 +1254,7 @@ npm install dotenv
 
 ## Need Help?
 
-- **[CLI Basics](./CLI_BASICS.md)** - All CLI commands and options
+- **[CLI Options](./CONFIGURATION.md)** - All CLI commands and options
 - **[Examples Index](../../examples/EXAMPLES_INDEX.md)** - Browse all examples
 - **[Configuration Guide](./CONFIGURATION.md)** - Environment and runtime options
 - **[GitHub Issues](https://github.com/Clockwork-Innovations/simply-mcp-ts/issues)** - Report bugs or ask questions
@@ -1478,6 +1478,157 @@ curl http://localhost:3000/tools/list
 # Stateless HTTP (v4.0+)
 curl http://localhost:3000/v1/tools
 ```
+
+### Claude CLI Integration Issues
+
+**"Connection timeout" or "Failed to connect to server"**
+
+Simply MCP servers take approximately 2 seconds to start up. The default MCP timeout is too short.
+
+Solution:
+```bash
+# Option 1: Set environment variable
+export MCP_TIMEOUT=30000
+
+# Option 2: Add to MCP config env section
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": [...],
+      "env": {
+        "MCP_TIMEOUT": "30000"
+      }
+    }
+  }
+}
+
+# Option 3: Inline with command
+MCP_TIMEOUT=30000 claude --mcp-config config.json "prompt"
+```
+
+Verify server starts correctly:
+```bash
+node node_modules/simply-mcp/dist/src/cli/index.js run dist/my-server.js --dry-run
+```
+
+**"Cannot find module" errors with Claude CLI**
+
+This typically means you're trying to run TypeScript sources directly, which has known loader issues.
+
+Solution:
+```bash
+# Step 1: Bundle your server first (recommended)
+npx simply-mcp bundle src/my-server.ts -o dist/my-server.js
+
+# Step 2: Update MCP config to use bundled file
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": [
+        "node_modules/simply-mcp/dist/src/cli/index.js",
+        "run",
+        "dist/my-server.js"  // ← Use bundled .js file
+      ]
+    }
+  }
+}
+
+# Step 3: Verify bundle exists
+ls dist/my-server.js
+```
+
+**Bundling vs TypeScript sources:**
+- ✅ **Bundled** (`dist/my-server.js`): Fast startup (~2s), reliable, recommended for production
+- ⚠️ **TypeScript** (`src/my-server.ts`): Currently has tsx loader issues, use bundled instead
+
+**Tools not appearing in Claude CLI**
+
+Check server validation and MCP configuration:
+
+Solution:
+```bash
+# Step 1: Validate server configuration
+npx simply-mcp run dist/my-server.js --dry-run
+
+# Step 2: Verify MCP config is valid JSON
+cat mcp-config.json | jq .
+
+# Step 3: Test with Claude CLI in non-interactive mode
+MCP_TIMEOUT=30000 claude --print \
+  --model haiku \
+  --mcp-config mcp-config.json \
+  --strict-mcp-config \
+  --dangerously-skip-permissions \
+  "List available tools"
+
+# Step 4: Check for specific server issues
+MCP_TIMEOUT=30000 claude --print \
+  --model haiku \
+  --mcp-config mcp-config.json \
+  --strict-mcp-config \
+  "Use my-server to list available tools"
+```
+
+**HTTP transport errors with Claude CLI**
+
+Claude CLI primarily uses stdio transport. HTTP transport has additional requirements.
+
+Common HTTP errors:
+- `"Cannot POST /"` → Use `/mcp` endpoint, not `/`
+- `"Not Acceptable"` → Missing required Accept header
+
+Solution:
+```bash
+# For Claude CLI, use stdio transport (recommended)
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "node",
+      "args": ["node_modules/simply-mcp/dist/src/cli/index.js", "run", "dist/my-server.js"]
+    }
+  }
+}
+
+# If using HTTP for testing/debugging:
+# - Endpoint: http://localhost:3000/mcp (not /)
+# - Required header: Accept: application/json, text/event-stream
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize",...}'
+```
+
+**Testing Claude CLI setup**
+
+Quick validation of your Claude CLI + Simply MCP configuration:
+
+```bash
+# 1. Test server starts correctly
+node node_modules/simply-mcp/dist/src/cli/index.js run dist/my-server.js --dry-run
+
+# 2. Test bundle exists and is valid
+ls -lh dist/my-server.js
+
+# 3. Test with Claude CLI (non-interactive)
+MCP_TIMEOUT=30000 claude --print \
+  --model haiku \
+  --mcp-config mcp-config.json \
+  --strict-mcp-config \
+  --dangerously-skip-permissions \
+  "List available tools and describe each one"
+
+# 4. Test actual tool execution
+MCP_TIMEOUT=30000 claude --print \
+  --model haiku \
+  --mcp-config mcp-config.json \
+  --strict-mcp-config \
+  --dangerously-skip-permissions \
+  "Use the greet tool with name 'Alice'"
+```
+
+**See:** README section "Using with Claude CLI" for complete setup instructions.
 
 ### Still Having Issues?
 
