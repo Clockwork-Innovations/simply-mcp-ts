@@ -227,6 +227,14 @@ async function extractZip(archivePath: string, targetDir: string): Promise<void>
 
   return new Promise((resolve, reject) => {
     let hasError = false;
+    let pendingWrites = 0;
+    let parsingComplete = false;
+
+    const checkComplete = () => {
+      if (parsingComplete && pendingWrites === 0 && !hasError) {
+        resolve();
+      }
+    };
 
     const readStream = fs.createReadStream(archivePath);
 
@@ -267,11 +275,18 @@ async function extractZip(archivePath: string, targetDir: string): Promise<void>
 
             // Write file using stream
             const writeStream = fs.createWriteStream(entryPath);
+            pendingWrites++;
 
             entry.pipe(writeStream);
 
+            writeStream.on('finish', () => {
+              pendingWrites--;
+              checkComplete();
+            });
+
             writeStream.on('error', (err) => {
               hasError = true;
+              pendingWrites--;
               reject(new Error(
                 `Failed to write file ${entry.path}: ${err.message}. ` +
                 `Archive may be corrupted.`
@@ -288,9 +303,8 @@ async function extractZip(archivePath: string, targetDir: string): Promise<void>
         }
       })
       .on('finish', () => {
-        if (!hasError) {
-          resolve();
-        }
+        parsingComplete = true;
+        checkComplete();
       })
       .on('error', (err: Error) => {
         hasError = true;
