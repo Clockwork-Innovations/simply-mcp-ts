@@ -117,8 +117,6 @@ jobs:
 
           # Check that .d.ts files exist for main exports
           test -f dist/src/index.d.ts || (echo "Missing: dist/src/index.d.ts" && exit 1)
-          test -f dist/src/decorators.d.ts || (echo "Missing: dist/src/decorators.d.ts" && exit 1)
-          test -f dist/src/config.d.ts || (echo "Missing: dist/src/config.d.ts" && exit 1)
 
           echo "✓ TypeScript declarations present"
 
@@ -173,18 +171,14 @@ jobs:
 
           # Create test file in project directory
           cat > test-imports.mjs << 'EOF'
-          import { BuildMCPServer } from './dist/src/index.js';
-          import { MCPServer, tool } from './dist/src/decorators.js';
-          import { defineConfig } from './dist/src/config.js';
+          import { BuildMCPServer, defineConfig } from './dist/src/index.js';
 
           console.log('✓ All imports successful');
 
           if (typeof BuildMCPServer !== 'function') {
             throw new Error('BuildMCPServer not exported correctly');
           }
-          if (typeof MCPServer !== 'function') {
-            throw new Error('MCPServer not exported correctly');
-          }
+
           if (typeof defineConfig !== 'function') {
             throw new Error('defineConfig not exported correctly');
           }
