@@ -26,6 +26,7 @@ npm run test:ci
 npm run test:unit              # Run Jest tests once
 npm run test:unit:watch        # Watch mode
 npm run test:unit:coverage     # With coverage report
+npm run test:perf              # Run performance tests (separate suite)
 ```
 
 ### Integration Tests

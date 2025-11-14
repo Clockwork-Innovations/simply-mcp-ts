@@ -648,6 +648,9 @@ npm run test:unit
 
 # Run with coverage
 npm run test:unit:coverage
+
+# Run performance tests (separate suite)
+npm run test:perf
 ```
 
 **CI/CD Pipeline:**
