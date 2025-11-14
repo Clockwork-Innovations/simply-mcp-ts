@@ -10,7 +10,7 @@ describe('Type Coercion', () => {
 
   test('loads server with all coercion test tools', async () => {
     const server = await loadInterfaceServer({ filePath: fixturePath });
-    const tools = server.listTools();
+    const tools = await server.listTools();
 
     expect(tools).toBeDefined();
     expect(tools.length).toBe(6);

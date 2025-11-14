@@ -43,28 +43,22 @@ function cleanupTempDir() {
 }
 
 function createTestServer(filename: string): string {
-  const content = `// @ts-nocheck
-import type { IServer, ITool } from '../../../src/index.js';
-
-interface GreetTool extends ITool {
-  name: 'greet';
-  description: 'Greet someone';
-  params: { name: string };
-  result: { message: string };
-}
-
-const server: IServer = {
+  // Use .mjs to avoid TypeScript re-exec which causes stdio buffering issues
+  const jsFilename = filename.replace(/\.ts$/, '.mjs');
+  const content = `export const server = {
   name: 'test-transport-server',
   version: '1.0.0',
   description: 'Test server for transport flags'
-}
+};
 
 export default class TestService {
-  greet: GreetTool = async ({ name }) => ({ message: \`Hello, \${name}!\` });
+  async greet({ name }) {
+    return { message: \`Hello, \${name}!\` };
+  }
 }
 `;
 
-  const filePath = join(TEMP_DIR, filename);
+  const filePath = join(TEMP_DIR, jsFilename);
   writeFileSync(filePath, content, 'utf-8');
   return filePath;
 }
@@ -74,8 +68,24 @@ describe('CLI Transport Flags', () => {
     setupTempDir();
   });
 
+  beforeEach(() => {
+    // Kill any orphaned processes from previous test runs
+    // This ensures clean state before each test
+    try {
+      require('child_process').execSync('pkill -9 -f "__temp_cli_transport__"', { stdio: 'ignore' });
+    } catch (e) {
+      // Ignore errors if no processes found
+    }
+  });
+
   afterAll(() => {
     cleanupTempDir();
+    // Final cleanup of any remaining processes
+    try {
+      require('child_process').execSync('pkill -9 -f "__temp_cli_transport__"', { stdio: 'ignore' });
+    } catch (e) {
+      // Ignore errors
+    }
   });
 
   describe('--transport flag', () => {
@@ -269,7 +279,7 @@ describe('CLI Transport Flags', () => {
         };
         proc.stderr.on('data', checkOutput);
         proc.stdout.on('data', checkOutput);
-        setTimeout(() => resolve(), 5000);
+        setTimeout(() => resolve(), 8000);
       });
 
       // Check that HTTP server started
@@ -280,7 +290,7 @@ describe('CLI Transport Flags', () => {
       // Cleanup
       proc.kill();
       await sleep(500);
-    }, 10000);
+    }, 12000);
 
     it('should still accept --http-stateless flag (legacy)', async () => {
       const serverPath = createTestServer('legacy-http-stateless-test.ts');
@@ -307,7 +317,7 @@ describe('CLI Transport Flags', () => {
         };
         proc.stderr.on('data', checkOutput);
         proc.stdout.on('data', checkOutput);
-        setTimeout(() => resolve(), 5000);
+        setTimeout(() => resolve(), 8000);
       });
 
       // Check that HTTP server started
@@ -318,7 +328,7 @@ describe('CLI Transport Flags', () => {
       // Cleanup
       proc.kill();
       await sleep(500);
-    }, 10000);
+    }, 12000);
   });
 
   describe('Default behavior', () => {

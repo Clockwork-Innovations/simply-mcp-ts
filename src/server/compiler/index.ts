@@ -64,6 +64,7 @@ export { compileSubscriptionInterface } from './compilers/subscription-compiler.
 export { compileCompletionInterface } from './compilers/completion-compiler.js';
 export { compileUIInterface } from './compilers/ui-compiler.js';
 export { compileRouterInterface } from './compilers/router-compiler.js';
+export { compileSkillInterface } from './compilers/skill-compiler.js';
 export { compileServerInterface } from './compilers/server-compiler.js';
 export { compileAuthInterface } from './compilers/auth-compiler.js';
 

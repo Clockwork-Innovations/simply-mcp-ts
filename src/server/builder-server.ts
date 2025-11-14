@@ -58,6 +58,8 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import type { SimpleMessage } from './interface-types.js';
 import { z, ZodSchema, ZodError } from 'zod';
+import { filterHiddenItems } from '../utils/filter-hidden.js';
+import type { HiddenEvaluationContext } from '../types/hidden.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { HandlerManager } from '../core/HandlerManager.js';
 import { HandlerContext, HandlerResult, ToolHandler, SamplingMessage, SamplingOptions, ResourceContents, ElicitResult as CoreElicitResult, MCPContext, BatchContext } from '../types/handler.js';
@@ -106,6 +108,19 @@ type Transport = StdioServerTransport | StreamableHTTPServerTransport;
  * Allows handlers to access batch information without explicit parameter threading.
  */
 const batchContextStorage = new AsyncLocalStorage<BatchContext>();
+
+// Debug logging for Agent SDK compatibility
+const DEBUG_PROTOCOL = process.env.SIMPLY_MCP_DEBUG_PROTOCOL === 'true';
+const SERVER_START_TIME = Date.now();
+
+function debugProtocol(message: string, data?: any) {
+  if (!DEBUG_PROTOCOL) return;
+  const elapsed = Date.now() - SERVER_START_TIME;
+  console.error(`[DEBUG:PROTOCOL:${elapsed}ms] ${message}`);
+  if (data) {
+    console.error(JSON.stringify(data, null, 2));
+  }
+}
 
 // Export for testing
 export {
@@ -645,9 +660,10 @@ function wrapStdioTransportForBatch(
  */
 export class BuildMCPServer {
   private options: Required<BuildMCPServerOptions>;
-  private tools: Map<string, InternalTool> = new Map();
-  private prompts: Map<string, PromptDefinition> = new Map();
-  private resources: Map<string, ResourceDefinition> = new Map();
+  // Note: Made public to allow skill-manual-generator access
+  public tools: Map<string, InternalTool> = new Map();
+  public prompts: Map<string, PromptDefinition> = new Map();
+  public resources: Map<string, ResourceDefinition> = new Map();
   private handlerManager: HandlerManager;
   private server?: Server;
   private httpServer?: any;
@@ -1066,6 +1082,8 @@ export class BuildMCPServer {
     return this;
   }
 
+
+
   /**
    * Add a resource to the server
    * @param definition Resource definition
@@ -1334,6 +1352,12 @@ export class BuildMCPServer {
     this.registerResourceHandlers();
     this.registerSubscriptionHandlers();
 
+    debugProtocol('[SERVER] Handlers registered', {
+      tools: this.tools.size,
+      prompts: this.prompts.size,
+      resources: this.resources.size,
+    });
+
     // Start the appropriate transport
     if (transport === 'stdio') {
       await this.startStdio();
@@ -1388,6 +1412,25 @@ export class BuildMCPServer {
   }
 
   /**
+   * Build hidden evaluation context
+   *
+   * Constructs context for evaluating dynamic hidden predicates.
+   * Provides server metadata and extensibility for custom context.
+   */
+  private buildHiddenContext(): HiddenEvaluationContext {
+    return {
+      mcp: {
+        server: {
+          name: this.options.name,
+          version: this.options.version,
+          description: this.options.description,
+        },
+      },
+      metadata: {},
+    };
+  }
+
+  /**
    * Register tool handlers with the MCP server
    */
   private registerToolHandlers(): void {
@@ -1397,6 +1440,11 @@ export class BuildMCPServer {
 
     // List tools handler
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      debugProtocol('[TOOLS/LIST] Request received', {
+        registeredTools: this.tools.size,
+        toolNames: Array.from(this.tools.keys()),
+      });
+
       let toolsList = Array.from(this.tools.values()).map((tool) => ({
         name: tool.definition.name,
         description: tool.definition.description,
@@ -1409,6 +1457,18 @@ export class BuildMCPServer {
         // Hide tools that are assigned to routers
         toolsList = toolsList.filter((tool) => !this.toolToRouters.has(tool.name));
       }
+
+      // Progressive disclosure: Filter out hidden tools (dynamic evaluation)
+      toolsList = await filterHiddenItems(
+        toolsList,
+        this.tools,
+        () => this.buildHiddenContext()
+      );
+
+      debugProtocol('[TOOLS/LIST] Returning response', {
+        toolsReturned: toolsList.length,
+        toolNames: toolsList.map(t => t.name),
+      });
 
       return { tools: toolsList };
     });
@@ -1696,11 +1756,18 @@ export class BuildMCPServer {
 
     // List prompts handler
     this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
-      const promptsList = Array.from(this.prompts.values()).map((prompt) => ({
+      let promptsList = Array.from(this.prompts.values()).map((prompt) => ({
         name: prompt.name,
         description: prompt.description,
         arguments: prompt.arguments || [],
       }));
+
+      // Progressive disclosure: Filter out hidden prompts (dynamic evaluation)
+      promptsList = await filterHiddenItems(
+        promptsList,
+        this.prompts,
+        () => this.buildHiddenContext()
+      );
 
       return { prompts: promptsList };
     });
@@ -1872,6 +1939,7 @@ export class BuildMCPServer {
     });
   }
 
+
   /**
    * Register resource handlers with the MCP server
    */
@@ -1882,12 +1950,19 @@ export class BuildMCPServer {
 
     // List resources handler
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      const resourcesList = Array.from(this.resources.values()).map((resource) => ({
+      let resourcesList = Array.from(this.resources.values()).map((resource) => ({
         uri: resource.uri,
         name: resource.name,
         description: resource.description,
         mimeType: resource.mimeType,
       }));
+
+      // Progressive disclosure: Filter out hidden resources (dynamic evaluation)
+      resourcesList = await filterHiddenItems(
+        resourcesList,
+        this.resources,
+        () => this.buildHiddenContext()
+      );
 
       return { resources: resourcesList };
     });
@@ -2256,6 +2331,7 @@ export class BuildMCPServer {
     await this.server.connect(transport);
 
     console.error('[BuildMCPServer] Connected and ready for requests');
+    debugProtocol('[SERVER] Transport connected, ready for protocol messages');
 
     // Handle graceful shutdown
     process.on('SIGINT', async () => {

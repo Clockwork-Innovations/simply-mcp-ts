@@ -34,6 +34,9 @@ export default {
     '**/?(*.)+(spec|test).ts',
     '**/?(*.)+(spec|test).tsx'
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(@anthropic-ai/claude-agent-sdk)/)',
+  ],
   testPathIgnorePatterns: [
     '/node_modules/',
     '/config/',

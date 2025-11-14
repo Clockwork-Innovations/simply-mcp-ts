@@ -206,11 +206,20 @@ async function runInterfaceAdapter(
  * Scan current directory for potential MCP server files
  * Looks for .ts and .js files containing interface patterns
  */
-async function discoverServers(cwd: string = process.cwd()): Promise<string[]> {
-  console.error('[DEBUG:DISCOVER] Discovering servers in:', cwd);
+async function discoverServers(cwd: string = process.cwd(), verbose: boolean = false): Promise<string[]> {
+  const shouldDebugLog = verbose || process.env.SIMPLY_MCP_DEBUG === 'true';
+
+  if (shouldDebugLog) {
+    console.error('[DEBUG:DISCOVER] Discovering servers in:', cwd);
+  }
+
   try {
     const files = await readdir(cwd);
-    console.error('[DEBUG:DISCOVER] Found files:', files.length, 'files');
+
+    if (shouldDebugLog) {
+      console.error('[DEBUG:DISCOVER] Found files:', files.length, 'files');
+    }
+
     const potentialServers: string[] = [];
 
     for (const file of files) {
@@ -235,10 +244,15 @@ async function discoverServers(cwd: string = process.cwd()): Promise<string[]> {
       }
     }
 
-    console.error('[DEBUG:DISCOVER] Potential servers found:', JSON.stringify(potentialServers));
+    if (shouldDebugLog) {
+      console.error('[DEBUG:DISCOVER] Potential servers found:', JSON.stringify(potentialServers));
+    }
+
     return potentialServers;
   } catch (error) {
-    console.error('[DEBUG:DISCOVER] Error during discovery:', error);
+    if (shouldDebugLog) {
+      console.error('[DEBUG:DISCOVER] Error during discovery:', error);
+    }
     return [];
   }
 }
@@ -382,6 +396,7 @@ async function spawnWithInspector(
   if (argv.port) scriptArgs.push('--port', String(argv.port));
   if (argv.style) scriptArgs.push('--style', argv.style);
   if (argv.verbose) scriptArgs.push('--verbose');
+  if (argv.quick) scriptArgs.push('--quick');
   if (argv['dry-run']) scriptArgs.push('--dry-run');
   if (argv.watch) scriptArgs.push('--watch');
   if (argv['watch-poll']) scriptArgs.push('--watch-poll');
@@ -488,6 +503,11 @@ export const runCommand: CommandModule = {
         describe: 'Show detection details and config info',
         type: 'boolean',
       })
+      .option('quick', {
+        describe: 'Enable production mode for faster startup (sets NODE_ENV=production, disables debug logs)',
+        type: 'boolean',
+        default: false,
+      })
       .option('inspect', {
         describe: 'Enable Node.js inspector for debugging',
         type: 'boolean',
@@ -547,18 +567,29 @@ export const runCommand: CommandModule = {
       });
   },
   handler: async (argv: any) => {
-    // DEBUG: Log all invocations to detect unexpected file execution
-    console.error('[DEBUG:RUN] ========== RUN COMMAND INVOKED ==========');
-    console.error('[DEBUG:RUN] timestamp:', new Date().toISOString());
-    console.error('[DEBUG:RUN] process.argv:', JSON.stringify(process.argv));
-    console.error('[DEBUG:RUN] cwd:', process.cwd());
-    console.error('[DEBUG:RUN] argv.file:', JSON.stringify(argv.file));
-    console.error('[DEBUG:RUN] ==========================================');
+    // Handle --quick flag: Enable production mode for faster startup
+    if (argv.quick && !process.env.NODE_ENV) {
+      process.env.NODE_ENV = 'production';
+    }
+
+    // DEBUG: Log all invocations to detect unexpected file execution (only in debug mode)
+    const shouldDebugLog = argv.verbose || process.env.SIMPLY_MCP_DEBUG === 'true';
+
+    if (shouldDebugLog) {
+      console.error('[DEBUG:RUN] ========== RUN COMMAND INVOKED ==========');
+      console.error('[DEBUG:RUN] timestamp:', new Date().toISOString());
+      console.error('[DEBUG:RUN] process.argv:', JSON.stringify(process.argv));
+      console.error('[DEBUG:RUN] cwd:', process.cwd());
+      console.error('[DEBUG:RUN] argv.file:', JSON.stringify(argv.file));
+      console.error('[DEBUG:RUN] ==========================================');
+    }
 
     const files = argv.file ? (Array.isArray(argv.file) ? argv.file : [argv.file]) : [];
     const configPath = argv.config as string | undefined;
 
-    console.error('[DEBUG:RUN] Parsed files array:', JSON.stringify(files));
+    if (shouldDebugLog) {
+      console.error('[DEBUG:RUN] Parsed files array:', JSON.stringify(files));
+    }
 
     // Validate file extensions - reject non-code files
     // Allow TypeScript, JavaScript, and archive bundles (.tar.gz, .tgz, .zip)
@@ -635,6 +666,7 @@ export const runCommand: CommandModule = {
       if (argv.port) scriptArgs.push('--port', String(argv.port));
       if (argv.style) scriptArgs.push('--style', argv.style);
       if (argv.verbose) scriptArgs.push('--verbose');
+      if (argv.quick) scriptArgs.push('--quick');
       if (argv['dry-run']) scriptArgs.push('--dry-run');
       if (argv.watch) scriptArgs.push('--watch');
       if (argv['watch-poll']) scriptArgs.push('--watch-poll');

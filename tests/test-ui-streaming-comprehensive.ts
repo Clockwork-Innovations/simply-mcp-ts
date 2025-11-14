@@ -1015,7 +1015,7 @@ async function testExample(example: ExampleConfig, index: number, total: number)
 
     // List resources
     verbose('Listing resources...');
-    const allResources = server.listResources();
+    const allResources = await server.listResources();
     debugLog('All resources', allResources);
 
     // Filter for UI resources (ui:// URIs)

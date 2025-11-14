@@ -37,6 +37,10 @@ export interface ToolDefinition<T = any> {
   execute: ExecuteFunction<T>;
   /** Tool annotations (optional) @since v4.1.0 */
   annotations?: import('./interface-types.js').IToolAnnotations;
+  /** Hide from tools/list endpoint @since v4.4.0 */
+  hidden?: boolean;
+  /** Skill membership for auto-grouping @since v4.4.0 (PL-1) */
+  skill?: string | string[];
 }
 
 /**
@@ -53,6 +57,10 @@ export interface PromptDefinition {
     description: string;
     required: boolean;
   }>;
+  /** Hide from prompts/list endpoint @since v4.4.0 */
+  hidden?: boolean;
+  /** Skill membership for auto-grouping @since v4.4.0 (PL-1) */
+  skill?: string | string[];
   /**
    * Template string or function that generates template dynamically
    * - string: Static template with {placeholder} syntax
@@ -110,6 +118,10 @@ export interface ResourceDefinition {
    * @default false
    */
   subscribable?: boolean;
+  /** Hide from resources/list endpoint @since v4.4.0 */
+  hidden?: boolean;
+  /** Skill membership for auto-grouping @since v4.4.0 (PL-1) */
+  skill?: string | string[];
   /**
    * Resource content or function that generates content dynamically
    * - string/object/Buffer/Uint8Array: Static content served as-is
@@ -266,3 +278,4 @@ export interface InternalTool {
   definition: ToolDefinition;
   jsonSchema: any;
 }
+

@@ -221,7 +221,7 @@ async function runTests() {
       pass('Server loaded successfully');
       passCount++;
 
-      const promptsList = server.listPrompts();
+      const promptsList = await server.listPrompts();
       if (promptsList.length === 4) {
         pass(`Server reports ${promptsList.length} prompts`);
         passCount++;

@@ -139,7 +139,7 @@ describe('Naming Convention Conversion', () => {
       const server = await loadInterfaceServer({ filePath, verbose: false });
 
       // Tool should be registered with snake_case name
-      const tools = server.listTools();
+      const tools = await server.listTools();
       const tool = tools.find(t => t.name === 'get_time');
       expect(tool).toBeDefined();
       expect(tool?.name).toBe('get_time');
@@ -252,7 +252,7 @@ describe('Naming Convention Conversion', () => {
       const filePath = createTestFile('consecutive-underscores.ts', content);
       const server = await loadInterfaceServer({ filePath, verbose: false });
 
-      const tools = server.listTools();
+      const tools = await server.listTools();
       const tool = tools.find(t => t.name === 'get__data');
       expect(tool).toBeDefined();
     });
@@ -387,7 +387,7 @@ describe('Naming Convention Conversion', () => {
 
       // Note: normalizeToolName converts camelCase to snake_case
       // So the tool will be registered as 'get_user'
-      const tools = server.listTools();
+      const tools = await server.listTools();
       const tool = tools.find(t => t.name === 'get_user');
       expect(tool).toBeDefined();
 
@@ -432,7 +432,7 @@ describe('Naming Convention Conversion', () => {
       try {
         const server = await loadInterfaceServer({ filePath, verbose: false });
         // If it doesn't throw during load, it might still work but issue warnings
-        const tools = server.listTools();
+        const tools = await server.listTools();
         // The tool might not be registered if method is missing
       } catch (error) {
         // Expected: should mention the missing method
@@ -496,7 +496,7 @@ describe('Naming Convention Conversion', () => {
       const filePath = createTestFile('inferred-name.ts', content);
       const server = await loadInterfaceServer({ filePath, verbose: false });
 
-      const tools = server.listTools();
+      const tools = await server.listTools();
       // Should infer 'getData' from 'GetDataTool' interface name
       const tool = tools.find(t => t.name === 'get_data');
       expect(tool).toBeDefined();

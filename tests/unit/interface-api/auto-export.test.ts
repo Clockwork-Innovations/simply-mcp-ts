@@ -23,7 +23,7 @@ describe('Named Export Support', () => {
     expect(server.name).toBe('named-export-test');
     expect(server.version).toBe('1.0.0');
 
-    const tools = server.listTools();
+    const tools = await server.listTools();
     expect(tools.length).toBe(1);
     expect(tools[0].name).toBe('echo');
   });

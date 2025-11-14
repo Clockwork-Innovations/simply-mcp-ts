@@ -25,6 +25,9 @@ export function compileToolInterface(
   let paramsNode: ts.TypeNode | undefined;
   let resultNode: ts.TypeNode | undefined;
   let annotations: any | undefined;
+  let hidden: boolean | undefined;
+  let hiddenIsDynamic: boolean | undefined;
+  let skill: string | string[] | undefined;
 
   // Extract JSDoc description
   const jsDocTags = ts.getJSDocTags(node);
@@ -60,6 +63,39 @@ export function compileToolInterface(
       } else if (memberName === 'annotations' && member.type) {
         // Extract annotations object literal
         annotations = extractAnnotationsFromType(member.type, sourceFile, interfaceName, validationErrors);
+      } else if (memberName === 'hidden' && member.type) {
+        // Check if it's a static boolean literal
+        if (ts.isLiteralTypeNode(member.type)) {
+          const literal = member.type.literal;
+          if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+            hidden = true;
+            hiddenIsDynamic = false;
+          } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+            hidden = false;
+            hiddenIsDynamic = false;
+          }
+        } else {
+          // It's a function type or other complex type - dynamic
+          hidden = undefined; // Cannot extract function at compile time
+          hiddenIsDynamic = true;
+        }
+      } else if (memberName === 'skill' && member.type) {
+        // Extract skill membership (string or string[])
+        if (ts.isLiteralTypeNode(member.type) && ts.isStringLiteral(member.type.literal)) {
+          // Single string literal: skill: 'database'
+          skill = member.type.literal.text;
+        } else if (ts.isTupleTypeNode(member.type) || ts.isArrayTypeNode(member.type)) {
+          // Array literal: skill: ['database', 'admin']
+          const elements: string[] = [];
+          if (ts.isTupleTypeNode(member.type)) {
+            for (const element of member.type.elements) {
+              if (ts.isLiteralTypeNode(element) && ts.isStringLiteral(element.literal)) {
+                elements.push(element.literal.text);
+              }
+            }
+          }
+          skill = elements.length > 0 ? elements : undefined;
+        }
       }
     }
   }
@@ -101,5 +137,8 @@ export function compileToolInterface(
     paramsNode,
     resultNode,
     annotations,
+    hidden,
+    hiddenIsDynamic,
+    skill,
   };
 }

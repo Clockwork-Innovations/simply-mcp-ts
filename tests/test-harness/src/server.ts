@@ -160,7 +160,7 @@ export async function launchTestHarness(config: ServerConfig): Promise<TestHarne
         return;
       }
 
-      const tools = server.listTools();
+      const tools = await server.listTools();
 
       if (verbose) {
         console.log(`[TestHarness] Listing ${tools.length} tools`);
@@ -222,7 +222,7 @@ export async function launchTestHarness(config: ServerConfig): Promise<TestHarne
         return;
       }
 
-      const resources = server.listResources();
+      const resources = await server.listResources();
 
       if (verbose) {
         console.log(`[TestHarness] Listing ${resources.length} resources`);
@@ -284,7 +284,7 @@ export async function launchTestHarness(config: ServerConfig): Promise<TestHarne
         return;
       }
 
-      const prompts = server.listPrompts();
+      const prompts = await server.listPrompts();
 
       if (verbose) {
         console.log(`[TestHarness] Listing ${prompts.length} prompts`);

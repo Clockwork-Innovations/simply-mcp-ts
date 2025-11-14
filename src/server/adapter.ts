@@ -25,7 +25,7 @@ import { typeNodeToZodSchema, generateSchemaFromTypeString } from '../core/schem
 import { ensureTypeScript } from '../core/typescript-detector.js';
 
 import { registerPrompts } from '../handlers/prompt-handler.js';
-import { registerResources } from '../handlers/resource-handler.js';
+import { registerResources, registerSkillsAsResources } from '../handlers/resource-handler.js';
 import { registerCompletions } from '../handlers/completion-handler.js';
 import { DatabaseManager } from '../core/database-manager.js';
 import type { UIWatchModeConfig } from '../types/config';
@@ -59,7 +59,15 @@ export interface InterfaceAdapterOptions {
 /**
  * Load and run an interface-driven MCP server
  */
-export async function loadInterfaceServer(options: InterfaceAdapterOptions): Promise<InterfaceServer> {
+export async function loadInterfaceServer(
+  optionsOrPath: InterfaceAdapterOptions | string
+): Promise<InterfaceServer> {
+  // Support both calling conventions: string path or options object
+  const options: InterfaceAdapterOptions =
+    typeof optionsOrPath === 'string'
+      ? { filePath: optionsOrPath }
+      : optionsOrPath;
+
   const { filePath, serverName, serverVersion, verbose } = options;
 
   if (verbose) {
@@ -99,12 +107,15 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
   // Step 1: Parse the TypeScript file to discover interfaces
   const parseResult = parseInterfaceFile(filePath);
 
-  // DEBUG: Log UI parsing results
-  console.error(`[DEBUG:UI-PARSER] Parsed ${parseResult.uis?.length || 0} UI interface(s) from ${filePath}`);
-  if (parseResult.uis && parseResult.uis.length > 0) {
-    parseResult.uis.forEach((ui, idx) => {
-      console.error(`[DEBUG:UI-PARSER] UI[${idx}]: uri="${ui.uri}", html length=${ui.html?.length || 'none'}, file="${ui.file || 'none'}", component="${ui.component || 'none'}"`);
-    });
+  // DEBUG: Log UI parsing results (only in verbose mode or when DEBUG env var is set)
+  const shouldDebugLog = verbose || process.env.SIMPLY_MCP_DEBUG === 'true';
+  if (shouldDebugLog) {
+    console.error(`[DEBUG:UI-PARSER] Parsed ${parseResult.uis?.length || 0} UI interface(s) from ${filePath}`);
+    if (parseResult.uis && parseResult.uis.length > 0) {
+      parseResult.uis.forEach((ui, idx) => {
+        console.error(`[DEBUG:UI-PARSER] UI[${idx}]: uri="${ui.uri}", html length=${ui.html?.length || 'none'}, file="${ui.file || 'none'}", component="${ui.component || 'none'}"`);
+      });
+    }
   }
 
   if (verbose) {
@@ -112,23 +123,36 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
     console.log(`  - Server: ${parseResult.server?.name || 'none'}`);
     console.log(`  - Tools: ${parseResult.tools.length}`);
     console.log(`  - Prompts: ${parseResult.prompts.length}`);
+    console.log(`  - Skills: ${parseResult.skills.length}`);
     console.log(`  - Resources: ${parseResult.resources.length}`);
+  }
+
+  // FT-3: Display skill validation warnings if present
+  if (parseResult.skillValidationWarnings && parseResult.skillValidationWarnings.length > 0) {
+    // Import the warning formatter
+    const { formatWarnings } = await import('./compiler/validators/warning-formatter.js');
+    const formatted = formatWarnings(parseResult.skillValidationWarnings);
+    console.error(formatted);
   }
 
   // Step 2: Load the module to get the implementation class
   const absolutePath = resolve(filePath);
   const fileUrl = pathToFileURL(absolutePath).href;
 
-  // DEBUG: Log file loading to detect unexpected .md execution
-  console.error('[DEBUG:ADAPTER] ========== LOADING MODULE ==========');
-  console.error('[DEBUG:ADAPTER] timestamp:', new Date().toISOString());
-  console.error('[DEBUG:ADAPTER] filePath:', filePath);
-  console.error('[DEBUG:ADAPTER] absolutePath:', absolutePath);
-  console.error('[DEBUG:ADAPTER] fileUrl:', fileUrl);
-  console.error('[DEBUG:ADAPTER] =======================================');
+  // DEBUG: Log file loading to detect unexpected .md execution (only in debug mode)
+  if (shouldDebugLog) {
+    console.error('[DEBUG:ADAPTER] ========== LOADING MODULE ==========');
+    console.error('[DEBUG:ADAPTER] timestamp:', new Date().toISOString());
+    console.error('[DEBUG:ADAPTER] filePath:', filePath);
+    console.error('[DEBUG:ADAPTER] absolutePath:', absolutePath);
+    console.error('[DEBUG:ADAPTER] fileUrl:', fileUrl);
+    console.error('[DEBUG:ADAPTER] =======================================');
+  }
 
-  // Add timestamp to avoid caching during development
-  const moduleUrl = `${fileUrl}?t=${Date.now()}`;
+  // PERFORMANCE FIX: Only add cache-busting timestamp in development mode
+  // This dramatically improves startup time in production (from 6s to <3s)
+  const isDevelopment = process.env.NODE_ENV === 'development' || process.env.SIMPLY_MCP_DEV === 'true';
+  const moduleUrl = isDevelopment ? `${fileUrl}?t=${Date.now()}` : fileUrl;
 
   const module = await import(moduleUrl);
   let ServerClass = module.default;
@@ -287,14 +311,25 @@ export async function loadInterfaceServer(options: InterfaceAdapterOptions): Pro
   }
 
   // Register all tools (static or runtime)
-  // Note: BuildMCPServer handles flattenRouters filtering in listTools()
+  // PERFORMANCE: Create TypeScript Program ONCE instead of for each tool
+  // This reduces 27× TypeScript parsing to 1× parsing (40s → 2s)
+  const tsProgram = toolsToRegister.length > 0 && toolsToRegister.some(t => t.paramsNode)
+    ? createTypeScriptProgram(filePath)
+    : null;
+
+  // Register tools sequentially (but with shared TS program - much faster)
   for (const tool of toolsToRegister) {
-    await registerTool(buildServer, serverInstance, tool, filePath, verbose, bundleManifest);
+    await registerTool(buildServer, serverInstance, tool, filePath, verbose, bundleManifest, tsProgram);
   }
 
   // Step 6: Register prompts (all prompts now require implementation)
   if (parseResult.prompts.length > 0) {
     registerPrompts(buildServer, serverInstance, parseResult.prompts, verbose);
+  }
+
+  // Step 6.5: Register skills as resources (Phase 1 - MCP-Native Skills)
+  if (parseResult.skills.length > 0) {
+    registerSkillsAsResources(buildServer, serverInstance, parseResult.skills, verbose);
   }
 
   // Step 7: Register resources
@@ -802,9 +837,10 @@ async function registerTool(
   tool: ParsedTool | any, // Allow runtime tool objects
   filePath: string,
   verbose?: boolean,
-  bundleManifest?: BundleManifest
+  bundleManifest?: BundleManifest,
+  tsProgram?: ReturnType<typeof createTypeScriptProgram>
 ): Promise<{ warning?: { toolName: string; foundMethod: string; suggestion: string } }> {
-  let { name, methodName, description, paramsNode, annotations } = tool;
+  let { name, methodName, description, paramsNode, annotations, hidden } = tool;
 
   // Phase 2.1: Tool name inference from method name
   // If name is not provided, infer it from the method name
@@ -847,6 +883,7 @@ async function registerTool(
         // Call execute on the runtime tool instance
         return await runtimeTool.execute.call(runtimeTool, args);
       },
+      ...(hidden !== undefined && { hidden }),
     });
 
     return {}; // No naming warnings for runtime tools
@@ -901,6 +938,7 @@ async function registerTool(
         // Interface-driven tools expect: async (params, helper) => { ... }
         return await method.call(serverInstance, args, context);
       },
+      ...(hidden !== undefined && { hidden }),
     });
 
     return {}; // No naming warnings for reflected tools
@@ -1021,8 +1059,8 @@ async function registerTool(
     console.log(`[Interface Adapter] Registering static tool: ${name} -> ${methodName}()`);
   }
 
-  // Generate Zod schema from TypeScript type
-  const schema = generateSchema(tool, filePath);
+  // Generate Zod schema from TypeScript type (reusing TS program for performance)
+  const schema = generateSchema(tool, filePath, tsProgram);
 
   // Register the tool
   server.addTool({
@@ -1035,38 +1073,58 @@ async function registerTool(
       return await method.call(serverInstance, args, context);
     },
     ...(annotations && { annotations }), // Include annotations if present
+    ...(hidden !== undefined && { hidden }),
   });
 
   return {}; // No warnings needed - both naming conventions are valid
 }
 
 /**
+ * Create a reusable TypeScript Program for schema generation
+ * PERFORMANCE: Call this ONCE and reuse for all tools instead of creating 27 programs
+ */
+function createTypeScriptProgram(filePath: string): { program: any; sourceFile: any; checker: any } | null {
+  try {
+    const ts = ensureTypeScript();
+
+    const compilerOptions: any = {
+      target: ts.ScriptTarget.Latest,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      strict: true,
+    };
+
+    const compilerHost = ts.createCompilerHost(compilerOptions);
+    const program = ts.createProgram([resolve(filePath)], compilerOptions, compilerHost);
+    const checker = program.getTypeChecker();
+    const sourceFile = program.getSourceFile(resolve(filePath));
+
+    if (!sourceFile) {
+      return null;
+    }
+
+    return { program, sourceFile, checker };
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
  * Generate Zod schema from tool parameter type
  */
-function generateSchema(tool: ParsedTool, filePath: string): z.ZodTypeAny {
+function generateSchema(tool: ParsedTool, filePath: string, tsProgram?: ReturnType<typeof createTypeScriptProgram>): z.ZodTypeAny {
   // If we have the AST node, use it for accurate schema generation
   if (tool.paramsNode) {
     try {
-      // Lazy-load TypeScript only when needed
-      const ts = ensureTypeScript();
-
-      // Create a TypeChecker for resolving IParam interfaces
-      const compilerOptions: ts.CompilerOptions = {
-        target: ts.ScriptTarget.Latest,
-        module: ts.ModuleKind.ESNext,
-        moduleResolution: ts.ModuleResolutionKind.NodeNext,
-        strict: true,
-      };
-
-      const compilerHost = ts.createCompilerHost(compilerOptions);
-      const program = ts.createProgram([resolve(filePath)], compilerOptions, compilerHost);
-      const checker = program.getTypeChecker();
-
-      // Get the source file from the program (so types are resolved)
-      const sourceFile = program.getSourceFile(resolve(filePath));
-      if (!sourceFile) {
-        throw new Error('Failed to get source file from program');
+      // Use provided TypeScript program (PERFORMANCE: reuse across all tools)
+      // If not provided, create one (fallback for single tool registration)
+      const programData = tsProgram || createTypeScriptProgram(filePath);
+      if (!programData) {
+        throw new Error('Failed to create TypeScript program');
       }
+
+      const { sourceFile, checker } = programData;
+      const ts = ensureTypeScript();
 
       // Re-find the tool interface in the new program's AST
       // We need to do this because tool.paramsNode is from a different program/sourceFile

@@ -145,6 +145,54 @@ export interface PerformanceConfig {
 }
 
 /**
+ * Skill validation configuration
+ * Controls compile-time validation of progressive disclosure patterns
+ */
+export interface SkillValidationConfig {
+  /**
+   * Enable/disable skill validation
+   * @default true
+   */
+  enabled?: boolean;
+
+  /**
+   * Validation rule configuration
+   * Each rule can be 'warn', 'error', or 'off'
+   */
+  rules?: {
+    /**
+     * Warn about hidden items not referenced by any skill
+     * @default 'warn'
+     */
+    orphanedHidden?: 'warn' | 'error' | 'off';
+
+    /**
+     * Warn about skills referencing non-existent components
+     * @default 'error'
+     */
+    invalidReferences?: 'warn' | 'error' | 'off';
+
+    /**
+     * Warn about skills referencing non-hidden components
+     * @default 'warn'
+     */
+    nonHiddenComponents?: 'warn' | 'error' | 'off';
+
+    /**
+     * Warn about skills with empty components
+     * @default 'warn'
+     */
+    emptySkills?: 'warn' | 'error' | 'off';
+  };
+
+  /**
+   * Strict mode - treat all warnings as errors
+   * @default false
+   */
+  strict?: boolean;
+}
+
+/**
  * Complete configuration schema
  */
 export interface SimplyMCPConfig {
@@ -162,6 +210,11 @@ export interface SimplyMCPConfig {
    * Performance monitoring
    */
   performance?: PerformanceConfig;
+
+  /**
+   * Skill validation configuration
+   */
+  skillValidation?: SkillValidationConfig;
 }
 
 /**
@@ -189,6 +242,16 @@ export const DEFAULT_CONFIG: Required<SimplyMCPConfig> = {
       minCacheHitRate: 0.7, // 70%
       minCompressionSavings: 0.2, // 20%
     },
+  },
+  skillValidation: {
+    enabled: true,
+    rules: {
+      orphanedHidden: 'warn',
+      invalidReferences: 'error',
+      nonHiddenComponents: 'warn',
+      emptySkills: 'warn',
+    },
+    strict: false,
   },
 };
 
@@ -233,6 +296,14 @@ export function mergeConfig(
       thresholds: {
         ...DEFAULT_CONFIG.performance.thresholds,
         ...userConfig.performance?.thresholds,
+      },
+    },
+    skillValidation: {
+      ...DEFAULT_CONFIG.skillValidation,
+      ...userConfig.skillValidation,
+      rules: {
+        ...DEFAULT_CONFIG.skillValidation.rules,
+        ...userConfig.skillValidation?.rules,
       },
     },
   };

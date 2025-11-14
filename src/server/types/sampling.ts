@@ -111,6 +111,59 @@ export interface ISamplingMessage {
  */
 export interface ISamplingOptions {
   /**
+   * Intelligence priority for model selection (0-9 scale)
+   *
+   * Maps to Anthropic model tiers:
+   * - **0-3**: Haiku (fast, cheap, basic tasks)
+   * - **4-6**: Sonnet (balanced, most use cases)
+   * - **7-9**: Opus (complex reasoning, slow, expensive)
+   *
+   * @example Quick task with Haiku
+   * ```typescript
+   * { intelligencePriority: 2, maxTokens: 500 }
+   * ```
+   *
+   * @example Balanced task with Sonnet
+   * ```typescript
+   * { intelligencePriority: 5, temperature: 0.7 }
+   * ```
+   *
+   * @example Complex analysis with Opus
+   * ```typescript
+   * { intelligencePriority: 8, temperature: 0.3, maxTokens: 4000 }
+   * ```
+   *
+   * @since v4.7.0
+   */
+  intelligencePriority?: number;
+
+  /**
+   * Speed priority for model selection (0.0-1.0 scale)
+   * Higher values prefer faster models (lower latency)
+   *
+   * @example Prefer fast response
+   * ```typescript
+   * { speedPriority: 0.9, intelligencePriority: 3 }
+   * ```
+   *
+   * @since v4.7.0
+   */
+  speedPriority?: number;
+
+  /**
+   * Cost priority for model selection (0.0-1.0 scale)
+   * Higher values prefer cheaper models (lower cost per token)
+   *
+   * @example Prefer cost efficiency
+   * ```typescript
+   * { costPriority: 1.0, intelligencePriority: 2 }
+   * ```
+   *
+   * @since v4.7.0
+   */
+  costPriority?: number;
+
+  /**
    * Maximum number of tokens to generate
    */
   maxTokens?: number;

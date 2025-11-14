@@ -287,7 +287,7 @@ describe('Interface API database resources', () => {
 
   describe('Resource Listing', () => {
     test('lists all database resources', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
 
       const dbResources = resources.filter((r) => r.uri.startsWith('db://'));
       expect(dbResources.length).toBeGreaterThanOrEqual(5);
@@ -301,7 +301,7 @@ describe('Interface API database resources', () => {
     });
 
     test('database resources have correct metadata', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
 
       const usersResource = resources.find((r) => r.uri === 'db://users');
       expect(usersResource).toBeDefined();
@@ -374,7 +374,7 @@ describe('Interface API database resources', () => {
 
   describe('MIME Types', () => {
     test('all database resources use application/json', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const dbResources = resources.filter((r) => r.uri.startsWith('db://'));
 
       for (const resource of dbResources) {

@@ -68,7 +68,7 @@ export function registerPrompt(
   serverInstance: any,
   prompt: ParsedPrompt
 ): void {
-  const { name, description, methodName, argsMetadata } = prompt;
+  const { name, description, methodName, argsMetadata, hidden } = prompt;
 
   // Generate all possible naming variations for the method name
   const possibleMethodNames = getNamingVariations(methodName);
@@ -187,6 +187,7 @@ export function registerPrompt(
       // (interface-style methods don't receive context parameter)
       return method.call(serverInstance, args);
     },
+    ...(hidden !== undefined && { hidden }),
   });
 }
 

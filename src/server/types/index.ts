@@ -37,6 +37,7 @@
 export * from './params.js';
 export * from './tool.js';
 export * from './prompt.js';
+export * from './skill.js';
 export * from './messages.js';
 export * from './resource.js';
 export * from './server.js';

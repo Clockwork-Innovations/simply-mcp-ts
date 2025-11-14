@@ -113,7 +113,7 @@ export default class TestServer {
   console.log('\n=== Adapter File Loading Test ===\n');
 
   // Get registered resources
-  const resources = server.listResources();
+  const resources = await server.listResources();
   console.log(`✓ Server loaded with ${resources.length} resources`);
 
   // Test 1: File-based UI resource

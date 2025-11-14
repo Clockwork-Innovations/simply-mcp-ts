@@ -233,17 +233,21 @@ The dry-run validates your interface definitions and catches configuration error
 ### Run Your Server
 
 ```bash
-# STDIO transport (default)
+# STDIO transport (default - recommended for Claude CLI)
 npx simply-mcp run server.ts
 
-# HTTP transport (stateful with sessions)
+# HTTP transport (stateful with sessions + SSE)
 npx simply-mcp run server.ts --transport http --port 3000
 
-# HTTP transport (stateless for serverless)
+# HTTP transport (stateless for serverless/AWS Lambda)
 npx simply-mcp run server.ts --transport http-stateless --port 3000
 
-# WebSocket transport
+# WebSocket transport (real-time bidirectional communication)
 npx simply-mcp run server.ts --transport ws --port 8080
+
+# Legacy flags (backward compatible)
+npx simply-mcp run server.ts --http --port 3000
+npx simply-mcp run server.ts --http-stateless --port 3000
 ```
 
 That's it! Your MCP server is running with full type safety and zero boilerplate.
@@ -351,14 +355,133 @@ See the [Quick Start Guide](./docs/guides/QUICK_START.md) for more detailed trou
 
 ---
 
+## Progressive Disclosure with AI Skills
+
+> **New in v4.4.0** - Reduce token usage by 60-67% through intelligent capability hiding
+
+Progressive disclosure allows you to hide MCP capabilities from initial discovery while making them accessible through **AI Skills**. This dramatically reduces token usage in the discovery phase while preserving full functionality.
+
+**Key Benefits:**
+- **60-67% token reduction** in initial discovery
+- **Context-aware hiding** based on user roles, permissions, or feature flags
+- **Auto-generated documentation** for hidden capabilities
+- **Compile-time validation** catches configuration issues early
+- **100% backward compatible**
+
+### Quick Example
+
+```typescript
+import { ITool, ISkill, HiddenEvaluationContext } from 'simply-mcp';
+
+// Public tool (visible to everyone)
+interface SearchTool extends ITool {
+  name: 'search';
+  description: 'Search public data';
+  params: { query: string };
+  result: { results: string[] };
+  // No hidden flag = visible by default
+}
+
+// Hidden tool (static - always hidden)
+interface DebugTool extends ITool {
+  name: 'debug';
+  description: 'Debug internal state';
+  params: { component: string };
+  result: { state: any };
+  hidden: true;  // Always hidden from tools/list
+}
+
+// Dynamic hidden tool (context-aware)
+interface AdminTool extends ITool {
+  name: 'reset';
+  description: 'Reset server state';
+  params: { confirm: boolean };
+  result: { success: boolean };
+  hidden: (ctx?: HiddenEvaluationContext) => {
+    const user = ctx?.metadata?.user as { role?: string } | undefined;
+    return user?.role !== 'admin';  // Hide if not admin
+  };
+}
+
+// Auto-generated skill (documents hidden tools)
+interface DebugSkill extends ISkill {
+  name: 'debug_toolkit';
+  description: 'Debug and diagnostic tools';
+  tools: ['debug'];  // Auto-generates documentation from flat array
+}
+```
+
+**Discovery Flow:**
+```bash
+# 1. Initial discovery (anonymous user)
+List all tools → [search]  # Only public tool visible (300 tokens)
+
+# 2. Discover hidden capabilities via skill
+Get the debug_toolkit skill → Returns auto-generated docs for debug tool
+
+# 3. Call hidden tool directly
+Call debug({ component: 'cache' }) → { state: {...} }
+```
+
+**Token Reduction:**
+- Before: All 50 tools exposed = 5000 tokens
+- After: 10 public + 40 hidden = 1700 tokens (66% reduction)
+
+### Features
+
+**Foundation Layer:**
+- ✅ Static `hidden` flag for tools, resources, and prompts
+- ✅ Manual skills with handcrafted documentation
+- ✅ Basic progressive disclosure workflow
+
+**Feature Layer:**
+- ✅ Dynamic hidden evaluation (runtime context-based)
+- ✅ Auto-generated skill documentation (zero maintenance)
+- ✅ Compile-time validation (catches orphaned hidden items)
+
+### Common Use Cases
+
+**Role-Based Access Control:**
+```typescript
+hidden: (ctx) => {
+  const user = ctx?.metadata?.user as { role?: string } | undefined;
+  return user?.role !== 'admin';
+}
+```
+
+**Feature Flags:**
+```typescript
+hidden: (ctx) => {
+  const flags = ctx?.metadata?.feature_flags as string[] | undefined;
+  return !flags?.includes('experimental_feature');
+}
+```
+
+**Hide Debug Tools:**
+```typescript
+interface DebugTool extends ITool {
+  name: 'debug';
+  hidden: true;  // Always hidden (debug/internal use only)
+}
+```
+
+**Learn More:**
+- 📘 [Progressive Disclosure Guide](./docs/guides/progressive-disclosure.md) - Complete feature documentation
+- 📘 [Migration Guide](./docs/guides/migration-fl-to-ft.md) - Upgrade from v4.3.x
+- 📘 [ISkill API Reference](./docs/api/iskill-reference.md) - Interface reference
+- 💡 [Examples](./examples/) - Auth-gated and feature flag examples
+
+---
+
 ## Transport & Authentication
 
 Simply MCP supports multiple transports and authentication methods configured via interfaces:
 
 **Transport Options:**
-- **Stdio** - Standard input/output (default)
+- **Stdio** - Standard input/output (default, best for Claude CLI)
 - **HTTP Stateful** - Sessions + Server-Sent Events (SSE)
 - **HTTP Stateless** - Serverless-ready (AWS Lambda, Vercel)
+- **WebSocket** - Real-time bidirectional communication
 
 **Authentication:**
 - **API Key** - Simple key-based auth for internal tools

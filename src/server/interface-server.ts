@@ -9,6 +9,8 @@ import { BuildMCPServer } from './builder-server.js';
 import type { StartOptions, RouterToolDefinition } from './builder-types.js';
 import { authConfigFromParsed } from '../features/auth/adapter.js';
 import type { SecurityConfig } from '../features/auth/security/types.js';
+import { filterHiddenItems } from '../utils/filter-hidden.js';
+import type { HiddenEvaluationContext } from '../types/hidden.js';
 
 /**
  * Runtime configuration for interface-driven servers
@@ -112,19 +114,36 @@ export class InterfaceServer {
     return this.buildServer.description;
   }
 
+  /**
+   * Build hidden evaluation context
+   */
+  private buildHiddenContext(): HiddenEvaluationContext {
+    const options = this.buildServer.getOptions();
+    return {
+      mcp: {
+        server: {
+          name: options.name,
+          version: options.version,
+          description: options.description,
+        },
+      },
+      metadata: {},
+    };
+  }
+
   // ===== MCP Protocol Methods - Tools =====
 
   /**
    * List all registered tools
    * @returns Array of tool definitions with name, description, and input schema
    */
-  listTools(): Array<{
+  async listTools(): Promise<Array<{
     name: string;
     description: string;
     inputSchema: any;
-  }> {
+  }>> {
     const tools = this.buildServer.getTools();
-    const toolsList = Array.from(tools.values()).map((tool) => ({
+    let toolsList = Array.from(tools.values()).map((tool) => ({
       name: tool.definition.name,
       description: tool.definition.description,
       inputSchema: tool.jsonSchema,
@@ -135,8 +154,15 @@ export class InterfaceServer {
     if (!options.flattenRouters) {
       // Hide tools that are assigned to routers
       const toolToRouters = this.buildServer.getToolToRouters();
-      return toolsList.filter((tool) => !toolToRouters.has(tool.name));
+      toolsList = toolsList.filter((tool) => !toolToRouters.has(tool.name));
     }
+
+    // Progressive disclosure: Filter out hidden tools (dynamic evaluation)
+    toolsList = await filterHiddenItems(
+      toolsList,
+      tools,
+      () => this.buildHiddenContext()
+    );
 
     return toolsList;
   }
@@ -157,7 +183,7 @@ export class InterfaceServer {
    * List all registered prompts
    * @returns Array of prompt definitions with name, description, and arguments
    */
-  listPrompts(): Array<{
+  async listPrompts(): Promise<Array<{
     name: string;
     description: string;
     arguments?: Array<{
@@ -165,13 +191,22 @@ export class InterfaceServer {
       description: string;
       required: boolean;
     }>;
-  }> {
+  }>> {
     const prompts = this.buildServer.getPrompts();
-    return Array.from(prompts.values()).map((prompt) => ({
+    let promptsList = Array.from(prompts.values()).map((prompt) => ({
       name: prompt.name,
       description: prompt.description,
       arguments: prompt.arguments,
     }));
+
+    // Progressive disclosure: Filter out hidden prompts (dynamic evaluation)
+    promptsList = await filterHiddenItems(
+      promptsList,
+      prompts,
+      () => this.buildHiddenContext()
+    );
+
+    return promptsList;
   }
 
   /**
@@ -184,25 +219,35 @@ export class InterfaceServer {
     return await this.buildServer.getPromptDirect(promptName, args);
   }
 
+
   // ===== MCP Protocol Methods - Resources =====
 
   /**
    * List all registered resources
    * @returns Array of resource definitions with uri, name, description, and mimeType
    */
-  listResources(): Array<{
+  async listResources(): Promise<Array<{
     uri: string;
     name: string;
     description: string;
     mimeType: string;
-  }> {
+  }>> {
     const resources = this.buildServer.getResources();
-    return Array.from(resources.values()).map((resource) => ({
+    let resourcesList = Array.from(resources.values()).map((resource) => ({
       uri: resource.uri,
       name: resource.name,
       description: resource.description,
       mimeType: resource.mimeType,
     }));
+
+    // Progressive disclosure: Filter out hidden resources (dynamic evaluation)
+    resourcesList = await filterHiddenItems(
+      resourcesList,
+      resources,
+      () => this.buildHiddenContext()
+    );
+
+    return resourcesList;
   }
 
   /**

@@ -2,6 +2,8 @@
  * Tool definition types
  */
 
+import type { HiddenValue } from '../../types/hidden.js';
+
 /**
  * Tool behavior annotations for safety and categorization
  *
@@ -222,6 +224,52 @@ export interface ITool<TParams = any, TResult = any> {
    * @since v4.1.0
    */
   annotations?: IToolAnnotations;
+  /**
+   * Hide this tool from tools/list endpoint
+   *
+   * **Static (Foundation Layer):**
+   * ```typescript
+   * hidden: true  // Always hidden
+   * hidden: false // Always visible
+   * ```
+   *
+   * **Dynamic (Feature Layer FT-1):**
+   * ```typescript
+   * hidden: (ctx) => !ctx.metadata?.user?.isAdmin
+   * hidden: async (ctx) => !(await checkPermission(ctx.metadata?.user, 'debug'))
+   * ```
+   *
+   * When true (or predicate returns true), tool is hidden from list but remains callable.
+   *
+   * @default false (visible)
+   * @since v4.4.0 Static boolean support
+   * @since v4.5.0 Dynamic function support (FT-1)
+   */
+  hidden?: HiddenValue;
+
+  /**
+   * Skill membership - which skill(s) this tool belongs to
+   *
+   * Used for grouping related tools in auto-generated skill documentation.
+   * Can reference a single skill or multiple skills.
+   *
+   * **Single skill:**
+   * ```typescript
+   * skill: 'database'
+   * ```
+   *
+   * **Multiple skills:**
+   * ```typescript
+   * skill: ['database', 'admin']
+   * ```
+   *
+   * When specified, auto-generated skills can use this metadata to automatically
+   * include the tool without manually listing it in components.
+   *
+   * @default undefined (no explicit membership)
+   * @since v4.4.0 (PL-1)
+   */
+  skill?: string | string[];
 }
 
 /**

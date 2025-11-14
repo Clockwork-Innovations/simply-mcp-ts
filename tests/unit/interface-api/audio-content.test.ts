@@ -461,7 +461,7 @@ describe('Audio Content Support - Interface-Driven API', () => {
 
   describe('Audio Resources with IResource', () => {
     it('should define resource with IAudioContent returns type', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const wavResource = resources.find((r: any) => r.uri === 'audio://static-wav');
 
       expect(wavResource).toBeDefined();
@@ -470,7 +470,7 @@ describe('Audio Content Support - Interface-Driven API', () => {
     });
 
     it('should define dynamic resource with IAudioContent returns', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const dynamicResource = resources.find((r: any) => r.uri === 'audio://dynamic');
 
       expect(dynamicResource).toBeDefined();
@@ -479,7 +479,7 @@ describe('Audio Content Support - Interface-Driven API', () => {
     });
 
     it('should support multiple audio resources in same server', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const audioResources = resources.filter((r: any) => r.uri.startsWith('audio://'));
 
       expect(audioResources.length).toBeGreaterThanOrEqual(6);
@@ -494,7 +494,7 @@ describe('Audio Content Support - Interface-Driven API', () => {
     });
 
     it('should specify MIME types in resource definitions', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
 
       const wavResource = resources.find((r: any) => r.uri === 'audio://static-wav');
       expect(wavResource?.mimeType).toBe('audio/wav');

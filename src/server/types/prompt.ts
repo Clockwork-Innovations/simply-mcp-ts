@@ -2,6 +2,7 @@
  * Prompt definition types
  */
 import type { PromptMessage, SimpleMessage } from './messages.js';
+import type { HiddenValue } from '../../types/hidden.js';
 
 /**
  * Prompt argument metadata (simpler than IParam for tools)
@@ -178,6 +179,53 @@ export interface IPrompt {
    * Use empty object {} for prompts with no arguments
    */
   args: Record<string, IPromptArgument>;
+  /**
+   * Hide this prompt from prompts/list endpoint
+   *
+   * **Static (Foundation Layer):**
+   * ```typescript
+   * hidden: true  // Always hidden
+   * hidden: false // Always visible
+   * ```
+   *
+   * **Dynamic (Feature Layer FT-1):**
+   * ```typescript
+   * hidden: (ctx) => !ctx.metadata?.user?.isAdmin
+   * hidden: async (ctx) => !(await checkPermission(ctx.metadata?.user, 'debug'))
+   * ```
+   *
+   * When true (or predicate returns true), prompt is hidden from list but remains callable.
+   *
+   * @default false (visible)
+   * @since v4.4.0 Static boolean support
+   * @since v4.5.0 Dynamic function support (FT-1)
+   */
+  hidden?: HiddenValue;
+
+  /**
+   * Skill membership - which skill(s) this prompt belongs to
+   *
+   * Used for grouping related prompts in auto-generated skill documentation.
+   * Can reference a single skill or multiple skills.
+   *
+   * @example Single skill
+   * ```typescript
+   * interface DebugPrompt extends IPrompt {
+   *   skill: 'debugging';
+   * }
+   * ```
+   *
+   * @example Multiple skills
+   * ```typescript
+   * interface AnalysisPrompt extends IPrompt {
+   *   skill: ['debugging', 'analysis'];
+   * }
+   * ```
+   *
+   * @default undefined (no explicit membership)
+   * @since v4.4.0 (PL-1)
+   */
+  skill?: string | string[];
 }
 
 /**

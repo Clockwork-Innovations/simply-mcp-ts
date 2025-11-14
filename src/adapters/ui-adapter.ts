@@ -1179,19 +1179,29 @@ function extractNameFromUri(uri: string): string {
  * - "ui://stats/live" -> "statsLive"
  * - "ui://dashboard/main" -> "dashboardMain"
  * - "ui://form" -> "form"
+ * - "greeting://message" -> "message"
+ * - "config://server" -> "server"
  *
- * @param uri - UI resource URI
+ * Note: The scheme is stripped as it represents addressing, not semantic meaning.
+ *
+ * @param uri - Resource URI (any scheme)
  * @returns camelCase method name
  */
 export function uriToMethodName(uri: string): string {
-  // Remove ui:// prefix
-  let path = uri.replace(/^ui:\/\//, '');
+  // Extract scheme and path separately
+  const match = uri.match(/^([a-z]+):\/\/(.+)$/);
+  if (!match) {
+    // No scheme found, just convert the whole URI
+    return uri.replace(/[\/\-]/g, '');
+  }
 
-  // Split on / or - to get parts
-  const parts = path.split(/[\/\-]/);
+  const [, , path] = match;
+
+  // Use ONLY path parts (scheme stripped for semantic naming)
+  const allParts = path.split(/[\/\-]/);
 
   // Convert to camelCase (first word lowercase, rest capitalized)
-  return parts
+  return allParts
     .map((part, index) => {
       if (index === 0) {
         // First part: lowercase

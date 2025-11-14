@@ -31,9 +31,13 @@ import {
   linkSubscriptionsToInterfaces
 } from './discovery.js';
 import { validateImplementations } from './validation-compiler.js';
+import { validateSkills } from './validators/skill-validator.js';
+import { loadSkillValidationConfig } from './validators/config-loader.js';
+import type { ValidationContext } from './validators/types.js';
 import { compileToolInterface } from './compilers/tool-compiler.js';
 import { compilePromptInterface } from './compilers/prompt-compiler.js';
 import { compileResourceInterface } from './compilers/resource-compiler.js';
+import { compileSkillInterface } from './compilers/skill-compiler.js';
 import { compileSamplingInterface } from './compilers/sampling-compiler.js';
 import { compileElicitInterface } from './compilers/elicit-compiler.js';
 import { compileRootsInterface } from './compilers/roots-compiler.js';
@@ -114,6 +118,7 @@ function parseWithProgram(absolutePath: string, sourceCode: string): ParseResult
     tools: [],
     prompts: [],
     resources: [],
+    skills: [],
     samplings: [],
     elicitations: [],
     roots: [],
@@ -177,6 +182,7 @@ function parseWithSyntaxOnly(absolutePath: string, sourceCode: string): ParseRes
     tools: [],
     prompts: [],
     resources: [],
+    skills: [],
     samplings: [],
     elicitations: [],
     roots: [],
@@ -576,6 +582,9 @@ function visitNode(
           } else if (typeName === 'IResource') {
             const resource = compileResourceInterface(node, sourceFile);
             if (resource) result.resources.push(resource);
+          } else if (typeName === 'ISkill') {
+            const skill = compileSkillInterface(node, sourceFile, result.validationErrors!);
+            if (skill) result.skills.push(skill);
           } else if (typeName === 'ISampling') {
             const sampling = compileSamplingInterface(node, sourceFile);
             if (sampling) result.samplings.push(sampling);
@@ -677,6 +686,46 @@ function visitNode(
 }
 
 /**
+ * Build validation context from parse result
+ */
+function buildValidationContext(result: ParseResult, sourceFile: ts.SourceFile): ValidationContext {
+  // Build Maps for O(1) lookups
+  const toolsMap = new Map();
+  for (const tool of result.tools) {
+    const key = tool.name || tool.methodName;
+    toolsMap.set(key, tool);
+  }
+
+  const resourcesMap = new Map();
+  for (const resource of result.resources) {
+    resourcesMap.set(resource.uri, resource);
+  }
+
+  const promptsMap = new Map();
+  for (const prompt of result.prompts) {
+    promptsMap.set(prompt.name, prompt);
+  }
+
+  const skillsMap = new Map();
+  for (const skill of result.skills) {
+    skillsMap.set(skill.name, skill);
+  }
+
+  // Load configuration
+  const config = loadSkillValidationConfig();
+
+  return {
+    tools: toolsMap,
+    resources: resourcesMap,
+    prompts: promptsMap,
+    skills: skillsMap,
+    sourceFile: sourceFile.fileName,
+    sourceFileNode: sourceFile,
+    config
+  };
+}
+
+/**
  * Post-processing logic after AST traversal.
  *
  * This function:
@@ -685,6 +734,7 @@ function visitNode(
  * - Links UIs, routers, completions, roots, subscriptions to interfaces
  * - Matches router properties to router interfaces
  * - Validates implementations
+ * - Runs skill validation (FT-3)
  *
  * @param result - The parse result to post-process
  * @param sourceFile - The source file that was parsed
@@ -744,4 +794,12 @@ function postProcessParseResult(result: ParseResult, sourceFile: ts.SourceFile):
 
   // Validate implementations (Phase 2B: Auto-discovery validation)
   validateImplementations(result);
+
+  // NEW FT-3: Skill validation
+  const validationContext = buildValidationContext(result, sourceFile);
+  const skillWarnings = validateSkills(validationContext);
+
+  if (skillWarnings.length > 0) {
+    result.skillValidationWarnings = skillWarnings;
+  }
 }

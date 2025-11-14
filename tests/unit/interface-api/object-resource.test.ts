@@ -61,7 +61,7 @@ describe('Interface API - Object Resource Pattern (Pattern 3)', () => {
   // ===========================================================================
   describe('Test 1: Basic object-with-data registration', () => {
     test('should register object resource with inline data', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const serverConfig = resources.find((r) => r.uri === 'config://pokedex/server');
 
       expect(serverConfig).toBeDefined();
@@ -86,7 +86,7 @@ describe('Interface API - Object Resource Pattern (Pattern 3)', () => {
     });
 
     test('should return correct URI in resource metadata', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const serverConfig = resources.find((r) => r.uri === 'config://pokedex/server');
 
       expect(serverConfig?.uri).toBe('config://pokedex/server');
@@ -98,7 +98,7 @@ describe('Interface API - Object Resource Pattern (Pattern 3)', () => {
   // ===========================================================================
   describe('Test 2: Object pattern coexists with function pattern (Pattern 2)', () => {
     test('should register both object and function resources', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
 
       const objectResource = resources.find((r) => r.uri === 'config://pokedex/server');
       const functionResource = resources.find((r) => r.uri === 'stats://server');
@@ -149,7 +149,7 @@ describe('Interface API - Object Resource Pattern (Pattern 3)', () => {
   // ===========================================================================
   describe('Test 3: Object with nested data structures', () => {
     test('should register object resource with nested data', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const dbConfig = resources.find((r) => r.uri === 'config://database');
 
       expect(dbConfig).toBeDefined();
@@ -197,7 +197,7 @@ describe('Interface API - Object Resource Pattern (Pattern 3)', () => {
   // ===========================================================================
   describe('Test 4: Object with array data', () => {
     test('should register object resource with array data', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const pokemonList = resources.find((r) => r.uri === 'data://pokemon/list');
 
       expect(pokemonList).toBeDefined();
@@ -240,14 +240,14 @@ describe('Interface API - Object Resource Pattern (Pattern 3)', () => {
   // ===========================================================================
   describe('Test 5: Object with all IResource properties', () => {
     test('should register object resource with all properties', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const detailed = resources.find((r) => r.uri === 'resource://detailed');
 
       expect(detailed).toBeDefined();
     });
 
     test('should respect object properties over interface defaults', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const detailed = resources.find((r) => r.uri === 'resource://detailed');
 
       // The object definition should take precedence
@@ -270,7 +270,7 @@ describe('Interface API - Object Resource Pattern (Pattern 3)', () => {
   // ===========================================================================
   describe('Test 6: Multiple object resources coexist', () => {
     test('should register multiple object resources', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
 
       const kanto = resources.find((r) => r.uri === 'region://kanto');
       const johto = resources.find((r) => r.uri === 'region://johto');
@@ -320,14 +320,14 @@ describe('Interface API - Object Resource Pattern (Pattern 3)', () => {
   // ===========================================================================
   describe('Test 7: Integration - Multiple patterns coexist', () => {
     test('should count all resources correctly', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
 
       // We have 6 object resources + 1 function resource = 7 total
       expect(resources.length).toBe(7);
     });
 
     test('should list all resource URIs', () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const uris = resources.map((r) => r.uri).sort();
 
       expect(uris).toEqual([

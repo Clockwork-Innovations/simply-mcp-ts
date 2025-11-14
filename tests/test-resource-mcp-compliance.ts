@@ -67,14 +67,14 @@ async function runTests() {
     console.log(`${colors.BLUE}1. MCP resources/list Protocol${colors.NC}`);
 
     await test('List all resources (static + dynamic)', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       if (resources.length !== 4) {
         throw new Error(`Expected 4 resources, got ${resources.length}`);
       }
     });
 
     await test('Each resource has required fields', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       for (const resource of resources) {
         if (!resource.uri) throw new Error('Missing uri');
         if (!resource.name) throw new Error('Missing name');
@@ -83,7 +83,7 @@ async function runTests() {
     });
 
     await test('Static resources included in list', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const staticURIs = resources.map((r: any) => r.uri).filter((uri: string) =>
         uri === 'config://server' || uri === 'templates://search'
       );
@@ -93,7 +93,7 @@ async function runTests() {
     });
 
     await test('Dynamic resources included in list', async () => {
-      const resources = server.listResources();
+      const resources = await server.listResources();
       const dynamicURIs = resources.map((r: any) => r.uri).filter((uri: string) =>
         uri === 'stats://search' || uri === 'cache://status'
       );

@@ -2,6 +2,8 @@
  * Resource definition types
  */
 
+import type { HiddenValue } from '../../types/hidden.js';
+
 /**
  * Database Configuration Interface
  *
@@ -447,6 +449,53 @@ export interface IResource<T = any> {
    * ```
    */
   database?: IDatabase;
+  /**
+   * Hide this resource from resources/list endpoint
+   *
+   * **Static (Foundation Layer):**
+   * ```typescript
+   * hidden: true  // Always hidden
+   * hidden: false // Always visible
+   * ```
+   *
+   * **Dynamic (Feature Layer FT-1):**
+   * ```typescript
+   * hidden: (ctx) => !ctx.metadata?.user?.isAdmin
+   * hidden: async (ctx) => !(await checkPermission(ctx.metadata?.user, 'debug'))
+   * ```
+   *
+   * When true (or predicate returns true), resource is hidden from list but remains readable.
+   *
+   * @default false (visible)
+   * @since v4.4.0 Static boolean support
+   * @since v4.5.0 Dynamic function support (FT-1)
+   */
+  hidden?: HiddenValue;
+
+  /**
+   * Skill membership - which skill(s) this resource belongs to
+   *
+   * Used for grouping related resources in auto-generated skill documentation.
+   * Can reference a single skill or multiple skills.
+   *
+   * @example Single skill
+   * ```typescript
+   * interface UsersResource extends IResource {
+   *   skill: 'database';
+   * }
+   * ```
+   *
+   * @example Multiple skills
+   * ```typescript
+   * interface CacheResource extends IResource {
+   *   skill: ['database', 'performance'];
+   * }
+   * ```
+   *
+   * @default undefined (no explicit membership)
+   * @since v4.4.0 (PL-1)
+   */
+  skill?: string | string[];
 }
 
 /**

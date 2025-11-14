@@ -11,7 +11,7 @@ describe('Interface API static resources', () => {
 
   test('inlines typed constants as static data', async () => {
     const server = await loadInterfaceServer({ filePath: fixturePath });
-    const resources = server.listResources();
+    const resources = await server.listResources();
     const chartResource = resources.find((resource) => resource.uri === 'pokemon://type-chart');
 
     expect(chartResource).toBeDefined();

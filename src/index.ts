@@ -125,6 +125,13 @@ export {
   type ParseResult,
 } from './server/parser.js';
 
+// Progressive Disclosure - Dynamic Hidden (FT-1)
+export type {
+  HiddenEvaluationContext,
+  HiddenPredicate,
+  HiddenValue,
+} from './types/hidden.js';
+
 export { authConfigFromParsed } from './features/auth/adapter.js';
 
 // ============================================================================
@@ -388,3 +395,13 @@ export {
   LIGHT_THEME,
   DARK_THEME,
 } from './core/themes/prebuilt.js';
+
+// Test Utilities
+export {
+  compileServerFromCode,
+} from './server/test-utils.js';
+
+export type {
+  CompileOptions,
+  CompileResult,
+} from './server/test-utils.js';

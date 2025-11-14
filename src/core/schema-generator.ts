@@ -214,6 +214,19 @@ function extractInlineIParamProperties(
           } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
             value = false;
           }
+        } else if (ts.isTupleTypeNode(propertyType)) {
+          // Handle tuple types (used for enum arrays like ['a', 'b'])
+          if (propertyName === 'enum') {
+            const enumValues: string[] = [];
+            for (const element of propertyType.elements) {
+              if (ts.isLiteralTypeNode(element) && ts.isStringLiteral(element.literal)) {
+                enumValues.push(element.literal.text);
+              }
+            }
+            if (enumValues.length > 0) {
+              value = enumValues;
+            }
+          }
         } else if (propertyType.kind === ts.SyntaxKind.NumberKeyword) {
           continue;
         } else if (propertyType.kind === ts.SyntaxKind.StringKeyword) {
@@ -305,6 +318,11 @@ function extractInlineIParamProperties(
             tags.additionalProperties = value;
           }
           break;
+        case 'enum':
+          if (Array.isArray(value) && value.length > 0) {
+            tags.enum = value;
+          }
+          break;
       }
     }
   }
@@ -363,64 +381,116 @@ function extractIParamProperties(
     return null;
   }
 
-  // Check if it extends any IParam variant
-  const heritageClauses = declaration.heritageClauses;
-  if (!heritageClauses) {
-    return null;
-  }
-
-  const validIParamTypes = ['IParam'];
-
-  let extendsIParam = false;
-
-  for (const clause of heritageClauses) {
-    if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
-      for (const type of clause.types) {
-        const typeName = type.expression.getText(sourceFile);
-        if (validIParamTypes.includes(typeName)) {
-          extendsIParam = true;
-          break;
-        }
-      }
+  // Check if it extends IParam (directly or transitively)
+  // This function recursively checks the inheritance chain
+  function extendsIParam(decl: ts.InterfaceDeclaration): boolean {
+    const heritageClauses = decl.heritageClauses;
+    if (!heritageClauses) {
+      return false;
     }
-  }
 
-  if (!extendsIParam) {
-    return null;
-  }
+    for (const clause of heritageClauses) {
+      if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
+        for (const type of clause.types) {
+          const typeName = type.expression.getText(sourceFile);
 
-  // Extract the 'type' field value to determine base type
-  let typeFieldValue: string | null = null;
-  let baseTypeNode: ts.TypeNode | null = null;
-
-  for (const member of declaration.members) {
-    if (ts.isPropertySignature(member) && member.name) {
-      const propertyName = member.name.getText(sourceFile);
-
-      if (propertyName === 'type' && member.type) {
-        // Extract the literal type value
-        if (ts.isLiteralTypeNode(member.type)) {
-          const literal = member.type.literal;
-          if (ts.isStringLiteral(literal)) {
-            typeFieldValue = literal.text;
+          // Direct extension of IParam
+          if (typeName === 'IParam') {
+            return true;
           }
-        } else if (ts.isUnionTypeNode(member.type)) {
-          // Handle union types like 'number' | 'integer'
-          // Take the first literal value
-          for (const unionMember of member.type.types) {
-            if (ts.isLiteralTypeNode(unionMember)) {
-              const literal = unionMember.literal;
-              if (ts.isStringLiteral(literal)) {
-                typeFieldValue = literal.text;
-                break;
+
+          // Transitive extension - check if the parent interface extends IParam
+          // Get the type of the extended interface
+          const extendedType = checker.getTypeAtLocation(type.expression);
+          const extendedSymbol = extendedType.getSymbol();
+
+          if (extendedSymbol) {
+            const extendedDeclarations = extendedSymbol.getDeclarations();
+            if (extendedDeclarations && extendedDeclarations.length > 0) {
+              const extendedDecl = extendedDeclarations[0];
+              if (ts.isInterfaceDeclaration(extendedDecl)) {
+                // Recursively check if the parent extends IParam
+                if (extendsIParam(extendedDecl)) {
+                  return true;
+                }
               }
             }
           }
         }
-        break;
       }
     }
+
+    return false;
   }
+
+  if (!extendsIParam(declaration)) {
+    return null;
+  }
+
+  // Extract the 'type' field value to determine base type
+  // This function searches for the 'type' field in the interface and its parents
+  function findTypeField(decl: ts.InterfaceDeclaration): string | null {
+    // First check the current interface
+    for (const member of decl.members) {
+      if (ts.isPropertySignature(member) && member.name) {
+        const propertyName = member.name.getText(sourceFile);
+
+        if (propertyName === 'type' && member.type) {
+          // Extract the literal type value
+          if (ts.isLiteralTypeNode(member.type)) {
+            const literal = member.type.literal;
+            if (ts.isStringLiteral(literal)) {
+              return literal.text;
+            }
+          } else if (ts.isUnionTypeNode(member.type)) {
+            // Handle union types like 'number' | 'integer'
+            // Take the first literal value
+            for (const unionMember of member.type.types) {
+              if (ts.isLiteralTypeNode(unionMember)) {
+                const literal = unionMember.literal;
+                if (ts.isStringLiteral(literal)) {
+                  return literal.text;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Not found in current interface, check parent interfaces
+    const heritageClauses = decl.heritageClauses;
+    if (heritageClauses) {
+      for (const clause of heritageClauses) {
+        if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
+          for (const type of clause.types) {
+            // Get the extended interface declaration
+            const extendedType = checker.getTypeAtLocation(type.expression);
+            const extendedSymbol = extendedType.getSymbol();
+
+            if (extendedSymbol) {
+              const extendedDeclarations = extendedSymbol.getDeclarations();
+              if (extendedDeclarations && extendedDeclarations.length > 0) {
+                const extendedDecl = extendedDeclarations[0];
+                if (ts.isInterfaceDeclaration(extendedDecl)) {
+                  // Recursively search in parent
+                  const typeValue = findTypeField(extendedDecl);
+                  if (typeValue) {
+                    return typeValue;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  let typeFieldValue = findTypeField(declaration);
+  let baseTypeNode: ts.TypeNode | null = null;
 
   if (!typeFieldValue) {
     // Check if they forgot to add the type field
@@ -487,13 +557,35 @@ function extractIParamProperties(
       return null;
   }
 
-  // Extract IParam properties from the interface
-  const tags: ValidationTags = {};
-  let itemsTypeNode: ts.TypeNode | undefined = undefined;
-  let objectProperties: Record<string, ts.TypeNode> = {};
-  let requiredPropertiesList: string[] = [];
+  // Extract IParam properties from the interface and its parents
+  // Helper function to collect properties from an interface and its parents
+  function collectProperties(decl: ts.InterfaceDeclaration): void {
+    // First collect from parent interfaces (so child properties can override)
+    const heritageClauses = decl.heritageClauses;
+    if (heritageClauses) {
+      for (const clause of heritageClauses) {
+        if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
+          for (const type of clause.types) {
+            const extendedType = checker.getTypeAtLocation(type.expression);
+            const extendedSymbol = extendedType.getSymbol();
 
-  for (const member of declaration.members) {
+            if (extendedSymbol) {
+              const extendedDeclarations = extendedSymbol.getDeclarations();
+              if (extendedDeclarations && extendedDeclarations.length > 0) {
+                const extendedDecl = extendedDeclarations[0];
+                if (ts.isInterfaceDeclaration(extendedDecl)) {
+                  // Recursively collect from parent (parents first, then override with child)
+                  collectProperties(extendedDecl);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Now collect from the current interface (overrides parent properties)
+    for (const member of decl.members) {
     if (ts.isPropertySignature(member) && member.name) {
       const propertyName = member.name.getText(sourceFile);
 
@@ -554,6 +646,19 @@ function extractIParamProperties(
             value = true;
           } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
             value = false;
+          }
+        } else if (ts.isTupleTypeNode(propertyType)) {
+          // Handle tuple types (used for enum arrays like ['a', 'b'])
+          if (propertyName === 'enum') {
+            const enumValues: string[] = [];
+            for (const element of propertyType.elements) {
+              if (ts.isLiteralTypeNode(element) && ts.isStringLiteral(element.literal)) {
+                enumValues.push(element.literal.text);
+              }
+            }
+            if (enumValues.length > 0) {
+              value = enumValues;
+            }
           }
         } else if (propertyType.kind === ts.SyntaxKind.NumberKeyword) {
           // For number properties without literal value, skip
@@ -649,9 +754,24 @@ function extractIParamProperties(
             tags.additionalProperties = value;
           }
           break;
+        case 'enum':
+          if (Array.isArray(value) && value.length > 0) {
+            tags.enum = value;
+          }
+          break;
+      }
       }
     }
   }
+
+  // Initialize property collection variables
+  const tags: ValidationTags = {};
+  let itemsTypeNode: ts.TypeNode | undefined = undefined;
+  let objectProperties: Record<string, ts.TypeNode> = {};
+  let requiredPropertiesList: string[] = [];
+
+  // Collect properties from the interface and its parents
+  collectProperties(declaration);
 
   // Validate array types have items
   if (typeFieldValue === 'array' && !itemsTypeNode) {

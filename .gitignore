@@ -110,6 +110,10 @@ REPORT.html
 **/*VALIDATION*.md
 **/*SUMMARY*.md
 
+# Pre-release checklists (developer working files)
+PRE-RELEASE-CHECKLIST.md
+*-validation-report.md
+
 # Playwright E2E test artifacts
 test-results/
 playwright-report/

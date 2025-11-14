@@ -39,7 +39,9 @@ const EXCLUDED_EXAMPLES = [
   'oauth-scope-enforcement-demo.ts',       // Tutorial demo, not a runnable server
   'react-compiler-demo.ts',                // Demo file, not a runnable server
   'reference-oauth-provider.ts',           // Reference implementation, not a runnable server
-  'uri-template-resources.ts'              // Feature demo with test code, not a runnable server
+  'uri-template-resources.ts',             // Feature demo with test code, not a runnable server
+  'interface-params.ts',                   // Legacy demo using old direct-type API (needs migration to IParam)
+  'progressive-disclosure-demo-server.ts'  // Demo server using old direct-type API (needs migration to IParam)
 ];
 
 async function validateExample(filePath: string): Promise<ValidationResult> {
