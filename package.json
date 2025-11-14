@@ -60,6 +60,7 @@
     "test:unit": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules --max-old-space-size=8192\" npx jest",
     "test:unit:watch": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest --watch",
     "test:unit:coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest --coverage",
+    "test:perf": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules --max-old-space-size=8192\" npx jest tests/performance --testTimeout=60000",
     "test:e2e": "npm run build:e2e && npx playwright test",
     "test:e2e:ui": "npm run build:e2e && npx playwright test --ui",
     "test:stdio": "bash tests/test-stdio.sh",
