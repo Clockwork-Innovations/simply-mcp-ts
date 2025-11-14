@@ -5,8 +5,9 @@
  * Validates the breaking change from v4.4.0 (sync) to v4.5.0 (async).
  */
 
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterEach } from '@jest/globals';
 import { loadInterfaceServer } from '../../src/server/adapter.js';
+import { programBuilder } from '../../src/server/compiler/program-builder.js';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -16,6 +17,11 @@ describe('Async List Methods (Breaking Change)', () => {
 
   beforeAll(() => {
     mkdirSync(testDir, { recursive: true });
+  });
+
+  // Clear compiler cache after each test to prevent test pollution
+  afterEach(() => {
+    programBuilder.clearCache();
   });
 
   describe('listTools() is async', () => {
