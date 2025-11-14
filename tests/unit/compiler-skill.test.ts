@@ -6,6 +6,7 @@
  */
 
 import { compileInterfaceFile } from '../../src/server/compiler/main-compiler.js';
+import { programBuilder } from '../../src/server/compiler/program-builder.js';
 import { writeFileSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 
@@ -37,6 +38,12 @@ async function compileCode(code: string) {
     cleanupTempDir();
   }
 }
+
+// Clear the compiler cache after each test to prevent test pollution
+// (all tests use the same filename, so caching causes one test's results to leak into another)
+afterEach(() => {
+  programBuilder.clearCache();
+});
 
 describe('Skill Compiler - Basic Extraction', () => {
   it('should extract skill with name, description, and skill fields correctly', async () => {
