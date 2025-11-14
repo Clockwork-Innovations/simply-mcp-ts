@@ -326,7 +326,7 @@ describe('FL-1 + FL-2 Integration: Complete Progressive Disclosure Workflow', ()
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // STEP 1: Initial Discovery - Only visible items returned
     const visibleTools = interfaceServer.listTools();
@@ -586,7 +586,7 @@ describe('FL-1 + FL-2 Integration: Backward Compatibility', () => {
     // Should have no skills
     expect(parsed.skills).toHaveLength(0);
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // Should list 0 skills
     const skillResourcesList = interfaceServer.listResources();
@@ -641,7 +641,7 @@ describe('FL-1 + FL-2 Integration: Backward Compatibility', () => {
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // All items should be visible (no hidden flags)
     const tools = interfaceServer.listTools();
@@ -695,7 +695,7 @@ describe('FL-1 + FL-2 Integration: Mixed Visibility Patterns', () => {
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // Only public skill visible
     const skillResourcesList3 = interfaceServer.listResources();
@@ -758,7 +758,7 @@ describe('FL-1 + FL-2 Integration: Mixed Visibility Patterns', () => {
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // Check visibility
     const tools = interfaceServer.listTools();
@@ -810,7 +810,7 @@ describe('FL-1 + FL-2 Integration: Mixed Visibility Patterns', () => {
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // List returns empty
     const tools = interfaceServer.listTools();
@@ -851,7 +851,7 @@ describe('FL-1 + FL-2 Integration: Mixed Visibility Patterns', () => {
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // All visible
     const tools = interfaceServer.listTools();
@@ -890,7 +890,7 @@ describe('FL-1 + FL-2 Integration: Error Handling', () => {
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // Should throw helpful error
     await expect(interfaceServer.callTool('unknown_tool', {})).rejects.toThrow();
@@ -917,7 +917,7 @@ describe('FL-1 + FL-2 Integration: Error Handling', () => {
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // Should throw helpful error
     await expect(interfaceServer.readResource('skill://unknown_skill')).rejects.toThrow();
@@ -951,7 +951,7 @@ describe('FL-1 + FL-2 Integration: Error Handling', () => {
       silent: true,
     });
 
-    const interfaceServer = server.toInterfaceServer();
+    const interfaceServer = server;
 
     // Should throw runtime validation error
     await expect(interfaceServer.readResource('skill://bad_skill')).rejects.toThrow('invalid type');
