@@ -27,20 +27,23 @@ Built on top of the official [Anthropic MCP SDK](https://github.com/modelcontext
 
 ✨ **Zero-Boilerplate API**
 Define tools, resources, and prompts using pure TypeScript interfaces. Full IntelliSense, compile-time validation, and automatic schema generation.
+→ [API Reference](./docs/guides/API_REFERENCE.md) | [Const Patterns Guide](./docs/guides/CONST_PATTERNS.md)
 
 🚀 **Multiple Transport Modes**
 Stdio, HTTP (stateful with sessions/SSE), and HTTP (stateless for serverless). Built-in API key and OAuth 2.1 authentication.
+→ [Transport Guide](./docs/guides/TRANSPORT.md) | [OAuth 2.1 Guide](./docs/guides/OAUTH2.md)
 
 🔌 **Complete MCP Protocol Support**
 Sampling, elicitation, roots, subscriptions, progress messages, tool annotations, JSON-RPC batch processing, and autocomplete.
+→ [Protocol Features](./docs/guides/PROTOCOL.md) | [Features Guide](./docs/guides/FEATURES.md)
 
 🎨 **React UI Resources**
 Build interactive UIs with React/JSX, automatic bundling, hot reload, and adapter hooks for any component library (shadcn, Radix, Material-UI).
+→ [MCP UI Protocol](./docs/guides/MCP_UI_PROTOCOL.md) | [UI Adapter Hooks](./docs/guides/MCP_UI_ADAPTER_HOOKS.md)
 
 🎵 **Rich Content Types**
 Serve audio resources (MP3, WAV, OGG, FLAC) with metadata, text/image/embedded content, and dynamic resources.
-
-**Learn More:** [Complete Feature List](./docs/guides/FEATURES.md)
+→ [Features Guide](./docs/guides/FEATURES.md)
 
 ---
 
@@ -466,6 +469,7 @@ interface DebugTool extends ITool {
 ```
 
 **Learn More:**
+- 📖 [AI Skills Guide](./docs/guides/SKILLS.md) - Practical guide to using Skills
 - 📘 [Progressive Disclosure Guide](./docs/guides/progressive-disclosure.md) - Complete feature documentation
 - 📘 [Migration Guide](./docs/guides/migration-fl-to-ft.md) - Upgrade from v4.3.x
 - 📘 [ISkill API Reference](./docs/api/iskill-reference.md) - Interface reference
@@ -562,6 +566,7 @@ const server = new BuildMCPServer({
 - [API Reference](./docs/guides/API_REFERENCE.md) - Full API documentation
 
 ### 🔧 Core Features
+- [AI Skills Guide](./docs/guides/SKILLS.md) - Progressive disclosure and token optimization
 - [Transport Guide](./docs/guides/TRANSPORT.md) - Stdio, HTTP stateful/stateless
 - [Authentication](./docs/guides/OAUTH2.md) - OAuth 2.1 and API keys
 - [Validation Guide](./docs/guides/VALIDATION.md) - Parameter validation
@@ -623,12 +628,12 @@ A Next.js application demonstrating MCP client integration with visual interface
 - Sandboxed iframe support for UI resources with postMessage communication
 - Implementation of MCP UI adapter hooks
 
-**Location:** [inspector/](./inspector/)
-
 **Use Cases:**
 - Testing your MCP servers during development
 - Learning how to build MCP clients
 - Reference implementation for client-side MCP integration
+
+→ [Inspector Documentation](./inspector/README.md)
 
 ---
 
@@ -666,7 +671,7 @@ These tests verify:
 - Parameter validation works with real MCP clients
 - Both stdio and HTTP transports function correctly
 
-See [`tests/manual/README.md`](./tests/manual/README.md) for details.
+→ [Testing Guide](./docs/guides/TESTING.md) | [Manual Tests](./tests/manual/README.md)
 
 ---
 
