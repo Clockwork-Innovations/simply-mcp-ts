@@ -3,6 +3,7 @@
  * Tests the core evaluateHidden() function with all scenarios
  */
 
+import { jest } from '@jest/globals';
 import { evaluateHidden } from '../../src/utils/hidden-evaluator.js';
 import type { HiddenEvaluationContext, HiddenPredicate } from '../../src/types/hidden.js';
 

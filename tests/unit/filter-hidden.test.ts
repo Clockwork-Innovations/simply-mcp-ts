@@ -3,6 +3,7 @@
  * Tests the filterHiddenItems() utility function
  */
 
+import { jest } from '@jest/globals';
 import { filterHiddenItems } from '../../src/utils/filter-hidden.js';
 import type { HiddenEvaluationContext, HiddenPredicate } from '../../src/types/hidden.js';
 
