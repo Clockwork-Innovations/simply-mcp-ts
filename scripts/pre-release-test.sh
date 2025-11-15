@@ -233,8 +233,6 @@ run_test "CLI: simplymcp --help" "npx simplymcp --help > /dev/null 2>&1"
 
 run_test "CLI: simply-mcp-run --help" "npx simply-mcp-run --help > /dev/null 2>&1"
 
-run_test "CLI: simply-mcp-interface --help" "npx simply-mcp-interface --help > /dev/null 2>&1"
-
 run_test "CLI: simply-mcp-bundle --help" "npx simply-mcp-bundle --help > /dev/null 2>&1"
 
 # Test dry-run execution with interface server

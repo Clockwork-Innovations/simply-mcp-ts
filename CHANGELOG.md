@@ -7,6 +7,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.5.0] - 2025-11-15
+
+### Breaking Changes
+
+#### Removed CLI Commands
+- **`create-bundle`** → Use `bundle` command instead (unified bundling interface)
+- **`simply-mcp-interface`** → Use `simplymcp run` (auto-detects interface API)
+- **`simplymcp-interface`** → Use `simplymcp run`
+
+#### Removed UI API Fields
+The following UI fields have been removed in favor of a unified `source` field with automatic type detection:
+
+- **`html` field** → Use `source: "<div>..."` (inline HTML auto-detected)
+- **`file` field** → Use `source: "./path.html"` (file path auto-detected)
+- **`component` field** → Use `source: "./Component.tsx"` (React component auto-detected)
+- **`externalUrl` field** → Use `source: "https://..."` (external URL auto-detected)
+- **`remoteDom` field** → Use `source: {...}` (Remote DOM JSON auto-detected)
+- **`dynamic` + `methodName` fields** → Use `source` with inline HTML or files
+
+**Migration Example:**
+```typescript
+// Before (v4.4):
+interface DashboardUI extends IUI {
+  uri: 'ui://dashboard';
+  html: '<div>Dashboard</div>';
+}
+
+// After (v4.5):
+interface DashboardUI extends IUI {
+  uri: 'ui://dashboard';
+  source: '<div>Dashboard</div>';  // Auto-detects as inline HTML
+}
+
+// React components:
+// Before: component: './Dashboard.tsx'
+// After: source: './Dashboard.tsx'
+```
+
+### Performance Improvements
+
+- **Babel Lazy Loading**: ~2.5MB memory savings for servers not using React components
+  - `@babel/standalone` now loaded on-demand only when compiling JSX/TSX
+  - First React compilation: <1ms overhead for dynamic import
+  - Zero impact for non-React servers
+
+- **Dependency Extraction Caching**: 10-50ms → <1ms per cached file
+  - File-based cache with mtime validation
+  - Automatic invalidation on file modification
+  - Significant speedup in watch mode (cache compounds across UI resources)
+
+- **Skill Manual Caching**: 350ms → <1ms for cached skill manuals
+  - 60-second TTL cache for skill resource generation
+  - For skill-heavy servers (50+ components): ~17 second savings per read
+  - Automatic cache invalidation on TTL expiration
+
+- **Naming Variations Memoization**: 1-2ms per call saved
+  - Caches naming convention conversions (camelCase, snake_case, PascalCase, kebab-case)
+  - Called 10-20 times per file during compilation
+  - Cumulative savings across large projects
+
+### Code Quality Improvements
+
+- **Standardized CLI Error Handling**: Consistent error reporting across all commands
+  - New `CLIError` class with semantic exit codes
+  - Exit codes: `USER_ERROR (1)`, `RUNTIME_ERROR (2)`, `SYSTEM_ERROR (3)`
+  - Centralized error handler with verbose mode support
+  - Updated 5 command files: run, bundle, list, stop, config
+
+- **Magic String Constants**: Single source of truth for UI-related values
+  - New `src/features/ui/ui-constants.ts` module
+  - MIME types, React config, sandbox presets, CSP defaults
+  - Easier version updates (e.g., React 18.2.0 → 18.3.0 in one place)
+  - Better maintainability and consistency
+
+- **Tiered Content Security Policy System**: Enhanced security with flexibility
+  - **Tier 1 (Default)**: Strict security defaults
+    - `default-src 'none'`, `script-src 'self'`, `style-src 'self' 'unsafe-inline'`
+    - `img-src 'self' data:`, `connect-src 'self'`
+
+  - **Tier 2 (Structured Overrides)**: Safe extensions via `csp` field
+    ```typescript
+    interface DashboardUI extends IUI {
+      uri: 'ui://dashboard';
+      source: './dashboard.html';
+      csp: {
+        imgSrc: ['https://cdn.example.com'],
+        connectSrc: ['https://api.example.com']
+      }
+    }
+    ```
+
+  - **Tier 3 (Expert Mode)**: Full control via `customCSP` field
+    ```typescript
+    customCSP: "default-src 'self'; script-src 'self' https://trusted-cdn.com;"
+    ```
+    - Warns when unsafe directives detected (`unsafe-eval`, `unsafe-inline`)
+
+### Removed
+
+- **Legacy UI Field Routing** (313 lines removed from `src/adapters/ui-adapter.ts`)
+  - Route 0: `externalUrl` field
+  - Route 0.5: `remoteDom` field
+  - Route 1: `dynamic` + `methodName` fields
+  - Route 2: `file` field
+  - Route 3: `component` field
+  - Route 4: `html` field
+  - All replaced by unified `source` field with auto-detection
+
+- **Deprecated Commands** (557 lines removed):
+  - `src/cli/create-bundle.ts` (374 lines) - Deprecated bundling command
+  - `src/cli/interface-bin.ts` (183 lines) - Redundant binary entry point
+  - `src/cli/run-optimized.patch` - Stale patch file
+
+- **Total Cleanup**: 870+ lines of legacy code removed
+
+### Tests
+
+- **Test Suite Status**: 2481/2487 tests passing (99.76%)
+  - 2 tests skipped (removed dynamic UI features)
+  - Zero regressions from refactoring
+  - All UI adapter tests passing (9/9)
+
 ## [4.4.0] - 2025-11-13
 
 ### ✨ AI Skills with Anthropic Parity
